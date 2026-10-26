@@ -80,6 +80,14 @@ Always read paths from the JSON instead of assuming `.artdirector/` exists in th
 & "<skill-dir>\scripts\artdirector.cmd" variants add --id "<id>" --file "<absolute html path>" --json
 ```
 
+### Verify the registration
+
+`variants add` must answer with `"command": "variants add"` and a summary starting with `Registered <id>`. Then run `variants --json` and confirm it lists every id you wrote. The studio shows "No variants yet" until they are registered.
+
+- If `variants add` answers `"command": "variants"` with `N variants`, it only listed: the CLI build in `dist/` is stale. Run `npm run build` in `packages/artdirector` and register again.
+- Never register by hand-editing `variants.json`. If you must, write UTF-8 without BOM (PowerShell's `Set-Content -Encoding utf8` adds a BOM and the CLI then reads an empty list).
+- Put each HTML at `<scope.variantsDir>/<id>/artwork.html` (one folder per id).
+
 ## Workflow
 
 Follow the user's intent. Do not run a long questionnaire when the brief already implies defaults. Do not read ArtDirector package source (`src/`, `Routes.ts`, `Audit.ts`) to discover how to work - use this skill and the CLI wrapper.
