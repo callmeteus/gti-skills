@@ -108,6 +108,23 @@ If you notice a defect, **say it in one sentence** and leave the files. They tes
 
 Details: [references/workflow/commands.md](references/workflow/commands.md). Live protocol: [references/workflow/live.md](references/workflow/live.md). Audit and export checks: [references/output/audit.md](references/output/audit.md).
 
+## Visual bar
+
+The target is professional social-media design: photo-led, layered, textured, with type that interlocks with the subject. Read these while you plan the first markup; each one is short.
+
+- [references/style/visual-language.md](references/style/visual-language.md) - the eight principles and mood families. Read first.
+- [references/style/composition.md](references/style/composition.md) - planes of depth and structures to combine.
+- [references/style/typography.md](references/style/typography.md) - type voices, scale, and moves.
+- [references/style/photo.md](references/style/photo.md) - finding photos, removing backgrounds, treatments.
+- [references/style/texture-and-ornament.md](references/style/texture-and-ornament.md) - textures and native furniture.
+- [references/style/originality.md](references/style/originality.md) - references set the level, never the layout; self-check before hand-over.
+
+**References are not recipes.** When the user shares example images, learn their level (depth, texture, contrast, finish) and make something new. Never reproduce a reference's layout, copy, brand, or subject.
+
+Build with the effects toolkit instead of rewriting textures and type effects: write `{{> grain}}`, `{{> duotone}}`, `{{> type-fx}}`, and the others into the artwork. They are tools to combine and adjust, not finished designs. See [references/effects/catalog.md](references/effects/catalog.md).
+
+Photos: ask the user first; otherwise search openly licensed photos with `scripts/photos/find_photos.py` and cut out subjects with `scripts/photos/remove_background.py` (local model, not generative; tell the user before the first model download). Details in [references/style/photo.md](references/style/photo.md).
+
 ## Composition rules
 
 - Lock `.artboard` to the export size. `overflow: hidden`. `data-artdirector-root` plus `data-width` / `data-height`.
@@ -117,7 +134,8 @@ Details: [references/workflow/commands.md](references/workflow/commands.md). Liv
 - Mark selectable regions with `data-ad-select` or ClickClick `data-layer`.
 - Backgrounds are a design choice: the AI may use solid color, gradients, patterns, or public-domain SVG/image backgrounds when they serve the piece and the brand - or keep the background empty when restraint is stronger. Do not default to empty backgrounds; choose deliberately based on the theme, the brand, and the format.
 - Do not default every variant to a dark background. Deliver a range of treatments (light, dark, and contrasting) so the user can choose.
-- If a suitable photo is missing, build a vector or typographic composition. Do not invent a generated picture.
+- If a suitable photo is missing and the user does not want a licensed one, build a typographic or vector composition at the same level (monument type, echo stacks, textures). Do not invent a generated picture.
+- Reference photos with relative paths from the artwork folder (for example `assets/portrait.png`). The studio and the exporter resolve them.
 
 Template production vs art direction: [references/design/templates.md](references/design/templates.md). Composition techniques per artifact type: [references/design/techniques.md](references/design/techniques.md).
 

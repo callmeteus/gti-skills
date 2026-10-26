@@ -1,0 +1,134 @@
+/*
+ * @summary Social-post furniture: pills, price tags, logo tab, circled arrow, glossy 3D bubble,
+ *          gradient orbs, X marks, dot grids, chevrons, diagonal bars, tape, and icon rows.
+ *          Icons and the glossy heart come from {{> svg-defs}}.
+ *
+ *   pill          rounded label. --pill-bg, --pill-ink
+ *   price-tag     slanted label above a price. --tag-bg, --tag-ink
+ *   logo-tab      white tab hanging from the top edge with an accent underline. --tab-accent
+ *   arrow-circle  outlined circle with an arrow. --ring color, --size
+ *   glossy-bubble 3D chat bubble that holds an icon or emoji-like symbol. --bubble (body color), --size
+ *   orb           glossy gradient sphere. --orb-1, --orb-2, --size
+ *   x-mark        small X. --mark color, --size
+ *   dot-grid      block of dots. --dot-color, --gap
+ *   chevrons      row of >>>> marks. --chevron color, --size
+ *   bar           diagonal bar, rotate it with transform. --bar color
+ *   tape          translucent sticky tape strip
+ *   icon-row      row of small stroke icons (heart, chat, send, bookmark)
+ */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.32em 0.8em;
+    border-radius: 999px;
+    background: var(--pill-bg, #1f8fa6);
+    color: var(--pill-ink, #fff);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.price-tag {
+    display: inline-block;
+    padding: 0.18em 0.6em 0.14em;
+    background: var(--tag-bg, #d3201b);
+    color: var(--tag-ink, #fff);
+    transform: skewX(-10deg) rotate(-1.5deg);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.price-tag > span { display: inline-block; transform: skewX(10deg); }
+.logo-tab {
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border-radius: 0 0 18px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 -8px 0 var(--tab-accent, #1f8fa6);
+}
+.arrow-circle {
+    display: inline-grid;
+    place-items: center;
+    width: var(--size, 96px);
+    height: var(--size, 96px);
+    border: calc(var(--size, 96px) * 0.06) solid var(--ring, #ff6a00);
+    border-radius: 50%;
+    color: var(--ring, #ff6a00);
+}
+.arrow-circle > svg { width: 52%; height: 52%; }
+.glossy-bubble {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--size, 200px);
+    height: calc(var(--size, 200px) * 0.86);
+    border-radius: 30%;
+    background:
+        radial-gradient(ellipse 60% 40% at 32% 22%, rgba(255, 255, 255, 0.95), transparent 70%),
+        linear-gradient(150deg, #ffffff 0%, var(--bubble, #e6e9f2) 58%, color-mix(in srgb, var(--bubble, #e6e9f2) 70%, #000) 100%);
+    box-shadow:
+        inset -10px -14px 24px rgba(0, 0, 0, 0.14),
+        inset 10px 10px 18px rgba(255, 255, 255, 0.9),
+        0 28px 44px rgba(0, 0, 0, 0.28);
+}
+.glossy-bubble::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    bottom: -12%;
+    width: 26%;
+    height: 26%;
+    border-radius: 0 0 0 40%;
+    background: linear-gradient(150deg, var(--bubble, #e6e9f2), color-mix(in srgb, var(--bubble, #e6e9f2) 72%, #000));
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    z-index: -1;
+}
+.glossy-bubble > svg { width: 58%; height: 58%; filter: drop-shadow(0 8px 10px rgba(120, 0, 10, 0.35)); }
+.orb {
+    width: var(--size, 120px);
+    height: var(--size, 120px);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 30%),
+        linear-gradient(160deg, var(--orb-1, #ff9a9e), var(--orb-2, #6a3df0));
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.25);
+}
+.x-mark { position: relative; width: var(--size, 28px); height: var(--size, 28px); }
+.x-mark::before,
+.x-mark::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--mark, #ff4fa3);
+    transform: translateX(-50%) rotate(45deg);
+}
+.x-mark::after { transform: translateX(-50%) rotate(-45deg); }
+.dot-grid {
+    background-image: radial-gradient(circle, var(--dot-color, #fff) 2.4px, transparent 2.8px);
+    background-size: var(--gap, 18px) var(--gap, 18px);
+}
+.chevrons {
+    height: var(--size, 18px);
+    background:
+        linear-gradient(135deg, var(--chevron, #fff) 25%, transparent 25%) 0 0 / var(--size, 18px) 100%,
+        linear-gradient(45deg, transparent 75%, var(--chevron, #fff) 75%) 0 0 / var(--size, 18px) 100%;
+    -webkit-mask: linear-gradient(90deg, #000, #000);
+    opacity: 0.9;
+}
+.bar { position: absolute; height: 26px; border-radius: 13px; background: var(--bar, #fff); }
+.tape {
+    position: absolute;
+    width: 170px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    -webkit-mask: conic-gradient(from -45deg at left, #0000 25%, #000 0) left / 51% 12px repeat-y, conic-gradient(from 135deg at right, #0000 25%, #000 0) right / 51% 12px repeat-y;
+    mask: conic-gradient(from -45deg at left, #0000 25%, #000 0) left / 51% 12px repeat-y, conic-gradient(from 135deg at right, #0000 25%, #000 0) right / 51% 12px repeat-y;
+}
+.icon-row { display: flex; gap: 0.7em; align-items: center; }
+.icon-row > svg { width: 1em; height: 1em; }

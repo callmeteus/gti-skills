@@ -155,6 +155,21 @@ export interface BrandColors {
 }
 
 /**
+ * Colors a new project starts with. Templates keep their own palette while the brand still uses these.
+ */
+export const DefaultBrandColors: Pick<BrandColors, "ink" | "paper" | "accent" | "muted"> = {
+    ink: "#14110e",
+    paper: "#f4efe6",
+    accent: "#c23b22",
+    muted: "#8a8178"
+};
+
+/**
+ * Project name used when the user did not name the project.
+ */
+export const DefaultProjectName = "Untitled project";
+
+/**
  * Communication brief for a piece or campaign.
  */
 export interface CreativeBrief {

@@ -52,7 +52,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 
 | Skill | Description | Requirements | Docs |
 |-------|-------------|--------------|------|
-| **Art Director** | Local-first graphic design studio. Designs posters, social cards, infographics, covers, and slides in HTML/CSS/SVG, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
+| **Art Director** | Local-first graphic design studio. Designs photo-led, layered social posts, posters, covers, and slides in HTML/CSS/SVG with a professional style guide and effects toolkit, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
 | **Video to Skill** | Turns a YouTube tutorial into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
 | **Video to Markdown** | Converts a YouTube or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
 | **UX Psychology Review** | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
@@ -161,7 +161,7 @@ Notes:
 
 | Skill | Node.js | Python | ffmpeg and yt-dlp | Network |
 |-------|:-------:|:------:|:-----------------:|:-------:|
-| Art Director | 20+ | No | No | Fonts at render time |
+| Art Director | 20+ | 3.8+, optional (photo scripts) | No | Fonts at render time; photo search |
 | Video to Skill | No | 3.8+ | Yes | YouTube |
 | Video to Markdown | No | 3.8+ | Yes | YouTube |
 | UX Psychology Review | No | No | No | No |

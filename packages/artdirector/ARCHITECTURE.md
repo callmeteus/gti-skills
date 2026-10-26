@@ -52,6 +52,14 @@ Security: loopback bind, timing-safe token, path confinement to the project or p
 
 OpenCode is first (`node dist/bin/artdirector.js install --agent opencode`). The same skill copies to `.cursor/skills`, `.claude/skills`, and `.agents/skills`.
 
+## Effects and local images
+
+The engine ships building blocks, not finished designs. `library/effects` holds CSS, SVG, and one small script (textures, photo treatments, type effects, ornaments, filters, icons, line fitting). Artwork includes them with `{{> effect-id}}` markers; `Effects.expand` inlines each one once when the studio serves the artwork, when the audit inspects it, and when the renderer exports it. The source HTML stays short and every piece shares one implementation.
+
+Photos stay as files next to the artwork. `TemplateApply.materialize` copies images a template or registered HTML references (relative paths, absolute paths, `file://` URLs) into the variant's `assets/` folder. The studio rewrites relative references to `/artwork/<id>/<path>` and serves them confined to the project; the renderer inlines them as data URIs, because pages are loaded with `setContent` and have no file origin.
+
+The style knowledge that tells the agent how to use these blocks lives in the skill (`skills/artdirector/references/style`), so the engine never encodes a house style.
+
 ## Limitations
 
 - **Agent in the loop:** Live Mode queues events on localhost. An OpenCode/Cursor/Claude agent must poll `/v1/events/poll`, edit HTML, and reply. The studio does not call a language model by itself.

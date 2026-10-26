@@ -1,0 +1,32 @@
+<!--
+  @summary Fits each [data-fit] line to the width of its parent (justified stacked headlines).
+
+  Usage: put {{> fit-text}} at the end of <body>, then mark lines:
+    <div class="stack" style="width: 900px">
+        <span data-fit>Um gesto seu</span>
+        <span data-fit="0.8" data-fit-max="140">salva vidas</span>
+    </div>
+  data-fit       share of the parent width to fill (default 1)
+  data-fit-max   largest font size in px (default 400)
+  Lines must be display:block or inline-block and white-space:nowrap.
+-->
+<script>
+(() => {
+    const fit = () => {
+        for (const el of document.querySelectorAll("[data-fit]")) {
+            const share = Number(el.dataset.fit || 1);
+            const max = Number(el.dataset.fitMax || 400);
+            const parent = el.parentElement;
+            const style = getComputedStyle(parent);
+            const target = (parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)) * share;
+            el.style.whiteSpace = "nowrap";
+            el.style.fontSize = "100px";
+            const width = el.getBoundingClientRect().width || 1;
+            el.style.fontSize = Math.min(max, (100 * target) / width).toFixed(2) + "px";
+        }
+    };
+
+    fit();
+    document.fonts.ready.then(fit);
+})();
+</script>

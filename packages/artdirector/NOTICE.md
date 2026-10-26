@@ -44,3 +44,10 @@ Families are loaded at render time from Bunny Fonts (https://fonts.bunny.net/), 
   https://github.com/thekorn/agent-skills/tree/main/skills/frontend-design
 
 Publicly reachable files are not treated as public domain. User-supplied images must carry their own license row in `.artdirector/assets.json`.
+
+## Optional tools used by the skill scripts
+
+- rembg - MIT. https://github.com/danielgatis/rembg
+  Installed on request by `skills/artdirector/scripts/photos/remove_background.py` for local background removal. Its segmentation models download on first use under their own licenses. Not bundled.
+- Openverse - https://openverse.org/
+  Searched by `skills/artdirector/scripts/photos/find_photos.py`. Each photo keeps its own license; the script records creator, source, and license in `credits.json`.

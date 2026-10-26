@@ -8,7 +8,9 @@ export {
     VariantStatus,
     ExportFormat,
     SessionPhase,
-    StorageScope
+    StorageScope,
+    DefaultBrandColors,
+    DefaultProjectName
 } from "./Types";
 
 export type {

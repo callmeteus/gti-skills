@@ -1,0 +1,111 @@
+<!--
+  @summary Shared SVG filters, gradients, and symbols (icons, flowers, stars, doily, oval frame).
+
+  Usage: put {{> svg-defs}} once at the top of <body>, then:
+    (the outer svg viewBox always starts at 0 0; the symbol scales into it)
+    filter: url(#fx-rough)           brush or stamp edges on type and shapes
+    filter: url(#fx-rough-strong)    torn, heavy brush edges
+    filter: url(#fx-brush)           painted blur for background brush marks
+    filter: url(#fx-melt)            dripping, melting bottoms on display type
+    filter: url(#fx-wave)            cloth wave for flags and ribbons
+    filter: url(#fx-smoke)           wispy distortion (used by smoke.css)
+    <svg class="icon"><use href="#i-heart"/></svg>   stroke icons: i-heart, i-chat, i-send, i-bookmark,
+                                                      i-arrow-right, i-instagram, i-phone, i-at, i-quote
+    <svg viewBox="0 0 100 100"><use href="#flower"/></svg>         five-petal flower (color: currentColor,
+                                                                    center: --flower-center)
+    <svg viewBox="0 0 100 100"><use href="#sparkle"/></svg>        four-point sparkle
+    <svg viewBox="0 0 100 100"><use href="#star"/></svg>           five-point star
+    <svg viewBox="0 0 24 24"><use href="#heart-gloss"/></svg>      glossy 3D red heart
+    <svg viewBox="0 0 440 440"><use href="#doily"/></svg>          lace doily (currentColor)
+    <svg viewBox="0 0 400 520"><use href="#oval-frame"/></svg>       beaded oval frame (currentColor)
+-->
+<svg width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true" focusable="false">
+    <defs>
+        <filter id="fx-rough" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="4" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="fx-rough-strong" x="-15%" y="-15%" width="130%" height="130%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="4" seed="9" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="fx-brush" x="-25%" y="-25%" width="150%" height="150%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="2" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="26" xChannelSelector="R" yChannelSelector="G" result="shape"/>
+            <feGaussianBlur in="shape" stdDeviation="2.4"/>
+        </filter>
+        <filter id="fx-melt" x="-5%" y="-10%" width="110%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.09 0.006" numOctaves="2" seed="5" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="A" yChannelSelector="R"/>
+        </filter>
+        <filter id="fx-wave" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.012" numOctaves="1" seed="3" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="60" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="fx-smoke" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="4" seed="11" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+
+        <linearGradient id="g-heart" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff6b6b"/>
+            <stop offset="0.55" stop-color="#e3122d"/>
+            <stop offset="1" stop-color="#9c0018"/>
+        </linearGradient>
+
+        <symbol id="i-heart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></g></symbol>
+        <symbol id="i-chat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></g></symbol>
+        <symbol id="i-send" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></g></symbol>
+        <symbol id="i-bookmark" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></g></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></g></symbol>
+        <symbol id="i-instagram" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></g></symbol>
+        <symbol id="i-phone" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g></symbol>
+        <symbol id="i-at" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/></g></symbol>
+        <symbol id="i-quote" viewBox="0 0 24 24"><g fill="currentColor"><path d="M3 21c3-1.5 5-4.5 5-8.5V5H2v7h3.5c0 2.6-1 4.6-3 6z"/><path d="M14 21c3-1.5 5-4.5 5-8.5V5h-6v7h3.5c0 2.6-1 4.6-3 6z"/></g></symbol>
+
+        <symbol id="flower" viewBox="-50 -50 100 100">
+            <g fill="currentColor">
+                <ellipse cx="0" cy="-24" rx="15" ry="24"/>
+                <ellipse cx="0" cy="-24" rx="15" ry="24" transform="rotate(72)"/>
+                <ellipse cx="0" cy="-24" rx="15" ry="24" transform="rotate(144)"/>
+                <ellipse cx="0" cy="-24" rx="15" ry="24" transform="rotate(216)"/>
+                <ellipse cx="0" cy="-24" rx="15" ry="24" transform="rotate(288)"/>
+            </g>
+            <circle r="11" style="fill: var(--flower-center, #ffd23f)"/>
+        </symbol>
+        <symbol id="sparkle" viewBox="-50 -50 100 100">
+            <path fill="currentColor" d="M0 -50 C5 -8 8 -5 50 0 C8 5 5 8 0 50 C-5 8 -8 5 -50 0 C-8 -5 -5 -8 0 -50 Z"/>
+        </symbol>
+        <symbol id="star" viewBox="-50 -50 100 100">
+            <path fill="currentColor" d="M0 -48 L11.3 -15.6 L45.6 -14.8 L18.3 5.9 L28.2 38.8 L0 19.2 L-28.2 38.8 L-18.3 5.9 L-45.6 -14.8 L-11.3 -15.6 Z"/>
+        </symbol>
+        <symbol id="heart-gloss" viewBox="0 0 24 24">
+            <path fill="url(#g-heart)" d="M12 21.4 10.6 20.1C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.6z"/>
+            <ellipse cx="7.6" cy="7.4" rx="2.6" ry="1.5" fill="#fff" opacity="0.65" transform="rotate(-32 7.6 7.4)"/>
+            <ellipse cx="17.2" cy="6.6" rx="1.1" ry="0.7" fill="#fff" opacity="0.45" transform="rotate(-20 17.2 6.6)"/>
+        </symbol>
+        <symbol id="doily" viewBox="-220 -220 440 440">
+            <mask id="doily-holes">
+                <rect x="-220" y="-220" width="440" height="440" fill="#fff"/>
+                <circle r="166" fill="none" stroke="#000" stroke-width="12" stroke-dasharray="0 23" stroke-linecap="round"/>
+                <circle r="136" fill="none" stroke="#000" stroke-width="20" stroke-dasharray="10 14"/>
+                <circle r="104" fill="none" stroke="#000" stroke-width="8" stroke-dasharray="0 17" stroke-linecap="round"/>
+                <circle r="78" fill="none" stroke="#000" stroke-width="14" stroke-dasharray="18 10"/>
+                <circle r="48" fill="none" stroke="#000" stroke-width="7" stroke-dasharray="0 14" stroke-linecap="round"/>
+                <circle r="18" fill="#000"/>
+            </mask>
+            <g fill="currentColor" mask="url(#doily-holes)">
+                <circle r="190"/>
+                <circle r="196" fill="none" stroke="currentColor" stroke-width="40" stroke-dasharray="0 34.2" stroke-linecap="round"/>
+            </g>
+        </symbol>
+        <symbol id="oval-frame" viewBox="-200 -260 400 520">
+            <g fill="none" stroke="currentColor">
+                <ellipse rx="186" ry="246" stroke-width="22" stroke-dasharray="0 27" stroke-linecap="round"/>
+                <ellipse rx="166" ry="226" stroke-width="16"/>
+                <ellipse rx="152" ry="212" stroke-width="4"/>
+                <ellipse rx="176" ry="236" stroke-width="3" opacity="0.7"/>
+            </g>
+        </symbol>
+    </defs>
+</svg>

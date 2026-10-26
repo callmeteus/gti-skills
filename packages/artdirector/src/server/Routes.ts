@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 
 import { ArtworkAudit } from "../audit";
 import { CommandRegistry, LiveActions } from "../commands";
@@ -19,9 +19,9 @@ import {
     type LiveEvent
 } from "../core";
 import { CritiquePrompts, DirectionCatalog, Directions, Formats, OutputFormats, QualityStandard } from "../design";
-import { UnifiedRenderer } from "../renderer";
+import { HtmlDocument, UnifiedRenderer } from "../renderer";
 import { ProjectContext } from "../session";
-import { TemplateApply, TemplateCatalog } from "../templates";
+import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { Http } from "./Http";
 
@@ -177,7 +177,7 @@ export class StudioRoutes {
             const body = await Http.jsonBody(req);
             const variant = this.ctx.variant(String(body.id));
             const htmlPath = Paths.confine(this.ctx.root, variant.htmlPath);
-            const report = await ArtworkAudit.run(htmlPath, variant, this.renderer);
+            const report = await ArtworkAudit.run(htmlPath, variant, this.renderer, this.ctx.root);
             this.ctx.setPhase(SessionPhase.AUDIT);
             Http.json(res, 200, {
                 ok: true,
@@ -259,8 +259,37 @@ export class StudioRoutes {
         const variant = this.ctx.variant(id);
         const file = Paths.confine(this.ctx.root, variant.htmlPath);
 
-        if (!Http.file(res, file)) {
+        if (!existsSync(file)) {
             throw ArtErrors.notFound(`Artwork file missing: ${variant.htmlPath}`);
+        }
+
+        const html = HtmlDocument.mapLocalReferences(
+            Effects.expand(readFileSync(file, "utf8")),
+            (reference) => `/artwork/${encodeURIComponent(id)}/${reference.split("/").map(encodeURIComponent).join("/")}`
+        );
+
+        res.writeHead(200, {
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store"
+        });
+        res.end(html);
+    }
+
+    /**
+     * Serves a file referenced by an artwork (photos, cutouts), relative to the artwork folder
+     * and confined to the project.
+     *
+     * @param id Variant id
+     * @param assetPath Path relative to the artwork HTML
+     * @param res Response
+     */
+    artworkAsset(id: string, assetPath: string, res: ServerResponse): void {
+        const variant = this.ctx.variant(id);
+        const htmlFile = Paths.confine(this.ctx.root, variant.htmlPath);
+        const file = Paths.confine(this.ctx.root, join(dirname(htmlFile), assetPath));
+
+        if (!Http.file(res, file)) {
+            throw ArtErrors.notFound(`Artwork asset missing: ${assetPath}`);
         }
     }
 
@@ -358,15 +387,18 @@ export class StudioRoutes {
         const unique = [...new Map(formats.map((item) => [item.id, item])).values()];
 
         return unique.map((format) => {
-            const html = TemplateApply.render(spec, TemplateApply.tokens({
+            const id = `template-${templateId}-${format.id}`;
+            const variantDir = dirname(Paths.confine(this.ctx.root, `.artdirector/variants/${id}/artwork.html`));
+            mkdirSync(variantDir, { recursive: true });
+            const html = TemplateApply.materialize(TemplateApply.render(spec, TemplateApply.tokens({
                 brand: project.brand,
                 brief: project.brief,
                 formatId: format.id,
                 extra
-            }));
+            })), variantDir, this.ctx.root);
 
             return this.addVariant({
-                id: `template-${templateId}-${format.id}`,
+                id,
                 html,
                 title: spec.title,
                 templateId,
@@ -478,6 +510,8 @@ export class StudioRoutes {
         this.ctx.setPhase(SessionPhase.EXPORT);
         return this.renderer.render({
             html,
+            baseDir: dirname(htmlPath),
+            root: this.ctx.root,
             format
         });
     }

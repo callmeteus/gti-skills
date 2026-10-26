@@ -7,6 +7,10 @@ import type { ExportFormat } from "../core";
  */
 export interface RenderRequest {
     html: string;
+    /** Folder that relative image paths in the HTML are resolved against (usually the artwork folder). */
+    baseDir?: string;
+    /** Folder local images must stay inside. Defaults to `baseDir`. */
+    root?: string;
     outputPath?: string;
     format?: ExportFormat;
     quality?: number;

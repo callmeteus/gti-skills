@@ -1,0 +1,19 @@
+/*
+ * @summary Placing background-free subjects: grounded shadow, rim light, ghost duplicate, sticker border.
+ *
+ * Usage on a transparent PNG <img>:
+ *   fx-cutout   soft contact shadow that sits the subject on the scene
+ *   fx-rim      thin light edge (--rim color) that separates a dark subject from a dark scene
+ *   fx-ghost    oversized, faded duplicate behind the main subject (sports and music posters)
+ *   fx-sticker  thick white outline, like a die-cut sticker (Y2K, collage)
+ *   --shadow  shadow color (default rgba(0,0,0,0.55))
+ *   --rim     rim color (default rgba(255,255,255,0.55))
+ */
+.fx-cutout { filter: drop-shadow(0 30px 40px var(--shadow, rgba(0, 0, 0, 0.55))) drop-shadow(0 6px 10px var(--shadow, rgba(0, 0, 0, 0.55))); }
+.fx-rim { filter: drop-shadow(0 0 1.5px var(--rim, rgba(255, 255, 255, 0.55))) drop-shadow(0 24px 40px rgba(0, 0, 0, 0.6)); }
+.fx-ghost { opacity: 0.32; filter: blur(2px) saturate(0.8); mix-blend-mode: luminosity; }
+.fx-sticker {
+    filter:
+        drop-shadow(5px 0 0 #fff) drop-shadow(-5px 0 0 #fff) drop-shadow(0 5px 0 #fff) drop-shadow(0 -5px 0 #fff)
+        drop-shadow(0 14px 18px rgba(0, 0, 0, 0.35));
+}

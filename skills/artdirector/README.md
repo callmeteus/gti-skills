@@ -78,13 +78,18 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 |-----------------|---------------------|
 | Keep brand tokens, brief, direction, variants, and history in one project | Call image-generation APIs |
 | Serve a token-gated localhost studio with gallery, Live Mode, audit, and export | Run a language model. The agent answers studio events. |
-| Ship templates, rendered direction previews, and technique packs per artifact type | Reconstruct SVG from HTML-only artboards |
+| Teach a professional visual bar: style guides, an effects toolkit, and photo treatments | Ship finished designs to copy. References set the level, never the layout |
+| Find openly licensed photos and remove backgrounds with a local model | Generate or alter images |
+| Export PNG, JPEG, PDF, HTML, and SVG for compositions with an SVG root | Reconstruct SVG from HTML-only artboards |
 | Install one skill into ten coding agents with a single command | Bind to any interface other than `127.0.0.1` |
 
 ## Features
 
 - **Rendered directions:** ten visual directions shown as real previews, not adjective lists
-- **Templates:** ten production templates for social, editorial, data, and promotional work
+- **Visual style guide:** principles, composition structures, type voices, photo treatments, textures, and ornaments for professional social-media design, plus originality rules
+- **Effects toolkit:** grain, paper, smoke, duotone, scrims, halftone, cutout shadows, 3D and glossy type, echo stacks, brush edges, ornaments, icons, and line fitting, included with `{{> effect}}`
+- **Photo pipeline:** search CC0 photos with credits and cut out subjects locally; local images work in the studio, the audit, and every export
+- **Templates for repeatable formats:** infographic, data visual, and carousel slide, filled from the brief or a tokens file
 - **Live Mode:** click an element in the studio, pick a refinement or type a request, and the agent edits the source
 - **Refinement commands:** `bolder`, `quieter`, `typeset`, `colorize`, `layout`, `distill`, `adapt`, `polish`
 - **Quality floor:** every piece is checked against hierarchy, type, and originality rules
@@ -103,6 +108,8 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 | Chromium | Matched to Playwright | Browser that renders the artwork | No, run `npx playwright install chromium` |
 | [ClickClick](https://github.com/mintyPT/clickclick) | 0.1.3 | PNG/JPEG production renderer | Yes, by `npm install` |
 | Network access | At render time | Fonts load from Bunny Fonts | No |
+| Python | 3.8+ | Optional: photo search and background removal scripts | No |
+| [rembg](https://github.com/danielgatis/rembg) | Latest | Optional: local background removal | Yes, with `remove_background.py --install` |
 
 | Platform | CLI wrapper used by the skill |
 |----------|-------------------------------|
@@ -247,7 +254,7 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
 | `shape` | Choose a visual direction from rendered alternatives | `--direction` |
-| `generate` | Fill a template, or return techniques for an original composition | `--template` |
+| `generate` | Fill a template for a repeatable format, or return techniques, templates, and effects for original work | `--template`, `--tokens`, `--id` |
 | `variants` | List variants; `variants add` registers agent-written HTML | `--file`, `--title` |
 | `studio` | Start the browser studio with gallery and Live Mode | `--open`, `--port` (default `4730`) |
 | `live` | Alias of `studio` focused on Live Mode | `--open` |
@@ -274,23 +281,50 @@ Refinement commands return guidance, quality rules, and techniques that the agen
 |---------|---------|-----------|
 | `audit` | Deterministic checks: size, overflow, fonts, assets | `--id` |
 | `export` | Export the accepted artwork | `--id`, `--format`, `--out` |
-| `demo` | Run the end-to-end demonstration | `--out`, `--no-render` |
+| `effects` | List the effects toolkit, or print one effect with its usage notes | `--id` |
+| `demo` | Run the pipeline check (fills the library templates, no language model) | `--out`, `--no-render` |
 | `help` | Show the command list | |
+
+### Photo scripts
+
+Run with `python3` on macOS and Linux, or `python` on Windows.
+
+```bash
+python3 skills/artdirector/scripts/photos/find_photos.py "red sneakers" --license cc0 --limit 12 --download ./photos
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `query` | Required | What the photo should show, in English for best results |
+| `--license` | `cc0` | Comma separated: `cc0`, `pdm`, `by`, `by-sa` |
+| `--limit` | `12` | Number of results, 1 to 50 |
+| `--aspect` | Any | `tall`, `wide`, or `square` |
+| `--source` | Any | One provider, for example `stocksnap` or `wikimedia` |
+| `--download` | Off | Folder that receives the images and `credits.json` |
+
+Prints the candidates as JSON (title, creator, license, source page, image URL, size) from [Openverse](https://openverse.org/). Exit code `2` means nothing matched.
+
+```bash
+python3 skills/artdirector/scripts/photos/remove_background.py ./photos/01-red-sneakers.jpg --install
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `images` | Required | One or more image files |
+| `--out`, `-o` | Next to each source | Folder for the cutouts |
+| `--model`, `-m` | `isnet-general-use` | `isnet-general-use`, `u2net`, `u2net_human_seg`, `birefnet-portrait`, `birefnet-general` |
+| `--install` | Off | Install `rembg[cpu]` first when it is missing |
+| `--no-trim` | Off | Keep the original canvas instead of trimming to the subject |
+
+Writes `<name>-cutout.png` and prints the files as JSON. The first run downloads the model (about 170 MB for the default, about 1 GB for `birefnet-portrait`).
 
 ### Library
 
-| Visual directions (`library/directions/`) | Templates (`library/templates/`) |
-|-------------------------------------------|----------------------------------|
-| `bold-promotional` | `announcement` |
-| `data-driven-editorial` | `carousel-slide` |
-| `editorial-typographic` | `coupon` |
-| `expressive-playful` | `cover` |
-| `minimalist-geometric` | `data-viz` |
-| `neo-brutalist` | `editorial` |
-| `premium-corporate` | `infographic` |
-| `swiss-inspired` | `promo-banner` |
-| `technical-infographic` | `social-post` |
-| `vintage-print` | `story` |
+| Library folder | Contents |
+|----------------|----------|
+| `library/directions/` | Ten rendered direction previews: `bold-promotional`, `data-driven-editorial`, `editorial-typographic`, `expressive-playful`, `minimalist-geometric`, `neo-brutalist`, `premium-corporate`, `swiss-inspired`, `technical-infographic`, `vintage-print` |
+| `library/templates/` | Repeatable formats: `infographic`, `data-viz`, `carousel-slide` |
+| `library/effects/` | Effects toolkit: `artboard`, `grain`, `paper`, `smoke`, `duotone`, `scrim`, `halftone`, `cutout`, `type-fx`, `ornaments`, `svg-defs`, `fit-text` |
 
 ## Output
 
@@ -330,12 +364,12 @@ See [ARCHITECTURE.md](../../packages/artdirector/ARCHITECTURE.md) for the source
 | Path | Responsibility |
 |------|----------------|
 | `skills/artdirector/SKILL.md` | Agent instructions |
-| `skills/artdirector/references/` | `workflow/` commands and Live Mode, `design/` formats, templates, techniques, quality, and `output/` audit |
-| `skills/artdirector/scripts/` | CLI wrapper that finds and runs the package |
+| `skills/artdirector/references/` | `style/` visual bar and originality, `effects/` toolkit catalog, `workflow/` commands and Live Mode, `design/` formats, templates, techniques, quality, and `output/` audit |
+| `skills/artdirector/scripts/` | CLI wrapper that finds and runs the package; `photos/` search and background removal |
 | `skills/artdirector/harnesses/` | One guide per agent, and project files such as the OpenCode `/artdirector` command |
 | `packages/artdirector/src/` | CLI, session, studio server, renderer, audit, design rules, and templates |
 | `packages/artdirector/studio/` | Browser design studio and Live Mode overlay |
-| `packages/artdirector/library/` | HTML templates and rendered direction previews |
+| `packages/artdirector/library/` | Effects toolkit, templates for repeatable formats, and rendered direction previews |
 
 ## Security
 
@@ -412,12 +446,31 @@ The package has not been built on this machine. Run `npm install` and `npm run b
 
 </details>
 
+<details>
+<summary><strong>Photos do not appear in the studio or the export</strong></summary>
+
+The image path does not resolve from the artwork folder. Use a path relative to the artwork HTML (for example `assets/portrait.png`), or register the HTML with `variants add`, which copies images referenced by absolute path or `file://` URL into `assets/`.
+
+</details>
+
+<details>
+<summary><strong><code>remove_background.py</code> says rembg is not installed</strong></summary>
+
+The optional background removal library is missing. Rerun with `--install`, or install it yourself:
+
+```bash
+python3 -m pip install "rembg[cpu]"
+```
+
+</details>
+
 ## Limitations
 
 - **Agent in the loop:** Live Mode queues events on localhost. An agent must poll `/v1/events/poll`, edit HTML, and reply.
 - **SVG export:** Playwright serializes an SVG root when the composition has one. HTML-only artboards export as PNG, JPEG, PDF, or HTML.
 - **ClickClick coverage:** ClickClick handles PNG and JPEG. PDF, live overlay, and audit stay on Playwright.
 - **Network fonts:** offline renders fall back to system fonts unless `@font-face` files are added locally.
+- **Photo resolution:** cutouts and photos smaller than the area they fill look soft; prefer sources at least as large as the board.
 - **Studio reuse:** sharing one running studio between projects (`StudioLock`) is not finished in the package yet; see the known issue in the [package README](../../packages/artdirector/README.md#testing).
 
 ## Acknowledgements
@@ -433,6 +486,8 @@ Art Director adapts ideas and techniques from these projects. No source or binar
 | [Playwright](https://github.com/microsoft/playwright) | Apache 2.0 | Live preview, audit, PDF, SVG |
 | [Lucide](https://lucide.dev/license) | ISC | Inlined icon subset |
 | [Bunny Fonts](https://fonts.bunny.net/) | SIL OFL 1.1 families | Web fonts at render time |
+| [rembg](https://github.com/danielgatis/rembg) | MIT | Optional local background removal, installed on request |
+| [Openverse](https://openverse.org/) | API terms, per-photo licenses | Openly licensed photo search |
 
 ## License
 

@@ -1,0 +1,15 @@
+/*
+ * @summary Base reset, locked artboard, absolute layers, and vertical text.
+ *
+ * Usage: include it first inside the style element.
+ *   .layer        absolute layer that fills the artboard
+ *   .vertical     text that reads bottom to top, like a book spine
+ *   .vertical-down text that reads top to bottom
+ */
+html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+*, *::before, *::after { box-sizing: border-box; }
+.artboard { position: relative; overflow: hidden; isolation: isolate; }
+.layer { position: absolute; inset: 0; }
+.vertical { writing-mode: vertical-rl; transform: rotate(180deg); }
+.vertical-down { writing-mode: vertical-rl; }
+img { display: block; }

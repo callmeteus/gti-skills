@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import {
     ArtErrors,
+    DefaultBrandColors,
     Ids,
     JsonFile,
     Paths,
@@ -419,10 +420,10 @@ function defaultBrand(name: string, patch?: Partial<BrandContext>): BrandContext
             mono: patch?.fonts?.mono ?? "IBM Plex Mono"
         },
         colors: {
-            ink: patch?.colors?.ink ?? "#14110e",
-            paper: patch?.colors?.paper ?? "#f4efe6",
-            accent: patch?.colors?.accent ?? "#c23b22",
-            muted: patch?.colors?.muted ?? "#8a8178",
+            ink: patch?.colors?.ink ?? DefaultBrandColors.ink,
+            paper: patch?.colors?.paper ?? DefaultBrandColors.paper,
+            accent: patch?.colors?.accent ?? DefaultBrandColors.accent,
+            muted: patch?.colors?.muted ?? DefaultBrandColors.muted,
             extra: patch?.colors?.extra ?? []
         },
         iconStyle: patch?.iconStyle ?? "lucide-stroke",

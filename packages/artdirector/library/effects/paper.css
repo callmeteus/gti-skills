@@ -1,0 +1,40 @@
+/*
+ * @summary Aged poster paper: fiber texture, stains, burned edges, and optional fold creases.
+ *
+ * Usage: class "fx-paper" on a full-size layer, optionally with "fx-creases".
+ *        Add "fx-paper-soft" for light or pastel paper (drops the heavy mottling, keeps fibers and stains).
+ *   --paper        base color (default #f2c230 poster yellow; try #f3ede1, #f6c9d6)
+ *   --paper-stain  stain color (default rgba(120, 70, 10, 0.28))
+ *   --paper-burn   edge burn color (default rgba(90, 50, 0, 0.45))
+ */
+.fx-paper {
+    background-color: var(--paper, #f2c230);
+    background-image:
+        radial-gradient(ellipse 38% 22% at 18% 14%, var(--paper-stain, rgba(120, 70, 10, 0.28)), transparent 70%),
+        radial-gradient(ellipse 30% 26% at 82% 68%, var(--paper-stain, rgba(120, 70, 10, 0.28)), transparent 72%),
+        radial-gradient(ellipse 22% 14% at 60% 30%, rgba(255, 255, 255, 0.22), transparent 70%),
+        radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, var(--paper-burn, rgba(90, 50, 0, 0.45)) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.006' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.22 0 0 0 0 0.05 0 0 0 0.8 -0.34'/%3E%3C/filter%3E%3Crect width='600' height='600' filter='url(%23p)'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0 0.05 0 0 0 0.9 -0.35'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E");
+    background-size: auto, auto, auto, auto, 600px, 300px;
+}
+.fx-paper.fx-paper-soft {
+    background-image:
+        radial-gradient(ellipse 38% 22% at 18% 14%, var(--paper-stain, rgba(120, 70, 10, 0.28)), transparent 70%),
+        radial-gradient(ellipse 30% 26% at 82% 68%, var(--paper-stain, rgba(120, 70, 10, 0.28)), transparent 72%),
+        radial-gradient(ellipse 120% 90% at 50% 50%, transparent 60%, var(--paper-burn, rgba(90, 50, 0, 0.45)) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.2 0 0 0 0 0.3 0 0 0 0.7 -0.32'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E");
+    background-size: auto, auto, auto, 300px;
+}
+.fx-creases { position: relative; }
+.fx-creases::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+    background:
+        linear-gradient(90deg, transparent calc(50% - 2px), rgba(0, 0, 0, 0.16) calc(50% - 1px), rgba(255, 255, 255, 0.35) 50%, transparent calc(50% + 3px)),
+        linear-gradient(0deg, transparent calc(48% - 2px), rgba(0, 0, 0, 0.14) calc(48% - 1px), rgba(255, 255, 255, 0.3) 48%, transparent calc(48% + 3px));
+    mix-blend-mode: multiply;
+}

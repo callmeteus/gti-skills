@@ -112,7 +112,14 @@ export class StudioServer {
             }
 
             if (req.method === "GET" && url.pathname.startsWith("/artwork/")) {
-                routes.artwork(url.pathname.slice("/artwork/".length), res);
+                const [id = "", ...asset] = url.pathname.slice("/artwork/".length).split("/").map(decodeURIComponent);
+
+                if (asset.length > 0 && asset.join("/")) {
+                    routes.artworkAsset(id, asset.join("/"), res);
+                } else {
+                    routes.artwork(id, res);
+                }
+
                 return;
             }
 

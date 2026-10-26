@@ -1,12 +1,13 @@
 import { execFile } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 import { ArtworkAudit } from "../audit";
 import { CommandRegistry, Commands } from "../commands";
 import {
     ArtCommand,
     ArtErrors,
+    DefaultProjectName,
     ExportFormat,
     Ids,
     Paths,
@@ -21,7 +22,7 @@ import { DemoWorkflow } from "../demo";
 import { UnifiedRenderer } from "../renderer";
 import { startStudio } from "../server";
 import { ContextResolver, type ProjectContext } from "../session";
-import { TemplateApply, TemplateCatalog } from "../templates";
+import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { helpText } from "./Help";
 import { flagBool, flagString, parseArgv } from "./ParseFlags";
@@ -57,7 +58,7 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
             request,
             permanent,
             newRequest: flagBool(parsed.flags, "new"),
-            name: flagString(parsed.flags, "name") ?? "Untitled project",
+            name: flagString(parsed.flags, "name") ?? DefaultProjectName,
             brief: {
                 goal: flagString(parsed.flags, "goal") ?? ""
             }
@@ -84,6 +85,19 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
             command: "demo",
             summary: `Wrote three HTML compositions and exports under ${out}`,
             data: result as unknown as Record<string, unknown>
+        }, json);
+    }
+
+    if (parsed.command === "effects") {
+        const id = flagString(parsed.flags, "id");
+
+        return finish({
+            ok: true,
+            command: "effects",
+            summary: id ? `Effect ${id}` : "Include an effect with {{> id}} inside a style element (css) or the body (svg, html).",
+            data: id
+                ? { effect: Effects.read(id) }
+                : { effects: Effects.list().map((item) => ({ id: item.id, kind: item.kind, summary: item.summary })) }
         }, json);
     }
 
@@ -179,24 +193,29 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
                 data: {
                     techniques: Techniques.forBrief(ctx.project().brief),
                     quality: QualityStandard,
-                    templates: TemplateCatalog.list().map((item) => item.id)
+                    templates: TemplateCatalog.list().map((item) => ({ id: item.id, format: item.formatId })),
+                    effects: Effects.list().map((item) => ({ id: item.id, summary: item.summary }))
                 }
             }, json);
         }
 
         const spec = TemplateCatalog.read(templateId);
         const format = Formats.byId(spec.formatId) ?? Formats.defaultFor(spec.category);
+        const tokensFile = flagString(parsed.flags, "tokens");
+        const extra = tokensFile
+            ? JSON.parse(readFileSync(resolve(workspace, tokensFile), "utf8")) as Record<string, string>
+            : undefined;
         const tokens = TemplateApply.tokens({
             brand: ctx.project().brand,
             brief: ctx.project().brief,
-            formatId: spec.formatId
+            formatId: spec.formatId,
+            extra
         });
-        const html = TemplateApply.render(spec, tokens);
-        const id = templateId;
+        const id = flagString(parsed.flags, "id") ?? templateId;
         const htmlPath = `.artdirector/variants/${id}/artwork.html`;
         const abs = Paths.confine(ctx.root, htmlPath);
-        const { mkdirSync, writeFileSync } = await import("node:fs");
-        mkdirSync(join(ctx.root, ".artdirector", "variants", id), { recursive: true });
+        mkdirSync(dirname(abs), { recursive: true });
+        const html = TemplateApply.materialize(TemplateApply.render(spec, tokens), dirname(abs), workspace);
         writeFileSync(abs, html, "utf8");
         ctx.upsertVariant({
             id,
@@ -214,9 +233,13 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
             ok: true,
             command: ArtCommand.GENERATE,
             summary: `Rendered template ${templateId} to ${htmlPath}`,
-            data: { htmlPath }
+            data: {
+                htmlPath,
+                tokens: TemplateApply.slots(spec.html)
+            }
         }, json);
     }
+
 
     if (parsed.command === "variants") {
         if (parsed.rest[0] === "add") {
@@ -256,7 +279,7 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         }
 
         const variant = ctx.variant(id);
-        const report = await ArtworkAudit.run(Paths.confine(ctx.root, variant.htmlPath), variant);
+        const report = await ArtworkAudit.run(Paths.confine(ctx.root, variant.htmlPath), variant, undefined, ctx.root);
         return finish({
             ok: report.passed,
             command: ArtCommand.AUDIT,
@@ -285,6 +308,8 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         try {
             const result = await renderer.render({
                 html,
+                baseDir: dirname(Paths.confine(ctx.root, variant.htmlPath)),
+                root: ctx.root,
                 outputPath,
                 format
             });
@@ -350,6 +375,13 @@ function addVariant(
 
     if (!existsSync(abs)) {
         throw ArtErrors.project(`Variant HTML is missing: ${abs}. Write the file before registering it.`);
+    }
+
+    const source = readFileSync(abs, "utf8");
+    const localized = TemplateApply.materialize(source, dirname(abs), dirname(abs));
+
+    if (localized !== source) {
+        writeFileSync(abs, localized, "utf8");
     }
 
     const htmlPath = Paths.posix(relative(ctx.root, abs));

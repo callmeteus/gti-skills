@@ -13,7 +13,7 @@ export function helpText(): string {
 Usage:
   artdirector <command> [flags]
   artdirector studio [--port 4730]
-  artdirector generate --template social-post
+  artdirector generate --template horror-drip-promo
   artdirector export --id <variant> --format png
   artdirector demo [--out dir]
 

@@ -2,15 +2,15 @@
 <html lang="en" data-title="Data visual" data-category="data-viz" data-format="data-landscape">
 <head>
     <meta charset="utf-8">
-    <title>{{title}}</title>
+    <title>{{title|Como funciona}}</title>
     <style>
         @import url("https://fonts.bunny.net/css?family=fraunces:600|ibm-plex-sans:400,500");
         html, body { margin: 0; overflow: hidden; }
         .artboard {
             width: {{width}}px;
             height: {{height}}px;
-            background: {{paper}};
-            color: {{ink}};
+            background: {{paper|#f4efe6}};
+            color: {{ink|#14110e}};
             font-family: "IBM Plex Sans", sans-serif;
             position: relative;
             overflow: hidden;
@@ -28,7 +28,7 @@
             font-family: Fraunces, serif;
             letter-spacing: -0.06em;
             line-height: 1;
-            color: {{accent}};
+            color: {{accent|#c23b22}};
         }
         .bars {
             position: absolute;
@@ -39,19 +39,19 @@
             gap: 16px;
             height: 280px;
         }
-        .bar { width: 42px; background: {{ink}}; }
-        .bar:nth-child(2) { height: 60%; background: {{accent}}; }
+        .bar { width: 42px; background: {{ink|#14110e}}; }
+        .bar:nth-child(2) { height: 60%; background: {{accent|#c23b22}}; }
         .bar:nth-child(3) { height: 80%; }
         .bar:nth-child(1) { height: 40%; }
-        .bar:nth-child(4) { height: 95%; background: {{accent}}; }
+        .bar:nth-child(4) { height: 95%; background: {{accent|#c23b22}}; }
         .sub { position: absolute; left: 56px; bottom: 64px; max-width: 420px; font-size: 20px; }
     </style>
 </head>
 <body>
     <div class="artboard" data-artdirector-root data-width="{{width}}" data-height="{{height}}" data-layer="card">
-        <h1 data-layer="title">{{title}}</h1>
-        <div class="stat" data-layer="kicker">{{kicker}}</div>
-        <p class="sub" data-layer="subtitle">{{subtitle}}</p>
+        <h1 data-layer="title">{{title|Como funciona}}</h1>
+        <div class="stat" data-layer="kicker">{{kicker|Guia rápido}}</div>
+        <p class="sub" data-layer="subtitle">{{subtitle|O essencial em uma tela.}}</p>
         <div class="bars" aria-hidden="true">
             <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
         </div>

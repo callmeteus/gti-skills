@@ -10,7 +10,7 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 | `brief` | Fill only gaps | `brief --goal --audience --category --format` |
 | `shape` | Offer 3 rendered directions | `shape --direction` |
 | `craft` | Write one complete HTML piece, then stop | `variants add --id --file` |
-| `generate` | Write 2-4 real HTML variants and hand them over | Template fill or agent HTML plus `variants add` |
+| `generate` | Write 2-4 real HTML variants and hand them over | Agent HTML plus `variants add`; `generate --template <id> --tokens <json>` only for repeatable formats |
 | `live` | Poll only after the user acts | `studio --open` |
 | `critique` | Answer quality prompts when asked | Prints floor + prompts |
 | `audit` | Run only after accept or an explicit ask; report, do not silently rewrite | Playwright inspection |
@@ -19,6 +19,7 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 | `adapt` | Duplicate HTML at a new size | New variant |
 | `export` | Do not fake files | PNG/JPEG via ClickClick when available, else Playwright; PDF/SVG via Playwright |
 | `resume` | Read session, pending events | `resume --json` |
+| `effects` | Look up the effects toolkit | `effects --json`, `effects --id <id> --json` |
 
 ## Session storage
 
@@ -59,7 +60,7 @@ Write the file anywhere inside the absolute `scope.variantsDir`, then register i
 & "<skill-dir>\scripts\artdirector.cmd" variants add --id "<id>" --file "<absolute html path>" --json
 ```
 
-`variants add` copies the file into the variant folder and updates the catalog. Use it instead of hand-editing `.artdirector` metadata or dropping files into the repository.
+`variants add` registers the file where it is and updates the catalog. Images the HTML references from outside its folder (absolute paths or `file://` URLs) are copied into an `assets/` folder next to it and the paths are rewritten, so the studio and the exporter can load them. Use it instead of hand-editing `.artdirector` metadata or dropping files into the repository.
 
 ## Studio reuse
 

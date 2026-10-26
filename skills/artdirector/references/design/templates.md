@@ -1,11 +1,17 @@
 # Templates and original work
 
-**Template production** - `artdirector generate --template <id> --json` fills `library/templates` with brand tokens and `{{placeholders}}`. Layers use `data-layer` so ClickClick-style modifications remain possible.
+**Art direction is the default.** For a new piece, write original HTML at the level described in [../style/visual-language.md](../style/visual-language.md), using the effects toolkit. Templates are not style references and must not be used as a shortcut to a finished look.
 
-Ids: `social-post`, `promo-banner`, `coupon`, `carousel-slide`, `cover`, `infographic`, `announcement`, `editorial`, `data-viz`, `story`.
+**Template production** is for repeatable formats the user asks for, such as a weekly carousel or a series of data cards. `artdirector generate --template <id> --json` fills a library template with the brief, the brand, and its own defaults (`{{token|default}}`), writes it into the variant folder, and copies any local images it references into `assets/`.
 
-`story` is a 1080×1920 full-bleed phone layout with monumental type. Do not treat it as a tall social post.
+Ids: `infographic`, `data-viz`, `carousel-slide`.
 
-**Art direction** - write a new HTML artboard when templates are wrong for the brief. Still lock dimensions, fonts, and selectable regions.
+Pass your own values with a JSON file; keys are token names and image paths may be absolute or relative to the working folder:
 
-Assets: Lucide subset in the package, Bunny Fonts, user files, public-domain or CC0 with a row in `.artdirector/assets.json` (`origin`, `license`, `attribution`).
+```bash
+"<skill-dir>/scripts/artdirector" generate --template carousel-slide --tokens ./tokens.json --json
+```
+
+The JSON result lists every token the template reads under `tokens`, with its default. Layers use `data-layer` so ClickClick-style modifications remain possible.
+
+Assets: Bunny Fonts, the effects toolkit, user files, and public-domain or CC0 photos and SVGs with a row in `.artdirector/assets.json` (`origin`, `license`, `attribution`).

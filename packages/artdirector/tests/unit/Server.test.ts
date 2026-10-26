@@ -1,6 +1,6 @@
-import { existsSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Auth } from "../../src/core";
@@ -56,14 +56,14 @@ describe("studio server", () => {
         expect(css).toContain("--ink");
     });
 
-    it("creates a variant from a library template, including story", async () => {
+    it("creates a variant from a library template and serves its local images", async () => {
         const res = await fetch("http://127.0.0.1:4742/v1/generate-template", {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ templateId: "story" })
+            body: JSON.stringify({ templateId: "infographic" })
         });
         expect(res.status).toBe(200);
         const body = await res.json() as {
@@ -71,10 +71,10 @@ describe("studio server", () => {
             variant: { id: string; templateId: string; width: number; height: number; htmlPath: string };
         };
         expect(body.ok).toBe(true);
-        expect(body.variant.templateId).toBe("story");
+        expect(body.variant.templateId).toBe("infographic");
         expect(body.variant.width).toBe(1080);
         expect(body.variant.height).toBe(1920);
-        expect(body.variant.id).toBe("template-story-story");
+        expect(body.variant.id).toBe("template-infographic-infographic-portrait");
         expect(existsSync(join(root, body.variant.htmlPath))).toBe(true);
 
         const second = await fetch("http://127.0.0.1:4742/v1/generate-template", {
@@ -83,7 +83,7 @@ describe("studio server", () => {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ templateId: "announcement" })
+            body: JSON.stringify({ templateId: "data-viz" })
         });
         expect(second.status).toBe(200);
         const session = await fetch("http://127.0.0.1:4742/v1/session", {
@@ -92,12 +92,40 @@ describe("studio server", () => {
             }
         });
         const snapshot = await session.json() as {
-            variants: Array<{ templateId?: string; id: string }>;
+            variants: Array<{ templateId?: string; id: string; htmlPath: string }>;
         };
         const generated = snapshot.variants.filter((item) => item.templateId);
         expect(generated).toHaveLength(1);
-        expect(generated[0]?.templateId).toBe("announcement");
+        expect(generated[0]?.templateId).toBe("data-viz");
         expect(existsSync(join(root, body.variant.htmlPath))).toBe(false);
+
+        const artwork = join(root, generated[0]?.htmlPath ?? "");
+        mkdirSync(join(dirname(artwork), "assets"), { recursive: true });
+        writeFileSync(join(dirname(artwork), "assets", "photo.png"), "png");
+        writeFileSync(artwork, readFileSync(artwork, "utf8").replace("</body>", `<img src="assets/photo.png"><style>{{> grain}}</style></body>`));
+
+        const page = await fetch(`http://127.0.0.1:4742/artwork/${generated[0]?.id}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        const served = await page.text();
+        expect(served).toContain(`/artwork/${generated[0]?.id}/assets/photo.png`);
+        expect(served).toContain(".fx-grain::after");
+
+        const photo = await fetch(`http://127.0.0.1:4742/artwork/${generated[0]?.id}/assets/photo.png`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        expect(photo.status).toBe(200);
+
+        const escape = await fetch(`http://127.0.0.1:4742/artwork/${generated[0]?.id}/..%2F..%2F..%2Fproject.json`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        expect(escape.status).not.toBe(200);
 
         const pack = await fetch("http://127.0.0.1:4742/v1/generate-template", {
             method: "POST",
@@ -106,7 +134,7 @@ describe("studio server", () => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                templateId: "social-post",
+                templateId: "carousel-slide",
                 formatIds: ["instagram-square", "story"]
             })
         });

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { dirname } from "node:path";
 
 import type { ArtworkVariant } from "../core";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
@@ -35,12 +36,14 @@ export namespace ArtworkAudit {
      * @param htmlPath Source path
      * @param expected Optional expected size
      * @param renderer Shared renderer
+     * @param root Folder local images must stay inside (defaults to the artwork folder)
      * @returns Report
      */
     export async function run(
         htmlPath: string,
         expected?: Pick<ArtworkVariant, "width" | "height">,
-        renderer?: UnifiedRenderer
+        renderer?: UnifiedRenderer,
+        root?: string
     ): Promise<AuditReport> {
         const html = readFileSync(htmlPath, "utf8");
         const dims = HtmlDocument.dimensions(html);
@@ -109,7 +112,7 @@ export namespace ArtworkAudit {
                         scrollHeight: document.documentElement.scrollHeight
                     };
                 });
-            });
+            }, dirname(htmlPath), root);
 
             if (inspection.overflowX || inspection.overflowY) {
                 findings.push({

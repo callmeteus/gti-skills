@@ -53,7 +53,11 @@ export class UnifiedRenderer {
      * @param request Render request
      * @returns Result
      */
-    async render(request: RenderRequest): Promise<RenderResult> {
+    async render(source: RenderRequest): Promise<RenderResult> {
+        const request: RenderRequest = {
+            ...source,
+            html: HtmlDocument.prepare(source.html, source.baseDir, source.root)
+        };
         const format = request.format ?? inferFormat(request.outputPath);
 
         if (format === ExportFormat.HTML && request.outputPath) {
@@ -122,10 +126,12 @@ export class UnifiedRenderer {
      *
      * @param html Document
      * @param fn Callback
+     * @param baseDir Folder relative image paths resolve against
+     * @param root Folder images must stay inside
      * @returns Callback result
      */
-    inspect<T>(html: string, fn: (page: Page) => Promise<T>): Promise<T> {
-        return this.playwright.inspect(html, fn);
+    inspect<T>(html: string, fn: (page: Page) => Promise<T>, baseDir?: string, root?: string): Promise<T> {
+        return this.playwright.inspect(HtmlDocument.prepare(html, baseDir, root), fn);
     }
 
     /**

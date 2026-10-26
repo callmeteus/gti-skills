@@ -1,3 +1,8 @@
+import { existsSync, readFileSync } from "node:fs";
+import { extname, isAbsolute, relative, resolve } from "node:path";
+
+import { Effects } from "../templates";
+
 /**
  * Helpers for assembling a locked artboard document.
  */
@@ -78,6 +83,70 @@ ${options.body}
     }
 
     /**
+     * Prepares artwork HTML for rendering: expands `{{> effect}}` includes and, when a base folder
+     * is given, inlines local images as data URIs so the page renders without a file server.
+     *
+     * @param html Artwork HTML
+     * @param baseDir Folder relative image paths resolve against
+     * @param root Folder images must stay inside (defaults to baseDir)
+     * @returns Self-contained HTML
+     */
+    export function prepare(html: string, baseDir?: string, root?: string): string {
+        const expanded = Effects.expand(html);
+
+        if (!baseDir) {
+            return expanded;
+        }
+
+        const boundary = resolve(root ?? baseDir);
+
+        return mapLocalReferences(expanded, (reference) => {
+            const file = resolve(baseDir, decodeURI(reference.split(/[?#]/)[0] ?? ""));
+            const inside = relative(boundary, file);
+
+            if (inside.startsWith("..") || isAbsolute(inside) || !existsSync(file)) {
+                return null;
+            }
+
+            const mime = ImageMimeTypes[extname(file).toLowerCase()];
+
+            if (!mime) {
+                return null;
+            }
+
+            return `data:${mime};base64,${readFileSync(file).toString("base64")}`;
+        });
+    }
+
+    /**
+     * Rewrites every relative file reference in `src="..."` attributes and CSS `url(...)` values.
+     * Data URIs, web URLs, fragments (`#id`), and absolute paths are left alone.
+     *
+     * @param html Artwork HTML
+     * @param map Returns the new reference, or null to keep the original
+     * @returns Rewritten HTML
+     */
+    export function mapLocalReferences(html: string, map: (reference: string) => string | null): string {
+        const local = (reference: string): string | null => {
+            if (!reference || /^(data:|https?:|blob:|#|about:|\/)/i.test(reference)) {
+                return null;
+            }
+
+            return map(reference);
+        };
+
+        return html
+            .replace(/(\ssrc=")([^"]+)(")/g, (match: string, open: string, value: string, close: string) => {
+                const next = local(value);
+                return next ? `${open}${next}${close}` : match;
+            })
+            .replace(/url\((["']?)([^"')]+)\1\)/g, (match: string, quote: string, value: string) => {
+                const next = local(value);
+                return next ? `url(${quote}${next}${quote})` : match;
+            });
+    }
+
+    /**
      * Splits a full document into ClickClick-style html + css fragments when possible.
      *
      * @param html Full document
@@ -98,6 +167,19 @@ ${options.body}
         };
     }
 }
+
+/**
+ * MIME types for images that may be inlined.
+ */
+const ImageMimeTypes: Record<string, string> = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".avif": "image/avif"
+};
 
 /**
  * Escapes text for HTML.

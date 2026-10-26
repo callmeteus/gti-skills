@@ -1,4 +1,3 @@
-export { TemplateCatalog } from "./Catalog";
-export type { TemplateSpec } from "./Catalog";
-export { TemplateApply } from "./Apply";
-export type { TemplateTokens } from "./Apply";
+export { TemplateApply, type TemplateTokens } from "./Apply";
+export { TemplateCatalog, type TemplateSpec } from "./Catalog";
+export { Effects, type EffectSpec } from "./Effects";

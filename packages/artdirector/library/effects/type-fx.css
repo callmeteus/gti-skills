@@ -1,0 +1,92 @@
+/*
+ * @summary Display type effects: 3D extrusion, glossy fill, gradient fill, stacked echo words,
+ *          outline, glow, motion blur, and brush roughness. Rough and melt need {{> svg-defs}}.
+ *
+ *   fx-extrude      solid 3D depth. --extrude color, --step offset per layer (default 1.5px)
+ *   fx-gloss        glossy vertical gradient fill. --gloss-top, --gloss-mid, --gloss-bottom.
+ *   fx-gloss-depth  glossy fill plus solid 3D depth (puffy holiday lettering). Repeat the text in data-text:
+ *                   <h1 class="fx-gloss-depth" data-text="SETE">SETE</h1>  (--extrude, --step, gloss vars)
+ *   fx-gradient     two-color fill. --g1, --g2, --g-angle (default 90deg)
+ *   fx-echo         stacked repeated word block; children fade out downward.
+ *                   <div class="fx-echo"><span>VERÃO</span><span>VERÃO</span><span>VERÃO</span></div>
+ *   fx-outline      hollow letters. --stroke width, --stroke-color
+ *   fx-glow         colored glow. --glow color
+ *   fx-motion       horizontal motion blur trail. --motion-blur (default 3px)
+ *   fx-rough        brush and stamp edges (filter #fx-rough)
+ *   fx-rough-strong torn heavy brush edges
+ *   fx-melt         dripping, melting bottoms (filter #fx-melt), pairs with drip fonts
+ */
+.fx-extrude {
+    --step: 1.5px;
+    text-shadow:
+        calc(var(--step) * 1) calc(var(--step) * 1) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 2) calc(var(--step) * 2) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 3) calc(var(--step) * 3) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 4) calc(var(--step) * 4) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 5) calc(var(--step) * 5) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 6) calc(var(--step) * 6) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 7) calc(var(--step) * 7) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 8) calc(var(--step) * 8) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 9) calc(var(--step) * 9) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 10) calc(var(--step) * 10) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 11) calc(var(--step) * 11) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 12) calc(var(--step) * 12) 0 var(--extrude, #0b3d24),
+        calc(var(--step) * 14) calc(var(--step) * 16) 18px rgba(0, 0, 0, 0.35);
+}
+.fx-gloss {
+    position: relative;
+    color: transparent;
+    background: linear-gradient(180deg, var(--gloss-top, #fff6c8) 0%, var(--gloss-mid, #ffc93c) 46%, var(--gloss-bottom, #e08a00) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.fx-gloss-depth {
+    position: relative;
+    color: transparent;
+}
+.fx-gloss-depth::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: transparent;
+    background: linear-gradient(180deg, var(--gloss-top, #fff6c8) 0%, var(--gloss-mid, #ffc93c) 46%, var(--gloss-bottom, #e08a00) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.fx-gloss-depth::before {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: var(--extrude, #8a4b00);
+    -webkit-text-fill-color: var(--extrude, #8a4b00);
+    --step: 1.6px;
+    text-shadow:
+        calc(var(--step) * 1) calc(var(--step) * 1) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 2) calc(var(--step) * 2) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 3) calc(var(--step) * 3) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 4) calc(var(--step) * 4) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 5) calc(var(--step) * 5) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 6) calc(var(--step) * 6) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 7) calc(var(--step) * 7) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 8) calc(var(--step) * 8) 0 var(--extrude, #8a4b00),
+        calc(var(--step) * 10) calc(var(--step) * 12) 16px rgba(0, 0, 0, 0.35);
+}
+.fx-gradient {
+    color: transparent;
+    background: linear-gradient(var(--g-angle, 90deg), var(--g1, #13a538), var(--g2, #f7d117));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.fx-echo { display: flex; flex-direction: column; line-height: 0.82; }
+.fx-echo > span:nth-child(2) { opacity: 0.85; -webkit-mask-image: linear-gradient(180deg, #000 30%, rgba(0, 0, 0, 0.55)); mask-image: linear-gradient(180deg, #000 30%, rgba(0, 0, 0, 0.55)); }
+.fx-echo > span:nth-child(3) { opacity: 0.6; -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent 92%); mask-image: linear-gradient(180deg, #000 10%, transparent 92%); }
+.fx-echo > span:nth-child(n+4) { opacity: 0.25; -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%); mask-image: linear-gradient(180deg, #000, transparent 70%); }
+.fx-outline { color: transparent; -webkit-text-stroke: var(--stroke, 2px) var(--stroke-color, currentColor); }
+.fx-glow { text-shadow: 0 0 18px var(--glow, rgba(255, 60, 30, 0.75)), 0 0 42px var(--glow, rgba(255, 60, 30, 0.75)), 0 4px 0 rgba(0, 0, 0, 0.35); }
+.fx-motion {
+    filter: blur(var(--motion-blur, 3px));
+    text-shadow: 14px 0 10px currentColor, 28px 0 18px currentColor, -14px 0 10px currentColor;
+}
+.fx-rough { filter: url(#fx-rough); }
+.fx-rough-strong { filter: url(#fx-rough-strong); }
+.fx-melt { filter: url(#fx-melt); }

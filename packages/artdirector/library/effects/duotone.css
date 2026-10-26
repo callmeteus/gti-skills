@@ -1,0 +1,49 @@
+/*
+ * @summary Two-color photo treatment (shadows to --duo-dark, highlights to --duo-light).
+ *
+ * Full photo:
+ *   <div class="fx-duotone" style="--duo-dark:#1b1464; --duo-light:#3d7bff">
+ *       <img src="photo.jpg" alt="">
+ *   </div>
+ *
+ * Cutout (transparent PNG) - the color stays inside the subject's outline:
+ *   <div class="fx-duotone fx-duotone-cutout" style="--src:url('cutout.png')">
+ *       <img src="cutout.png" alt="">
+ *   </div>
+ *
+ *   --duo-dark      color for shadows
+ *   --duo-light     color for highlights
+ *   --duo-contrast  contrast boost before tinting (default 1.15)
+ *   --duo-brightness lift dark subjects before tinting (default 1, try 1.2 to 1.5)
+ *   --duo-position  object-position of the photo (default center)
+ */
+.fx-duotone {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--duo-light, #3d7bff);
+}
+.fx-duotone > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--duo-position, center);
+    filter: grayscale(1) brightness(var(--duo-brightness, 1)) contrast(var(--duo-contrast, 1.15));
+    mix-blend-mode: multiply;
+}
+.fx-duotone::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--duo-dark, #1b1464);
+    mix-blend-mode: lighten;
+    pointer-events: none;
+}
+.fx-duotone-cutout {
+    overflow: visible;
+    -webkit-mask-image: var(--src);
+    mask-image: var(--src);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+}
+.fx-duotone-cutout > img { object-fit: fill; }

@@ -1,0 +1,13 @@
+/*
+ * @summary Gradient scrims that melt a photo into a solid color so type stays readable.
+ *
+ * Usage: <div class="layer fx-scrim-bottom"></div> above the photo, below the type.
+ *   fx-scrim-bottom | fx-scrim-top | fx-scrim-left | fx-scrim-right | fx-scrim-vignette
+ *   --scrim       color the photo fades into (default #000)
+ *   --scrim-from  where the fade starts, percent from the opposite edge (default 40%)
+ */
+.fx-scrim-bottom { background: linear-gradient(180deg, transparent var(--scrim-from, 40%), var(--scrim, #000) 92%); }
+.fx-scrim-top { background: linear-gradient(0deg, transparent var(--scrim-from, 40%), var(--scrim, #000) 92%); }
+.fx-scrim-left { background: linear-gradient(270deg, transparent var(--scrim-from, 40%), var(--scrim, #000) 92%); }
+.fx-scrim-right { background: linear-gradient(90deg, transparent var(--scrim-from, 40%), var(--scrim, #000) 92%); }
+.fx-scrim-vignette { background: radial-gradient(ellipse 80% 70% at 50% 42%, transparent var(--scrim-from, 40%), var(--scrim, #000) 100%); }

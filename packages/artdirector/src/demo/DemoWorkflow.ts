@@ -1,5 +1,5 @@
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { ArtworkAudit } from "../audit";
 import {
@@ -15,9 +15,10 @@ import {
     VisualDensity,
     VisualDirection
 } from "../core";
+import { Formats } from "../design";
 import { UnifiedRenderer } from "../renderer";
 import { ProjectContext } from "../session";
-import { editorialCoverHtml, infographicHtml, promoPosterHtml } from "./DemoArtworks";
+import { TemplateApply, TemplateCatalog } from "../templates";
 
 /**
  * Result of the scripted end-to-end demonstration.
@@ -37,12 +38,27 @@ export interface DemoResult {
 }
 
 /**
+ * Library templates the pipeline check fills, with the direction recorded for each.
+ */
+const DemoPieces: Array<{ templateId: string; direction: VisualDirection }> = [
+    { templateId: "infographic", direction: VisualDirection.TECHNICAL_INFOGRAPHIC },
+    { templateId: "data-viz", direction: VisualDirection.DATA_DRIVEN_EDITORIAL },
+    { templateId: "carousel-slide", direction: VisualDirection.SWISS_INSPIRED }
+];
+
+/**
+ * The piece that receives the scripted Live Mode edit and is accepted.
+ */
+const AcceptedId = "infographic";
+
+/**
  * Runs init → brief → shape → generate → live edit → accept → audit → export
- * without an LLM, using three authored HTML compositions.
+ * without an LLM, filling three library templates with their default copy.
+ * It exercises the pipeline; it is not a style reference.
  */
 export namespace DemoWorkflow {
     /**
-     * Creates demonstration artifacts under `outDir`.
+     * Creates pipeline-check artifacts under `outDir`.
      *
      * @param outDir Destination directory
      * @param render Whether to capture PNG/JPEG
@@ -51,136 +67,92 @@ export namespace DemoWorkflow {
     export async function run(outDir: string, render = true): Promise<DemoResult> {
         mkdirSync(outDir, { recursive: true });
         const ctx = ProjectContext.create({
-            name: "ArtDirector demonstration",
+            name: "Art Director pipeline check",
             root: outDir,
-            brand: {
-                name: "Northfold Press",
-                tagline: "Type as image",
-                voice: "editorial, exact, unhurried"
-            },
             brief: {
-                goal: "Show three distinct HTML-rendered visual directions",
-                audience: "designers evaluating ArtDirector",
-                category: ArtworkCategory.COVER,
-                formatId: "cover-16x9",
+                goal: "Exercise the full Art Director pipeline without a language model",
+                category: ArtworkCategory.INFOGRAPHIC,
+                formatId: "infographic-portrait",
                 density: VisualDensity.BALANCED,
-                productionMode: ProductionMode.ART_DIRECTION,
-                copy: {
-                    title: "The Geometry of Quiet",
-                    subtitle: "Vol. 04"
-                }
+                productionMode: ProductionMode.TEMPLATE
             }
         });
 
-        ctx.selectDirection(VisualDirection.EDITORIAL_TYPOGRAPHIC, [
-            VisualDirection.BOLD_PROMOTIONAL,
-            VisualDirection.TECHNICAL_INFOGRAPHIC
+        ctx.selectDirection(VisualDirection.TECHNICAL_INFOGRAPHIC, [
+            VisualDirection.DATA_DRIVEN_EDITORIAL,
+            VisualDirection.SWISS_INSPIRED
         ]);
-
-        const pieces = [
-            {
-                id: "editorial",
-                title: "The Geometry of Quiet",
-                direction: VisualDirection.EDITORIAL_TYPOGRAPHIC,
-                width: 1600,
-                height: 2000,
-                html: editorialCoverHtml()
-            },
-            {
-                id: "promo",
-                title: "Night Market",
-                direction: VisualDirection.BOLD_PROMOTIONAL,
-                width: 1080,
-                height: 1080,
-                html: promoPosterHtml()
-            },
-            {
-                id: "info",
-                title: "How HTML Graphics Are Made",
-                direction: VisualDirection.TECHNICAL_INFOGRAPHIC,
-                width: 1080,
-                height: 1920,
-                html: infographicHtml()
-            }
-        ];
 
         const renderer = new UnifiedRenderer();
         const exports: string[] = [];
         const variants: DemoResult["variants"] = [];
 
         try {
-            for (const piece of pieces) {
-                const htmlPath = `.artdirector/variants/${piece.id}/artwork.html`;
+            for (const piece of DemoPieces) {
+                const spec = TemplateCatalog.read(piece.templateId);
+                const format = Formats.byId(spec.formatId) ?? Formats.defaultFor(spec.category);
+                const htmlPath = `.artdirector/variants/${piece.templateId}/artwork.html`;
                 const abs = Paths.confine(outDir, htmlPath);
-                mkdirSync(join(outDir, ".artdirector", "variants", piece.id), { recursive: true });
-                writeFileSync(abs, piece.html, "utf8");
+                mkdirSync(dirname(abs), { recursive: true });
+                const filled = TemplateApply.render(spec, {
+                    width: String(format.width),
+                    height: String(format.height)
+                });
+                writeFileSync(abs, TemplateApply.materialize(filled, dirname(abs), outDir), "utf8");
                 ctx.upsertVariant({
-                    id: piece.id,
-                    title: piece.title,
+                    id: piece.templateId,
+                    title: spec.title,
                     direction: piece.direction,
                     status: VariantStatus.DRAFT,
                     createdAt: new Date().toISOString(),
                     htmlPath,
-                    width: piece.width,
-                    height: piece.height,
-                    notes: "Demonstration artifact. HTML/CSS/SVG only."
+                    width: format.width,
+                    height: format.height,
+                    templateId: piece.templateId,
+                    formatId: format.id,
+                    notes: "Pipeline check. HTML, CSS, and SVG only."
                 });
             }
 
-            const liveHtml = applyLiveEdit(editorialCoverHtml());
-            const livePath = Paths.confine(outDir, ".artdirector/variants/editorial/artwork.html");
-            writeFileSync(livePath, liveHtml, "utf8");
+            const livePath = Paths.confine(outDir, `.artdirector/variants/${AcceptedId}/artwork.html`);
+            writeFileSync(livePath, applyLiveEdit(readFileSync(livePath, "utf8")), "utf8");
             ctx.enqueueEvent({
                 id: Ids.short(),
                 type: LiveEventType.GENERATE,
                 createdAt: new Date().toISOString(),
                 acknowledged: true,
                 action: ArtCommand.BOLDER,
-                prompt: "Increase the issue number scale and ink density on the kicker.",
-                variantId: "editorial",
+                prompt: "Make the headline larger.",
+                variantId: AcceptedId,
                 count: 1
             });
-            const accepted = ctx.variant("editorial");
+            const accepted = ctx.variant(AcceptedId);
             accepted.status = VariantStatus.ACCEPTED;
             ctx.upsertVariant(accepted);
             const project = ctx.project();
-            project.acceptedVariantId = "editorial";
-            project.activeVariantId = "editorial";
+            project.acceptedVariantId = AcceptedId;
+            project.activeVariantId = AcceptedId;
             ctx.writeProject(project);
             ctx.setPhase(SessionPhase.DONE);
 
-            for (const piece of pieces) {
-                const htmlPath = Paths.confine(outDir, `.artdirector/variants/${piece.id}/artwork.html`);
-                const report = await ArtworkAudit.run(
-                    htmlPath,
-                    {
-                        width: piece.width,
-                        height: piece.height
-                    },
-                    renderer
-                );
+            for (const piece of DemoPieces) {
+                const variant = ctx.variant(piece.templateId);
+                const htmlPath = Paths.confine(outDir, variant.htmlPath);
+                const report = await ArtworkAudit.run(htmlPath, variant, renderer, outDir);
                 let pngPath: string | undefined;
 
                 if (render) {
-                    const png = join(outDir, "exports", `${piece.id}.png`);
-                    const jpg = join(outDir, "exports", `${piece.id}.jpg`);
-                    await renderer.render({
-                        html: piece.id === "editorial" ? liveHtml : piece.html,
-                        outputPath: png,
-                        format: ExportFormat.PNG
-                    });
-                    await renderer.render({
-                        html: piece.id === "editorial" ? liveHtml : piece.html,
-                        outputPath: jpg,
-                        format: ExportFormat.JPEG,
-                        quality: 88
-                    });
+                    const html = readFileSync(htmlPath, "utf8");
+                    const png = join(outDir, "exports", `${piece.templateId}.png`);
+                    const jpg = join(outDir, "exports", `${piece.templateId}.jpg`);
+                    await renderer.render({ html, baseDir: dirname(htmlPath), root: outDir, outputPath: png, format: ExportFormat.PNG });
+                    await renderer.render({ html, baseDir: dirname(htmlPath), root: outDir, outputPath: jpg, format: ExportFormat.JPEG, quality: 88 });
                     pngPath = png;
                     exports.push(png, jpg);
                 }
 
                 variants.push({
-                    id: piece.id,
+                    id: piece.templateId,
                     direction: piece.direction,
                     htmlPath,
                     pngPath,
@@ -194,22 +166,21 @@ export namespace DemoWorkflow {
         return {
             root: outDir,
             variants,
-            acceptedId: "editorial",
-            liveEdit: "Kicker type increased from 13px to 18px and tracking tightened after Live Mode accept.",
+            acceptedId: AcceptedId,
+            liveEdit: "Title type increased from 56px to 64px after Live Mode accept.",
             exports
         };
     }
 }
 
 /**
- * Applies the scripted Live Mode edit to the editorial piece.
+ * Applies the scripted Live Mode edit to the accepted piece.
  *
  * @param html Original HTML
  * @returns Edited HTML
  */
 function applyLiveEdit(html: string): string {
     return html
-        .replace("font-size: 13px;", "font-size: 18px;")
-        .replace("letter-spacing: 0.42em;", "letter-spacing: 0.28em;")
-        .replace("Northfold Press / Vol. 04 Autumn", "Northfold Press / Vol. 04 accepted live");
+        .replace("font-size: 56px;", "font-size: 64px;")
+        .replace("</body>", "    <!-- accepted live: title enlarged after Live Mode -->\n</body>");
 }

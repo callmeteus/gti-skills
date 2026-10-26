@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { Paths } from "../../src/core";
 import { DemoWorkflow } from "../../src/demo";
-import { TemplateCatalog } from "../../src/templates";
+import { Effects, TemplateApply, TemplateCatalog } from "../../src/templates";
 
 describe("skill", () => {
     it("ships one unified skill that forbids generative images", () => {
@@ -44,15 +44,21 @@ describe("skill", () => {
 });
 
 describe("templates", () => {
-    it("loads the library catalog", () => {
+    it("loads the library catalog with sample copy in every template", () => {
         const ids = TemplateCatalog.list().map((item) => item.id);
-        expect(ids).toContain("social-post");
-        expect(ids).toContain("infographic");
-        expect(ids).toContain("cover");
-        expect(ids).toContain("story");
-        expect(TemplateCatalog.read("story").formatId).toBe("story");
-        expect(TemplateCatalog.read("story").html).toMatch(/font-size:\s*200px/);
-        expect(TemplateCatalog.read("story").html).toContain("flex-direction: column");
+        expect(ids).toEqual(expect.arrayContaining(["infographic", "data-viz", "carousel-slide"]));
+
+        for (const id of ids) {
+            const spec = TemplateCatalog.read(id);
+            expect(spec.html, id).toContain("data-artdirector-root");
+            expect(TemplateApply.slots(spec.html).title, id).toBeTruthy();
+        }
+    });
+
+    it("references only effects that exist", () => {
+        for (const spec of TemplateCatalog.list()) {
+            expect(() => Effects.expand(spec.html), spec.id).not.toThrow();
+        }
     });
 });
 
@@ -61,10 +67,11 @@ describe("demo workflow", () => {
         const dest = mkdtempSync(join(tmpdir(), "ad-demo-"));
         const result = await DemoWorkflow.run(dest, false);
         expect(result.variants).toHaveLength(3);
-        expect(result.acceptedId).toBe("editorial");
-        expect(result.liveEdit).toMatch(/Kicker/);
+        expect(result.acceptedId).toBe("infographic");
+        expect(result.liveEdit).toMatch(/Title/);
         const html = readFileSync(result.variants[0]?.htmlPath ?? "", "utf8");
         expect(html).toContain("accepted live");
+        expect(html).toContain("font-size: 64px;");
         expect(html).toContain("data-artdirector-root");
         expect(html.toLowerCase()).not.toContain("dall-e");
     });

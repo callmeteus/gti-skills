@@ -9,10 +9,13 @@ export const QualityStandard = {
         "Commit to one named visual direction and execute it throughout the piece.",
         "Typography must carry the voice: a distinct display face plus a refined body face. Never Inter, Roboto, Arial, or a system stack as the design.",
         "Hierarchy is built from scale, weight, spacing, and placement - not from extra boxes.",
-        "Whitespace is a material. Empty fields must be intentional, not leftover.",
+        "Give the piece a hero (photo, object, or monumental word) and lock the type to it: letters behind or across the subject.",
+        "Build at least three planes of depth (field, back graphic, hero, front type, finish) and finish with a texture layer such as grain or paper.",
+        "Use the whole canvas. Bleed and crop with intent; empty fields must be deliberate breathing room, never leftover.",
         "Contrast must keep primary text readable against its actual background.",
         "Every decorative mark (grain, rule, sticker, glow) has to earn its place against the brief.",
-        "Compositions are original. Do not default to a centered card on a gradient."
+        "Compositions are original. References set the level, never the layout: do not reproduce a reference's composition, copy, or brand.",
+        "Do not default to a flat single-color card with centered text or a centered card on a gradient."
     ],
 
     never: [
@@ -34,7 +37,8 @@ export const QualityStandard = {
     finishing: [
         "Lock the artboard to the exact export dimensions. Overflow is a defect.",
         "Load fonts before capture. Fallback stacks are not the design.",
-        "Icons are Lucide or other licensed SVGs, optically aligned, not emoji.",
+        "Icons are Lucide, the bundled svg-defs symbols, or other licensed SVGs, optically aligned, not emoji.",
+        "Photos come from the user or open licenses (CC0, public domain); record them in .artdirector/assets.json.",
         "Export only after audit. Automated checks do not prove subjective quality."
     ]
 } as const;
@@ -49,5 +53,7 @@ export const CritiquePrompts = [
     "What would you remove first if asked to distill?",
     "Does color serve emphasis, or is it applied evenly?",
     "Would this still work in one ink color?",
-    "Is the composition original, or a rearranged template of cards?"
+    "Is the composition original, or a rearranged template of cards?",
+    "Are there at least three planes of depth and a texture layer, or does the field go flat?",
+    "Could someone match this piece to one specific reference? If so, change the structure."
 ] as const;

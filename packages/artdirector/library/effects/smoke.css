@@ -1,0 +1,43 @@
+/*
+ * @summary Moody studio backdrop: colored smoke, curtain folds, and a vignette.
+ *          Needs {{> svg-defs}} in the body for the wispy distortion filter.
+ *
+ * Usage: <div class="layer fx-smoke"></div> behind the subject.
+ *   --smoke-base   darkest color (default #1a0605)
+ *   --smoke-glow   lit smoke color (default #8f1d12)
+ *   --smoke-hot    brightest core (default #d2452a)
+ *   --curtain      opacity of vertical fabric folds, 0 to 0.5 (default 0.22)
+ */
+.fx-smoke {
+    background:
+        radial-gradient(ellipse 60% 45% at 50% 38%, var(--smoke-hot, #d2452a) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 60% at 16% 30%, var(--smoke-glow, #8f1d12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 55% at 86% 24%, var(--smoke-glow, #8f1d12) 0%, transparent 70%),
+        radial-gradient(ellipse 90% 50% at 50% 100%, var(--smoke-base, #1a0605) 30%, transparent 75%),
+        var(--smoke-base, #1a0605);
+}
+.fx-smoke::before {
+    content: "";
+    position: absolute;
+    inset: -12%;
+    background:
+        radial-gradient(ellipse 24% 12% at 24% 20%, rgba(255, 150, 120, 0.55), transparent 70%),
+        radial-gradient(ellipse 16% 22% at 70% 34%, rgba(255, 130, 100, 0.45), transparent 70%),
+        radial-gradient(ellipse 30% 10% at 46% 56%, rgba(255, 110, 80, 0.32), transparent 70%),
+        radial-gradient(ellipse 12% 20% at 90% 62%, rgba(255, 120, 90, 0.4), transparent 70%),
+        radial-gradient(ellipse 18% 9% at 10% 48%, rgba(255, 130, 100, 0.38), transparent 70%),
+        radial-gradient(ellipse 20% 8% at 60% 12%, rgba(255, 170, 140, 0.4), transparent 70%);
+    filter: url(#fx-smoke) blur(4px);
+    mix-blend-mode: screen;
+    opacity: 0.8;
+}
+.fx-smoke::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        repeating-linear-gradient(90deg, transparent 0 31px, rgba(0, 0, 0, var(--curtain, 0.22)) 52px, transparent 77px 97px),
+        repeating-linear-gradient(90deg, transparent 0 60px, rgba(0, 0, 0, calc(var(--curtain, 0.22) * 0.8)) 92px, transparent 120px 143px),
+        repeating-linear-gradient(90deg, transparent 0 120px, rgba(255, 200, 180, calc(var(--curtain, 0.22) * 0.3)) 150px, transparent 176px 211px),
+        radial-gradient(ellipse 85% 75% at 50% 42%, transparent 40%, rgba(0, 0, 0, 0.8) 100%);
+}
