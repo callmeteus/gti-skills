@@ -1,5 +1,5 @@
 ---
-name: skill-from-video
+name: video-to-skill
 description: >-
   Generate a complete, usable SKILL.md from a YouTube video by analyzing both the
   transcript and visual frames. Requires more than just a video URL - needs
@@ -7,7 +7,7 @@ description: >-
   structure. Use when transforming a tutorial video into an agent skill.
 ---
 
-# skill-from-video
+# video-to-skill
 
 ## Core Rule
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
@@ -48,16 +48,22 @@ Use a structured approach to gather:
 ### Step 2: Extract Content
 Gather both modalities:
 
+Run `python <skill-dir>/scripts/dependencies.py` first so every tool below is available. `<skill-dir>` is the folder that contains this `SKILL.md`.
+
 **Transcription:**
-- Use `youtube-transcript-api` for YouTube videos with captions
-- If no captions, use `fetch_media.py` approach with Whisper (download + transcribe)
+- For YouTube videos with captions, run `python <skill-dir>/scripts/get_transcript.py <video-id> --lang <code> --json`
+- If there are no captions, download the audio and transcribe it with Whisper:
+  - `yt-dlp -x --audio-format m4a -o audio.m4a "<url>"`
+  - Apple Silicon: `mlx_whisper audio.m4a --output-format json`
+  - Other platforms: `whisper audio.m4a --model base --output_format json`
 - Always get timestamps when possible
 
 **Visual frames:**
-- Extract keyframes at regular intervals (every 10-30 seconds)
+- Download the video when it is not a local file: `yt-dlp -f mp4 -o video.mp4 "<url>"`
+- Extract keyframes at regular intervals (every 10-30 seconds): `python <skill-dir>/scripts/extract_frames.py video.mp4 --output ./frames --interval 20 --max 30`
 - Prioritize frames where code, commands, file trees, UI, or configurations are shown
 - For short videos (< 3 min), extract more frames
-- Use `ffmpeg` to extract: `ffmpeg -ss <time> -i <video> -frames:v 1 <frame>.jpg`
+- For a single moment, use `ffmpeg -ss <time> -i <video> -frames:v 1 <frame>.jpg`
 
 ### Step 3: Analyze and Synthesize
 Analyze both transcript and frames together to understand:
@@ -125,7 +131,7 @@ Before saving, verify:
 
 ```bash
 # Example usage pattern
-skill-from-video
+video-to-skill
   --video "https://youtube.com/watch?v=..."
   --name "my-new-skill"
   --purpose "Deploy applications to production"

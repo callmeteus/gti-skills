@@ -50,7 +50,7 @@ artdirector CLI --json
 
 Security: loopback bind, timing-safe token, path confinement to the project or package library, no shell, no arbitrary filesystem.
 
-OpenCode is first (`npx artdirector install --agent opencode`). The same skill copies to `.cursor/skills`, `.claude/skills`, and `.agents/skills`.
+OpenCode is first (`node dist/bin/artdirector.js install --agent opencode`). The same skill copies to `.cursor/skills`, `.claude/skills`, and `.agents/skills`.
 
 ## Limitations
 
@@ -58,4 +58,4 @@ OpenCode is first (`npx artdirector install --agent opencode`). The same skill c
 - **SVG export:** Playwright serializes an SVG root when the composition has one. HTML-only artboards export as PNG/JPEG/PDF/HTML, not a reconstructed SVG.
 - **ClickClick coverage:** `@maurogoncalo/clickclick@0.1.3` does PNG/JPEG and `data-layer` templates. PDF, live overlay, and audit stay on Playwright (documented complement, not a second template language).
 - **Network fonts:** Bunny Fonts load at render time. Offline captures fall back to whatever the OS has unless `@font-face` files are added locally.
-- **Workspace location:** ArtDirector is `Pacotes/artdirector`, not inside `Sites/furzue-site`, so the existing event site is untouched.
+- **Workspace location:** ArtDirector lives in `skills/artdirector` of the gti-skills repository, as a standalone package that does not depend on any other project.

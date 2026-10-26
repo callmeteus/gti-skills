@@ -94,7 +94,7 @@ class DependencyInstaller:
                 self.run_cmd(f"{sys.executable} -m pip install openai-whisper")
     
     def run(self):
-        print(f"Checking dependencies for skill-from-video on {self.system}...")
+        print(f"Checking dependencies for video-to-skill on {self.system}...")
         self.install_python_packages()
         self.install_system_deps()
         self.install_whisper()
