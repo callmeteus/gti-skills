@@ -8,6 +8,20 @@ import subprocess
 import sys
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+def use_utf8_console() -> None:
+    """Write stdout and stderr as UTF-8, so titles with emoji do not crash a cp1252 Windows console."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+
+        if reconfigure is not None and (stream.encoding or "").lower().replace("-", "") != "utf8":
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
+use_utf8_console()
+
 VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 URL_ID_PATTERNS = (
