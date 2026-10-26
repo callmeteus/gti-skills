@@ -1,0 +1,60 @@
+{
+    "name": "artdirector",
+    "version": "0.1.0",
+    "description": "Local-first graphic design studio: HTML/CSS/SVG compositions, live visual editing, and deterministic browser export. No generative image APIs.",
+    "license": "MIT",
+    "type": "module",
+    "engines": {
+        "node": ">=20"
+    },
+    "bin": {
+        "artdirector": "./dist/bin/artdirector.js"
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "studio",
+        "library",
+        "skill",
+        "LICENSE",
+        "NOTICE.md",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsup && node scripts/copy-assets.mjs",
+        "dev": "tsx src/bin/artdirector.ts",
+        "start": "node dist/bin/artdirector.js",
+        "studio": "tsx src/bin/artdirector.ts studio",
+        "demo": "tsx src/bin/artdirector.ts demo",
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "graphic-design",
+        "html",
+        "css",
+        "svg",
+        "playwright",
+        "opencode",
+        "agent-skill",
+        "local-first"
+    ],
+    "dependencies": {
+        "@maurogoncalo/clickclick": "0.1.3",
+        "playwright": "1.64.1"
+    },
+    "devDependencies": {
+        "@types/node": "^22.10.5",
+        "tsup": "^8.3.5",
+        "tsx": "^4.19.2",
+        "typescript": "^5.7.3",
+        "vitest": "^3.2.4"
+    }
+}
