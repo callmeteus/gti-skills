@@ -1,0 +1,114 @@
+{
+    "harnesses": [
+        {
+            "id": "cursor",
+            "name": "Cursor / Cursor CLI",
+            "projectPath": ".cursor/skills",
+            "userPath": "~/.cursor/skills",
+            "source": "official",
+            "docs": "https://cursor.com/docs/skills",
+            "slashCommand": true,
+            "verify": null,
+            "notes": "Cursor CLI reads the same folders. Cursor also loads .agents/skills, .claude/skills, and .codex/skills."
+        },
+        {
+            "id": "claude",
+            "name": "Claude / Claude Code",
+            "projectPath": ".claude/skills",
+            "userPath": "~/.claude/skills",
+            "source": "official",
+            "docs": "https://code.claude.com/docs/en/skills",
+            "slashCommand": true,
+            "verify": null,
+            "notes": "Nested .claude/skills folders inside subdirectories also load when working there."
+        },
+        {
+            "id": "antigravity",
+            "name": "Antigravity",
+            "projectPath": ".agents/skills",
+            "userPath": "~/.gemini/antigravity/skills",
+            "source": "official",
+            "docs": "https://antigravity.google/docs/skills",
+            "slashCommand": false,
+            "verify": null,
+            "notes": "Older versions use .agent/skills. Antigravity 2.0 documents ~/.gemini/config/skills for user scope; the IDE and codelab use ~/.gemini/antigravity/skills."
+        },
+        {
+            "id": "opencode",
+            "name": "OpenCode",
+            "projectPath": ".opencode/skills",
+            "userPath": "~/.config/opencode/skills",
+            "source": "official",
+            "docs": "https://opencode.ai/docs/skills/",
+            "slashCommand": false,
+            "verify": null,
+            "notes": "OpenCode also reads .claude/skills and .agents/skills."
+        },
+        {
+            "id": "cline",
+            "name": "Cline",
+            "projectPath": ".cline/skills",
+            "userPath": "~/.cline/skills",
+            "source": "official",
+            "docs": "https://docs.cline.bot/customization/skills",
+            "slashCommand": true,
+            "verify": "Open the Skills tab in the Cline panel to see and toggle installed skills.",
+            "notes": "The name field must match the folder name exactly."
+        },
+        {
+            "id": "kilo",
+            "name": "Kilo Code",
+            "projectPath": ".kilocode/skills",
+            "userPath": "~/.kilocode/skills",
+            "source": "official",
+            "docs": "https://kilo.ai/docs/customize/skills",
+            "slashCommand": false,
+            "verify": "Run `kilo debug skill` to list the skills Kilo discovered.",
+            "notes": "Folders named skills-<mode>, such as skills-code, load only in that mode."
+        },
+        {
+            "id": "kiro",
+            "name": "Kiro",
+            "projectPath": ".kiro/skills",
+            "userPath": "~/.kiro/skills",
+            "source": "official",
+            "docs": "https://kiro.dev/docs/skills/",
+            "slashCommand": true,
+            "verify": null,
+            "notes": "Workspace skills take priority over user skills with the same name."
+        },
+        {
+            "id": "codex",
+            "name": "Codex",
+            "projectPath": ".agents/skills",
+            "userPath": "~/.agents/skills",
+            "source": "community",
+            "docs": "https://developers.openai.com/codex/skills",
+            "slashCommand": false,
+            "verify": null,
+            "notes": "Scan paths come from community guides; /etc/codex/skills is the admin location. Codex configuration lives in ~/.codex."
+        },
+        {
+            "id": "copilot",
+            "name": "GitHub Copilot",
+            "projectPath": ".github/skills",
+            "userPath": "~/.copilot/skills",
+            "source": "official",
+            "docs": "https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-skills",
+            "slashCommand": false,
+            "verify": null,
+            "notes": "Copilot also reads .claude/skills and .agents/skills. Works in VS Code agent mode, Copilot CLI, and the cloud agent."
+        },
+        {
+            "id": "muse",
+            "name": "Muse Code",
+            "projectPath": ".agents/skills",
+            "userPath": "~/.agents/skills",
+            "source": "community",
+            "docs": "https://www.withone.ai/blog/muse-code-skills-not-mcp",
+            "slashCommand": false,
+            "verify": "Run `muse skills list` to see the skills Muse discovered.",
+            "notes": "Based on one community report: muse skills list scans ~/.agents/skills, ~/.claude/skills, and ~/.codex/skills."
+        }
+    ]
+}

@@ -4,11 +4,11 @@
 
 > Turn any talk or tutorial into notes you can search, skim, and keep
 
-**Converts a YouTube or local video into structured Markdown with timestamps, inline keyframes, and every command and code snippet extracted.**
+**Converts a YouTube or local video into structured Markdown with timestamp links, inline keyframes, and every command and code snippet extracted.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
-[![Harnesses](https://img.shields.io/badge/harness-Claude%20Code%20%7C%20OpenCode%20%7C%20Cursor-8A63D2.svg)](#installation)
+[![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#installation)
 [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#requirements)
 [![License](https://img.shields.io/badge/license-not%20declared-lightgrey.svg)](#license)
 
@@ -37,78 +37,100 @@
 
 Talks and tutorials carry information in two channels: what is said and what is shown. Slides, diagrams, and terminal sessions often hold details the speaker never reads aloud.
 
-Video to Markdown extracts the transcript, samples frames where slides, code, diagrams, or UI appear, and organizes everything into scannable Markdown with links back to the exact moment in the video.
+Video to Markdown extracts the transcript, samples frames where slides, code, diagrams, or UI appear, builds a sectioned draft with links back to the exact moment in the video, and has the agent turn that draft into one of four formats: study notes, tutorial, full transcript, or meeting notes.
 
 ```text
-  video URL or file + desired output
+  video URL or file + desired format
           │
-          ├──> youtube-transcript-api ─────────> timestamped transcript
-          │    (yt-dlp + Whisper without captions)
-          │
-          ├──> yt-dlp + ffmpeg ────────────────> keyframes (slides, code, diagrams)
-          │
-          v
-  agent organizes content into sections
+          ├──> download_video.py ──> metadata and chapters
+          ├──> get_transcript.py ──> timestamped transcript (Whisper without captions)
+          ├──> extract_frames.py ──> timestamped keyframes
           │
           v
-  notes.md  (overview, key points, timestamped content, code, resources)
+  assemble_draft.py ──> sections by chapter, frames placed, raw text in blockquotes
+          │
+          v
+  agent condenses the draft into the chosen format
+          │
+          v
+  notes.md  (frontmatter, linked sections, code blocks, frames)
 ```
 
 | This skill does | This skill does not |
 |-----------------|---------------------|
-| Ask what kind of document you want before extracting anything | Dump a raw transcript |
-| Extract a timestamped transcript and keyframes | Publish or upload the result |
-| Write Markdown with frontmatter, sections, code blocks, and source link | Download private, members-only, or region-locked videos |
-| Install its own dependencies on first use | Summarize content it cannot see or hear |
+| Ask what kind of document you want before extracting anything | Dump a raw transcript, except in the full transcript format |
+| Extract metadata, a timestamped transcript, and keyframes | Publish or upload the result |
+| Build a draft grouped by chapters with frames in the right section | Download private, members-only, or region-locked videos |
+| Write Markdown with frontmatter, sections, code blocks, and source link | Summarize content it cannot see or hear |
 
 ## Features
 
-- **Transcript extraction:** full or summarized, with timestamps when available
-- **Visual context:** keyframes of slides, code, diagrams, and UI placed inline where they add information
-- **Timestamp links:** jump from any section back to the moment in the video
+- **Four formats:** study notes, tutorial, full transcript, and meeting notes, each with a template
+- **Timestamp links:** every section heading jumps to its moment in the video
+- **Chapter-aware drafts:** uses the video chapters when they exist, fixed time windows otherwise
+- **Visual context:** keyframes of slides, code, diagrams, and UI placed in the section they belong to
 - **Code extraction:** commands and snippets pulled into fenced blocks
-- **Focus and skip:** emphasize specific topics or ignore segments such as intros and sponsors
 - **Caption fallback:** transcribes locally with Whisper when a video has no captions
-- **Self-installing:** `dependencies.py` detects the platform and installs missing tools
+- **Self-installing:** `check_dependencies.py` detects the platform and installs missing tools
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| Python | 3.8+ | Runs the dependency installer and transcript API | No |
+| Python | 3.8+ | Runs the helper scripts | No |
 | [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) | 1.x | Fetches YouTube captions | Yes |
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Latest | Downloads videos and metadata | Yes |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Latest | Downloads video, audio, and metadata | Yes |
 | [ffmpeg](https://ffmpeg.org/) | Any recent | Extracts frames | Yes |
-| [openai-whisper](https://github.com/openai/whisper) or [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) | Latest | Transcribes videos without captions | Yes |
+| [openai-whisper](https://github.com/openai/whisper) or [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) | Latest | Transcribes videos without captions (`--with-whisper`) | Yes |
 
 | Platform | System package manager used |
 |----------|-----------------------------|
 | macOS | Homebrew (must already be installed) |
-| Linux | `apt`, `dnf`, or `pacman` (uses `sudo`) |
-| Windows | `winget`, then `choco` |
+| Linux | `apt-get`, `dnf`, or `pacman` (uses `sudo` unless root) |
+| Windows | `winget` |
 
 ## Installation
 
-Copy the folder into the skills directory of your harness.
-
-macOS and Linux:
+From the repository root, install the skill into any supported agent:
 
 ```bash
-cp -r skills/video-to-markdown ~/.claude/skills/
+node packages/cli install --harness claude --skill video-to-markdown
+```
+
+The same command works in PowerShell. Use a comma separated list or `all` for several agents, `--scope user` to install for every project, and `--dry-run` to preview.
+
+| Agent | Id | Project folder | User folder |
+|-------|----|----------------|-------------|
+| Cursor / Cursor CLI | `cursor` | `.cursor/skills` | `~/.cursor/skills` |
+| Claude / Claude Code | `claude` | `.claude/skills` | `~/.claude/skills` |
+| Antigravity | `antigravity` | `.agents/skills` | `~/.gemini/antigravity/skills` |
+| OpenCode | `opencode` | `.opencode/skills` | `~/.config/opencode/skills` |
+| Cline | `cline` | `.cline/skills` | `~/.cline/skills` |
+| Kilo Code | `kilo` | `.kilocode/skills` | `~/.kilocode/skills` |
+| Kiro | `kiro` | `.kiro/skills` | `~/.kiro/skills` |
+| Codex | `codex` | `.agents/skills` | `~/.agents/skills` |
+| GitHub Copilot | `copilot` | `.github/skills` | `~/.copilot/skills` |
+| Muse Code | `muse` | `.agents/skills` | `~/.agents/skills` |
+
+The skill is one self-contained folder, identical for every agent. To copy it by hand, put `skills/video-to-markdown` in your agent's folder (macOS and Linux, Claude Code shown):
+
+```bash
+mkdir -p .claude/skills && cp -r skills/video-to-markdown .claude/skills/
 ```
 
 Windows (PowerShell):
 
 ```powershell
-Copy-Item -Recurse skills\video-to-markdown "$env:USERPROFILE\.claude\skills\"
+New-Item -ItemType Directory -Force .claude\skills | Out-Null
+Copy-Item -Recurse skills\video-to-markdown .claude\skills\
 ```
 
-For OpenCode, Cursor, and project-scoped paths, see the [installation table](../../README.md#installation) in the root README.
+Each agent has a short guide in `skills/video-to-markdown/harnesses/<id>/GUIDE.md` covering install paths, how to invoke the skill, and how to confirm it loaded.
 
-Optionally install the dependencies ahead of time:
+Optionally install the dependencies ahead of time (use `python` instead of `python3` on Windows):
 
 ```bash
-python ~/.claude/skills/video-to-markdown/scripts/dependencies.py
+python3 skills/video-to-markdown/scripts/setup/check_dependencies.py --install
 ```
 
 ## Quick Start
@@ -119,7 +141,7 @@ Start a new agent session and ask:
 Convert https://youtube.com/watch?v=VIDEO_ID into study notes with timestamps and frames.
 ```
 
-The agent confirms the output format, extracts the transcript and frames, and writes the Markdown file.
+The agent confirms the format, extracts the transcript and frames, builds the draft, and writes the Markdown file.
 
 ## Usage
 
@@ -130,10 +152,9 @@ If a required input is missing, the agent asks before starting.
 | Input | Required | Example |
 |-------|:--------:|---------|
 | Video source | Yes | YouTube URL, video ID, or local file |
-| Output purpose | Yes | Study notes, tutorial summary, full transcript with visuals |
-| Target structure | Yes | Specific sections, or "use the default" |
-| Timestamps | No | Link each section to its moment in the video |
-| Frames | No | Extract and embed keyframes |
+| Format | Yes | Study notes, tutorial, full transcript, or meeting notes |
+| Timestamps | No | Link each section to its moment in the video (default on) |
+| Frames | No | Extract and embed keyframes (default on for slides, code, and UI) |
 | Focus | No | Topics to emphasize |
 | Skip | No | Segments to ignore |
 | Output location | No | Path for the Markdown file |
@@ -158,97 +179,197 @@ grouped by topic, with timestamps.
 ## How It Works
 
 ```text
-  video + desired output
+  video + desired format
           │
           v
-  ┌──────────────────┐     missing purpose or
-  │ 1. Collect       │ ──> structure? ask the user
+  ┌──────────────────┐     missing format or source?
+  │ 1. Collect       │ ──> ask the user, offer defaults
   └────────┬─────────┘
            v
-  ┌──────────────────┐     youtube-transcript-api, or
-  │ 2. Transcript    │ ──> yt-dlp + Whisper without captions
+  ┌──────────────────┐     metadata, captions or Whisper,
+  │ 2. Extract       │ ──> keyframes by interval or scene
   └────────┬─────────┘
            v
-  ┌──────────────────┐     every 15-30 seconds or on scene changes,
-  │ 3. Keyframes     │ ──> prioritizing slides, code, diagrams, UI
+  ┌──────────────────┐     assemble_draft.py: sections,
+  │ 3. Draft         │ ──> frames, raw text, source links
   └────────┬─────────┘
            v
-  ┌──────────────────┐
-  │ 4. Markdown      │ ──> sections, inline frames, code blocks, links
+  ┌──────────────────┐     condense into the chosen format
+  │ 4. Write         │ ──> using the template in assets/templates/
+  └────────┬─────────┘
+           v
+  ┌──────────────────┐     references/quality/checklist.md,
+  │ 5. Review        │ ──> then deliver in the user's language
   └──────────────────┘
 ```
 
+Each step has a guide in `references/workflow/`, and each format has a guide in `references/formats/`, loaded only when needed.
+
 ## Reference
 
-### dependencies.py
+All scripts print JSON (or the requested format) on stdout, errors on stderr, and exit `0` on success. Run them from any folder; the examples assume the repository root. Use `python` instead of `python3` on Windows.
 
-Detects the platform and installs missing Python packages (`youtube-transcript-api`, `requests`), system tools (`yt-dlp`, `ffmpeg`), and the right Whisper build (`mlx-whisper` on Apple Silicon, `openai-whisper` elsewhere). Takes no arguments.
+### check_dependencies.py
+
+Reports which tools are present and, with `--install`, installs the missing ones.
 
 ```bash
-python scripts/dependencies.py
+python3 skills/video-to-markdown/scripts/setup/check_dependencies.py --install --with-whisper
 ```
 
-### Extraction tools
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--install` | Off | Install missing Python packages and system tools |
+| `--with-whisper` | Off | Also install Whisper (`mlx-whisper` on Apple Silicon, `openai-whisper` elsewhere) |
 
-The agent runs transcript and frame extraction directly with the tools in [Requirements](#requirements). For standalone extraction scripts, see `get_transcript.py` and `extract_frames.py` in the [Video to Skill reference](../video-to-skill/README.md#reference).
+### download_video.py
+
+Downloads metadata, audio, or video with `yt-dlp`.
+
+```bash
+python3 skills/video-to-markdown/scripts/download/download_video.py "URL" --out ./work --mode metadata
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `url` | Required | Video URL or YouTube video ID |
+| `--out`, `-o` | `./work` | Output folder |
+| `--mode`, `-m` | `metadata` | `metadata` (writes `metadata.json` with chapters), `video` (`video.mp4`), or `audio` (`audio.m4a`) |
+| `--height` | `720` | Maximum video height for `--mode video` |
+
+### get_transcript.py
+
+Fetches captions, preferring manual captions over auto-generated ones.
+
+```bash
+python3 skills/video-to-markdown/scripts/transcript/get_transcript.py "URL" --lang en --format json --out ./work/transcript.json
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `video` | Required | Video ID or URL |
+| `--lang`, `-l` | `en` | Comma separated language preference, for example `pt,en` |
+| `--format`, `-f` | `text` | `text`, `json`, `srt`, or `markdown` (lines that link to the video moment) |
+| `--json`, `-j` | Off | Shortcut for `--format json` |
+| `--out`, `-o` | stdout | Write to a file |
+| `--list` | Off | List the available caption tracks and exit |
+
+Exit code `2` means the video has no captions.
+
+### transcribe_audio.py
+
+Transcribes a local audio or video file with Whisper and writes the same JSON shape.
+
+```bash
+python3 skills/video-to-markdown/scripts/transcript/transcribe_audio.py ./work/audio.m4a --out ./work/transcript.json
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `media` | Required | Audio or video file |
+| `--model` | `base` | `tiny`, `base`, `small`, `medium`, or `large` |
+| `--language` | Auto-detect | Spoken language code |
+| `--out`, `-o` | stdout | Write to a file |
+
+### extract_frames.py
+
+Extracts timestamped frames and writes `manifest.json` next to them.
+
+```bash
+python3 skills/video-to-markdown/scripts/frames/extract_frames.py ./work/video.mp4 --out ./work/frames --mode scene --max 30
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `video` | Required | Local video file |
+| `--out`, `-o` | `./frames` | Output folder for `frame_0001.jpg`, `frame_0002.jpg`, and so on |
+| `--mode` | `interval` | `interval` or `scene` (frames where the picture changes a lot) |
+| `--interval`, `-i` | `20` | Seconds between frames in interval mode |
+| `--scene-threshold` | `0.3` | Scene change sensitivity from 0 to 1; lower finds more |
+| `--max`, `-m` | `30` | Maximum number of frames |
+| `--start`, `--end` | `0`, end of video | Time range in seconds |
+| `--width` | `1280` | Maximum frame width in pixels |
+
+### assemble_draft.py
+
+Builds the sectioned Markdown draft the agent then rewrites.
+
+```bash
+python3 skills/video-to-markdown/scripts/render/assemble_draft.py --transcript ./work/transcript.json --video-id VIDEO_ID --frames ./work/frames/manifest.json --metadata ./work/metadata.json --out ./notes/draft.md
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--transcript` | Required | Transcript JSON |
+| `--video-id` | Required | YouTube video ID, used for timestamp links |
+| `--frames` | None | Frame `manifest.json`; places each frame in its section |
+| `--metadata` | None | `metadata.json`; supplies title, channel, duration, and chapters |
+| `--window` | `120` | Section length in seconds when the video has no chapters |
+| `--frames-dir` | `frames` | Folder name used in image links |
+| `--out`, `-o` | stdout | Write to a file |
 
 ## Output
 
 ```markdown
 ---
 title: "Video Title"
-source: "https://youtube.com/watch?v=VIDEO_ID"
+source: "https://www.youtube.com/watch?v=VIDEO_ID"
+channel: "Channel"
 duration: "12:34"
-date: "YYYY-MM-DD"
 ---
 
 # Video Title
 
-## Overview
-## Key Points
-## Content
-## Code/Commands
-## Resources
-## Notes
+## [00:00](https://youtu.be/VIDEO_ID?t=0) Section title
 ```
 
-| Section | Contents |
-|---------|----------|
-| Frontmatter | Title, source URL, duration, and date |
-| Overview | A short summary of the video |
-| Key Points | The main takeaways |
-| Content | Timestamped sections with frames inline where they add information |
-| Code/Commands | Every command and snippet shown or spoken, in fenced blocks |
-| Resources | Links mentioned in the video |
-| Notes | Additional context and caveats |
+| Format | Structure | Template |
+|--------|-----------|----------|
+| Study notes | Overview, key points, linked sections, code, terms, resources, open questions | `assets/templates/study-notes.md` |
+| Tutorial | Goal, prerequisites, numbered steps, verify, troubleshooting | `assets/templates/tutorial.md` |
+| Full transcript | Linked sections of cleaned spoken text with frames | `assets/templates/full-transcript.md` |
+| Meeting notes | Summary, attendees, decisions, action items, discussion | `assets/templates/meeting-notes.md` |
+
+Frames are saved as image files in a `frames/` folder next to the Markdown file.
 
 ## Troubleshooting
 
 <details>
 <summary><strong>The video has no captions</strong></summary>
 
-The agent downloads the audio with `yt-dlp` and transcribes it locally with Whisper. Long videos take a while and use CPU or GPU time on your machine.
+`get_transcript.py` exits with code `2`. Download the audio with `download_video.py --mode audio` and run `transcribe_audio.py`. Local Whisper is slower and uses CPU or GPU time on your machine.
 
 </details>
 
 <details>
-<summary><strong><code>dependencies.py</code> asks for a password on Linux</strong></summary>
+<summary><strong><code>get_transcript.py</code> fails with an <code>AttributeError</code></strong></summary>
 
-System packages are installed with `sudo apt`, `sudo dnf`, or `sudo pacman`. If you do not want the script to use `sudo`, install `yt-dlp` and `ffmpeg` yourself first; the script skips anything already on `PATH`.
+An older 0.x release of `youtube-transcript-api` is installed. The script requires 1.x:
+
+```bash
+python3 -m pip install --upgrade youtube-transcript-api
+```
+
+</details>
+
+<details>
+<summary><strong><code>check_dependencies.py</code> asks for a password on Linux</strong></summary>
+
+System packages are installed with `sudo apt-get`, `dnf`, or `pacman`. If you do not want the script to use `sudo`, install `yt-dlp` and `ffmpeg` yourself first; the script skips anything already on `PATH`.
 
 </details>
 
 <details>
 <summary><strong>Nothing installs on Windows</strong></summary>
 
-The script tries `winget`, then `choco`. If neither is available, install [ffmpeg](https://ffmpeg.org/download.html) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) manually and make sure both are on `PATH`.
+The script uses `winget`. If it is not available, install [ffmpeg](https://ffmpeg.org/download.html) and [yt-dlp](https://github.com/yt-dlp/yt-dlp) manually and make sure both are on `PATH`.
 
 </details>
 
 <details>
-<summary><strong>Homebrew not found on macOS</strong></summary>
+<summary><strong>The agent does not see the skill</strong></summary>
 
-The script uses Homebrew for system tools. Install [Homebrew](https://brew.sh) and rerun `dependencies.py`, or install `ffmpeg` and `yt-dlp` another way.
+Restart the agent session after installing, and confirm the folder is in the path your agent reads (see the table in [Installation](#installation)).
 
 </details>
 
@@ -261,8 +382,9 @@ Frames are saved as image files next to the Markdown. Ask for notes without fram
 
 ## Limitations
 
-- Frames are sampled at intervals, so very short on-screen moments can be missed.
+- Frames are sampled by interval or scene change, so very short on-screen moments can be missed.
 - Local Whisper transcription of long videos can take a significant amount of time.
+- Auto-generated captions can misspell names and jargon; the agent corrects what it can verify on screen.
 - Only public videos that `yt-dlp` and `youtube-transcript-api` can access are supported.
 
 ## License

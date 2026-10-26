@@ -1,109 +1,76 @@
 ---
 name: video-to-markdown
 description: >-
-  Download YouTube videos or use video URLs to extract transcripts and frames,
-  then generate clean Markdown documentation. Analyzes both spoken content and
-  visual elements like slides, code, diagrams, and UI. Use when you need to
-  convert video content into structured Markdown notes.
+  Converts a video (YouTube URL or local file) into clean, structured Markdown
+  notes using the transcript and keyframes of slides, code, diagrams, and UI.
+  Supports study notes, tutorials, full transcripts, and meeting notes with
+  timestamp links back to the video. Use when the user wants notes, a
+  summary, a tutorial, or documentation written from a video, talk, lecture,
+  or recording. Do not use to build an agent skill from a video; use
+  video-to-skill for that.
+compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube access needs network.
+metadata:
+  display-name: Video to Markdown
 ---
 
-# video-to-markdown
+# Video to Markdown
 
 ## Core Rule
+
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
 
 ## When to use
-Use this skill when the user wants to convert video content (primarily YouTube) into clean, structured Markdown documentation. Great for turning tutorials, talks, or walkthroughs into readable notes.
 
-## What this skill needs
-You MUST gather the following information before generating anything:
+- The user wants notes, a summary, a tutorial, or documentation from a video or recording.
+- The user wants a searchable transcript with timestamps and the important visuals.
 
-### Required
-- **Video source**: YouTube URL, video ID, or local video file
-- **Output purpose**: What kind of document? (notes, tutorial summary, full transcript with visuals, etc.)
-- **Target format**: Any specific structure desired?
+Do not use this skill to create an agent skill from a video (use `video-to-skill`). Do not summarize a video you have not extracted.
 
-### Recommended
-- **Include timestamps**: Add clickable timestamps to video?
-- **Include frames**: Extract and embed keyframes?
-- **Focus on**: Specific topics to emphasize?
-- **Skip**: Parts to ignore?
-- **Output location**: Where to save the Markdown file?
+## Setup
 
-## How it works
+`<skill-dir>` is the folder that contains this `SKILL.md`. Use `python3` on macOS and Linux, and `python` or `py -3` on Windows.
 
-### Step 1: Collect Context
-If missing required info, ask the user. Don't just take a URL.
+```bash
+python3 <skill-dir>/scripts/setup/check_dependencies.py --install
+```
 
-### Step 2: Extract Transcript
-- For YouTube with captions: Use `youtube-transcript-api`
-- For videos without captions or other platforms: Use `yt-dlp` + `whisper`/`mlx-whisper`
-- Get timestamps when available
+It installs `yt-dlp`, `ffmpeg`, and `youtube-transcript-api` when missing. Add `--with-whisper` only when a video has no captions.
 
-### Step 3: Extract Keyframes
-- Extract frames at key moments (every 15-30s or on scene changes)
-- Prioritize frames with code, slides, diagrams, UI screenshots, terminal output
-- For videos < 3 min, extract more frequently
-- Use `ffmpeg` for extraction
+## Running in your agent
 
-### Step 4: Generate Markdown
-Create structured documentation with:
+The skill works the same in every coding agent. If you need install paths, how to invoke it, or how to check that it loaded, read the guide for your agent: `harnesses/<agent>/GUIDE.md`, where `<agent>` is one of `cursor`, `claude`, `antigravity`, `opencode`, `cline`, `kilo`, `kiro`, `codex`, `copilot`, or `muse`.
 
-```markdown
----
-title: "Video Title"
-source: "https://youtube.com/..."
-duration: "..."
-date: "YYYY-MM-DD"
----
+## Workflow
 
-# Title
+Follow these steps in order. Read each reference only when you reach that step.
 
-## Overview
-Brief summary
+1. **Collect context.** Ask for the video and the kind of document. Offer the four formats and defaults. See [references/workflow/01-collect-context.md](references/workflow/01-collect-context.md).
+2. **Extract.** Metadata, transcript, and frames with the bundled scripts. See [references/workflow/02-extract-content.md](references/workflow/02-extract-content.md).
+3. **Draft.** Build a sectioned draft with `scripts/render/assemble_draft.py`. See [references/workflow/03-assemble-the-draft.md](references/workflow/03-assemble-the-draft.md).
+4. **Write.** Turn the draft into the chosen format. Formats: [study notes](references/formats/study-notes.md), [tutorial](references/formats/tutorial.md), [full transcript](references/formats/full-transcript.md), [meeting notes](references/formats/meeting-notes.md).
+5. **Review and deliver.** Run the checklist in [references/quality/checklist.md](references/quality/checklist.md), then give the user the file path.
 
-## Key Points
-Main takeaways
+## Rules
 
-## Content
-Timestamped sections with transcript and relevant frames
-
-## Code/Commands
-Extracted commands and code snippets
+- Synthesize; do not dump the transcript, except in the full transcript format.
+- Every section heading links to its moment in the video.
+- Embed a frame only when it adds information the words do not (slides, code, diagrams, UI, terminal output).
+- Copy commands and code from frames, not from speech, and put them in fenced blocks with a language.
+- Always state the source video (title, channel, link) in the frontmatter.
+- Never present something as shown in the video when you only inferred it.
+- Keep extraction files (`work/`) out of the delivered folder unless the user asks for the frames, which then sit in a `frames/` folder next to the Markdown file.
 
 ## Resources
-Links mentioned
 
-## Notes
-Additional context
-```
-
-## Features
-- **Transcript extraction**: Get full or summarized transcript
-- **Visual context**: Include screenshots of important visuals
-- **Timestamped**: Navigate back to video easily
-- **Clean formatting**: Readable, not just raw transcript
-- **Code extraction**: Pull out commands and code blocks
-- **Metadata**: Include video info, channel, date
-
-## Dependencies
-- `yt-dlp` - download videos/metadata
-- `ffmpeg` - frame extraction and processing
-- `youtube-transcript-api` - YouTube transcripts
-- `whisper` or `mlx-whisper` - transcription for videos without captions
-
-## Usage Examples
-
-```
-"Convert https://youtube.com/watch?v=xxx to markdown notes with timestamps and frames"
-"Create tutorial markdown from this YouTube video focusing on commands"
-"Extract keyframes and transcript from this video as study notes"
-```
-
-## Notes
-- Prioritize visual content - slides/diagrams often contain info not in audio
-- Synthesize, don't just dump - organize into logical sections
-- Include frames inline where they add value
-- Keep it scannable with headings and bullet points
-- Always mention source video with link
-- Output in clean, portable Markdown
+| Path | Purpose |
+|------|---------|
+| `scripts/setup/` | Dependency check and install |
+| `scripts/download/` | Video, audio, and metadata download with yt-dlp |
+| `scripts/transcript/` | Captions with timestamps, and Whisper fallback |
+| `scripts/frames/` | Timestamped keyframes by interval or scene change |
+| `scripts/render/` | Builds the sectioned Markdown draft |
+| `references/workflow/` | One guide per workflow step |
+| `references/formats/` | Structure and rules for each output format |
+| `references/quality/` | Final checklist |
+| `assets/templates/` | One Markdown template per format |
+| `harnesses/` | One short guide per coding agent: install, invoke, verify |

@@ -1,0 +1,10 @@
+{
+    "id": "video-to-markdown",
+    "displayName": "Video to Markdown",
+    "shared": [
+        {
+            "from": "packages/python/shared/scripts",
+            "to": "scripts"
+        }
+    ]
+}

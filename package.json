@@ -1,0 +1,15 @@
+{
+    "name": "gti-skills",
+    "private": true,
+    "description": "Handcrafted agent skills for every major coding agent.",
+    "scripts": {
+        "build": "node packages/cli build",
+        "check": "node packages/cli check",
+        "validate": "node packages/cli validate",
+        "list": "node packages/cli list",
+        "install-skills": "node packages/cli install",
+        "test": "npm run test:cli && npm run test:python",
+        "test:cli": "node --test \"packages/cli/tests/*.test.mjs\"",
+        "test:python": "python -m unittest discover -s packages/python/shared/tests && python -m unittest discover -s skills/video-to-skill/tests && python -m unittest discover -s skills/video-to-markdown/tests"
+    }
+}

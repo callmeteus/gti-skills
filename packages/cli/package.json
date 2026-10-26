@@ -1,0 +1,21 @@
+{
+    "name": "@gti-skills/cli",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Builds, validates, and installs the gti-skills skills for every supported coding agent.",
+    "type": "module",
+    "main": "./index.mjs",
+    "bin": {
+        "gti-skills": "./index.mjs"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "scripts": {
+        "build": "node index.mjs build",
+        "check": "node index.mjs check",
+        "validate": "node index.mjs validate",
+        "list": "node index.mjs list",
+        "test": "node --test \"tests/*.test.mjs\""
+    }
+}

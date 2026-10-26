@@ -8,7 +8,7 @@
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-blue.svg)](#requirements)
-[![Harnesses](https://img.shields.io/badge/harness-Claude%20Code%20%7C%20OpenCode%20%7C%20Cursor-8A63D2.svg)](#installation)
+[![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#installation)
 [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-yellow.svg)](#license)
 
@@ -79,7 +79,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 | Keep brand tokens, brief, direction, variants, and history in one project | Call image-generation APIs |
 | Serve a token-gated localhost studio with gallery, Live Mode, audit, and export | Run a language model. The agent answers studio events. |
 | Ship templates, rendered direction previews, and technique packs per artifact type | Reconstruct SVG from HTML-only artboards |
-| Install one skill into Claude Code, OpenCode, Cursor, and `.agents` layouts | Bind to any interface other than `127.0.0.1` |
+| Install one skill into ten coding agents with a single command | Bind to any interface other than `127.0.0.1` |
 
 ## Features
 
@@ -111,47 +111,42 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 
 ## Installation
 
-Install dependencies and build the package:
+Build the engine once. The skill drives the `packages/artdirector` package, so it must be built on the machine that runs the agent:
 
 ```bash
-cd skills/artdirector
+cd packages/artdirector
 npm install
 npx playwright install chromium
 npm run build
-npm test
+cd ../..
 ```
 
-Install the skill into your agent. `--dest` is the root that receives `.claude/`, `.opencode/`, `.cursor/`, or `.agents/`, and defaults to the current directory.
-
-User scope for Claude Code (macOS and Linux):
+Then install the skill into any supported agent from the repository root:
 
 ```bash
-node dist/bin/artdirector.js install --agent claude --dest ~
+node packages/cli install --harness claude --skill artdirector
 ```
 
-User scope for Claude Code (Windows PowerShell):
+The same command works in PowerShell. Use a comma separated list or `all` for several agents, `--scope user` to install for every project, `--dest <dir>` to choose the project folder, and `--dry-run` to preview.
 
-```powershell
-node dist\bin\artdirector.js install --agent claude --dest $env:USERPROFILE
-```
+| Agent | Id | Project folder | User folder |
+|-------|----|----------------|-------------|
+| Cursor / Cursor CLI | `cursor` | `.cursor/skills` | `~/.cursor/skills` |
+| Claude / Claude Code | `claude` | `.claude/skills` | `~/.claude/skills` |
+| Antigravity | `antigravity` | `.agents/skills` | `~/.gemini/antigravity/skills` |
+| OpenCode | `opencode` | `.opencode/skills` | `~/.config/opencode/skills` |
+| Cline | `cline` | `.cline/skills` | `~/.cline/skills` |
+| Kilo Code | `kilo` | `.kilocode/skills` | `~/.kilocode/skills` |
+| Kiro | `kiro` | `.kiro/skills` | `~/.kiro/skills` |
+| Codex | `codex` | `.agents/skills` | `~/.agents/skills` |
+| GitHub Copilot | `copilot` | `.github/skills` | `~/.copilot/skills` |
+| Muse Code | `muse` | `.agents/skills` | `~/.agents/skills` |
 
-Project scope for every supported agent:
+For OpenCode at project scope the installer also adds the `/artdirector` command to `.opencode/commands/`.
 
-```bash
-node dist/bin/artdirector.js install --agent all --dest /path/to/your/project
-```
+> **Keep the package in place.** The installer writes the absolute path of `packages/artdirector` to `scripts/artdirector.root` inside the installed skill. If you move the repository, run `install` again, or set `ARTDIRECTOR_HOME` to the package folder.
 
-| `--agent` | Installed to |
-|-----------|--------------|
-| `opencode` (default) | `.opencode/skills/artdirector/`, the `/artdirector` command in `.opencode/commands/`, and an `opencode.json` hint if none exists |
-| `claude` | `.claude/skills/artdirector/` |
-| `cursor` | `.cursor/skills/artdirector/` |
-| `agents` | `.agents/skills/artdirector/` |
-| `all` | Every location above |
-
-> **Keep the package in place.** The installed skill stores a pointer to this folder in `scripts/artdirector.root`. If you move the package, run `install` again.
-
-Unlike the copy-based skills, Art Director is not installed by copying its folder. See the [root installation table](../../README.md#installation) for how the other skills are installed.
+To copy by hand instead, put the `skills/artdirector` folder in your agent's folder (for example `cp -r skills/artdirector .claude/skills/`) and set `ARTDIRECTOR_HOME` to the absolute path of `packages/artdirector`. Each agent has a short guide in `skills/artdirector/harnesses/<id>/GUIDE.md` covering install paths, how to invoke the skill, and how to confirm it loaded.
 
 ## Quick Start
 
@@ -192,11 +187,11 @@ Adapt the approved poster into a 9:16 story and export both as PNG.
 Start an Art Director project for this repo and keep it in Git.
 ```
 
-Drive the CLI by hand: create a project and open the studio.
+Drive the CLI by hand from the repository root: create a project and open the studio.
 
 ```bash
-node dist/bin/artdirector.js init --name "Northfold Press" --json
-node dist/bin/artdirector.js studio --open --json
+node packages/artdirector/dist/bin/artdirector.js init --name "Northfold Press" --json
+node packages/artdirector/dist/bin/artdirector.js studio --open --json
 ```
 
 The JSON `url` is `http://127.0.0.1:4730/?token=...`. The server binds to localhost only.
@@ -204,10 +199,10 @@ The JSON `url` is `http://127.0.0.1:4730/?token=...`. The server binds to localh
 Run the end-to-end demonstration (three distinct HTML pieces, live edit, accept, audit, PNG/JPEG):
 
 ```bash
-node dist/bin/artdirector.js demo --json
+node packages/artdirector/dist/bin/artdirector.js demo --json
 ```
 
-Outputs land in `demos/artifacts/`. Pass `--out <dir>` to write elsewhere or `--no-render` to skip image export.
+Outputs land in `packages/artdirector/demos/artifacts/`. Pass `--out <dir>` to write elsewhere or `--no-render` to skip image export.
 
 ## How It Works
 
@@ -233,10 +228,10 @@ Template production (repeatable campaigns) and art direction (original compositi
 ## Reference
 
 ```bash
-node dist/bin/artdirector.js <command> [flags]
+node packages/artdirector/dist/bin/artdirector.js <command> [flags]
 ```
 
-Run from source without building with `npm run dev -- <command>`. Agents use the wrapper bundled in the installed skill. All commands accept `--json`.
+Run from source without building with `npm run dev -- <command>` inside `packages/artdirector`. Agents use the wrapper bundled in the installed skill (`scripts/artdirector` on macOS and Linux, `scripts/artdirector.cmd` on Windows). All commands accept `--json`.
 
 ### Project and session
 
@@ -279,7 +274,6 @@ Refinement commands return guidance, quality rules, and techniques that the agen
 |---------|---------|-----------|
 | `audit` | Deterministic checks: size, overflow, fonts, assets | `--id` |
 | `export` | Export the accepted artwork | `--id`, `--format`, `--out` |
-| `install` | Copy the skill into an agent layout | `--agent`, `--dest` |
 | `demo` | Run the end-to-end demonstration | `--out`, `--no-render` |
 | `help` | Show the command list | |
 
@@ -331,25 +325,17 @@ Art Director isolates project state per chat. The CLI reads agent session variab
 
 ## Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the source assessment, engine split, and design rationale.
+See [ARCHITECTURE.md](../../packages/artdirector/ARCHITECTURE.md) for the source assessment, engine split, and design rationale, and the [package README](../../packages/artdirector/README.md) for the source layout.
 
 | Path | Responsibility |
 |------|----------------|
-| `skill/artdirector/` | Canonical agent skill (`SKILL.md`, references, CLI wrapper) |
-| `skill/opencode/commands/` | OpenCode `/artdirector` slash command |
-| `templates/<agent>/` | Prebuilt skill layouts per supported agent |
-| `src/cli/` | Argument parsing and command dispatch |
-| `src/commands/` | Command registry and metadata |
-| `src/session/` | Per-chat project scope and context resolution |
-| `src/server/` | Local studio HTTP API |
-| `studio/` | Browser design studio and Live Mode overlay |
-| `src/renderer/` | Unified ClickClick + Playwright renderer |
-| `src/audit/` | Deterministic rendering checks |
-| `src/design/` | Quality floor, directions, and formats |
-| `src/techniques/` | HT-derived technique packs |
-| `src/templates/` | Template catalog and token application |
-| `src/install/` | Skill installer |
-| `library/` | HTML templates and rendered direction previews |
+| `skills/artdirector/SKILL.md` | Agent instructions |
+| `skills/artdirector/references/` | `workflow/` commands and Live Mode, `design/` formats, templates, techniques, quality, and `output/` audit |
+| `skills/artdirector/scripts/` | CLI wrapper that finds and runs the package |
+| `skills/artdirector/harnesses/` | One guide per agent, and project files such as the OpenCode `/artdirector` command |
+| `packages/artdirector/src/` | CLI, session, studio server, renderer, audit, design rules, and templates |
+| `packages/artdirector/studio/` | Browser design studio and Live Mode overlay |
+| `packages/artdirector/library/` | HTML templates and rendered direction previews |
 
 ## Security
 
@@ -362,6 +348,8 @@ Do not share the studio URL; it contains the access token.
 
 ## Development
 
+Run these inside `packages/artdirector`.
+
 | Command | Action |
 |---------|--------|
 | `npm test` | Vitest unit tests in `tests/unit/` |
@@ -369,22 +357,24 @@ Do not share the studio URL; it contains the access token.
 | `npm run dev -- <command>` | Run the CLI from source with `tsx` |
 | `npm run studio` | Start the studio from source |
 | `npm run demo` | Generate demonstration artifacts |
-| `npm run build` | `tsup` + copy studio/library/skill |
+| `npm run build` | `tsup` + copy studio and library |
 | `npm start` | Run the built CLI |
+
+After editing anything in `skills/artdirector`, run `node packages/cli build` from the repository root so the generated guides stay current.
 
 ## Troubleshooting
 
 <details>
 <summary><strong><code>npx artdirector</code> does not work</strong></summary>
 
-The package is not published to npm, so `npx` searches the registry instead of using this folder. Use `node dist/bin/artdirector.js`, `npm run dev --`, or the skill wrapper script.
+The package is not published to npm, so `npx` searches the registry instead of using this folder. Use `node packages/artdirector/dist/bin/artdirector.js`, `npm run dev --` inside `packages/artdirector`, or the skill wrapper script.
 
 </details>
 
 <details>
 <summary><strong>Exports fail with a missing browser error</strong></summary>
 
-Chromium has not been downloaded for Playwright. Run this inside `skills/artdirector`:
+Chromium has not been downloaded for Playwright. Run this inside `packages/artdirector`:
 
 ```bash
 npx playwright install chromium
@@ -411,7 +401,14 @@ The studio does not edit files by itself. An agent with the skill loaded must be
 <details>
 <summary><strong>The agent cannot find the CLI after moving the folder</strong></summary>
 
-The installed skill points to the package path recorded at install time. Run `install` again from the new location.
+The installed skill points to the package path recorded at install time. Run `node packages/cli install --harness <id> --skill artdirector` again from the new location, or set `ARTDIRECTOR_HOME` to the absolute path of `packages/artdirector`.
+
+</details>
+
+<details>
+<summary><strong>The skill says the CLI was not found</strong></summary>
+
+The package has not been built on this machine. Run `npm install` and `npm run build` inside `packages/artdirector`. Without a build, the wrapper falls back to running the TypeScript source, which needs `npm install` only.
 
 </details>
 
@@ -421,10 +418,11 @@ The installed skill points to the package path recorded at install time. Run `in
 - **SVG export:** Playwright serializes an SVG root when the composition has one. HTML-only artboards export as PNG, JPEG, PDF, or HTML.
 - **ClickClick coverage:** ClickClick handles PNG and JPEG. PDF, live overlay, and audit stay on Playwright.
 - **Network fonts:** offline renders fall back to system fonts unless `@font-face` files are added locally.
+- **Studio reuse:** sharing one running studio between projects (`StudioLock`) is not finished in the package yet; see the known issue in the [package README](../../packages/artdirector/README.md#testing).
 
 ## Acknowledgements
 
-Art Director adapts ideas and techniques from these projects. No source or binaries are copied unless noted in [NOTICE.md](NOTICE.md).
+Art Director adapts ideas and techniques from these projects. No source or binaries are copied unless noted in [NOTICE.md](../../packages/artdirector/NOTICE.md).
 
 | Project | License | Used for |
 |---------|---------|----------|
@@ -438,6 +436,6 @@ Art Director adapts ideas and techniques from these projects. No source or binar
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Third-party notices: [NOTICE.md](NOTICE.md).
+MIT. See [LICENSE](../../packages/artdirector/LICENSE). Third-party notices: [NOTICE.md](../../packages/artdirector/NOTICE.md).
 
 Playwright 1.64.1 confirmed at [npmjs.com/package/playwright](https://www.npmjs.com/package/playwright) (2026-10-14). ClickClick 0.1.3 confirmed at [github.com/mintyPT/clickclick](https://github.com/mintyPT/clickclick).

@@ -1,0 +1,16 @@
+{
+    "id": "video-to-skill",
+    "displayName": "Video to Skill",
+    "shared": [
+        {
+            "from": "packages/python/shared/scripts",
+            "to": "scripts"
+        }
+    ],
+    "generated": [
+        {
+            "to": "references/harnesses/install-locations.md",
+            "template": "install-locations"
+        }
+    ]
+}

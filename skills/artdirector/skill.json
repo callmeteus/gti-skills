@@ -1,0 +1,10 @@
+{
+    "id": "artdirector",
+    "displayName": "Art Director",
+    "package": "packages/artdirector",
+    "rootPointer": "scripts/artdirector.root",
+    "harnessNotes": {
+        "*": "This skill drives the packages/artdirector engine. Build it once, and set ARTDIRECTOR_HOME to its folder if you copied the skill folder by hand instead of using the install command.",
+        "opencode": "Installing at project scope also adds the /artdirector command to .opencode/commands/, which starts a new artwork request."
+    }
+}

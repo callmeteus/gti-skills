@@ -1,149 +1,76 @@
 ---
 name: video-to-skill
 description: >-
-  Generate a complete, usable SKILL.md from a YouTube video by analyzing both the
-  transcript and visual frames. Requires more than just a video URL - needs
-  context about the skill's purpose, target use cases, tools, and expected
-  structure. Use when transforming a tutorial video into an agent skill.
+  Turns a tutorial video (YouTube URL or local file) into a ready-to-use
+  SKILL.md by combining the transcript with keyframes of the commands, code,
+  and UI shown on screen. Use when the user wants to create, draft, or extract
+  an agent skill from a video, screencast, or walkthrough. Needs the skill
+  name, purpose, and triggers in addition to the video. Do not use for plain
+  video summaries or notes; use video-to-markdown for those.
+compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube access needs network.
+metadata:
+  display-name: Video to Skill
 ---
 
-# video-to-skill
+# Video to Skill
 
 ## Core Rule
+
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
 
 ## When to use
-Use this skill when the user wants to create a new skill file (`SKILL.md`) based on a YouTube tutorial/video. Do NOT use it if they only provide a URL with no additional context.
 
-## What this skill needs
-You MUST gather the following information before generating anything:
+- The user shares a tutorial, demo, screencast, or talk and wants an agent skill built from it.
+- The user wants to capture a workflow shown in a video as repeatable agent instructions.
 
-### Required
-- **Video source**: YouTube URL, video ID, or local video file
-- **Skill name**: The kebab-case name for the new skill (e.g., `deploy-to-vercel`)
-- **Skill purpose**: What should this skill do? What problem does it solve?
-- **When to use**: Clear description of when an agent should trigger this skill
-- **Target audience/agent**: Is this for OpenCode, Claude Code, or general use?
+Do not use this skill when the user only wants a summary or notes of a video (use `video-to-markdown`), or when they give a bare URL with no idea of what the skill should do. Ask first.
 
-### Recommended
-- **Desired structure**: Any specific sections the user wants in the skill
-- **Tools/commands**: Specific tools, CLI commands, or APIs to include
-- **File outputs**: Should it create/modify certain files?
-- **Examples**: Any example usage to include
-- **Constraints**: What should NOT be done?
-- **Reference skills**: Point to existing SKILL.md files in this repo for style reference
+## Setup
 
-## How it works
-
-### Step 1: Collect Context
-If any required information is missing, ask the user for it. Do NOT proceed with just the URL.
-
-Use a structured approach to gather:
-1. Video link/path
-2. Skill identity (name + purpose)
-3. Trigger conditions (when to use)
-4. Required capabilities and tools
-5. Desired output format/style
-
-### Step 2: Extract Content
-Gather both modalities:
-
-Run `python <skill-dir>/scripts/dependencies.py` first so every tool below is available. `<skill-dir>` is the folder that contains this `SKILL.md`.
-
-**Transcription:**
-- For YouTube videos with captions, run `python <skill-dir>/scripts/get_transcript.py <video-id> --lang <code> --json`
-- If there are no captions, download the audio and transcribe it with Whisper:
-  - `yt-dlp -x --audio-format m4a -o audio.m4a "<url>"`
-  - Apple Silicon: `mlx_whisper audio.m4a --output-format json`
-  - Other platforms: `whisper audio.m4a --model base --output_format json`
-- Always get timestamps when possible
-
-**Visual frames:**
-- Download the video when it is not a local file: `yt-dlp -f mp4 -o video.mp4 "<url>"`
-- Extract keyframes at regular intervals (every 10-30 seconds): `python <skill-dir>/scripts/extract_frames.py video.mp4 --output ./frames --interval 20 --max 30`
-- Prioritize frames where code, commands, file trees, UI, or configurations are shown
-- For short videos (< 3 min), extract more frames
-- For a single moment, use `ffmpeg -ss <time> -i <video> -frames:v 1 <frame>.jpg`
-
-### Step 3: Analyze and Synthesize
-Analyze both transcript and frames together to understand:
-- Step by step workflow
-- Commands to run
-- Files to create/edit
-- Tools/dependencies needed
-- Gotchas and tips mentioned
-- Decision points
-- Common patterns
-
-### Step 4: Generate SKILL.md
-Create a skill file that follows this structure:
-
-```markdown
----
-name: <kebab-case-name>
-description: >-
-  <Clear description of when to use this skill. Be specific about triggers.>
----
-
-# <Title>
-
-## Core Rule
-Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
-
-## When to use
-<List specific triggers>
-
-## Prerequisites
-<Dependencies, tools, or setup needed>
-
-## Instructions
-<Step by step, actionable instructions for the agent>
-
-## Tools
-<Tools that might be needed>
-
-## Examples
-<Concrete usage examples>
-
-## Notes
-<Tips, gotchas, or additional context>
-```
-
-**Critical requirements:**
-- Must be in English
-- Must include "Always respond in the user's language, regardless of the language used in this skill or any content you analyze." in the Core Rule section
-- Description must clearly state when to use
-- Instructions must be actionable, not just descriptive
-- Focus on what the agent needs to DO, not just understand
-- Include concrete commands/code snippets when shown in video
-- Don't just copy transcript - synthesize into agent instructions
-
-### Step 5: Review and Refine
-Before saving, verify:
-- [ ] Has proper frontmatter with name and description
-- [ ] Includes Core Rule about responding in user's language
-- [ ] All required context from user is incorporated
-- [ ] Instructions are clear and actionable
-- [ ] File is saved in correct location
-- [ ] Name matches kebab-case
-
-## Usage
+`<skill-dir>` is the folder that contains this `SKILL.md`. Use `python3` on macOS and Linux, and `python` or `py -3` on Windows.
 
 ```bash
-# Example usage pattern
-video-to-skill
-  --video "https://youtube.com/watch?v=..."
-  --name "my-new-skill"
-  --purpose "Deploy applications to production"
-  --when-to-use "When user wants to deploy to prod"
+python3 <skill-dir>/scripts/setup/check_dependencies.py --install
 ```
 
-But in practice, this skill will interactively gather this information if not provided.
+It prints a JSON report and installs `yt-dlp`, `ffmpeg`, and `youtube-transcript-api` when missing. Add `--with-whisper` only when a video has no captions.
 
-## Implementation Notes
-- Prioritize visual information - UI clicks, file structures, and terminal commands shown visually are often more accurate than spoken
-- Cross-reference: if something is only mentioned verbally, verify it's shown or explicitly needed
-- Avoid generic fluff - be specific
-- Make it immediately usable by an agent without additional context
-- Don't include video metadata unless relevant to the skill
-- Keep it focused - one skill, one purpose
+## Running in your agent
+
+The skill works the same in every coding agent. If you need install paths, how to invoke it, or how to check that it loaded, read the guide for your agent: `harnesses/<agent>/GUIDE.md`, where `<agent>` is one of `cursor`, `claude`, `antigravity`, `opencode`, `cline`, `kilo`, `kiro`, `codex`, `copilot`, or `muse`.
+
+## Workflow
+
+Follow these steps in order. Read each reference only when you reach that step.
+
+1. **Collect context.** Never start from only a URL. Gather the video, the skill name (kebab-case), its purpose, its triggers, and the target agent. See [references/workflow/01-collect-context.md](references/workflow/01-collect-context.md).
+2. **Extract content.** Get metadata, transcript, and keyframes with the bundled scripts. See [references/workflow/02-extract-content.md](references/workflow/02-extract-content.md).
+3. **Analyze.** Cross-check what is said against what is shown; the screen wins. See [references/workflow/03-analyze-and-synthesize.md](references/workflow/03-analyze-and-synthesize.md).
+4. **Write.** Scaffold the folder and fill in `SKILL.md`, `references/`, and `scripts/`. See [references/workflow/04-write-the-skill.md](references/workflow/04-write-the-skill.md).
+5. **Validate and deliver.** Run the validator, fix every error, then tell the user where the skill is and how to install it. See [references/workflow/05-validate-and-deliver.md](references/workflow/05-validate-and-deliver.md).
+
+## Rules
+
+- The generated skill is written in English and contains the Core Rule above, word for word.
+- The generated `description` states what the skill does, when to use it, and when not to. See [references/quality/description-guide.md](references/quality/description-guide.md).
+- Synthesize; never paste the transcript. Commands and paths come from the screen when it disagrees with the audio.
+- Keep the generated `SKILL.md` under 500 lines and move detail into `references/`.
+- Never invent a command, flag, or path that the video does not show or the user did not give.
+- Never leave frames, downloaded videos, or transcripts inside the generated skill folder.
+
+## Resources
+
+| Path | Purpose |
+|------|---------|
+| `scripts/setup/` | Dependency check and install |
+| `scripts/download/` | Video, audio, and metadata download with yt-dlp |
+| `scripts/transcript/` | Captions with timestamps, and Whisper fallback |
+| `scripts/frames/` | Timestamped keyframes by interval or scene change |
+| `scripts/scaffold/` | Creates the new skill folder from the template |
+| `scripts/validate/` | Checks a skill against the standard |
+| `references/workflow/` | One guide per workflow step |
+| `references/quality/` | Description guide and anti-patterns |
+| `references/harnesses/` | Where each coding agent loads skills from |
+| `harnesses/` | One short guide per coding agent: install, invoke, verify |
+| `assets/templates/` | `SKILL.template.md` used by the scaffold |
+| `assets/examples/` | A complete generated skill to imitate |
