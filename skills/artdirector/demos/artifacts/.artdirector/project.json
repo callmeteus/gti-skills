@@ -1,0 +1,48 @@
+{
+    "id": "122f16fb-0f0c-4a64-8f10-2b77c4905e7e",
+    "name": "ArtDirector demonstration",
+    "createdAt": "2026-10-21T22:16:31.526Z",
+    "updatedAt": "2026-10-21T22:47:42.936Z",
+    "root": "C:\\Users\\Gio\\Documents\\Projetos\\Pacotes\\artdirector\\demos\\artifacts",
+    "brand": {
+        "name": "ArtDirector demonstration",
+        "tagline": "Type as image",
+        "voice": "editorial, exact, unhurried",
+        "logos": [],
+        "fonts": {
+            "display": "Fraunces",
+            "body": "IBM Plex Sans",
+            "mono": "IBM Plex Mono"
+        },
+        "colors": {
+            "ink": "#14110e",
+            "paper": "#f4efe6",
+            "accent": "#c23b22",
+            "muted": "#8a8178",
+            "extra": []
+        },
+        "iconStyle": "lucide-stroke",
+        "spacing": "editorial",
+        "references": []
+    },
+    "brief": {
+        "goal": "Show three distinct HTML-rendered visual directions",
+        "audience": "designers evaluating ArtDirector",
+        "category": "cover",
+        "formatId": "cover-16x9",
+        "density": "balanced",
+        "productionMode": "art-direction",
+        "constraints": [],
+        "copy": {
+            "title": "The Geometry of Quiet",
+            "subtitle": "Vol. 04"
+        }
+    },
+    "combinedDirections": [
+        "bold-promotional",
+        "technical-infographic"
+    ],
+    "selectedDirection": "editorial-typographic",
+    "acceptedVariantId": "info",
+    "activeVariantId": "template-social-post-story"
+}

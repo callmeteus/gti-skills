@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ArtDirector</title>
+    <link rel="stylesheet" href="/studio.css">
+</head>
+<body>
+    <header class="masthead">
+        <div class="mark">AD</div>
+        <div>
+            <p class="kicker" id="phase">studio</p>
+            <h1 id="project-name">ArtDirector</h1>
+        </div>
+        <nav class="modes" aria-label="Studio modes">
+            <button data-mode="brief" class="is-on">Brief</button>
+            <button data-mode="gallery">Gallery</button>
+            <button data-mode="live">Live</button>
+            <button data-mode="audit">Audit</button>
+        </nav>
+    </header>
+
+    <main>
+        <aside class="rail" id="rail"></aside>
+        <section class="stage" id="stage"></section>
+        <aside class="inspect" id="inspect"></aside>
+    </main>
+
+    <footer class="status" id="status">
+        <button type="button" class="queue-btn" id="queue-btn" aria-expanded="false" aria-controls="queue-panel">
+            Queue <span id="queue-n">(0)</span>
+        </button>
+    </footer>
+    <div class="queue-panel" id="queue-panel" hidden role="dialog" aria-labelledby="queue-title"></div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script>
+        window.__ARTDIRECTOR_TOKEN__ = "%%TOKEN%%";
+        window.__ARTDIRECTOR_PORT__ = "%%PORT%%";
+    </script>
+    <script src="/studio.js"></script>
+</body>
+</html>

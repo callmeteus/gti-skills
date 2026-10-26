@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-title="Promo banner" data-category="promotion" data-format="og-card">
+<head>
+    <meta charset="utf-8">
+    <title>{{title}}</title>
+    <style>
+        @import url("https://fonts.bunny.net/css?family=archivo-black:400|space-grotesk:500,700");
+        html, body { margin: 0; overflow: hidden; }
+        .artboard {
+            width: {{width}}px;
+            height: {{height}}px;
+            background: {{ink}};
+            color: {{paper}};
+            position: relative;
+            overflow: hidden;
+            font-family: "Space Grotesk", sans-serif;
+        }
+        h1 {
+            margin: 0;
+            position: absolute;
+            left: 56px;
+            top: 72px;
+            right: 280px;
+            font-family: "Archivo Black", sans-serif;
+            font-size: 72px;
+            line-height: 0.9;
+            text-transform: uppercase;
+            color: {{accent}};
+        }
+        .cta {
+            position: absolute;
+            right: 48px;
+            bottom: 48px;
+            border: 4px solid {{accent}};
+            color: {{accent}};
+            padding: 14px 22px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .sub {
+            position: absolute;
+            left: 56px;
+            bottom: 56px;
+            max-width: 640px;
+            font-size: 22px;
+        }
+    </style>
+</head>
+<body>
+    <div class="artboard" data-artdirector-root data-width="{{width}}" data-height="{{height}}" data-layer="card">
+        <h1 data-layer="title">{{title}}</h1>
+        <p class="sub" data-layer="subtitle">{{subtitle}}</p>
+        <div class="cta" data-layer="cta">{{cta}}</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-title="Cover" data-category="cover" data-format="cover-16x9">
+<head>
+    <meta charset="utf-8">
+    <title>{{title}}</title>
+    <style>
+        @import url("https://fonts.bunny.net/css?family=newsreader:500,700|ibm-plex-sans:400");
+        html, body { margin: 0; overflow: hidden; }
+        .artboard {
+            width: {{width}}px;
+            height: {{height}}px;
+            background: {{ink}};
+            color: {{paper}};
+            position: relative;
+            overflow: hidden;
+            font-family: "IBM Plex Sans", sans-serif;
+        }
+        .bar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 18px;
+            background: {{accent}};
+        }
+        h1 {
+            position: absolute;
+            left: 96px;
+            top: 28%;
+            margin: 0;
+            font-family: Newsreader, serif;
+            font-size: 110px;
+            line-height: 0.9;
+            max-width: 70%;
+        }
+        .kicker {
+            position: absolute;
+            left: 96px;
+            top: 18%;
+            letter-spacing: 0.36em;
+            text-transform: uppercase;
+            font-size: 16px;
+            color: {{accent}};
+        }
+        .sub {
+            position: absolute;
+            left: 96px;
+            bottom: 80px;
+            font-size: 24px;
+            max-width: 640px;
+        }
+    </style>
+</head>
+<body>
+    <div class="artboard" data-artdirector-root data-width="{{width}}" data-height="{{height}}" data-layer="card">
+        <div class="bar"></div>
+        <div class="kicker" data-layer="kicker">{{kicker}}</div>
+        <h1 data-layer="title">{{title}}</h1>
+        <p class="sub" data-layer="subtitle">{{subtitle}}</p>
+    </div>
+</body>
+</html>

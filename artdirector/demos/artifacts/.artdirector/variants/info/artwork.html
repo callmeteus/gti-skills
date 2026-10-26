@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>How HTML Graphics Are Made</title>
+    <style>
+        @import url("https://fonts.bunny.net/css?family=ibm-plex-sans:400,500,600|ibm-plex-mono:400,500");
+        html, body { margin: 0; overflow: hidden; }
+        .artboard {
+            width: 1080px;
+            height: 1920px;
+            background: #0b1c28;
+            color: #d7e6ef;
+            position: relative;
+            overflow: hidden;
+            font-family: "IBM Plex Sans", sans-serif;
+        }
+        .grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(62, 200, 224, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(62, 200, 224, 0.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        header {
+            position: relative;
+            padding: 72px 64px 24px;
+        }
+        .id {
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 13px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #3ec8e0;
+        }
+        h1 {
+            margin: 16px 0 0;
+            font-size: 64px;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            font-weight: 600;
+        }
+        .steps {
+            position: relative;
+            margin: 40px 64px;
+            display: grid;
+            gap: 28px;
+        }
+        .step {
+            border: 1px solid rgba(62, 200, 224, 0.45);
+            padding: 28px 28px 24px 88px;
+            position: relative;
+            min-height: 148px;
+        }
+        .num {
+            position: absolute;
+            left: 20px;
+            top: 24px;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 28px;
+            color: #3ec8e0;
+        }
+        .step h2 {
+            margin: 0 0 8px;
+            font-size: 26px;
+            font-weight: 600;
+        }
+        .step p {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.4;
+            color: #9db8c6;
+        }
+        .icon {
+            position: absolute;
+            right: 22px;
+            top: 22px;
+            width: 28px;
+            height: 28px;
+            color: #3ec8e0;
+        }
+        .icon svg { width: 28px; height: 28px; }
+        footer {
+            position: absolute;
+            left: 64px;
+            right: 64px;
+            bottom: 64px;
+            font-family: "IBM Plex Mono", monospace;
+            font-size: 14px;
+            color: #3ec8e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="artboard" data-artdirector-root data-width="1080" data-height="1920">
+        <div class="grid"></div>
+        <header>
+            <div class="id">AD-INF-01 / deterministic pipeline</div>
+            <h1 data-ad-select="title">How HTML graphics are made</h1>
+        </header>
+        <div class="steps">
+            <article class="step" data-ad-select="step-1">
+                <div class="num">01</div>
+                <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg></div>
+                <h2>Write the composition</h2>
+                <p>Language models reason about hierarchy and write HTML, CSS, and SVG. No picture model is involved.</p>
+            </article>
+            <article class="step" data-ad-select="step-2">
+                <div class="num">02</div>
+                <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></div>
+                <h2>Lock the artboard</h2>
+                <p>Exact pixel dimensions, licensed fonts from Bunny, Lucide marks, user or public-domain images only.</p>
+            </article>
+            <article class="step" data-ad-select="step-3">
+                <div class="num">03</div>
+                <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg></div>
+                <h2>Render in a browser</h2>
+                <p>Chromium paints the document. Live Mode selects real elements. Accept writes source, then re-renders.</p>
+            </article>
+            <article class="step" data-ad-select="step-4">
+                <div class="num">04</div>
+                <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg></div>
+                <h2>Export pixels</h2>
+                <p>PNG, JPEG, SVG, or PDF from the same HTML. Audit checks overflow, fonts, and assets before shipping.</p>
+            </article>
+        </div>
+        <footer>ArtDirector / HTML in. Pixels out. Never a generative image API.</footer>
+    </div>
+</body>
+</html>

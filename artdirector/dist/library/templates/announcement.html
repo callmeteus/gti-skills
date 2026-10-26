@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" data-title="Announcement" data-category="announcement" data-format="og-card">
+<head>
+    <meta charset="utf-8">
+    <title>{{title}}</title>
+    <style>
+        @import url("https://fonts.bunny.net/css?family=syne:700,800|ibm-plex-sans:400,500");
+        html, body { margin: 0; overflow: hidden; }
+        .artboard {
+            width: {{width}}px;
+            height: {{height}}px;
+            background: {{paper}};
+            color: {{ink}};
+            position: relative;
+            overflow: hidden;
+            font-family: "IBM Plex Sans", sans-serif;
+        }
+        .circle {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 18px solid {{accent}};
+            right: -80px;
+            top: -80px;
+        }
+        h1 {
+            position: absolute;
+            left: 64px;
+            top: 120px;
+            margin: 0;
+            font-family: Syne, sans-serif;
+            font-size: 84px;
+            line-height: 0.9;
+            max-width: 70%;
+        }
+        .sub {
+            position: absolute;
+            left: 64px;
+            bottom: 64px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="artboard" data-artdirector-root data-width="{{width}}" data-height="{{height}}" data-layer="card">
+        <div class="circle"></div>
+        <h1 data-layer="title">{{title}}</h1>
+        <p class="sub" data-layer="subtitle">{{subtitle}}</p>
+    </div>
+</body>
+</html>
