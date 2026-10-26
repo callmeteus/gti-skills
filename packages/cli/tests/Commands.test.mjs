@@ -25,7 +25,7 @@ function collect() {
 
 describe("repository state", () => {
     it("has the three skills and every skill validates", () => {
-        assert.deepEqual(discoverSkills().map((skill) => skill.id), ["artdirector", "video-to-markdown", "video-to-skill"]);
+        assert.deepEqual(discoverSkills().map((skill) => skill.id), ["artdirector", "ux-psychology-review", "video-to-markdown", "video-to-skill"]);
         const io = collect();
         assert.equal(runValidate({}, io), 0, io.errors.join("\n"));
     });

@@ -147,6 +147,7 @@ Current skills:
 | `artdirector` | Art Director |
 | `video-to-skill` | Video to Skill |
 | `video-to-markdown` | Video to Markdown |
+| `ux-psychology-review` | UX Psychology Review |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

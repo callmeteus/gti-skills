@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-3-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-4-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -55,6 +55,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Art Director** | Local-first graphic design studio. Designs posters, social cards, infographics, covers, and slides in HTML/CSS/SVG, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
 | **Video to Skill** | Turns a YouTube tutorial into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
 | **Video to Markdown** | Converts a YouTube or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
+| **UX Psychology Review** | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 
 ## Quick Start
 
@@ -163,6 +164,7 @@ Notes:
 | Art Director | 20+ | No | No | Fonts at render time |
 | Video to Skill | No | 3.8+ | Yes | YouTube |
 | Video to Markdown | No | 3.8+ | Yes | YouTube |
+| UX Psychology Review | No | No | No | No |
 
 | Platform | Status |
 |----------|--------|
@@ -276,6 +278,7 @@ gti-skills/
 ├── README.md                  # This file
 ├── skills/                    # One folder per skill, the source of truth
 │   ├── artdirector/
+│   ├── ux-psychology-review/
 │   ├── video-to-markdown/
 │   └── video-to-skill/
 ├── packages/                  # Code packages
@@ -331,6 +334,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/artdirector/README.md](skills/artdirector/README.md) | Art Director installation, CLI, and workflow |
 | [skills/video-to-skill/README.md](skills/video-to-skill/README.md) | Generating skills from tutorial videos |
 | [skills/video-to-markdown/README.md](skills/video-to-markdown/README.md) | Converting videos into Markdown notes |
+| [skills/ux-psychology-review/README.md](skills/ux-psychology-review/README.md) | Reviewing conversion screens with UX psychology principles |
 
 ## About GTI
 
@@ -345,5 +349,6 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Art Director | MIT, see [LICENSE](packages/artdirector/LICENSE) and [NOTICE.md](packages/artdirector/NOTICE.md) |
 | Video to Skill | Not declared |
 | Video to Markdown | Not declared |
+| UX Psychology Review | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
