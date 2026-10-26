@@ -16,7 +16,8 @@ import {
     type ArtworkVariant,
     type BrandContext,
     type CreativeBrief,
-    type LiveEvent
+    type LiveEvent,
+    type StudioLanguage
 } from "../core";
 
 /**
@@ -200,6 +201,19 @@ export class ProjectContext {
      */
     writeVariants(variants: ArtworkVariant[]): void {
         JsonFile.write(join(this.stateDir(), "variants.json"), variants);
+    }
+
+    /**
+     * Sets the studio interface language.
+     *
+     * @param language Language code
+     * @returns Updated project
+     */
+    setLanguage(language: StudioLanguage): ArtProject {
+        const project = this.project();
+        project.language = language;
+        this.writeProject(project);
+        return project;
     }
 
     /**

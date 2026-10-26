@@ -7,6 +7,10 @@ import { UnifiedRenderer } from "../renderer";
 import { ProjectContext } from "../session";
 import { Http } from "./Http";
 import { StudioRoutes } from "./Routes";
+import { StudioLock } from "./StudioLock";
+
+/** Ports tried after the preferred one before the OS picks a free port. */
+const PORT_ATTEMPTS = 20;
 
 /**
  * Local interactive studio server. Bound to 127.0.0.1 with a bearer token.
@@ -23,34 +27,60 @@ export class StudioServer {
      */
     constructor(
         private readonly ctx: ProjectContext,
-        private readonly port: number,
+        private port: number,
         private readonly token: string
     ) {}
 
     /**
-     * Starts listening on 127.0.0.1.
+     * Starts listening on 127.0.0.1. When the port is taken, tries the next
+     * ports, then lets the OS assign one.
      *
      * @returns Public URL including the token
      */
     async listen(): Promise<string> {
         const routes = new StudioRoutes(this.ctx, this.renderer);
+        const candidates = Array.from({ length: PORT_ATTEMPTS + 1 }, (_, i) => this.port + i);
+        candidates.push(0);
 
-        this.http = createServer((req, res) => {
-            void this.dispatch(req, res, routes);
-        });
+        for (const candidate of candidates) {
+            const http = createServer((req, res) => {
+                void this.dispatch(req, res, routes);
+            });
 
-        await new Promise<void>((resolve, reject) => {
-            this.http?.once("error", reject);
-            this.http?.listen(this.port, "127.0.0.1", () => resolve());
-        });
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    http.once("error", reject);
+                    http.listen(candidate, "127.0.0.1", () => resolve());
+                });
+            } catch (err) {
+                if ((err as NodeJS.ErrnoException).code === "EADDRINUSE") {
+                    continue;
+                }
 
-        return `http://127.0.0.1:${this.port}/?token=${this.token}`;
+                throw err;
+            }
+
+            const address = http.address();
+            this.http = http;
+            this.port = typeof address === "object" && address ? address.port : candidate;
+            return `http://127.0.0.1:${this.port}/?token=${this.token}`;
+        }
+
+        throw ArtErrors.server("No free port for the studio.");
+    }
+
+    /**
+     * @returns Port the server is bound to
+     */
+    boundPort(): number {
+        return this.port;
     }
 
     /**
      * Stops the server and renderer.
      */
     async close(): Promise<void> {
+        StudioLock.release(this.ctx.stateDir(), this.port);
         await this.renderer.close();
         await new Promise<void>((resolve, reject) => {
             if (!this.http) {
@@ -211,23 +241,37 @@ function cookieToken(req: IncomingMessage): string | undefined {
 }
 
 /**
- * Starts a studio server for a project.
+ * Starts a studio server for a project, or reuses the healthy one in its lock.
  *
  * @param options Port and project context
- * @returns Server and URL
+ * @returns Server (absent when reused), URL, and whether it was reused
  */
 export async function startStudio(options: {
     ctx: ProjectContext;
     port?: number;
-}): Promise<{ server: StudioServer; url: string; token: string; port: number }> {
-    const port = options.port ?? Number(process.env.ARTDIRECTOR_PORT ?? 4730);
+}): Promise<{ server?: StudioServer; url: string; token: string; port: number; reused: boolean }> {
     const token = Auth.loadOrCreate(options.ctx.root);
+    const stateDir = options.ctx.stateDir();
+    const lock = StudioLock.read(stateDir);
+
+    if (lock && await StudioLock.healthy(lock, token)) {
+        return { url: lock.url, token, port: lock.port, reused: true };
+    }
+
+    const port = options.port ?? Number(process.env.ARTDIRECTOR_PORT ?? 4730);
     const server = new StudioServer(options.ctx, port, token);
     const url = await server.listen();
+    StudioLock.write(stateDir, {
+        pid: process.pid,
+        port: server.boundPort(),
+        url,
+        startedAt: new Date().toISOString()
+    });
     return {
         server,
         url,
         token,
-        port
+        port: server.boundPort(),
+        reused: false
     };
 }

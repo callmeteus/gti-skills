@@ -77,5 +77,7 @@ Inflated 3D lettering and one glossy object on a bright gradient with rays or fa
 - **Focal point off center:** put the hero's eyes or the main word on a third, not in the exact middle.
 - **Safe zones:** in stories (1080 x 1920) keep critical type out of the top 210 px and bottom 250 px; fill the space anyway with image and texture.
 - **Margins:** 56 to 80 px for small text on 1080 px wide boards; display type and photos may bleed.
+- **Bleed or clear, never near:** an element either clears the edge by the margin or crosses it by a clear amount (a fifth of a letter or more). A headline that ends 0 to 40 px from the edge looks like an accident. Fit display lines to the padded column with `data-fit`, and mark intended bleeds with `data-bleed`.
+- **Breathing room around the hero:** ornaments (moons, stars, stickers) do not touch letters; keep 24 px or more between them, or overlap them clearly.
 - **Reading order:** hero, headline, offer or date, call to action, brand. Size and contrast must follow that order.
 - **Variants:** when you deliver several variants, use a different structure or a different hero treatment in each.

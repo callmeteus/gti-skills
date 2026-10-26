@@ -258,6 +258,18 @@ export namespace ContextResolver {
         identity: SessionIdentity,
         record: SessionRecord | null,
         workspace: string,
+        required: true
+    ): ContextResolution;
+    function openRepository(
+        identity: SessionIdentity,
+        record: SessionRecord | null,
+        workspace: string,
+        required: boolean
+    ): ContextResolution | null;
+    function openRepository(
+        identity: SessionIdentity,
+        record: SessionRecord | null,
+        workspace: string,
         required: boolean
     ): ContextResolution | null {
         const root = Paths.findProjectRoot(workspace);

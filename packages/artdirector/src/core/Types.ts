@@ -207,7 +207,14 @@ export interface ArtProject {
     combinedDirections: VisualDirection[];
     activeVariantId?: string;
     acceptedVariantId?: string;
+    /** Studio interface language, taken from the language of the user's prompt. */
+    language?: StudioLanguage;
 }
+
+/**
+ * Languages the studio interface ships in.
+ */
+export type StudioLanguage = "en" | "pt" | "es";
 
 /**
  * Interactive session persisted beside the project.

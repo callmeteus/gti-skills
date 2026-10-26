@@ -27,7 +27,7 @@ One skill, one CLI, one local studio. Do not load Impeccable, Claude HT Skills, 
 
 **Hard rule:** never call DALL-E, Midjourney, diffusion models, or any image-generation API. Final artwork is HTML, CSS, SVG, Canvas, or licensed/user photography rendered in a browser.
 
-**Ship first:** write variants to disk and stop so the user can look. Do not audit-fix-export-redraw in a loop. Taste belongs to the user. One write pass, then hand over.
+**Ship first:** write variants to disk, check each render once for construction defects, and stop so the user can look. Do not audit-fix-export-redraw in a loop. Taste belongs to the user. One write pass, one render check, then hand over.
 
 ## Setup
 
@@ -54,11 +54,13 @@ If the wrapper cannot find the package, set `ARTDIRECTOR_HOME` to the package fo
 If `status` fails with `PROJECT`, init then open the studio:
 
 ```powershell
-& "<skill-dir>\scripts\artdirector.cmd" init --name "<name>" --json
+& "<skill-dir>\scripts\artdirector.cmd" init --name "<name>" --lang <en|pt|es> --json
 & "<skill-dir>\scripts\artdirector.cmd" studio --open --json
 ```
 
-Open the returned `url` (includes the localhost token). That UI is the creative surface: brief, visual directions, gallery, Live Mode, audit, export.
+Set `--lang` from the language of the user's prompt: `pt` for Portuguese, `es` for Spanish, and `en` for English or any other language. The studio interface and the prompts it produces use that language. Pass `--lang` again on any later command if the user switches language.
+
+Open the returned `url` (includes the localhost token). That UI has two views: **Gallery** (every variant) and **Preview** (one variant with element comments and export). Accepted and rejected status is set in Gallery and shows up in `variants --json`. The studio does not show audit findings; fixing them is your job in the render check.
 
 ## Running in your agent
 
@@ -95,18 +97,19 @@ Follow the user's intent. Do not run a long questionnaire when the brief already
 1. **init** once when `status` returns `PROJECT`. The CLI reuses the chat's active request; for a new unrelated piece in the same chat use `init --new`. Skip exploring the whole repo. Use `init --permanent` only when the user asks to keep state in the repository.
 2. **brief** only for missing essentials (goal, format, audience). If the user already said "story teaser for X", that is enough.
 3. **generate** - write **2 to 4 complete HTML variants** on disk in one pass (different directions, or the same art at the sizes they asked for). Vary the backgrounds deliberately: do not ship only dark pieces - include at least one lighter or contrasting treatment unless the brief clearly calls for darkness. Original work: write each piece to an absolute path inside the `scope.variantsDir` returned by `init`, then register it with `variants add --id "<id>" --file "<absolute html path>"`. Never invent a repository `.artdirector/variants/<id>/artwork.html` path. Templates: `generate --template <id> --json` with `formatIds` when they want several sizes of the same piece.
-4. **Hand over.** Start `studio --open --json` if it is not running. Tell the user the variant ids and the studio URL. **Stop. Wait for them.** Do not audit. Do not export a PNG to inspect it yourself. Do not rewrite the tail, the tree, or the gradient because you dislike the first render.
-5. **live** only after they click, comment, or ask for a change. Poll `/v1/events/poll`. Edit the HTML they pointed at. Then stop again.
-6. **audit / export** only when they accept a variant or explicitly ask to export.
+4. **Render check, once.** For each variant run `audit --id <id> --json` and `export --id <id> --format png --json`, then look at the PNG. Fix construction defects only: text touching or crossing the edge, copy in the story chrome, an empty band where the art ends early, a floating or crooked object, blurred type, collisions, missing glyphs, broken assets. One fix pass, no taste edits. Follow [references/output/render-check.md](references/output/render-check.md).
+5. **Hand over.** Start `studio --open --json` if it is not running. Tell the user the variant ids and the studio URL. **Stop. Wait for them.** Do not audit again. Do not rewrite the tail, the tree, or the gradient because you dislike the render.
+6. **Changes** arrive as a prompt the user copies from Preview and pastes into the chat: variant id, file path, and numbered comments with a CSS selector each. Edit only those elements in that file, run the render check once, then stop again. See [references/workflow/live.md](references/workflow/live.md).
+7. **Final audit / export** when they accept a variant or explicitly ask to export.
 
-Forbidden after the first write:
+Forbidden after the render check:
 
-- `audit` as a self-review gate
-- `export` just to look
-- a second rewrite of the same file because a decoration "still looks like a blob"
+- a second audit-fix-export round on the same variant
+- a rewrite of the same file because a decoration "still looks like a blob"
+- changing direction, palette, type, or copy without the user asking
 - polishing until it feels perfect
 
-If you notice a defect, **say it in one sentence** and leave the files. They test; you wait.
+Do not audit as a beauty gate: the render check is for construction defects. If a defect survives the one fix pass, **say it in one sentence** and leave the files. They test; you wait.
 
 **resume** reads session + pending events: `& "<skill-dir>\scripts\artdirector.cmd" resume --json`.
 
@@ -114,7 +117,7 @@ If you notice a defect, **say it in one sentence** and leave the files. They tes
 
 `init` `brief` `shape` `craft` `generate` `live` `critique` `audit` `polish` `bolder` `quieter` `typeset` `colorize` `layout` `distill` `adapt` `export` `resume`
 
-Details: [references/workflow/commands.md](references/workflow/commands.md). Live protocol: [references/workflow/live.md](references/workflow/live.md). Audit and export checks: [references/output/audit.md](references/output/audit.md).
+Details: [references/workflow/commands.md](references/workflow/commands.md). Studio comments: [references/workflow/live.md](references/workflow/live.md). Audit and export checks: [references/output/audit.md](references/output/audit.md).
 
 ## Visual bar
 
@@ -125,6 +128,7 @@ The target is professional social-media design: photo-led, layered, textured, wi
 - [references/style/typography.md](references/style/typography.md) - type voices, scale, and moves.
 - [references/style/photo.md](references/style/photo.md) - finding photos, removing backgrounds, treatments.
 - [references/style/texture-and-ornament.md](references/style/texture-and-ornament.md) - textures and native furniture.
+- [references/style/illustration.md](references/style/illustration.md) - where drawn objects and characters come from, construction rules, and how to hide a spoiler. Read it before you draw anything.
 - [references/style/originality.md](references/style/originality.md) - references set the level, never the layout; self-check before hand-over.
 
 **References are not recipes.** When the user shares example images, learn their level (depth, texture, contrast, finish) and make something new. Never reproduce a reference's layout, copy, brand, or subject.
@@ -136,7 +140,9 @@ Photos: ask the user first; otherwise search openly licensed photos with `script
 ## Composition rules
 
 - Lock `.artboard` to the export size. `overflow: hidden`. `data-artdirector-root` plus `data-width` / `data-height`.
-- **Story (1080×1920):** the board is a phone screen. Fill the height with stacked, huge type (headline 180px or larger). Safe chrome: keep critical copy out of the top 210px and bottom 250px. Never letterbox a square poster in the middle. See [references/design/formats.md](references/design/formats.md).
+- **Story (1080×1920):** the board is a phone screen. Fill the height with stacked, huge type (headline 180px or larger). Safe chrome: keep critical copy out of the top 210px and bottom 250px. Never letterbox a square poster in the middle, and never end the art above a flat strip. See [references/design/formats.md](references/design/formats.md).
+- **Edges:** text either clears the side by 56px or more, or bleeds clearly past it and carries `data-bleed`. Never 0 to 40px from the edge. Size display lines to the padded column, not to the board.
+- **Drawn objects and characters:** never draw people, animals, or mascots by hand; ask for the brand's file or use a licensed vector. Build simple objects on one grid with identical gaps and no per-part rotation. Never hide text with blur. See [references/style/illustration.md](references/style/illustration.md).
 - Bunny Fonts for open-source families. Lucide SVGs for icons. Record third-party assets in `.artdirector/assets.json`.
 - **Search the web for public-domain elements, especially SVGs**, when the composition needs icons, illustrations, maps, diagrams, or decorative marks beyond the bundled Lucide subset. Choose assets that **make sense for the proposed theme and the brand** (subject, industry, audience, tone) - do not grab generic clip art just because it is free. Prefer sources with a clear CC0 / public-domain license (Wikimedia Commons, OpenClipArt, Feather, Tabler, Heroicons, etc.). Download the file into the project, inline the SVG so its strokes and fills can be themed, and record it in `.artdirector/assets.json` with source and license. Never hotlink a remote asset, and never use copyrighted or unclearly licensed imagery.
 - Mark selectable regions with `data-ad-select` or ClickClick `data-layer`.
@@ -151,4 +157,4 @@ Template production vs art direction: [references/design/templates.md](reference
 
 Read [references/design/quality.md](references/design/quality.md) **once**, while writing the first markup. The floor is for that first pass: named direction, intentional type, original composition. It is not a license to iterate until perfect.
 
-Automated audit is not a beauty certificate and is not a prerequisite for showing work.
+Automated audit is not a beauty certificate. It catches construction defects during the render check; taste stays with the user.

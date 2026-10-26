@@ -4,34 +4,173 @@
         "Authorization": `Bearer ${TOKEN}`,
         "Content-Type": "application/json"
     };
+    const FORMATS = [
+        { id: "png", api: "png", ext: "png", label: "PNG" },
+        { id: "jpg", api: "jpeg", ext: "jpg", label: "JPEG" },
+        { id: "pdf", api: "pdf", ext: "pdf", label: "PDF" }
+    ];
 
-    let state = {
-        mode: "brief",
-        snapshot: null,
-        selected: null,
-        canvasObserver: null,
-        ignoreQueueOutside: false,
-        galleryFocus: null,
-        sizeIds: ["instagram-square", "story"]
+    // Lucide icons (ISC), inlined so the studio works offline. See NOTICE.md.
+    const ICONS = {
+        "check": '<path d="M20 6 9 17l-5-5"/>',
+        "x": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        "rotate-ccw": '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+        "refresh-cw": '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+        "message-square-plus": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M12 7v6"/><path d="M9 10h6"/>',
+        "scan": '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>',
+        "copy": '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+        "trash-2": '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+        "file-down": '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/>',
+        "loader-circle": '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+        "mouse-pointer-2": '<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>',
+        "archive": '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
+        "circle-check": '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'
     };
 
+    function icon(name, extra) {
+        return `<svg class="icon${extra ? ` ${extra}` : ""}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+    }
+
+    // Interface strings. The agent sets the language from the user's prompt (`--lang`); the
+    // browser language is the fallback, and the masthead switcher overrides both for this viewer.
+    const STRINGS = {
+        en: {
+            studio: "Studio", gallery: "Gallery", preview: "Preview",
+            noVariants: "No variants yet", noVariantsHint: "Ask the agent for a piece. Variants appear here as soon as they are registered.",
+            rejected: "Rejected", restore: "Restore", undoAccept: "Undo accept", accept: "Accept", reject: "Reject",
+            status_draft: "draft", status_selected: "draft", status_accepted: "accepted", status_rejected: "rejected",
+            toastRejected: "Rejected {id}. Restore it from Rejected.", toastAccepted: "Accepted {id}.", toastRestored: "Restored {id}.",
+            nothingToPreview: "Nothing to preview", nothingToPreviewHint: "Open a variant from the gallery.",
+            clickToComment: "Click an element to comment on it", reload: "Reload", artworkPreview: "Artwork preview",
+            comment: "Comment", wholeBoardHint: "Whole board. Click an element to target it.", target: "Target: {what}",
+            notePlaceholder: "What should change?", addComment: "Add comment", wholeBoard: "Whole board",
+            prompt: "Prompt", promptHint: "Paste it into your agent's chat.", copyPrompt: "Copy prompt", clear: "Clear",
+            export: "Export", variants: "Variants", remove: "Remove", removeComment: "Remove comment {n}",
+            pickFailed: "Element picking could not attach to this artwork.",
+            promptCopied: "Prompt copied.", copyBlocked: "Copy blocked by the browser. The prompt is selected; press Ctrl+C.",
+            exporting: "Exporting...", rendering: "Rendering {format}...", renderingFor: "Rendering {format}... {s}s",
+            downloading: "Downloading {format}... {kb} KB", exported: "Exported {file} in {s}s.", exportFailed: "Export failed: {message}",
+            promptHead: "Art Director: edit variant \"{id}\" ({w}x{h}).", promptFile: "File: {file}",
+            promptWhole: "whole board", promptSelector: "{what}, selector `{selector}`",
+            promptTail: "Change only what these comments ask and keep the rest of the piece. Save the file, run the render check once for this variant, then stop."
+        },
+        pt: {
+            studio: "Estúdio", gallery: "Galeria", preview: "Prévia",
+            noVariants: "Nenhuma variante ainda", noVariantsHint: "Peça uma arte ao agente. As variantes aparecem aqui assim que forem registradas.",
+            rejected: "Recusadas", restore: "Recuperar", undoAccept: "Desfazer aceite", accept: "Aceitar", reject: "Recusar",
+            status_draft: "rascunho", status_selected: "rascunho", status_accepted: "aceita", status_rejected: "recusada",
+            toastRejected: "{id} recusada. Recupere em Recusadas.", toastAccepted: "{id} aceita.", toastRestored: "{id} recuperada.",
+            nothingToPreview: "Nada para mostrar", nothingToPreviewHint: "Abra uma variante na galeria.",
+            clickToComment: "Clique em um elemento para comentar", reload: "Recarregar", artworkPreview: "Prévia da arte",
+            comment: "Comentário", wholeBoardHint: "Arte inteira. Clique em um elemento para mirar nele.", target: "Alvo: {what}",
+            notePlaceholder: "O que deve mudar?", addComment: "Adicionar comentário", wholeBoard: "Arte inteira",
+            prompt: "Prompt", promptHint: "Cole no chat do seu agente.", copyPrompt: "Copiar prompt", clear: "Limpar",
+            export: "Exportar", variants: "Variantes", remove: "Remover", removeComment: "Remover comentário {n}",
+            pickFailed: "Não foi possível ativar a seleção de elementos nesta arte.",
+            promptCopied: "Prompt copiado.", copyBlocked: "O navegador bloqueou a cópia. O prompt está selecionado; pressione Ctrl+C.",
+            exporting: "Exportando...", rendering: "Renderizando {format}...", renderingFor: "Renderizando {format}... {s}s",
+            downloading: "Baixando {format}... {kb} KB", exported: "{file} exportado em {s}s.", exportFailed: "Falha ao exportar: {message}",
+            promptHead: "Art Director: edite a variante \"{id}\" ({w}x{h}).", promptFile: "Arquivo: {file}",
+            promptWhole: "arte inteira", promptSelector: "{what}, seletor `{selector}`",
+            promptTail: "Mude só o que estes comentários pedem e mantenha o resto da peça. Salve o arquivo, rode o render check uma vez nesta variante e pare."
+        },
+        es: {
+            studio: "Estudio", gallery: "Galería", preview: "Vista previa",
+            noVariants: "Aún no hay variantes", noVariantsHint: "Pide una pieza al agente. Las variantes aparecen aquí en cuanto se registran.",
+            rejected: "Rechazadas", restore: "Recuperar", undoAccept: "Deshacer aceptación", accept: "Aceptar", reject: "Rechazar",
+            status_draft: "borrador", status_selected: "borrador", status_accepted: "aceptada", status_rejected: "rechazada",
+            toastRejected: "{id} rechazada. Recupérala en Rechazadas.", toastAccepted: "{id} aceptada.", toastRestored: "{id} recuperada.",
+            nothingToPreview: "Nada que mostrar", nothingToPreviewHint: "Abre una variante desde la galería.",
+            clickToComment: "Haz clic en un elemento para comentarlo", reload: "Recargar", artworkPreview: "Vista previa de la pieza",
+            comment: "Comentario", wholeBoardHint: "Pieza completa. Haz clic en un elemento para apuntarlo.", target: "Objetivo: {what}",
+            notePlaceholder: "¿Qué debe cambiar?", addComment: "Añadir comentario", wholeBoard: "Pieza completa",
+            prompt: "Prompt", promptHint: "Pégalo en el chat de tu agente.", copyPrompt: "Copiar prompt", clear: "Limpiar",
+            export: "Exportar", variants: "Variantes", remove: "Quitar", removeComment: "Quitar comentario {n}",
+            pickFailed: "No se pudo activar la selección de elementos en esta pieza.",
+            promptCopied: "Prompt copiado.", copyBlocked: "El navegador bloqueó la copia. El prompt está seleccionado; pulsa Ctrl+C.",
+            exporting: "Exportando...", rendering: "Renderizando {format}...", renderingFor: "Renderizando {format}... {s}s",
+            downloading: "Descargando {format}... {kb} KB", exported: "{file} exportado en {s}s.", exportFailed: "Error al exportar: {message}",
+            promptHead: "Art Director: edita la variante \"{id}\" ({w}x{h}).", promptFile: "Archivo: {file}",
+            promptWhole: "pieza completa", promptSelector: "{what}, selector `{selector}`",
+            promptTail: "Cambia solo lo que piden estos comentarios y conserva el resto de la pieza. Guarda el archivo, ejecuta el render check una vez para esta variante y detente."
+        }
+    };
+    const LANGS = Object.keys(STRINGS);
+
+    function normalizeLang(value) {
+        const short = String(value || "").toLowerCase().slice(0, 2);
+        return LANGS.includes(short) ? short : null;
+    }
+
+    function storedLang() {
+        try {
+            return normalizeLang(localStorage.getItem("artdirector:lang"));
+        } catch {
+            return null;
+        }
+    }
+
+    function t(key, vars) {
+        const table = STRINGS[state.lang] || STRINGS.en;
+        const text = table[key] !== undefined ? table[key] : STRINGS.en[key];
+        return String(text).replace(/\{(\w+)\}/g, (match, name) => (vars && vars[name] !== undefined ? String(vars[name]) : match));
+    }
+
+    const state = {
+        lang: storedLang() || normalizeLang(navigator.language) || "en",
+        mode: "gallery",
+        snapshot: null,
+        activeId: null,
+        pick: null,
+        canvasObserver: null,
+        exporting: null
+    };
+
+    const main = document.getElementById("main");
     const rail = document.getElementById("rail");
     const stage = document.getElementById("stage");
     const inspect = document.getElementById("inspect");
-    const queueBtn = document.getElementById("queue-btn");
-    const queueN = document.getElementById("queue-n");
-    const queuePanel = document.getElementById("queue-panel");
     const toasts = document.getElementById("toasts");
 
     document.querySelectorAll("[data-mode]").forEach((button) => {
+        button.addEventListener("click", () => setMode(button.getAttribute("data-mode")));
+    });
+
+    document.querySelectorAll("[data-lang]").forEach((button) => {
         button.addEventListener("click", () => {
-            state.mode = button.getAttribute("data-mode");
-            document.querySelectorAll("[data-mode]").forEach((item) => {
-                item.classList.toggle("is-on", item === button);
-            });
-            render();
+            const lang = button.getAttribute("data-lang");
+
+            try {
+                localStorage.setItem("artdirector:lang", lang);
+            } catch {
+                // The choice still applies to this tab.
+            }
+
+            setLang(lang);
         });
     });
+
+    window.addEventListener("message", onPick);
+
+    function setLang(lang) {
+        state.lang = normalizeLang(lang) || "en";
+        document.documentElement.lang = state.lang === "pt" ? "pt-BR" : state.lang;
+        document.querySelectorAll("[data-i18n]").forEach((node) => {
+            node.textContent = t(node.getAttribute("data-i18n"));
+        });
+        document.querySelectorAll("[data-lang]").forEach((button) => {
+            button.classList.toggle("is-on", button.getAttribute("data-lang") === state.lang);
+        });
+        render();
+    }
+
+    function setMode(mode) {
+        state.mode = mode;
+        document.querySelectorAll("[data-mode]").forEach((item) => {
+            item.classList.toggle("is-on", item.getAttribute("data-mode") === mode);
+        });
+        render();
+    }
 
     async function api(path, options) {
         const res = await fetch(path, {
@@ -53,9 +192,44 @@
     async function refresh() {
         state.snapshot = await api("/v1/session");
         document.getElementById("project-name").textContent = state.snapshot.project.name;
-        document.getElementById("phase").textContent = state.snapshot.session.phase;
-        paintQueue();
-        render();
+
+        if (!variantById(state.activeId)) {
+            state.activeId = state.snapshot.project.activeVariantId || (variants()[0] && variants()[0].id) || null;
+        }
+
+        setLang(storedLang() || normalizeLang(state.snapshot.project.language) || state.lang);
+    }
+
+    // New variants written by the agent show up without a reload. The open preview is left alone.
+    async function watchVariants() {
+        if (document.hidden || !state.snapshot) {
+            return;
+        }
+
+        try {
+            const snap = await api("/v1/session");
+            const before = variants().map((item) => item.id).join("|");
+            const after = (snap.variants || []).map((item) => item.id).join("|");
+            state.snapshot = snap;
+
+            if (before !== after) {
+                if (state.mode === "gallery") {
+                    render();
+                } else {
+                    paintVariantList();
+                }
+            }
+        } catch {
+            return;
+        }
+    }
+
+    function variants() {
+        return (state.snapshot && state.snapshot.variants) ? state.snapshot.variants : [];
+    }
+
+    function variantById(id) {
+        return variants().find((item) => item.id === id);
     }
 
     function render() {
@@ -65,91 +239,82 @@
 
         clearCanvasObserver();
         stage.classList.remove("is-canvas");
+        main.classList.toggle("is-wide", state.mode === "gallery");
 
-        if (state.mode === "brief") {
-            renderBrief();
-        } else if (state.mode === "gallery") {
+        if (state.mode === "gallery") {
             renderGallery();
-        } else if (state.mode === "live") {
-            renderLive();
         } else {
-            renderAudit();
+            renderPreview();
         }
     }
 
-    function renderBrief() {
-        const brief = state.snapshot.project.brief;
-        const brand = state.snapshot.project.brand;
-        rail.innerHTML = `
-            <h2>Brief</h2>
-            <label>Goal</label>
-            <textarea id="goal">${escape(brief.goal || "")}</textarea>
-            <label>Audience</label>
-            <input id="audience" value="${escape(brief.audience || "")}">
-            <label>Category</label>
-            <input id="category" value="${escape(brief.category || "")}">
-            <label>Format</label>
-            <select id="format">${state.snapshot.formats.map((item) =>
-                `<option value="${item.id}" ${item.id === brief.formatId ? "selected" : ""}>${item.label} (${item.width}x${item.height})</option>`
-            ).join("")}</select>
-            <div class="actions">
-                <button class="primary" id="save-brief">Save brief</button>
-            </div>
-        `;
-        stage.innerHTML = `
-            <h2>Brand</h2>
-            <p>${escape(brand.name)} / ${escape(brand.tagline || "no tagline")}</p>
-            <p>Display ${escape(brand.fonts.display)} · Body ${escape(brand.fonts.body)}</p>
-            <p>Ink ${escape(brand.colors.ink)} · Paper ${escape(brand.colors.paper)} · Accent ${escape(brand.colors.accent)}</p>
-            <p>Technique pack: <strong>${escape(state.snapshot.techniques.id)}</strong></p>
-        `;
-        inspect.innerHTML = `<h2>Note</h2><p>Only ask for what is missing. Sensible defaults are already filled.</p>`;
-        document.getElementById("save-brief").onclick = async () => {
-            await api("/v1/brief", {
-                method: "POST",
-                body: JSON.stringify({
-                    goal: value("goal"),
-                    audience: value("audience"),
-                    category: value("category"),
-                    formatId: value("format")
-                })
-            });
-            await refresh();
-            toast("Brief saved.");
-        };
-    }
-
     function renderGallery() {
-        const focused = state.galleryFocus;
-        const variants = focused
-            ? state.snapshot.variants.filter((item) => item.templateId === focused)
-            : state.snapshot.variants;
-        rail.innerHTML = `<h2>Sizes</h2>
-            <p>Choose the sizes for this piece, then pick a look.</p>
-            <div class="chip-row" id="size-row">
-                ${state.snapshot.formats.map((item) =>
-                    `<button type="button" class="chip ${state.sizeIds.includes(item.id) ? "is-on" : ""}" data-size="${item.id}">${escape(sizeLabel(item))} ${item.width}×${item.height}</button>`
-                ).join("")}
-            </div>
-            <p>${focused ? "Same piece, one card per size." : `${state.snapshot.variants.length} on file.`}</p>
-            <p class="muted">The agent suggests the look for this brief.</p>`;
-        stage.innerHTML = variants.length
-            ? `<div class="gallery">${variants.map(variantCard).join("")}</div>`
-            : `<p>No variants yet. Ask the agent for a look in the right sizes.</p>`;
-        inspect.innerHTML = `<h2>Compare</h2><p>Same piece, one card per size. Select a card, then Live or Accept.</p>`;
-        rail.querySelectorAll("[data-size]").forEach((chip) => {
-            chip.onclick = () => {
-                const id = chip.getAttribute("data-size");
-                state.sizeIds = state.sizeIds.includes(id)
-                    ? state.sizeIds.filter((item) => item !== id)
-                    : state.sizeIds.concat(id);
-                render();
+        const list = variants().filter((item) => item.status !== "rejected");
+        const rejected = variants().filter((item) => item.status === "rejected");
+        rail.innerHTML = "";
+        inspect.innerHTML = "";
+        stage.innerHTML = (list.length
+            ? `<div class="gallery">${list.map(variantCard).join("")}</div>`
+            : `<div class="empty"><h2>${t("noVariants")}</h2><p>${t("noVariantsHint")}</p></div>`)
+            + (rejected.length
+                ? `<details class="rejected"><summary>${icon("archive")}${t("rejected")} (${rejected.length})</summary>
+                    <div class="gallery">${rejected.map(variantCard).join("")}</div>
+                </details>`
+                : "");
+        stage.querySelectorAll("[data-status]").forEach((button) => {
+            button.onclick = (event) => {
+                event.stopPropagation();
+                void setStatus(button.getAttribute("data-id"), button.getAttribute("data-status"));
             };
         });
         stage.querySelectorAll("[data-variant]").forEach((card) => {
-            card.onclick = () => selectVariant(card.getAttribute("data-variant"));
+            card.onclick = () => openPreview(card.getAttribute("data-variant"));
+            card.onkeydown = (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openPreview(card.getAttribute("data-variant"));
+                }
+            };
         });
         observeFits(stage);
+    }
+
+    function variantCard(variant) {
+        const id = escape(variant.id);
+        const actions = variant.status === "rejected"
+            ? `<button type="button" data-id="${id}" data-status="draft">${icon("rotate-ccw")}${t("restore")}</button>`
+            : variant.status === "accepted"
+                ? `<button type="button" data-id="${id}" data-status="draft">${icon("rotate-ccw")}${t("undoAccept")}</button>
+                   <button type="button" data-id="${id}" data-status="rejected">${icon("x")}${t("reject")}</button>`
+                : `<button type="button" class="accept" data-id="${id}" data-status="accepted">${icon("check")}${t("accept")}</button>
+                   <button type="button" data-id="${id}" data-status="rejected">${icon("x")}${t("reject")}</button>`;
+        return `<article class="card is-${escape(variant.status)}" data-variant="${id}" tabindex="0">
+            ${previewFrame(`/artwork/${encodeURIComponent(variant.id)}?token=${TOKEN}`, variant.title, variant.width, variant.height)}
+            <header><strong>${escape(variant.title)}</strong><span class="badge">${variant.status === "accepted" ? icon("circle-check") : ""}${escape(t(`status_${variant.status}`))}</span></header>
+            <footer>${escape(formatName(variant))} · ${variant.width}×${variant.height}</footer>
+            <div class="card-actions">${actions}</div>
+        </article>`;
+    }
+
+    async function setStatus(id, status) {
+        try {
+            await api("/v1/variants/status", {
+                method: "POST",
+                body: JSON.stringify({ id, status })
+            });
+            await refresh();
+            toast(t(status === "rejected" ? "toastRejected" : status === "accepted" ? "toastAccepted" : "toastRestored", { id }));
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    }
+
+    function previewFrame(src, title, width, height) {
+        return `<div class="preview" data-art-width="${Number(width) || 1}" data-art-height="${Number(height) || 1}">
+            <div class="canvas-fit">
+                <iframe src="${src}" title="${escape(title)}" loading="lazy"></iframe>
+            </div>
+        </div>`;
     }
 
     function sizeLabel(format) {
@@ -157,31 +322,390 @@
     }
 
     function formatName(variant) {
-        const formats = (state.snapshot && state.snapshot.formats) ? state.snapshot.formats : [];
+        const formats = state.snapshot.formats || [];
         const match = formats.find((item) => item.id === variant.formatId)
             || formats.find((item) => item.width === variant.width && item.height === variant.height);
+        return match ? sizeLabel(match) : (variant.direction || `${variant.width}×${variant.height}`);
+    }
 
-        if (match) {
-            return sizeLabel(match);
+    async function openPreview(id) {
+        state.activeId = id;
+        state.pick = null;
+
+        setMode("preview");
+    }
+
+    function renderPreview() {
+        const variant = variantById(state.activeId);
+
+        if (!variant) {
+            rail.innerHTML = "";
+            inspect.innerHTML = "";
+            stage.innerHTML = `<div class="empty"><h2>${t("nothingToPreview")}</h2><p>${t("nothingToPreviewHint")}</p></div>`;
+            return;
         }
 
-        return variant.direction || `${variant.width}×${variant.height}`;
+        stage.classList.add("is-canvas");
+        stage.innerHTML = `<div class="canvas-wrap">
+                <div class="canvas-bar">
+                    <span id="canvas-meta">${variant.width} × ${variant.height}</span>
+                    <span class="muted">${icon("mouse-pointer-2")}${t("clickToComment")}</span>
+                    <button type="button" class="link" id="reload">${icon("refresh-cw")}${t("reload")}</button>
+                </div>
+                <div class="canvas" data-art-width="${variant.width}" data-art-height="${variant.height}">
+                    <div class="canvas-fit">
+                        <iframe id="live-frame" src="/artwork/${encodeURIComponent(variant.id)}?token=${TOKEN}" title="${t("artworkPreview")}"></iframe>
+                    </div>
+                </div>
+            </div>`;
+        inspect.innerHTML = `
+            <section class="block">
+                <h2>${t("comment")}</h2>
+                <p class="target" id="target">${t("wholeBoardHint")}</p>
+                <textarea id="note" placeholder="${t("notePlaceholder")}"></textarea>
+                <div class="row">
+                    <button type="button" class="primary" id="add-note">${icon("message-square-plus")}${t("addComment")}</button>
+                    <button type="button" id="clear-target">${icon("scan")}${t("wholeBoard")}</button>
+                </div>
+                <ol class="notes" id="notes"></ol>
+            </section>
+            <section class="block" id="prompt-block">
+                <h2>${t("prompt")}</h2>
+                <p class="muted">${t("promptHint")}</p>
+                <pre class="prompt" id="prompt"></pre>
+                <div class="row">
+                    <button type="button" class="primary" id="copy-prompt">${icon("copy")}${t("copyPrompt")}</button>
+                    <button type="button" id="clear-notes">${icon("trash-2")}${t("clear")}</button>
+                </div>
+            </section>
+            <section class="block">
+                <h2>${t("export")}</h2>
+                <div class="row" id="export-row">${FORMATS.map((item) =>
+                    `<button type="button" data-export="${item.id}">${icon("file-down")}${item.label}</button>`
+                ).join("")}</div>
+                <div class="progress" id="progress" hidden>
+                    <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+                    <p id="progress-text"></p>
+                </div>
+            </section>`;
+        paintVariantList();
+        bindPreview(variant);
+        paintNotes();
+        paintExport();
+        observeFits(stage);
     }
 
-    function variantCard(variant) {
-        return `<article class="card" data-variant="${variant.id}">
-            ${previewFrame(`/artwork/${variant.id}?token=${TOKEN}`, variant.title, variant.width, variant.height)}
-            <header><strong>${escape(variant.title)}</strong><span>${escape(variant.status)}</span></header>
-            <footer>${escape(formatName(variant))} · ${variant.width}×${variant.height}</footer>
-        </article>`;
+    function paintVariantList() {
+        if (state.mode !== "preview") {
+            return;
+        }
+
+        rail.innerHTML = `<h2>${t("variants")}</h2><div class="variant-list">${variants().filter((item) => item.status !== "rejected" || item.id === state.activeId).map((item) =>
+            `<button type="button" class="${item.id === state.activeId ? "is-on" : ""}" data-open="${escape(item.id)}">
+                <strong>${escape(item.title)}</strong>
+                <span>${escape(formatName(item))} · ${item.width}×${item.height}</span>
+            </button>`
+        ).join("")}</div>`;
+        rail.querySelectorAll("[data-open]").forEach((button) => {
+            button.onclick = () => openPreview(button.getAttribute("data-open"));
+        });
     }
 
-    function previewFrame(src, title, width, height) {
-        return `<div class="preview" data-art-width="${Number(width) || 1}" data-art-height="${Number(height) || 1}">
-            <div class="canvas-fit">
-                <iframe src="${src}" title="${escape(title)}"></iframe>
-            </div>
-        </div>`;
+    function bindPreview(variant) {
+        const frame = document.getElementById("live-frame");
+        frame.addEventListener("load", () => {
+            try {
+                const doc = frame.contentDocument;
+                const script = doc.createElement("script");
+                script.src = `/live.js?token=${TOKEN}`;
+                script.onload = () => sendMarks();
+                doc.documentElement.appendChild(script);
+            } catch {
+                toast(t("pickFailed"), "error");
+            }
+        });
+
+        document.getElementById("reload").onclick = () => renderPreview();
+
+        const note = document.getElementById("note");
+        note.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                addNote();
+            }
+        });
+        document.getElementById("add-note").onclick = addNote;
+        document.getElementById("clear-target").onclick = () => {
+            state.pick = null;
+            paintTarget();
+            postToFrame({ type: "artdirector-clear" });
+        };
+        document.getElementById("copy-prompt").onclick = copyPrompt;
+        document.getElementById("clear-notes").onclick = () => {
+            saveNotes(variant.id, []);
+            paintNotes();
+        };
+        inspect.querySelectorAll("[data-export]").forEach((button) => {
+            button.onclick = () => exportAs(button.getAttribute("data-export"));
+        });
+    }
+
+    function onPick(event) {
+        if (!event.data || event.data.type !== "artdirector-select") {
+            return;
+        }
+
+        state.pick = event.data.selection;
+        paintTarget();
+        const note = document.getElementById("note");
+
+        if (note) {
+            note.focus();
+        }
+    }
+
+    function paintTarget() {
+        const node = document.getElementById("target");
+
+        if (node) {
+            node.textContent = state.pick ? t("target", { what: describe(state.pick) }) : t("wholeBoardHint");
+            node.classList.toggle("is-set", Boolean(state.pick));
+        }
+    }
+
+    function describe(selection) {
+        const text = selection.text ? ` "${selection.text.slice(0, 40)}"` : "";
+        return `${selection.tagName}${text}`;
+    }
+
+    // Comments live in this browser only. The prompt is the hand-off, so no harness needs a trigger.
+    function notesKey(id) {
+        return `artdirector:notes:${state.snapshot.project.name}:${id}`;
+    }
+
+    function loadNotes(id) {
+        try {
+            return JSON.parse(localStorage.getItem(notesKey(id)) || "[]");
+        } catch {
+            return state.memoryNotes && state.memoryNotes[id] ? state.memoryNotes[id] : [];
+        }
+    }
+
+    function saveNotes(id, notes) {
+        state.memoryNotes = { ...(state.memoryNotes || {}), [id]: notes };
+
+        try {
+            localStorage.setItem(notesKey(id), JSON.stringify(notes));
+        } catch {
+            // Storage can be blocked; the in-memory copy still works for this tab.
+        }
+    }
+
+    function addNote() {
+        const note = document.getElementById("note");
+        const text = note.value.trim();
+
+        if (!text) {
+            note.focus();
+            return;
+        }
+
+        const notes = loadNotes(state.activeId);
+        notes.push({ text, selection: state.pick });
+        saveNotes(state.activeId, notes);
+        note.value = "";
+        state.pick = null;
+        paintTarget();
+        postToFrame({ type: "artdirector-clear" });
+        paintNotes();
+    }
+
+    function paintNotes() {
+        const list = document.getElementById("notes");
+
+        if (!list) {
+            return;
+        }
+
+        const notes = loadNotes(state.activeId);
+        list.innerHTML = notes.map((item, index) => `<li>
+                <div><span class="where">${escape(item.selection ? describe(item.selection) : t("wholeBoard"))}</span>${escape(item.text)}</div>
+                <button type="button" class="link" data-remove="${index}" aria-label="${t("removeComment", { n: index + 1 })}">${icon("trash-2")}${t("remove")}</button>
+            </li>`).join("");
+        list.querySelectorAll("[data-remove]").forEach((button) => {
+            button.onclick = () => {
+                const next = loadNotes(state.activeId);
+                next.splice(Number(button.getAttribute("data-remove")), 1);
+                saveNotes(state.activeId, next);
+                paintNotes();
+            };
+        });
+        document.getElementById("prompt-block").hidden = notes.length === 0;
+        document.getElementById("prompt").textContent = buildPrompt(notes);
+        sendMarks();
+    }
+
+    function sendMarks() {
+        const marks = loadNotes(state.activeId)
+            .map((item, index) => ({ n: index + 1, selector: item.selection ? item.selection.selector : null }))
+            .filter((item) => item.selector);
+        postToFrame({ type: "artdirector-marks", marks });
+    }
+
+    function postToFrame(message) {
+        const frame = document.getElementById("live-frame");
+
+        if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage(message, "*");
+        }
+    }
+
+    function buildPrompt(notes) {
+        const variant = variantById(state.activeId);
+
+        if (!variant || !notes.length) {
+            return "";
+        }
+
+        const lines = [
+            t("promptHead", { id: variant.id, w: variant.width, h: variant.height }),
+            t("promptFile", { file: variant.htmlFile || variant.htmlPath }),
+            ""
+        ];
+
+        notes.forEach((item, index) => {
+            const where = item.selection
+                ? t("promptSelector", { what: describe(item.selection), selector: item.selection.selector })
+                : t("promptWhole");
+            lines.push(`${index + 1}. [${where}]`);
+            lines.push(`   ${item.text}`);
+        });
+
+        lines.push("");
+        lines.push(t("promptTail"));
+        return lines.join("\n");
+    }
+
+    async function copyPrompt() {
+        const text = document.getElementById("prompt").textContent;
+
+        try {
+            await navigator.clipboard.writeText(text);
+            toast(t("promptCopied"));
+        } catch {
+            const range = document.createRange();
+            range.selectNodeContents(document.getElementById("prompt"));
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            toast(t("copyBlocked"), "error");
+        }
+    }
+
+    function paintExport() {
+        const busy = state.exporting;
+        inspect.querySelectorAll("[data-export]").forEach((button) => {
+            const format = FORMATS.find((item) => item.id === button.getAttribute("data-export"));
+            const mine = busy && busy.format === format.id;
+            button.disabled = Boolean(busy);
+            button.classList.toggle("is-busy", Boolean(mine));
+            button.innerHTML = mine ? `${icon("loader-circle", "spin")}${t("exporting")}` : `${icon("file-down")}${format.label}`;
+        });
+        const progress = document.getElementById("progress");
+
+        if (!progress) {
+            return;
+        }
+
+        progress.hidden = !busy;
+
+        if (busy) {
+            const bar = document.getElementById("progress-bar");
+            bar.classList.toggle("is-indeterminate", busy.ratio === null);
+            bar.style.width = busy.ratio === null ? "" : `${Math.round(busy.ratio * 100)}%`;
+            document.getElementById("progress-text").textContent = busy.label;
+        }
+    }
+
+    // The server renders first and then streams the file, so the bar is indeterminate while
+    // rendering and shows real bytes once the download starts.
+    async function exportAs(formatId) {
+        const format = FORMATS.find((item) => item.id === formatId);
+        const id = state.activeId;
+
+        if (!format || !id || state.exporting) {
+            return;
+        }
+
+        const started = Date.now();
+        state.exporting = { format: format.id, ratio: null, label: t("rendering", { format: format.label }) };
+        paintExport();
+        const timer = window.setInterval(() => {
+            if (state.exporting && state.exporting.ratio === null) {
+                state.exporting.label = t("renderingFor", { format: format.label, s: Math.round((Date.now() - started) / 1000) });
+                paintExport();
+            }
+        }, 500);
+
+        try {
+            const res = await fetch("/v1/export", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ id, format: format.api })
+            });
+
+            if (!res.ok) {
+                let message = res.statusText;
+
+                try {
+                    const body = await res.json();
+                    message = body.summary || message;
+                } catch {
+                    // Keep the HTTP status text when the body is not JSON.
+                }
+
+                throw new Error(message);
+            }
+
+            const total = Number(res.headers.get("Content-Length")) || 0;
+            const chunks = [];
+            let received = 0;
+            const reader = res.body.getReader();
+
+            for (;;) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    break;
+                }
+
+                chunks.push(value);
+                received += value.length;
+                state.exporting = {
+                    format: format.id,
+                    ratio: total ? received / total : null,
+                    label: t("downloading", { format: format.label, kb: Math.round(received / 1024) })
+                };
+                paintExport();
+            }
+
+            const blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${id}.${format.ext}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            toast(t("exported", { file: `${id}.${format.ext}`, s: ((Date.now() - started) / 1000).toFixed(1) }));
+        } catch (err) {
+            toast(t("exportFailed", { message: err.message }), "error");
+        } finally {
+            window.clearInterval(timer);
+            state.exporting = null;
+            paintExport();
+        }
     }
 
     function clearCanvasObserver() {
@@ -221,11 +745,7 @@
 
         const layout = () => {
             boxes.forEach((box) => {
-                if (!box.isConnected) {
-                    return;
-                }
-
-                const frame = box.querySelector("iframe");
+                const frame = box.isConnected ? box.querySelector("iframe") : null;
 
                 if (!frame) {
                     return;
@@ -237,7 +757,7 @@
                 const meta = document.getElementById("canvas-meta");
 
                 if (meta && box.classList.contains("canvas")) {
-                    meta.textContent = `${width} × ${height} · fitted ${Math.round(scale * 100)}%`;
+                    meta.textContent = `${width} × ${height} · ${Math.round(scale * 100)}%`;
                 }
             });
         };
@@ -247,292 +767,6 @@
         const observer = new ResizeObserver(layout);
         boxes.forEach((box) => observer.observe(box));
         state.canvasObserver = observer;
-    }
-
-    async function selectVariant(id) {
-        await api("/v1/variants/status", {
-            method: "POST",
-            body: JSON.stringify({
-                id,
-                status: "selected"
-            })
-        });
-        state.mode = "live";
-        document.querySelectorAll("[data-mode]").forEach((item) => {
-            item.classList.toggle("is-on", item.getAttribute("data-mode") === "live");
-        });
-        await refresh();
-    }
-
-    function renderLive() {
-        const id = state.snapshot.project.activeVariantId || (state.snapshot.variants[0] && state.snapshot.variants[0].id);
-        const variant = (state.snapshot.variants || []).find((item) => item.id === id);
-        const width = variant && variant.width ? variant.width : 1080;
-        const height = variant && variant.height ? variant.height : 1080;
-        rail.innerHTML = `<h2>Live</h2><p>Click an element in the artwork. Choose an action or write a note. The agent edits source; this preview updates after render.</p>
-            <label>Freeform note</label>
-            <textarea id="prompt"></textarea>
-            <div class="actions" id="live-actions"></div>`;
-        stage.classList.add("is-canvas");
-        stage.innerHTML = id
-            ? `<div class="canvas" data-art-width="${width}" data-art-height="${height}">
-                <div class="canvas-fit">
-                    <iframe id="live-frame" src="/artwork/${id}?token=${TOKEN}" title="Live artwork"></iframe>
-                </div>
-            </div>`
-            : `<p>Select a variant first.</p>`;
-        inspect.innerHTML = `<h2>Selection</h2>
-            <p id="canvas-meta">${width} × ${height}</p>
-            <pre id="sel">None</pre>
-            <div class="actions">
-                <button class="primary" id="accept">Accept variant</button>
-                <button id="reject">Reject</button>
-            </div>`;
-        api("/v1/commands").then((payload) => {
-            document.getElementById("live-actions").innerHTML = payload.liveActions.map((item) =>
-                `<button data-action="${item.id}">${escape(item.label)}</button>`
-            ).join("");
-            document.querySelectorAll("[data-action]").forEach((button) => {
-                button.onclick = () => postEvent(button.getAttribute("data-action"));
-            });
-        });
-        const frame = document.getElementById("live-frame");
-
-        if (frame) {
-            frame.addEventListener("load", () => {
-                try {
-                    const doc = frame.contentDocument;
-                    const script = doc.createElement("script");
-                    script.src = `/live.js?token=${TOKEN}`;
-                    doc.documentElement.appendChild(script);
-                    window.addEventListener("message", onPick);
-                } catch (err) {
-                    toast("Live overlay could not attach. Open the artwork origin with the studio token.", "error");
-                }
-            }, { once: true });
-        }
-
-        document.getElementById("accept").onclick = () => setStatus("accepted");
-        document.getElementById("reject").onclick = () => setStatus("rejected");
-        const promptField = document.getElementById("prompt");
-
-        if (promptField) {
-            promptField.addEventListener("keydown", (event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-
-                    if (promptField.value.trim()) {
-                        void postEvent("freeform");
-                    }
-                }
-            });
-        }
-
-        observeFits(stage);
-    }
-
-    function onPick(event) {
-        if (!event.data || event.data.type !== "artdirector-select") {
-            return;
-        }
-
-        state.pick = event.data.selection;
-        document.getElementById("sel").textContent = JSON.stringify(event.data.selection, null, 2);
-    }
-
-    async function postEvent(action) {
-        const id = state.snapshot.project.activeVariantId;
-
-        try {
-            await api("/v1/events", {
-                method: "POST",
-                body: JSON.stringify({
-                    type: "generate",
-                    action,
-                    prompt: value("prompt"),
-                    selection: state.pick,
-                    variantId: id,
-                    count: 3
-                })
-            });
-            toast(`Queued ${actionLabel(action)}.`);
-            await syncQueue();
-        } catch (err) {
-            toast(err.message, "error");
-        }
-    }
-
-    async function setStatus(statusName) {
-        const id = state.snapshot.project.activeVariantId;
-
-        if (!id) {
-            return;
-        }
-
-        await api("/v1/variants/status", {
-            method: "POST",
-            body: JSON.stringify({
-                id,
-                status: statusName
-            })
-        });
-        await refresh();
-        toast(`${statusName}: ${id}`);
-    }
-
-    function renderAudit() {
-        const id = state.snapshot.project.acceptedVariantId || state.snapshot.project.activeVariantId;
-        rail.innerHTML = `<h2>Audit / Export</h2><p>Deterministic checks only. Passing them does not prove the piece is beautiful.</p>
-            <div class="actions">
-                <button id="run-audit">Run audit</button>
-                <button class="primary" id="export-png">Export PNG</button>
-                <button id="export-jpg">Export JPEG</button>
-                <button id="export-pdf">Export PDF</button>
-            </div>`;
-        stage.innerHTML = `<pre id="audit-out">No report yet.</pre>`;
-        inspect.innerHTML = `<h2>Active</h2><p>${escape(id || "none")}</p>`;
-        document.getElementById("run-audit").onclick = async () => {
-            const report = await api("/v1/audit", {
-                method: "POST",
-                body: JSON.stringify({ id })
-            });
-            document.getElementById("audit-out").textContent = JSON.stringify(report.report, null, 2);
-        };
-        ["png", "jpg", "pdf"].forEach((format) => {
-            const button = document.getElementById(format === "jpg" ? "export-jpg" : `export-${format}`);
-            button.onclick = async () => {
-                const exportFormat = format === "jpg" ? "jpeg" : format;
-                const extension = format === "jpg" ? "jpg" : format;
-
-                try {
-                    const res = await fetch("/v1/export", {
-                        method: "POST",
-                        headers,
-                        body: JSON.stringify({
-                            id,
-                            format: exportFormat
-                        })
-                    });
-
-                    if (!res.ok) {
-                        let message = res.statusText;
-
-                        try {
-                            const body = await res.json();
-                            message = body.summary || message;
-                        } catch {
-                            // Keep the HTTP status text when the body is not JSON.
-                        }
-
-                        throw new Error(message);
-                    }
-
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = `${id}.${extension}`;
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    URL.revokeObjectURL(url);
-
-                    toast(`Exported ${exportFormat.toUpperCase()}.`);
-                } catch (err) {
-                    toast(err.message, "error");
-                }
-            };
-        });
-    }
-
-    function queueItems() {
-        return (state.snapshot && state.snapshot.queue) ? state.snapshot.queue : [];
-    }
-
-    function actionLabel(action) {
-        const actions = (state.snapshot && state.snapshot.liveActions) ? state.snapshot.liveActions : [];
-        const match = actions.find((item) => item.id === action);
-        return match ? match.label : (action || "Edit");
-    }
-
-    function waitingLabel(iso) {
-        const ms = Date.now() - Date.parse(iso || "");
-
-        if (!Number.isFinite(ms) || ms < 8000) {
-            return "just now";
-        } else if (ms < 60000) {
-            return `${Math.round(ms / 1000)}s waiting`;
-        } else {
-            return `${Math.round(ms / 60000)}m waiting`;
-        }
-    }
-
-    function queueDetail(item) {
-        const bits = [];
-
-        if (item.selection && item.selection.text) {
-            bits.push(item.selection.text);
-        } else if (item.selection && item.selection.selector) {
-            bits.push(item.selection.selector);
-        }
-
-        if (item.prompt) {
-            bits.push(item.prompt);
-        }
-
-        bits.push(waitingLabel(item.createdAt));
-        return bits.join(" · ");
-    }
-
-    function fillQueuePanel() {
-        const items = queueItems();
-
-        if (!items.length) {
-            queuePanel.innerHTML = `<h2 id="queue-title">Queue</h2><p class="queue-empty">No edits waiting. Live actions stay here until the agent writes HTML and replies.</p>`;
-            return;
-        }
-
-        queuePanel.innerHTML = `<h2 id="queue-title">Queue</h2>${items.map((item) => `
-            <article class="queue-item">
-                <header>
-                    <strong>${escape(actionLabel(item.action))}</strong>
-                    <span>Waiting</span>
-                </header>
-                <p>${escape(queueDetail(item))}</p>
-            </article>
-        `).join("")}`;
-    }
-
-    function paintQueue() {
-        const count = queueItems().length;
-        queueN.textContent = `(${count})`;
-        queueBtn.classList.toggle("has-items", count > 0);
-        queueBtn.setAttribute("aria-expanded", queuePanel.hidden ? "false" : "true");
-
-        if (!queuePanel.hidden) {
-            fillQueuePanel();
-        }
-    }
-
-    async function syncQueue() {
-        if (document.hidden || !state.snapshot) {
-            return;
-        }
-
-        try {
-            const snap = await api("/v1/session");
-            const prev = queueItems().length;
-            state.snapshot.queue = snap.queue || [];
-            state.snapshot.liveActions = snap.liveActions || state.snapshot.liveActions;
-
-            if (state.snapshot.queue.length < prev) {
-                toast(state.snapshot.queue.length ? "Next edit is in progress." : "Queue is clear.");
-            }
-
-            paintQueue();
-        } catch {
-            return;
-        }
     }
 
     function toast(message, kind) {
@@ -555,11 +789,6 @@
         window.setTimeout(() => node.remove(), 180);
     }
 
-    function value(id) {
-        const node = document.getElementById(id);
-        return node ? node.value : "";
-    }
-
     function escape(value) {
         return String(value)
             .replaceAll("&", "&amp;")
@@ -568,47 +797,9 @@
             .replaceAll("\"", "&quot;");
     }
 
-    queueBtn.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const willOpen = queuePanel.hidden;
-        queuePanel.hidden = !willOpen;
-
-        if (willOpen) {
-            fillQueuePanel();
-            state.ignoreQueueOutside = true;
-            window.setTimeout(() => {
-                state.ignoreQueueOutside = false;
-            }, 0);
-        }
-
-        paintQueue();
-    });
-
-    document.addEventListener("pointerdown", (event) => {
-        if (state.ignoreQueueOutside || queuePanel.hidden) {
-            return;
-        }
-
-        if (queuePanel.contains(event.target) || queueBtn.contains(event.target)) {
-            return;
-        }
-
-        queuePanel.hidden = true;
-        paintQueue();
-    });
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && !queuePanel.hidden) {
-            queuePanel.hidden = true;
-            queueBtn.focus();
-            paintQueue();
-        }
-    });
-
     window.setInterval(() => {
-        void syncQueue();
-    }, 2500);
+        void watchVariants();
+    }, 3000);
 
     refresh().catch((err) => {
         toast(err.message, "error");

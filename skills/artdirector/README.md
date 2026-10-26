@@ -39,7 +39,7 @@
 
 ## Overview
 
-Art Director is a local creative application for making **graphic design with code**. You describe a piece or campaign. The agent and the studio share one project: brand, brief, visual direction, variants, live comments, audit, and export.
+Art Director is a local creative application for making **graphic design with code**. You describe a piece or campaign. The agent and the studio share one project: brand, brief, visual direction, variants, element comments, audit, and export.
 
 It combines, rather than stacks, four existing ideas:
 
@@ -61,11 +61,11 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
                    v
   ┌─────────────────────────────────┐      ┌──────────────────────────────┐
   │ artdirector CLI                 │ ───> │ Studio  127.0.0.1:4730       │
-  │ brand · brief · variants        │      │ gallery · Live Mode · audit  │
+  │ brand · brief · variants        │      │ gallery · preview · export   │
   └────────────────┬────────────────┘      └──────────────┬───────────────┘
                    │                                      │
-                   │        Live Mode events (click an    │
-                   │ <───── element, request a change) ───┘
+                   │      copied prompt (click elements,  │
+                   │ <───── comment, paste in chat) ──────┘
                    v
   ┌─────────────────────────────────┐
   │ UnifiedRenderer                 │
@@ -77,7 +77,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 | This skill does | This skill does not |
 |-----------------|---------------------|
 | Keep brand tokens, brief, direction, variants, and history in one project | Call image-generation APIs |
-| Serve a token-gated localhost studio with gallery, Live Mode, audit, and export | Run a language model. The agent answers studio events. |
+| Serve a token-gated localhost studio with a gallery with accept and reject, and a preview with element comments and export | Run a language model. The agent applies the prompt the user pastes. |
 | Teach a professional visual bar: style guides, an effects toolkit, and photo treatments | Ship finished designs to copy. References set the level, never the layout |
 | Find openly licensed photos and remove backgrounds with a local model | Generate or alter images |
 | Export PNG, JPEG, PDF, HTML, and SVG for compositions with an SVG root | Reconstruct SVG from HTML-only artboards |
@@ -90,10 +90,14 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Effects toolkit:** grain, paper, smoke, duotone, scrims, halftone, cutout shadows, 3D and glossy type, echo stacks, brush edges, ornaments, icons, and line fitting, included with `{{> effect}}`
 - **Photo pipeline:** search CC0 photos with credits and cut out subjects locally; local images work in the studio, the audit, and every export
 - **Templates for repeatable formats:** infographic, data visual, and carousel slide, filled from the brief or a tokens file
-- **Live Mode:** click an element in the studio, pick a refinement or type a request, and the agent edits the source
+- **Gallery:** every variant at its real ratio, with Accept and Reject; rejected variants move to a Rejected area and can be restored
+- **Preview:** the full-size artwork with PNG, JPEG, or PDF export and a progress indicator; audit findings stay with the agent
+- **Studio in three languages:** English, Portuguese, and Spanish; the agent passes the language of your prompt with `--lang`, and a switcher in the studio overrides it
+- **Element comments:** click elements in the preview, comment on each, and copy one prompt for any agent, with no polling or trigger needed
 - **Refinement commands:** `bolder`, `quieter`, `typeset`, `colorize`, `layout`, `distill`, `adapt`, `polish`
 - **Quality floor:** every piece is checked against hierarchy, type, and originality rules
-- **Deterministic audit:** size, overflow, fonts, and asset checks before export
+- **Render check:** each variant is audited and rendered once before hand-over, and construction defects are fixed in one pass
+- **Deterministic audit:** size, overflow, fonts, assets, text at or past the edge, story chrome, and blurred text
 - **Multi-format export:** PNG, JPEG, SVG, PDF, and HTML
 - **Session isolation:** each chat gets its own temporary project unless you ask for permanent repository state
 - **Agent-native CLI:** every command accepts `--json`
@@ -163,7 +167,7 @@ With the skill installed, start a new agent session and ask:
 Design a square social post announcing our spring sale, 30% off, bold and playful.
 ```
 
-The agent creates a project, opens the studio, and writes variants you can compare, refine in Live Mode, and export.
+The agent creates a project, opens the studio, and writes variants you can compare, comment on in Preview, and export.
 
 ## Usage
 
@@ -214,7 +218,7 @@ Outputs land in `packages/artdirector/demos/artifacts/`. Pass `--out <dir>` to w
 ## How It Works
 
 ```text
-init ──> brief ──> shape ──> generate ──> studio / live ──> audit ──> export
+init ──> brief ──> shape ──> generate ──> render check ──> studio / live ──> audit ──> export
                                  ^              │
                                  └── bolder, quieter, typeset, colorize,
                                      layout, distill, adapt, polish
@@ -223,12 +227,11 @@ init ──> brief ──> shape ──> generate ──> studio / live ──> 
 1. Describe the artwork in natural language (the agent loads this skill).
 2. Studio asks only for missing essentials.
 3. Choose a **rendered** visual direction (not a paragraph of adjectives).
-4. Agent writes HTML/CSS/SVG variants into `.artdirector/variants/`.
+4. Agent writes HTML/CSS/SVG variants into `.artdirector/variants/`, audits and renders each one once, and fixes construction defects.
 5. Gallery compares real artboards.
-6. Live Mode: click an element, pick "Make bolder" / "Improve typography" / freeform.
-7. Agent edits source, replies only after the file exists, preview reloads.
-8. Accept or reject. History is JSONL under `.artdirector/`.
-9. Audit, then export.
+6. Preview: click elements, write comments, and copy the prompt into the chat.
+7. Agent edits the file and runs the render check once; click Reload in Preview.
+8. Accept the variants you keep, reject the rest (restorable), and export PNG, JPEG, or PDF from Preview.
 
 Template production (repeatable campaigns) and art direction (original compositions) share the same session.
 
@@ -244,7 +247,7 @@ Run from source without building with `npm run dev -- <command>` inside `package
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
-| `init` | Create project files, brand tokens, and session state | `--name`, `--new`, `--permanent` |
+| `init` | Create project files, brand tokens, and session state | `--name`, `--new`, `--permanent`, `--lang` |
 | `brief` | Record goal, audience, format, and constraints | `--goal`, `--audience`, `--format`, `--tone` |
 | `status` | Print project, session, and variants as JSON | |
 | `resume` | Recover the project, session, and pending live events | |
@@ -256,8 +259,8 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | `shape` | Choose a visual direction from rendered alternatives | `--direction` |
 | `generate` | Fill a template for a repeatable format, or return techniques, templates, and effects for original work | `--template`, `--tokens`, `--id` |
 | `variants` | List variants; `variants add` registers agent-written HTML | `--file`, `--title` |
-| `studio` | Start the browser studio with gallery and Live Mode | `--open`, `--port` (default `4730`) |
-| `live` | Alias of `studio` focused on Live Mode | `--open` |
+| `studio` | Start the browser studio with Gallery and Preview | `--open`, `--port` (default `4730`) |
+| `live` | Alias of `studio` | `--open` |
 | `critique` | Review against the quality floor | |
 
 ### Refinement
@@ -279,7 +282,7 @@ Refinement commands return guidance, quality rules, and techniques that the agen
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
-| `audit` | Deterministic checks: size, overflow, fonts, assets | `--id` |
+| `audit` | Deterministic checks: size, overflow, fonts, assets, edges, story chrome, blurred text | `--id` |
 | `export` | Export the accepted artwork | `--id`, `--format`, `--out` |
 | `effects` | List the effects toolkit, or print one effect with its usage notes | `--id` |
 | `demo` | Run the pipeline check (fills the library templates, no language model) | `--out`, `--no-render` |
@@ -364,11 +367,11 @@ See [ARCHITECTURE.md](../../packages/artdirector/ARCHITECTURE.md) for the source
 | Path | Responsibility |
 |------|----------------|
 | `skills/artdirector/SKILL.md` | Agent instructions |
-| `skills/artdirector/references/` | `style/` visual bar and originality, `effects/` toolkit catalog, `workflow/` commands and Live Mode, `design/` formats, templates, techniques, quality, and `output/` audit |
+| `skills/artdirector/references/` | `style/` visual bar, illustration, and originality, `effects/` toolkit catalog, `workflow/` commands and studio comments, `design/` formats, templates, techniques, quality, and `output/` audit and render check |
 | `skills/artdirector/scripts/` | CLI wrapper that finds and runs the package; `photos/` search and background removal |
 | `skills/artdirector/harnesses/` | One guide per agent, and project files such as the OpenCode `/artdirector` command |
 | `packages/artdirector/src/` | CLI, session, studio server, renderer, audit, design rules, and templates |
-| `packages/artdirector/studio/` | Browser design studio and Live Mode overlay |
+| `packages/artdirector/studio/` | Browser design studio and element-picking overlay |
 | `packages/artdirector/library/` | Effects toolkit, templates for repeatable formats, and rendered direction previews |
 
 ## Security
@@ -426,9 +429,9 @@ Fonts load from Bunny Fonts at render time. Without network access, rendering fa
 </details>
 
 <details>
-<summary><strong>Live Mode requests are not applied</strong></summary>
+<summary><strong>Comments in the studio are not applied</strong></summary>
 
-The studio does not edit files by itself. An agent with the skill loaded must be running so it can poll events, edit the HTML, and reply.
+The studio does not edit files by itself. Click Copy prompt in Preview, paste the prompt into the agent chat, then click Reload after the agent saves the file.
 
 </details>
 
@@ -466,7 +469,7 @@ python3 -m pip install "rembg[cpu]"
 
 ## Limitations
 
-- **Agent in the loop:** Live Mode queues events on localhost. An agent must poll `/v1/events/poll`, edit HTML, and reply.
+- **Agent in the loop:** the studio does not edit files. Comments reach the agent as a prompt the user pastes into the chat.
 - **SVG export:** Playwright serializes an SVG root when the composition has one. HTML-only artboards export as PNG, JPEG, PDF, or HTML.
 - **ClickClick coverage:** ClickClick handles PNG and JPEG. PDF, live overlay, and audit stay on Playwright.
 - **Network fonts:** offline renders fall back to system fonts unless `@font-face` files are added locally.

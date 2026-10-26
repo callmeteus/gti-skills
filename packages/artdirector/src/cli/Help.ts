@@ -26,7 +26,7 @@ Also:
   demo          Run the end-to-end demonstration
   help          Show this help
 
-All commands accept --json. Artwork is HTML rendered in a browser.
+All commands accept --json. Pass --lang en|pt|es (on init or studio) to set the studio language. Artwork is HTML rendered in a browser.
 ArtDirector never calls an image-generation API.
 `;
 }

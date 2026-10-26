@@ -61,7 +61,7 @@ const RecordFile = "session.json";
  * Resolves the temporary session directory and its request index.
  *
  * Temporary state lives under `%TEMP%/artdirector` by default and can be
- * redirected with `ARTDIRECTOR_HOME`.
+ * redirected with `ARTDIRECTOR_STATE_HOME`.
  */
 export namespace Scope {
     /**
@@ -70,7 +70,7 @@ export namespace Scope {
      * @returns Absolute temporary home
      */
     export function home(): string {
-        const override = process.env.ARTDIRECTOR_HOME?.trim();
+        const override = process.env.ARTDIRECTOR_STATE_HOME?.trim();
 
         if (override) {
             return resolve(override);

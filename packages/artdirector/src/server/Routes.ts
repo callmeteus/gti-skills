@@ -229,7 +229,10 @@ export class StudioRoutes {
             ok: true,
             project,
             session: this.ctx.session(),
-            variants: this.ctx.variants(),
+            variants: this.ctx.variants().map((item) => ({
+                ...item,
+                htmlFile: Paths.confine(this.ctx.root, item.htmlPath)
+            })),
             formats: OutputFormats.map((item) => ({
                 ...item,
                 short: Formats.shortName(item)

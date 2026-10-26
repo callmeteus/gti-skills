@@ -25,7 +25,8 @@ export type {
     LiveEvent,
     OutputFormat,
     AssetRecord,
-    CommandResult
+    CommandResult,
+    StudioLanguage
 } from "./Types";
 
 export { ArtDirectorError, ArtErrors } from "./Errors";

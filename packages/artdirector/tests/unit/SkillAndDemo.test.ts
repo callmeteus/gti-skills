@@ -17,6 +17,8 @@ describe("skill", () => {
         expect(text).toContain("Do not search npm");
         expect(text).toContain("Ship first");
         expect(text).toContain("Do not audit");
+        expect(text).toContain("Render check, once");
+        expect(text).toContain("references/style/illustration.md");
         expect(text).toContain("Story (1080×1920)");
         expect(text).not.toMatch(/```(?:bash|powershell)\n(?:npx artdirector)/);
         expect(text).not.toContain("/ht-infographic");

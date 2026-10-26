@@ -33,7 +33,7 @@ npm run dev -- help
 | `src/cli/` | Argument parsing and command dispatch |
 | `src/commands/` | Command registry and metadata |
 | `src/session/` | Per-chat project scope and context resolution |
-| `src/server/` | Local studio HTTP API |
+| `src/server/` | Local studio HTTP API and the per-project studio lock |
 | `src/renderer/` | ClickClick and Playwright renderer |
 | `src/audit/` | Deterministic rendering checks |
 | `src/design/` | Quality floor, directions, and formats |
@@ -67,6 +67,7 @@ npm run dev -- help
 | `ARTDIRECTOR_STORAGE` | unset | Set to `repository` to keep projects in the repository instead of a temporary folder |
 | `ARTDIRECTOR_BIN` | unset | Path of a built CLI the skill wrapper should run |
 | `ARTDIRECTOR_HOME` | unset | Package folder the skill wrapper should use |
+| `ARTDIRECTOR_STATE_HOME` | `<temp>/artdirector` | Folder that holds temporary sessions |
 
 ## Testing
 
@@ -74,6 +75,6 @@ npm run dev -- help
 npm test
 ```
 
-Known issue: `tests/unit/Core.test.ts` and `tests/unit/Server.test.ts` fail to load because `src/server/StudioLock` is imported by `src/server/index.ts` but is not in the repository, and `startStudio` does not return `reused` yet. The remaining suites pass.
+The suites cover the core, formats, templates, session scope, the studio server (including port fallback and lock reuse), and the skill wrapper and demo workflow.
 
 See [../../README.md](../../README.md) for the full repository.

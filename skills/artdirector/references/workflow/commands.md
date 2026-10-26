@@ -10,10 +10,10 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 | `brief` | Fill only gaps | `brief --goal --audience --category --format` |
 | `shape` | Offer 3 rendered directions | `shape --direction` |
 | `craft` | Write one complete HTML piece, then stop | `variants add --id --file` |
-| `generate` | Write 2-4 real HTML variants and hand them over | Agent HTML plus `variants add`; `generate --template <id> --tokens <json>` only for repeatable formats |
-| `live` | Poll only after the user acts | `studio --open` |
+| `generate` | Write 2-4 real HTML variants, render-check each once, and hand them over | Agent HTML plus `variants add`; `generate --template <id> --tokens <json>` only for repeatable formats |
+| `live` | Apply a pasted studio prompt only after the user sends it | `studio --open` |
 | `critique` | Answer quality prompts when asked | Prints floor + prompts |
-| `audit` | Run only after accept or an explicit ask; report, do not silently rewrite | Playwright inspection |
+| `audit` | Once per variant in the render check, then after accept or an explicit ask; fix construction defects only | Playwright inspection |
 | `polish` | Last pass on **accepted** HTML, not the first draft | Live action |
 | `bolder` / `quieter` / `typeset` / `colorize` / `layout` / `distill` | Edit the selected element or whole board | Live actions |
 | `adapt` | Duplicate HTML at a new size | New variant |
@@ -38,6 +38,7 @@ State is isolated per chat and, inside a chat, per request. Default storage is t
 | `--session <id>` | Explicit chat identity. Defaults to `ARTDIRECTOR_SESSION`, then `OPENCODE_SESSION_ID`, `PASEO_AGENT_ID`, `CLAUDE_SESSION_ID`, `CURSOR_SESSION_ID`, `CODEX_SESSION_ID`, `TERM_SESSION_ID`, then a workspace-scoped fallback |
 | `--request <id>` | Target a specific request inside the session |
 | `--new` | On `init`, start a fresh request even if the chat already has an active one |
+| `--lang <en\|pt\|es>` | Studio interface language, taken from the language of the user's prompt. Stored on the project; every command accepts it |
 | `--permanent` | Store under `<workspace>/.artdirector` and keep using it for later commands in the chat |
 | `--out <path>` | On `export`, resolve relative to the workspace instead of the temp exports folder |
 

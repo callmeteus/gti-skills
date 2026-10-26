@@ -19,7 +19,7 @@ import {
 } from "../core";
 import { CritiquePrompts, Directions, Formats, QualityStandard } from "../design";
 import { DemoWorkflow } from "../demo";
-import { UnifiedRenderer } from "../renderer";
+import { HtmlDocument, UnifiedRenderer } from "../renderer";
 import { startStudio } from "../server";
 import { ContextResolver, type ProjectContext } from "../session";
 import { Effects, TemplateApply, TemplateCatalog } from "../templates";
@@ -64,6 +64,7 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
             }
         });
         const ctx = resolution.ctx;
+        applyLanguage(ctx, parsed.flags);
         return finish({
             ok: true,
             command: ArtCommand.INIT,
@@ -108,6 +109,7 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         permanent
     });
     const ctx = resolution.ctx;
+    applyLanguage(ctx, parsed.flags);
 
     if (parsed.command === "status" || parsed.command === ArtCommand.RESUME) {
         return finish({
@@ -386,7 +388,13 @@ function addVariant(
 
     const htmlPath = Paths.posix(relative(ctx.root, abs));
     const formatFlag = flagString(flags, "format");
-    const dims = Formats.byId(formatFlag ?? ctx.project().brief.formatId ?? "")
+    // The artboard's own data-width and data-height win over the brief's default format.
+    const declared = /data-width="\d+"/.test(localized) && /data-height="\d+"/.test(localized)
+        ? HtmlDocument.dimensions(localized)
+        : undefined;
+    const dims = (formatFlag ? Formats.byId(formatFlag) : undefined)
+        ?? declared
+        ?? Formats.byId(ctx.project().brief.formatId ?? "")
         ?? Formats.defaultFor(ctx.project().brief.category);
     const width = Number(flagString(flags, "width") ?? dims.width);
     const height = Number(flagString(flags, "height") ?? dims.height);
@@ -448,4 +456,26 @@ function openUrl(url: string): void {
     const cmd = process.platform === "win32" ? "cmd" : process.platform === "darwin" ? "open" : "xdg-open";
     const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
     execFile(cmd, args, () => undefined);
+}
+
+/**
+ * Stores `--lang` on the project so the studio opens in the user's language.
+ *
+ * @param ctx Project context
+ * @param flags Parsed flags
+ */
+function applyLanguage(ctx: ProjectContext, flags: Parameters<typeof flagString>[0]): void {
+    const value = flagString(flags, "lang")?.trim().toLowerCase().slice(0, 2);
+
+    if (value === undefined) {
+        return;
+    }
+
+    if (value !== "en" && value !== "pt" && value !== "es") {
+        throw ArtErrors.project(`Unsupported --lang "${flagString(flags, "lang")}". Use en, pt, or es.`);
+    }
+
+    if (ctx.project().language !== value) {
+        ctx.setLanguage(value);
+    }
 }

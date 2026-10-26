@@ -7,7 +7,7 @@ import { StorageScope } from "../../src/core";
 import { ContextResolver } from "../../src/session";
 
 const temps: string[] = [];
-const previousHome = process.env.ARTDIRECTOR_HOME;
+const previousHome = process.env.ARTDIRECTOR_STATE_HOME;
 const sessionVariables = [
     "ARTDIRECTOR_SESSION",
     "OPENCODE_SESSION_ID",
@@ -28,9 +28,9 @@ beforeEach(() => {
 
 afterEach(() => {
     if (previousHome === undefined) {
-        delete process.env.ARTDIRECTOR_HOME;
+        delete process.env.ARTDIRECTOR_STATE_HOME;
     } else {
-        process.env.ARTDIRECTOR_HOME = previousHome;
+        process.env.ARTDIRECTOR_STATE_HOME = previousHome;
     }
 
     for (const [name, value] of savedVariables) {
@@ -48,7 +48,7 @@ afterEach(() => {
 describe("session isolation", () => {
     it("keeps each chat in a separate temp project without touching the repository", () => {
         const repo = temp("repo-");
-        process.env.ARTDIRECTOR_HOME = temp("home-");
+        process.env.ARTDIRECTOR_STATE_HOME = temp("home-");
         const first = ContextResolver.init({
             workspace: repo,
             session: "chat-a",
@@ -67,7 +67,7 @@ describe("session isolation", () => {
         expect(first.storage).toBe(StorageScope.SESSION);
         expect(second.storage).toBe(StorageScope.SESSION);
         expect(first.ctx.root).not.toBe(second.ctx.root);
-        expect(first.ctx.root.startsWith(process.env.ARTDIRECTOR_HOME ?? "")).toBe(true);
+        expect(first.ctx.root.startsWith(process.env.ARTDIRECTOR_STATE_HOME ?? "")).toBe(true);
         expect(existsSync(join(repo, ".artdirector"))).toBe(false);
 
         expect(first.ctx.project().brand.name).toBe("Brand A");
@@ -87,7 +87,7 @@ describe("session isolation", () => {
 
     it("reuses the active request and starts a new one only when asked", () => {
         const repo = temp("repo-");
-        process.env.ARTDIRECTOR_HOME = temp("home-");
+        process.env.ARTDIRECTOR_STATE_HOME = temp("home-");
         const first = ContextResolver.init({
             workspace: repo,
             session: "chat-a",
@@ -123,7 +123,7 @@ describe("session isolation", () => {
 
     it("writes into the repository only with permanent opt-in", () => {
         const repo = temp("repo-");
-        process.env.ARTDIRECTOR_HOME = temp("home-");
+        process.env.ARTDIRECTOR_STATE_HOME = temp("home-");
         const permanent = ContextResolver.init({
             workspace: repo,
             session: "chat-a",
@@ -146,7 +146,7 @@ describe("session isolation", () => {
 
     it("uses a workspace fallback when the agent exposes no chat id", () => {
         const repo = temp("repo-");
-        process.env.ARTDIRECTOR_HOME = temp("home-");
+        process.env.ARTDIRECTOR_STATE_HOME = temp("home-");
         const repoTwo = temp("repo-two-");
 
         const first = ContextResolver.init({
