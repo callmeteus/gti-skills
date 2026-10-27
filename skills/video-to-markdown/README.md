@@ -4,7 +4,7 @@
 
 > Turn any talk or tutorial into notes you can search, skim, and keep
 
-**Converts a YouTube or local video into structured Markdown with timestamp links, inline keyframes, and every command and code snippet extracted.**
+**Converts a YouTube, X, or local video into structured Markdown with timestamp links, inline keyframes, and every command and code snippet extracted.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
@@ -71,6 +71,7 @@ Video to Markdown extracts the transcript, samples frames where slides, code, di
 - **Visual context:** keyframes of slides, code, diagrams, and UI placed in the section they belong to
 - **Code extraction:** commands and snippets pulled into fenced blocks
 - **Caption fallback:** transcribes locally with Whisper when a video has no captions
+- **X (Twitter) posts:** downloads post videos through the FixupX (FxTwitter) API, with no account or API key
 - **Self-installing:** `check_dependencies.py` detects the platform and installs missing tools
 
 ## Requirements
@@ -79,6 +80,7 @@ Video to Markdown extracts the transcript, samples frames where slides, code, di
 |------------|---------|---------|:--------------:|
 | Python | 3.8+ | Runs the helper scripts | No |
 | [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) | 1.x | Fetches YouTube captions | Yes |
+| [FxTwitter API](https://github.com/FxEmbed/FxEmbed) | Public service | Resolves X post videos to direct MP4 links; network only, nothing to install | - |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Latest | Downloads video, audio, and metadata | Yes |
 | [ffmpeg](https://ffmpeg.org/) | Any recent | Extracts frames | Yes |
 | [openai-whisper](https://github.com/openai/whisper) or [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) | Latest | Transcribes videos without captions (`--with-whisper`) | Yes |
@@ -151,7 +153,7 @@ If a required input is missing, the agent asks before starting.
 
 | Input | Required | Example |
 |-------|:--------:|---------|
-| Video source | Yes | YouTube URL, video ID, or local file |
+| Video source | Yes | YouTube URL, video ID, X (Twitter) post URL, or local file |
 | Format | Yes | Study notes, tutorial, full transcript, or meeting notes |
 | Timestamps | No | Link each section to its moment in the video (default on) |
 | Frames | No | Extract and embed keyframes (default on for slides, code, and UI) |
@@ -169,6 +171,10 @@ Save it to docs/notes/setup.md.
 ```text
 Turn ./recordings/team-sync.mp4 into meeting notes. Skip the first five minutes.
 No frames.
+```
+
+```text
+Write study notes from the second video in https://x.com/user/status/1234567890.
 ```
 
 ```text
@@ -224,7 +230,7 @@ python3 skills/video-to-markdown/scripts/setup/check_dependencies.py --install -
 
 ### download_video.py
 
-Downloads metadata, audio, or video with `yt-dlp`.
+Downloads metadata, audio, or video with `yt-dlp`. X post links (`x.com`, `twitter.com`, `fixupx.com`, `fxtwitter.com`) go through the FixupX API instead, and audio is extracted from the MP4 with ffmpeg.
 
 ```bash
 python3 skills/video-to-markdown/scripts/download/download_video.py "URL" --out ./work --mode metadata
@@ -232,14 +238,17 @@ python3 skills/video-to-markdown/scripts/download/download_video.py "URL" --out 
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `url` | Required | Video URL or YouTube video ID |
+| `url` | Required | Video URL, YouTube video ID, or X post URL |
 | `--out`, `-o` | `./work` | Output folder |
 | `--mode`, `-m` | `metadata` | `metadata` (writes `metadata.json` with chapters), `video` (`video.mp4`), or `audio` (`audio.m4a`) |
 | `--height` | `720` | Maximum video height for `--mode video` |
+| `--index` | `1` | Which video of an X post with several videos |
+
+Set `FIXUPX_API_BASE` to use another instance of the API (default `https://api.fxtwitter.com`).
 
 ### get_transcript.py
 
-Fetches captions, preferring manual captions over auto-generated ones.
+Fetches captions, preferring manual captions over auto-generated ones. X posts have no captions to fetch, so an X link always exits with code `2`; transcribe its audio with `transcribe_audio.py`.
 
 ```bash
 python3 skills/video-to-markdown/scripts/transcript/get_transcript.py "URL" --lang en --format json --out ./work/transcript.json
@@ -301,7 +310,8 @@ python3 skills/video-to-markdown/scripts/render/assemble_draft.py --transcript .
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `--transcript` | Required | Transcript JSON |
-| `--video-id` | Required | YouTube video ID, used for timestamp links |
+| `--video-id` | None | YouTube video ID; section headings link to that moment |
+| `--source-url` | `webpage_url` from `--metadata` | Source link when there is no YouTube ID, such as an X post |
 | `--frames` | None | Frame `manifest.json`; places each frame in its section |
 | `--metadata` | None | `metadata.json`; supplies title, channel, duration, and chapters |
 | `--window` | `120` | Section length in seconds when the video has no chapters |
@@ -385,7 +395,8 @@ Frames are saved as image files next to the Markdown. Ask for notes without fram
 - Frames are sampled by interval or scene change, so very short on-screen moments can be missed.
 - Local Whisper transcription of long videos can take a significant amount of time.
 - Auto-generated captions can misspell names and jargon; the agent corrects what it can verify on screen.
-- Only public videos that `yt-dlp` and `youtube-transcript-api` can access are supported.
+- Only public videos that `yt-dlp`, `youtube-transcript-api`, or the FixupX API can access are supported. Private, deleted, and age-restricted X posts cannot be downloaded.
+- X posts are always transcribed locally with Whisper, and their timestamps cannot link to a moment in the post.
 
 ## License
 

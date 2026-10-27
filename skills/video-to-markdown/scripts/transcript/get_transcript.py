@@ -9,6 +9,7 @@ Usage:
 Formats: text (default), json, srt, markdown.
 Manually written captions win over auto-generated ones for the same language.
 Exit codes: 0 success, 1 failure, 2 no captions at all (use transcribe_audio.py).
+X (Twitter) post URLs always exit with 2: transcribe their audio instead.
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from lib.fixupx import parse_status_id  # noqa: E402
 from lib.common import (  # noqa: E402
     build_transcript,
     fail,
@@ -130,6 +132,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--out", "-o", help="Write the result to a file instead of stdout")
     parser.add_argument("--list", action="store_true", help="List the available caption tracks and exit")
     args = parser.parse_args(argv)
+
+    if parse_status_id(args.video):
+        sys.stderr.write(
+            "Error: X (Twitter) posts have no caption track to fetch. Download the audio with "
+            "scripts/download/download_video.py --mode audio and use scripts/transcript/transcribe_audio.py\n"
+        )
+        return NO_CAPTIONS_EXIT
 
     video_id = parse_video_id(args.video)
 

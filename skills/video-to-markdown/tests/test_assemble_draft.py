@@ -51,6 +51,16 @@ class AssembleDraftTests(unittest.TestCase):
         self.assertIn("> Welcome First topic starts", markdown)
         self.assertIn(assemble_draft.DRAFT_NOTICE, markdown)
 
+    def test_render_markdown_without_video_id_uses_source_url(self):
+        sections = assemble_draft.build_sections(ENTRIES, FRAMES, [], 200, 120)
+        metadata = {"title": "Post", "webpage_url": "https://x.com/user/status/1"}
+        markdown = assemble_draft.render_markdown(sections, None, metadata, "frames")
+        self.assertIn('source: "https://x.com/user/status/1"', markdown)
+        self.assertIn("## 00:00 Part 1", markdown)
+        self.assertNotIn("youtu", markdown)
+        override = assemble_draft.render_markdown(sections, None, metadata, "frames", "https://example.com/v")
+        self.assertIn('source: "https://example.com/v"', override)
+
     def test_empty_transcript_still_renders(self):
         markdown = assemble_draft.render_markdown(assemble_draft.build_sections([], [], [], 60, 120), "abc", {}, "frames")
         self.assertIn("# Video notes", markdown)

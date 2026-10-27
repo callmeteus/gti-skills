@@ -1,13 +1,13 @@
 ---
 name: video-to-skill
 description: >-
-  Turns a tutorial video (YouTube URL or local file) into a ready-to-use
+  Turns a tutorial video (YouTube URL, X post, or local file) into a ready-to-use
   SKILL.md by combining the transcript with keyframes of the commands, code,
   and UI shown on screen. Use when the user wants to create, draft, or extract
   an agent skill from a video, screencast, or walkthrough. Needs the skill
   name, purpose, and triggers in addition to the video. Do not use for plain
   video summaries or notes; use video-to-markdown for those.
-compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube access needs network.
+compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube and X access need network.
 metadata:
   display-name: Video to Skill
 ---

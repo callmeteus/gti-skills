@@ -28,6 +28,12 @@ python3 <skill-dir>/scripts/transcript/transcribe_audio.py ./work/audio.m4a --ou
 
 For a local file, pass it straight to `transcribe_audio.py`.
 
+### X (Twitter) posts
+
+`download_video.py` recognizes `x.com`, `twitter.com`, `fixupx.com`, and `fxtwitter.com` post links and fetches them through the FixupX (FxTwitter) API instead of yt-dlp. Metadata uses the post text as title and the author as channel; there are no chapters. When a post has several videos, pick one with `--index 2`, `--index 3`, and so on.
+
+X has no captions to fetch: `get_transcript.py` always exits with `2` for a post link, so go straight to the Whisper fallback above. Private, deleted, and age-restricted posts cannot be downloaded.
+
 ## 3. Frames (skip when the user does not want them)
 
 ```bash

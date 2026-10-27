@@ -6,7 +6,7 @@ Ask only what you cannot infer. One message, a short list, with defaults the use
 
 | Input | Examples | If missing |
 |-------|----------|------------|
-| Video source | YouTube URL, video ID, local file | Ask for it |
+| Video source | YouTube URL, video ID, X (Twitter) post URL, local file | Ask for it |
 | Format | study notes, tutorial, full transcript, meeting notes | Offer the four and recommend one |
 
 ## Optional

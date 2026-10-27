@@ -6,7 +6,7 @@ A video alone does not define a good skill. The same video can become a deploy s
 
 | Input | Example | If missing |
 |-------|---------|------------|
-| Video source | YouTube URL, video ID, or local file path | Ask for it |
+| Video source | YouTube URL, video ID, X (Twitter) post URL, or local file path | Ask for it |
 | Skill name | `deploy-to-vercel` | Propose one and ask for approval |
 | Purpose | "Deploy a Next.js app from the CLI" | Ask what problem it solves |
 | Triggers | "when the user says deploy, ship, or publish to Vercel" | Ask which requests should activate it |

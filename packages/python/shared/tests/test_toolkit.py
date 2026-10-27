@@ -2,6 +2,7 @@
 
     python -m unittest discover -s shared/video-toolkit/tests -v
 """
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -11,7 +12,7 @@ sys.path.insert(0, str(SCRIPTS))
 for folder in ("setup", "download", "transcript", "frames"):
     sys.path.insert(0, str(SCRIPTS / folder))
 
-from lib import common  # noqa: E402
+from lib import common, fixupx  # noqa: E402
 import check_dependencies  # noqa: E402
 import download_video  # noqa: E402
 import extract_frames  # noqa: E402
@@ -106,6 +107,78 @@ class DownloadTests(unittest.TestCase):
         self.assertEqual(summary["channel"], "U")
         self.assertEqual(len(summary["description"]), 2000)
         self.assertEqual(summary["chapters"][0]["title"], "Intro")
+
+
+class FixupxTests(unittest.TestCase):
+    VIDEO = {
+        "url": "https://video.twimg.com/vid/1280x720/default.mp4",
+        "thumbnail_url": "https://pbs.twimg.com/thumb.jpg",
+        "duration": 324.484,
+        "formats": [
+            {"url": "https://video.twimg.com/pl/list.m3u8", "container": "m3u8"},
+            {"url": "https://video.twimg.com/vid/480x270/a.mp4", "bitrate": 288000, "container": "mp4"},
+            {"url": "https://video.twimg.com/vid/1280x720/b.mp4", "bitrate": 2176000, "container": "mp4"},
+            {"url": "https://video.twimg.com/vid/1920x1080/c.mp4", "bitrate": 10368000, "container": "mp4"},
+        ],
+    }
+
+    def test_parse_status_id_accepts_x_hosts(self):
+        for url in (
+            "https://x.com/BrooklynNets/status/1349794411333394432",
+            "https://twitter.com/BrooklynNets/status/1349794411333394432?s=20",
+            "https://fixupx.com/BrooklynNets/status/1349794411333394432",
+            "https://fxtwitter.com/BrooklynNets/status/1349794411333394432/video/1",
+            "https://mobile.twitter.com/i/web/status/1349794411333394432",
+            "x.com/i/status/1349794411333394432",
+        ):
+            self.assertEqual(fixupx.parse_status_id(url), "1349794411333394432", url)
+
+    def test_parse_status_id_rejects_other_urls(self):
+        self.assertIsNone(fixupx.parse_status_id("https://youtu.be/jNQXAC9IVRw"))
+        self.assertIsNone(fixupx.parse_status_id("https://x.com/BrooklynNets"))
+        self.assertIsNone(fixupx.parse_status_id("https://example.com/user/status/123"))
+
+    def test_pick_mp4_url_respects_max_height(self):
+        self.assertTrue(fixupx.pick_mp4_url(self.VIDEO, 720).endswith("/b.mp4"))
+        self.assertTrue(fixupx.pick_mp4_url(self.VIDEO, 1080).endswith("/c.mp4"))
+        self.assertTrue(fixupx.pick_mp4_url(self.VIDEO, 144).endswith("/a.mp4"))
+        self.assertEqual(fixupx.pick_mp4_url({"url": "u"}, 720), "u")
+
+    def test_summarize_status_matches_metadata_shape(self):
+        tweet = {
+            "id": "1349794411333394432",
+            "url": "https://x.com/BrooklynNets/status/1349794411333394432",
+            "text": "WATCH: full media session\nsecond line",
+            "created_timestamp": 1610658000,
+            "author": {"name": "Brooklyn Nets", "screen_name": "BrooklynNets"},
+        }
+        summary = fixupx.summarize_status(tweet, self.VIDEO, 1, 2)
+        self.assertEqual(summary["title"], "WATCH: full media session")
+        self.assertEqual(summary["channel"], "Brooklyn Nets (@BrooklynNets)")
+        self.assertEqual(summary["duration_seconds"], 324.484)
+        self.assertEqual(summary["upload_date"], "20210114")
+        self.assertEqual(summary["chapters"], [])
+        self.assertEqual((summary["platform"], summary["video_index"], summary["video_count"]), ("x", 1, 2))
+
+    def test_list_videos_skips_entries_without_url(self):
+        tweet = {"media": {"videos": [{"url": "a"}, {"type": "gif"}]}}
+        self.assertEqual(fixupx.list_videos(tweet), [{"url": "a"}])
+        self.assertEqual(fixupx.list_videos({}), [])
+
+    def test_api_base_honors_environment(self):
+        previous = os.environ.pop("FIXUPX_API_BASE", None)
+        try:
+            self.assertEqual(fixupx.api_base(), "https://api.fxtwitter.com")
+            os.environ["FIXUPX_API_BASE"] = "https://example.test/"
+            self.assertEqual(fixupx.api_base(), "https://example.test")
+        finally:
+            os.environ.pop("FIXUPX_API_BASE", None)
+            if previous is not None:
+                os.environ["FIXUPX_API_BASE"] = previous
+
+    def test_get_transcript_sends_x_posts_to_whisper(self):
+        code = get_transcript.main(["https://x.com/user/status/123"])
+        self.assertEqual(code, get_transcript.NO_CAPTIONS_EXIT)
 
 
 class TranscriptTests(unittest.TestCase):

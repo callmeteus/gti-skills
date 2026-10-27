@@ -4,7 +4,7 @@
 
 > Turn a tutorial video into a working agent skill
 
-**Generates a complete, validated skill folder from a YouTube video by cross-referencing the transcript with keyframes of the code, terminals, and UI shown on screen.**
+**Generates a complete, validated skill folder from a YouTube or X video by cross-referencing the transcript with keyframes of the code, terminals, and UI shown on screen.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
@@ -40,7 +40,7 @@ Tutorial videos show the real workflow: commands typed in a terminal, files open
 Video to Skill reads both channels, resolves conflicts in favor of what is shown on screen, and synthesizes the result into a skill folder that another agent can follow without watching the video. The skill is scaffolded with the standard subfolders and checked by a validator before delivery.
 
 ```text
-  YouTube URL or local file + skill context
+  YouTube URL, X post, or local file + skill context
           │
           ├──> download_video.py ──> metadata and chapters
           ├──> get_transcript.py ──> timestamped transcript (Whisper without captions)
@@ -69,6 +69,7 @@ Video to Skill reads both channels, resolves conflicts in favor of what is shown
 - **Visual-first accuracy:** commands and paths shown on screen take priority over what is spoken
 - **Smart frames:** extracts by fixed interval or by scene change, with the time of every frame in a manifest
 - **Caption fallback:** transcribes locally with Whisper when a video has no captions
+- **X (Twitter) posts:** downloads post videos through the FixupX (FxTwitter) API, with no account or API key
 - **Standard layout:** scaffolds the skill with progressive-disclosure subfolders
 - **Built-in validator:** checks name, description, length, links, and the language Core Rule
 - **Self-installing:** `check_dependencies.py` detects the platform and installs missing tools
@@ -79,6 +80,7 @@ Video to Skill reads both channels, resolves conflicts in favor of what is shown
 |------------|---------|---------|:--------------:|
 | Python | 3.8+ | Runs the helper scripts | No |
 | [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) | 1.x | Fetches YouTube captions | Yes |
+| [FxTwitter API](https://github.com/FxEmbed/FxEmbed) | Public service | Resolves X post videos to direct MP4 links; network only, nothing to install | - |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | Latest | Downloads video, audio, and metadata | Yes |
 | [ffmpeg](https://ffmpeg.org/) | Any recent | Extracts frames | Yes |
 | [openai-whisper](https://github.com/openai/whisper) or [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper) | Latest | Transcribes videos without captions (`--with-whisper`) | Yes |
@@ -153,7 +155,7 @@ The agent stops and asks for anything missing from this table.
 
 | Input | Example |
 |-------|---------|
-| Video source | YouTube URL, video ID, or local video file |
+| Video source | YouTube URL, video ID, X (Twitter) post URL, or local video file |
 | Skill name | `deploy-to-vercel` (kebab-case) |
 | Purpose | What the skill does and what problem it solves |
 | Triggers | The requests that should activate it |
@@ -180,6 +182,11 @@ database. It must never touch production hosts.
 ```text
 Use ./recordings/onboarding.mp4 to create a skill "repo-onboarding" for OpenCode.
 Match the style of skills/video-to-markdown/SKILL.md.
+```
+
+```text
+Turn https://x.com/user/status/1234567890 into a skill "quick-git-bisect" that
+runs when the user wants to find the commit that introduced a bug.
 ```
 
 ## How It Works
@@ -230,7 +237,7 @@ python3 skills/video-to-skill/scripts/setup/check_dependencies.py --install --wi
 
 ### download_video.py
 
-Downloads metadata, audio, or video with `yt-dlp`.
+Downloads metadata, audio, or video with `yt-dlp`. X post links (`x.com`, `twitter.com`, `fixupx.com`, `fxtwitter.com`) go through the FixupX API instead, and audio is extracted from the MP4 with ffmpeg.
 
 ```bash
 python3 skills/video-to-skill/scripts/download/download_video.py "URL" --out ./work --mode metadata
@@ -238,14 +245,17 @@ python3 skills/video-to-skill/scripts/download/download_video.py "URL" --out ./w
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `url` | Required | Video URL or YouTube video ID |
+| `url` | Required | Video URL, YouTube video ID, or X post URL |
 | `--out`, `-o` | `./work` | Output folder |
 | `--mode`, `-m` | `metadata` | `metadata` (writes `metadata.json` with chapters), `video` (`video.mp4`), or `audio` (`audio.m4a`) |
 | `--height` | `720` | Maximum video height for `--mode video` |
+| `--index` | `1` | Which video of an X post with several videos |
+
+Set `FIXUPX_API_BASE` to use another instance of the API (default `https://api.fxtwitter.com`).
 
 ### get_transcript.py
 
-Fetches captions, preferring manual captions over auto-generated ones.
+Fetches captions, preferring manual captions over auto-generated ones. X posts have no captions to fetch, so an X link always exits with code `2`; transcribe its audio with `transcribe_audio.py`.
 
 ```bash
 python3 skills/video-to-skill/scripts/transcript/get_transcript.py "URL" --lang pt,en --format json --out ./work/transcript.json
@@ -399,7 +409,8 @@ The context given was too vague. The skill writes instructions for what you say 
 
 - Frames are sampled by interval or scene change, so very short on-screen moments can be missed. Lower `--interval` or `--scene-threshold` for fast-paced videos.
 - Local Whisper transcription of long videos can take a significant amount of time.
-- Only public videos that `yt-dlp` and `youtube-transcript-api` can access are supported.
+- Only public videos that `yt-dlp`, `youtube-transcript-api`, or the FixupX API can access are supported. Private, deleted, and age-restricted X posts cannot be downloaded.
+- X posts are always transcribed locally with Whisper, and their timestamps cannot link to a moment in the post.
 
 ## License
 

@@ -2,13 +2,15 @@
 """Assemble a Markdown draft from a transcript, frame manifest, and metadata.
 
 The draft groups the transcript into sections (video chapters when available,
-otherwise fixed time windows), links every heading to the video moment, and
-places keyframes inside the section they belong to. The agent then condenses
-each raw transcript block into clear prose.
+otherwise fixed time windows), links every heading to the YouTube moment when a
+video ID is given, and places keyframes inside the section they belong to. The
+agent then condenses each raw transcript block into clear prose.
 
 Usage:
     python assemble_draft.py --transcript transcript.json --video-id VIDEO_ID \
         --frames frames/manifest.json --metadata metadata.json --out draft.md
+    python assemble_draft.py --transcript transcript.json \
+        --metadata metadata.json --out draft.md    # X post or local file
 """
 from __future__ import annotations
 
@@ -77,17 +79,25 @@ def build_sections(
 
 def render_markdown(
     sections: List[Dict[str, Any]],
-    video_id: str,
+    video_id: Optional[str],
     metadata: Dict[str, Any],
     frames_dir: str,
+    source_url: Optional[str] = None,
 ) -> str:
-    """Render the draft Markdown document."""
+    """Render the draft Markdown document.
+
+    With a YouTube video ID, section headings link to their moment in the video.
+    Without one (X posts, local files), headings show the plain timestamp.
+    """
     title = metadata.get("title") or "Video notes"
+    source = "https://www.youtube.com/watch?v=%s" % video_id if video_id else source_url or metadata.get("webpage_url")
     lines = [
         "---",
         'title: "%s"' % str(title).replace('"', "'"),
-        'source: "https://www.youtube.com/watch?v=%s"' % video_id,
     ]
+
+    if source:
+        lines.append('source: "%s"' % source)
 
     if metadata.get("channel"):
         lines.append('channel: "%s"' % str(metadata["channel"]).replace('"', "'"))
@@ -98,11 +108,12 @@ def render_markdown(
     lines += ["---", "", DRAFT_NOTICE, "", "# %s" % title, ""]
 
     for section in sections:
-        heading = "## [%s](%s) %s" % (
-            format_timestamp(section["start"]),
-            timestamp_url(video_id, section["start"]),
-            section["title"],
-        )
+        label = format_timestamp(section["start"])
+
+        if video_id:
+            label = "[%s](%s)" % (label, timestamp_url(video_id, section["start"]))
+
+        heading = "## %s %s" % (label, section["title"])
         lines += [heading, ""]
 
         for frame in section["frames"]:
@@ -125,7 +136,8 @@ def load_json(path: Optional[str]) -> Dict[str, Any]:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Assemble a Markdown draft from video extraction output")
     parser.add_argument("--transcript", required=True, help="Transcript JSON from get_transcript.py or transcribe_audio.py")
-    parser.add_argument("--video-id", required=True, help="YouTube video ID used for timestamp links")
+    parser.add_argument("--video-id", help="YouTube video ID used for timestamp links")
+    parser.add_argument("--source-url", help="Source URL for videos without a YouTube ID, such as an X post (default: webpage_url from --metadata)")
     parser.add_argument("--frames", help="manifest.json from extract_frames.py")
     parser.add_argument("--metadata", help="metadata.json from download_video.py")
     parser.add_argument("--window", type=float, default=120.0, help="Section length in seconds when there are no chapters (default: 120)")
@@ -143,7 +155,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     last = entries[-1] if entries else {"start": 0, "duration": 0}
     duration = float(metadata.get("duration_seconds") or manifest.get("duration") or (last["start"] + last["duration"]))
     sections = build_sections(entries, manifest.get("frames", []), metadata.get("chapters", []), duration, args.window)
-    draft = render_markdown(sections, args.video_id, metadata, args.frames_dir)
+    draft = render_markdown(sections, args.video_id, metadata, args.frames_dir, args.source_url)
 
     if args.out:
         Path(args.out).write_text(draft, encoding="utf-8")

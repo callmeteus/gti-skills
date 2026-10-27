@@ -1,14 +1,14 @@
 ---
 name: video-to-markdown
 description: >-
-  Converts a video (YouTube URL or local file) into clean, structured Markdown
+  Converts a video (YouTube URL, X post, or local file) into clean, structured Markdown
   notes using the transcript and keyframes of slides, code, diagrams, and UI.
   Supports study notes, tutorials, full transcripts, and meeting notes with
   timestamp links back to the video. Use when the user wants notes, a
   summary, a tutorial, or documentation written from a video, talk, lecture,
   or recording. Do not use to build an agent skill from a video; use
   video-to-skill for that.
-compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube access needs network.
+compatibility: Requires Python 3.8+, ffmpeg, and yt-dlp. YouTube and X access need network.
 metadata:
   display-name: Video to Markdown
 ---
