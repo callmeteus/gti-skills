@@ -148,6 +148,7 @@ Current skills:
 | `video-to-skill` | Video to Skill |
 | `video-to-markdown` | Video to Markdown |
 | `ux-psychology-review` | UX Psychology Review |
+| `unslop-interface` | Unslop Interface |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

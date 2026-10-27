@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-4-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-5-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -56,6 +56,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Video to Skill** | Turns a YouTube or X tutorial video into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
 | **Video to Markdown** | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
 | **UX Psychology Review** | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
+| **Unslop Interface** | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
 
 ## Quick Start
 
@@ -165,6 +166,7 @@ Notes:
 | Video to Skill | No | 3.8+ | Yes | YouTube, X |
 | Video to Markdown | No | 3.8+ | Yes | YouTube, X |
 | UX Psychology Review | No | No | No | No |
+| Unslop Interface | No | No | No | No |
 
 | Platform | Status |
 |----------|--------|
@@ -278,6 +280,7 @@ gti-skills/
 ├── README.md                  # This file
 ├── skills/                    # One folder per skill, the source of truth
 │   ├── artdirector/
+│   ├── unslop-interface/
 │   ├── ux-psychology-review/
 │   ├── video-to-markdown/
 │   └── video-to-skill/
@@ -335,6 +338,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/video-to-skill/README.md](skills/video-to-skill/README.md) | Generating skills from tutorial videos |
 | [skills/video-to-markdown/README.md](skills/video-to-markdown/README.md) | Converting videos into Markdown notes |
 | [skills/ux-psychology-review/README.md](skills/ux-psychology-review/README.md) | Reviewing conversion screens with UX psychology principles |
+| [skills/unslop-interface/README.md](skills/unslop-interface/README.md) | Removing the generated look from interfaces in six passes |
 
 ## About GTI
 
@@ -350,5 +354,6 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Video to Skill | Not declared |
 | Video to Markdown | Not declared |
 | UX Psychology Review | Not declared |
+| Unslop Interface | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
