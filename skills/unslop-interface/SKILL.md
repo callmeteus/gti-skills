@@ -8,8 +8,9 @@ description: >-
   describes exact changes for a screenshot. Use when the user says unslop,
   de-slop, "looks AI generated", "looks vibecoded", "too much gradient",
   "make it look professional", or asks for design polish of a generated UI.
-  Do not use for conversion or UX psychology reviews, accessibility audits,
-  or building a new screen from nothing.
+  Do not use for conversion or UX psychology reviews, full design reviews,
+  accessibility audits, or building a new screen from nothing (use
+  frontend-design-review for those).
 metadata:
   display-name: Unslop Interface
 ---
@@ -26,7 +27,7 @@ Always respond in the user's language, regardless of the language used in this s
 - The user asks to unslop, de-slop, clean up, polish, refine, or make a UI look professional or production-ready.
 - The user points at the typical tells: purple gradients, glow, emoji icons, gradient text, pill badges everywhere, "Welcome back!" headers, exclamation marks.
 
-Do not use this skill to change what a screen asks the user to do (use `ux-psychology-review`), for accessibility audits, or to design a screen from nothing. Keep the product's structure; this skill changes how it looks and reads.
+Do not use this skill to change what a screen asks the user to do (use `ux-psychology-review`), for full design reviews, accessibility audits, or designing a screen from nothing (use `frontend-design-review`, which calls this skill for its slop inventory). Keep the product's structure; this skill changes how it looks and reads.
 
 ## Prerequisites
 

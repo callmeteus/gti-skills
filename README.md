@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-6-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-7-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -57,6 +57,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Video to Markdown** | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
 | **UX Psychology Review** | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 | **Unslop Interface** | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
+| **Frontend Design Review** | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
 | **Better Tests** | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mutation testing, and safe pruning of brittle suites. | None | [README](skills/better-tests/README.md) |
 
 ## Quick Start
@@ -197,6 +198,7 @@ Notes:
 | Video to Markdown | No | 3.8+ | Yes | YouTube, X |
 | UX Psychology Review | No | No | No | No |
 | Unslop Interface | No | No | No | No |
+| Frontend Design Review | No | No | No | No |
 | Better Tests | No | No | No | No |
 
 | Platform | Status |
@@ -312,6 +314,7 @@ gti-skills/
 ├── skills/                    # One folder per skill, the source of truth
 │   ├── artdirector/
 │   ├── better-tests/
+│   ├── frontend-design-review/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
 │   ├── video-to-markdown/
@@ -373,6 +376,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/video-to-markdown/README.md](skills/video-to-markdown/README.md) | Converting videos into Markdown notes |
 | [skills/ux-psychology-review/README.md](skills/ux-psychology-review/README.md) | Reviewing conversion screens with UX psychology principles |
 | [skills/unslop-interface/README.md](skills/unslop-interface/README.md) | Removing the generated look from interfaces in six passes |
+| [skills/frontend-design-review/README.md](skills/frontend-design-review/README.md) | Design reviews with severity and building distinctive interfaces |
 | [skills/better-tests/README.md](skills/better-tests/README.md) | Writing tests that catch bugs and pruning brittle suites |
 
 ## About GTI
@@ -390,6 +394,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Video to Markdown | Not declared |
 | UX Psychology Review | Not declared |
 | Unslop Interface | Not declared |
+| Frontend Design Review | Not declared |
 | Better Tests | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.

@@ -151,6 +151,7 @@ Current skills:
 | `ux-psychology-review` | UX Psychology Review |
 | `unslop-interface` | Unslop Interface |
 | `better-tests` | Better Tests |
+| `frontend-design-review` | Frontend Design Review |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 
