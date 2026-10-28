@@ -152,6 +152,7 @@ Current skills:
 | `unslop-interface` | Unslop Interface |
 | `better-tests` | Better Tests |
 | `frontend-design-review` | Frontend Design Review |
+| `web-performance-audit` | Web Performance Audit |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

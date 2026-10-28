@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-7-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-8-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -59,6 +59,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Unslop Interface** | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
 | **Frontend Design Review** | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
 | **Better Tests** | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mutation testing, and safe pruning of brittle suites. | None | [README](skills/better-tests/README.md) |
+| **Web Performance Audit** | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 
 ## Quick Start
 
@@ -200,6 +201,7 @@ Notes:
 | Unslop Interface | No | No | No | No |
 | Frontend Design Review | No | No | No | No |
 | Better Tests | No | No | No | No |
+| Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
 
 | Platform | Status |
 |----------|--------|
@@ -318,7 +320,8 @@ gti-skills/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
 │   ├── video-to-markdown/
-│   └── video-to-skill/
+│   ├── video-to-skill/
+│   └── web-performance-audit/
 ├── packages/                  # Code packages
 │   ├── cli/                   # list, validate, build, check, install
 │   ├── artdirector/           # Engine behind the Art Director skill
@@ -378,6 +381,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/unslop-interface/README.md](skills/unslop-interface/README.md) | Removing the generated look from interfaces in six passes |
 | [skills/frontend-design-review/README.md](skills/frontend-design-review/README.md) | Design reviews with severity and building distinctive interfaces |
 | [skills/better-tests/README.md](skills/better-tests/README.md) | Writing tests that catch bugs and pruning brittle suites |
+| [skills/web-performance-audit/README.md](skills/web-performance-audit/README.md) | Auditing page load and Core Web Vitals with Chrome DevTools |
 
 ## About GTI
 
@@ -396,5 +400,6 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Unslop Interface | Not declared |
 | Frontend Design Review | Not declared |
 | Better Tests | Not declared |
+| Web Performance Audit | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
