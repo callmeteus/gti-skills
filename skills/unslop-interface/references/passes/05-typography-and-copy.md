@@ -21,6 +21,18 @@ Text that informs instead of shouting: calm weights, sentence case, numbers with
 | Plan counts | Violet pills with a person icon (`18`, `1.2k`) | Plain muted monospace numbers |
 | Nav extras | `New` badge with a sparkle | Removed |
 
+### Numbers that change
+
+A second source, a clip by Nexvyn, shows a running timer `00:01.23` side by side. With the font's default proportional digits, each digit has its own width, so the timer box changes width as it counts and the text shifts (the clip measures it at 173.7px wide, moved 29.9px). With `font-variant-numeric: tabular-nums`, every digit has the same width: the box is 186.7px wide and moved 0.0px.
+
+```css
+.timer {
+  font-variant-numeric: tabular-nums;
+}
+```
+
+In Tailwind, the same rule is the `tabular-nums` class.
+
 ## Steps
 
 1. Use at most two families: the existing UI font, plus a monospace for numbers, metadata, and section labels if it suits the product. Do not introduce a display font.
@@ -31,10 +43,11 @@ Text that informs instead of shouting: calm weights, sentence case, numbers with
 6. Replace greeting or filler headers with the most useful fact for the page, such as the period the data covers.
 7. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
 8. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
-9. Use tabular figures (`font-variant-numeric: tabular-nums`) for numbers that line up in columns.
+9. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
 
 ## Check
 
 - No exclamation marks, emoji, or tracked caps remain in the UI copy.
 - Every trend value says what it is compared to.
 - The page title tells the user something they did not already know.
+- No number that updates in place shifts sideways while it changes.

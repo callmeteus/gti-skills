@@ -1,6 +1,6 @@
 # Slop tells
 
-Use this list twice: to inventory the screen before the first pass, and to check it after the last one. Every row seen in the source "before" frame is marked **Source**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip.
+Use this list twice: to inventory the screen before the first pass, and to check it after the last one. Every row seen in the source "before" frame is marked **Source**; the row from the second clip by Nexvyn is marked **Source (Nexvyn clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip.
 
 ## Spacing and layout
 
@@ -51,6 +51,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Emoji in front of numbers and trends | Source | 05 |
 | ALL CAPS, wide tracked section labels and card titles | Source | 05 |
 | Heavy bold on every number | Source | 05 |
+| Timer, counter, or live value that wobbles sideways as its digits change (proportional figures) | Source (Nexvyn clip) | 05 |
 | Change values with no comparison ("+12%" vs what?) | Source | 05 |
 | Placeholder copy such as "Search anything..." | Source | 05 |
 | "New" badges and "PRO" tags that carry no information | Source | 05 |
