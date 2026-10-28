@@ -2,8 +2,10 @@ import { chmodSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { recordInstalls, stateFolder } from "../core/Installs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { discoverSkills, loadProjectFiles, loadSkillFiles } from "../core/Skills.mjs";
+import { sourceCommit } from "../core/Source.mjs";
 import { removeDirectory, writeTree } from "../core/Tree.mjs";
 
 /**
@@ -32,10 +34,11 @@ function markExecutables(files, destination) {
  *
  * Flags: --harness <ids|all> (required), --skill <ids|all>, --scope project|user,
  * --dest <project root, default current directory>, --dry-run.
+ * Each installed folder is recorded with its source commit so `update` can refresh it later.
  *
  * @param {Record<string, string | boolean>} flags Command flags
  * @param {{ out: (line: string) => void, err: (line: string) => void }} io Output channels
- * @param {{ cwd?: string, home?: string }} [environment] Overrides used by tests
+ * @param {{ cwd?: string, home?: string, stateDir?: string }} [environment] Overrides used by tests
  * @returns {number} Exit code
  */
 export function runInstall(flags, io, environment = {}) {
@@ -81,12 +84,18 @@ export function runInstall(flags, io, environment = {}) {
 
     const projectRoot = resolve(cwd, typeof flags.dest === "string" ? flags.dest : ".");
     const written = new Map();
+    const records = new Map();
+    const commit = dryRun ? null : sourceCommit();
+    const installedAt = new Date().toISOString();
 
     for (const harness of selectedHarnesses) {
         const folder = skillsFolder(harness, scope, projectRoot, home);
 
         for (const skill of selectedSkills) {
             const destination = join(folder, skill.id);
+            const record = records.get(destination) ?? { destination, skill: skill.id, harnesses: [], scope, projectRoot, commit, installedAt };
+            record.harnesses.push(harness.id);
+            records.set(destination, record);
 
             if (written.has(destination)) {
                 io.out(`skip     ${skill.id} for ${harness.id}: same folder as ${written.get(destination)}`);
@@ -121,6 +130,10 @@ export function runInstall(flags, io, environment = {}) {
                 io.out(`note     ${skill.id} has project files for ${harness.id} that only install at project scope`);
             }
         }
+    }
+
+    if (!dryRun) {
+        recordInstalls(stateFolder({ home, stateDir: environment.stateDir }), [...records.values()]);
     }
 
     return 0;

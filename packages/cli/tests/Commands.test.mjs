@@ -11,6 +11,8 @@ import { runValidate } from "../commands/Validate.mjs";
 import { loadHarnesses } from "../core/Registry.mjs";
 import { discoverSkills } from "../core/Skills.mjs";
 
+process.env.GTI_SKILLS_HOME = mkdtempSync(join(tmpdir(), "gti-state-"));
+
 /**
  * Creates an output collector.
  *

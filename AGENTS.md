@@ -111,6 +111,7 @@ Run `node packages/cli build` after changing any skill, any shared script, or th
 | `node packages/cli build` | Sync shared files, regenerate the per-agent guides, and validate |
 | `node packages/cli check` | Fail when anything generated is out of date |
 | `node packages/cli install --harness <ids\|all>` | Install skills into agents (`--skill`, `--scope project\|user`, `--dest`, `--dry-run`) |
+| `node packages/cli update` | Reinstall outdated installs from the latest commit on GitHub `master` (`--check`, `--force`, `--skip-build`); there are no releases |
 
 Never edit these by hand; change the source and rebuild:
 

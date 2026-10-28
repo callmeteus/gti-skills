@@ -3,6 +3,7 @@ import { runBuild } from "./commands/Build.mjs";
 import { runCheck } from "./commands/Check.mjs";
 import { runInstall } from "./commands/Install.mjs";
 import { runList } from "./commands/List.mjs";
+import { notifyUpdate, runUpdate } from "./commands/Update.mjs";
 import { runValidate } from "./commands/Validate.mjs";
 import { parseArgs } from "./core/Args.mjs";
 
@@ -18,6 +19,9 @@ Commands:
   check                        Fail when generated files are out of date (use in CI)
   install --harness <ids|all>  Install skills into coding agents
           [--skill <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
+  update                       Update installed skills to the latest commit on GitHub master
+          [--check] [--dry-run] [--force] [--skip-build]
+          [--harness <ids|all> [--skill <ids|all>] [--scope project|user] [--dest <dir>]]
 `;
 
 const Commands = {
@@ -25,8 +29,11 @@ const Commands = {
     validate: runValidate,
     build: runBuild,
     check: runCheck,
-    install: runInstall
+    install: runInstall,
+    update: runUpdate
 };
+
+const NotifyCommands = new Set(["list", "install"]);
 
 const io = {
     out: (line) => process.stdout.write(`${line}\n`),
@@ -41,4 +48,11 @@ if (!handler) {
     process.exit(command ? 1 : 0);
 }
 
-process.exit(handler(flags, io));
+const code = await handler(flags, io);
+
+if (NotifyCommands.has(command)) {
+    await notifyUpdate(io);
+}
+
+// Setting the exit code instead of calling process.exit lets pending network handles close (Windows aborts otherwise).
+process.exitCode = code;

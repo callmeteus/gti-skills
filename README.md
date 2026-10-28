@@ -103,6 +103,35 @@ node packages/cli install --harness opencode --skill artdirector --dry-run
 
 Reinstalling replaces the skill folder. Restart the agent session afterwards so it picks up the new skill.
 
+### Updating
+
+There are no releases: the latest commit on `master` is the current version. `install` records every installed folder and the commit it came from in `~/.gti-skills/installs.json`. `update` asks GitHub for the latest commit hash on `master`, downloads that commit as a tarball into `~/.gti-skills/sources/`, builds the code packages the updated skills drive (such as Art Director's), and reinstalls every folder that is older, with the installer from that commit.
+
+```bash
+node packages/cli update --check
+node packages/cli update
+node packages/cli update --harness claude --skill better-tests --scope user
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--check`, `--dry-run` | Off | Print which installs are outdated; download nothing |
+| `--force` | Off | Reinstall even when the commit already matches |
+| `--skip-build` | Off | Do not run `npm ci` and `npm run build` for skills with a code package |
+| `--harness`, `--skill`, `--scope`, `--dest` | Every recorded install | Install exactly this selection from the latest commit, like `install` |
+
+Without `--harness`, `update` also picks up skill folders installed before installs were recorded: it scans each agent's user folder and the project folders under the current directory for gti-skills skill names. `list` and `install` check GitHub at most once a day and print a notice when recorded installs are older than `master`.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `GTI_SKILLS_HOME` | `~/.gti-skills` | Install records, update state, and downloaded sources |
+| `GTI_SKILLS_REPO` | `callmeteus/gti-skills` | GitHub repository updates come from |
+| `GTI_SKILLS_BRANCH` | `master` | Branch whose latest commit is the current version |
+| `GITHUB_TOKEN` or `GH_TOKEN` | Unset | GitHub token for private forks or a higher API rate limit |
+| `GTI_SKILLS_NO_UPDATE_CHECK` | Unset | Set to any value to turn off the daily notice; `CI` also turns it off |
+
+After an update, installed skills that drive a code package point to the package inside `~/.gti-skills/sources/<commit>/`, not to your clone.
+
 Other CLI commands:
 
 | Command | Purpose |
@@ -325,6 +354,8 @@ To report a bug or request a skill, [open an issue](https://github.com/callmeteu
 ## Security
 
 Skills run commands on your machine with the permissions of your agent. Read a skill's `SKILL.md` and scripts before installing it, and review install prompts (for example `sudo`, `winget`, or `pip install`) before approving them.
+
+`node packages/cli update` downloads the latest `master` commit from GitHub and runs its installer and `npm ci` for code packages. Run `update --check` first if you want to review the commit before applying it.
 
 Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/callmeteus/gti-skills/security/advisories/new) rather than public issues.
 
