@@ -46,7 +46,7 @@ Work through the passes in this order. Each pass fixes the ground the next one s
 5. **Icons and alignment pass.** Replace emoji with one line icon set, align the icon column, and turn decorative category icons into data such as color dots. See [references/passes/04-icons.md](references/passes/04-icons.md).
 6. **Typography and copy pass.** Calm the type, drop all-caps labels and exclamation marks, give numbers context, set tabular figures on numbers that change, replace filler headers with information, and drop taglines that only restate the page title. See [references/passes/05-typography-and-copy.md](references/passes/05-typography-and-copy.md).
 7. **Data display pass.** Make charts carry real information: axes, units, a legend that matches the rest of the screen, and one focus. See [references/passes/06-data-display.md](references/passes/06-data-display.md).
-8. **Verify and report.** Re-check the inventory: every tell is fixed or listed as intentionally kept. Report with [assets/templates/unslop-report.md](assets/templates/unslop-report.md). When you edited code, list the files changed and the tokens you introduced.
+8. **Verify and report.** Re-check the inventory: every tell is fixed or listed as intentionally kept. Name each fix with its precise term from [references/quality/vocabulary.md](references/quality/vocabulary.md). Report with [assets/templates/unslop-report.md](assets/templates/unslop-report.md). When you edited code, list the files changed and the tokens you introduced.
 
 ## Rules
 
@@ -83,7 +83,7 @@ template, so a developer can apply them.
 | Path | Purpose |
 |------|---------|
 | `references/passes/` | One file per pass, in order: tells, fixes, and the before and after from the source |
-| `references/quality/` | The full list of slop tells used for the inventory and the final check |
+| `references/quality/` | The full list of slop tells used for the inventory and the final check, and the vocabulary of precise UI terms |
 | `assets/templates/` | The report structure |
 
 ## Running in your agent
@@ -94,4 +94,5 @@ The skill works the same in every coding agent. If you need install paths, how t
 
 - The source is a 10 second silent clip by Damir Sokolovsky ("Unslopping a vibecoded dashboard") that shows the passes as successive states of one dashboard, with spacing and inset measurements on screen. The pass order, the measured values, and every before and after come from those frames. The reasons and general rules in the pass files are written for this skill and are not stated in the video.
 - The tabular figures rule for changing numbers comes from a second, 7 second clip by Nexvyn that measures a timer with and without `tabular-nums`.
+- The affordance, leading, ligature, and sticky header rules, and the vocabulary file, come from a third, 45 second silent clip by Emil Kowalski that demos terms from the [AI for UI](https://aiforui.dev/) vocabulary, each with a toggle between the wrong and the right version.
 - The Damir Sokolovsky clip ends on a dark theme, but the target is "neutral", not "dark". Keep the product's theme unless the user asks to change it.

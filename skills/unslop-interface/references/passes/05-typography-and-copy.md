@@ -31,7 +31,11 @@ A second source, a clip by Nexvyn, shows a running timer `00:01.23` side by side
 }
 ```
 
-In Tailwind, the same rule is the `tabular-nums` class.
+In Tailwind, the same rule is the `tabular-nums` class. The Emil Kowalski clip shows the same rule as a proportional and a `tabular-nums` version of `1:12.20`.
+
+### Leading and ligatures
+
+The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked "Too tight": the lines crowd each other, and the eye hunts for the next one. Too much leading has the opposite fault, and the paragraph falls apart into separate lines. The same clip shows ligatures (`fi`, `fl` in "fine office flow") switched off and on, and notes that some ligatures are decorative and belong in display use only.
 
 ## Steps
 
@@ -45,6 +49,8 @@ In Tailwind, the same rule is the `tabular-nums` class.
 8. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
 9. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
 10. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
+11. Give paragraphs more leading than headings. Body text set as tight as a heading (around `1.2`) is cramped; loosen it, and stop before the lines drift apart. Keep line height as a token, not a value per element.
+12. Keep decorative or discretionary ligatures for display text such as a hero title. Body and UI text use the font's standard ligatures only.
 
 ## Check
 
@@ -53,3 +59,4 @@ In Tailwind, the same rule is the `tabular-nums` class.
 - The page title tells the user something they did not already know.
 - No page carries a tagline that only restates its title or sells the feature.
 - No number that updates in place shifts sideways while it changes.
+- Paragraphs read without cramped or floating lines, and no decorative ligatures appear in body text.

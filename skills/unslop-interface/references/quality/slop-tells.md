@@ -1,6 +1,6 @@
 # Slop tells
 
-Use this list twice: to inventory the screen before the first pass, and to check it after the last one. Every row seen in the source "before" frame is marked **Source**; the row from the second clip by Nexvyn is marked **Source (Nexvyn clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip.
+Use this list twice: to inventory the screen before the first pass, and to check it after the last one. Every row seen in the source "before" frame is marked **Source**; rows from the clips by Nexvyn and Emil Kowalski are marked **Source (Nexvyn clip)** and **Source (Kowalski clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip.
 
 ## Spacing and layout
 
@@ -41,6 +41,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Logo set inside a glowing gradient tile | Source | 03 |
 | Decorative emoji per category where a color key would carry information | Source | 04 |
 | Icons that are not on one vertical line | Source | 04 |
+| Main action and secondary link set as the same plain text, external links with no arrow | Source (Kowalski clip) | 04 |
 
 ## Type and copy
 
@@ -57,6 +58,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | "New" badges and "PRO" tags that carry no information | Source | 05 |
 | Counts wrapped in colored pill badges with a person icon | Source | 05 |
 | Filler marketing copy ("Supercharge your workflow") | Common | 05 |
+| Paragraphs with heading-tight line height (around 1.2) | Source (Kowalski clip) | 05 |
+| Decorative ligatures in body or UI text | Source (Kowalski clip) | 05 |
 | A tagline under every page title, restating it ("Settings" / "Manage your account settings") | Common | 05 |
 
 ## Data display
@@ -66,3 +69,4 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Chart with no axis values or units | Source | 06 |
 | Chart whose colors do not relate to anything else on the screen | Source | 06 |
 | Clip-art illustration (emoji credit card) in a stat card | Source | 06 |
+| Scrolling table whose header row scrolls out of view | Source (Kowalski clip) | 06 |

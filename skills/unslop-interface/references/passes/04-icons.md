@@ -21,15 +21,21 @@ Other changes in this pass:
 - **Expandable items:** items with children (Projects, Customers, Invoices) get a small chevron on the right.
 - **Search:** the shortcut hint becomes separate keycaps.
 
+### Affordance
+
+A third source, a clip by Emil Kowalski, shows a trial card ("Your trial ends in 3 days") with two actions, `Upgrade` and `Compare plans`, set as identical plain text. With affordance, `Upgrade` becomes a filled button and `Compare plans` becomes an underlined link with a small external arrow (↗). The clip defines affordance as the visual signal that tells you how something can be used: a button looks like a button, and an external link has an external icon.
+
 ## Steps
 
 1. Pick one icon library already in the project (for example Lucide, Heroicons, Phosphor, Tabler, or SF Symbols). If none exists, ask the user before adding a dependency, or use inline SVG.
 2. Replace every emoji used as an icon with an icon from that set. Use one size and one stroke width.
 3. Fix the icon column: the same inset from the panel edge for every row and section header, and the same gap between icon and label.
 4. Where icons only decorate a category, replace them with something that carries information, such as a color dot that matches the category's color elsewhere on the screen.
-5. Add affordance icons where behavior needs them (chevrons for expandable rows), and nowhere else.
+5. Add affordance icons where behavior needs them (chevrons for expandable rows, an external arrow on links that leave the product), and nowhere else.
+6. Give every action the look of what it does: the main action is a button, a navigation is a link, and two different actions never share the same plain-text style.
 
 ## Check
 
 - No emoji remain as icons.
+- Every action looks clickable, and a button and a link are never styled the same.
 - A vertical line touches the left edge of every icon, and another touches the start of every label.

@@ -20,9 +20,11 @@ Charts and illustrations that carry information and tie into the rest of the scr
 5. Keep shapes plain: no fully rounded bars or decorative effects unless they help read the data.
 6. Replace clip art and emoji illustrations with nothing, or with an illustration in the screen's own palette and style.
 7. Use the project's charting library. Do not add one without asking.
+8. In a table that scrolls inside its container, make the header row sticky (`position: sticky; top: 0` with a background) so the column names stay visible. The Emil Kowalski clip shows an invoice table (Invoice, Customer, Amount) whose header scrolls away without it.
 
 ## Check
 
 - Every chart has labeled axes and units.
 - Every color in a chart maps to a key the user can see.
 - No illustration uses emoji or a style that clashes with the palette.
+- Every scrolling table keeps its header row in view.

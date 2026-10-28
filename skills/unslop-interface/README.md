@@ -69,6 +69,7 @@ Unslop Interface gives an agent a fixed order of six passes, a checklist of the 
 - **Measured examples:** the spacing and icon passes include the exact values from the source frames, before and after, and the typography pass includes a measured timer that stops shifting with tabular figures.
 - **Tells checklist:** one table of tells, each mapped to the pass that fixes it, used before and after the work.
 - **Keeps the information:** every number, item, and action stays; only decoration and filler go.
+- **Precise vocabulary:** the report names each fix with its UI term (affordance, leading, tabular numbers, sticky positioning).
 - **Report template:** before and after per pass, changed files, new tokens, and tells kept on purpose.
 - **No dependencies:** works from source code, a screenshot, or both.
 
@@ -182,10 +183,11 @@ Each file holds the goal, the before and after from the source, steps, and a che
 | `references/passes/01-spacing.md` | Spacing | Arbitrary gaps snapped to a scale, aligned content edges |
 | `references/passes/02-radius.md` | Corner radius | Pills replaced, radius tokens |
 | `references/passes/03-color.md` | Color and effects | Gradients, glow, and tinted glass removed |
-| `references/passes/04-icons.md` | Icons and alignment | Emoji replaced by a line icon set, fixed inset and gap |
-| `references/passes/05-typography-and-copy.md` | Typography and copy | Caps, exclamation marks, filler headers, and redundant page taglines removed; tabular figures for changing numbers |
-| `references/passes/06-data-display.md` | Data display | Axes, units, and colors tied to a legend |
+| `references/passes/04-icons.md` | Icons and alignment | Emoji replaced by a line icon set, fixed inset and gap, actions given affordance |
+| `references/passes/05-typography-and-copy.md` | Typography and copy | Caps, exclamation marks, filler headers, and redundant page taglines removed; tabular figures for changing numbers; body leading and ligatures |
+| `references/passes/06-data-display.md` | Data display | Axes, units, colors tied to a legend, sticky table headers |
 | `references/quality/slop-tells.md` | Checklist | Every tell mapped to its pass |
+| `references/quality/vocabulary.md` | Vocabulary | Precise UI terms to name each fix in the report |
 
 ### Repository commands
 
@@ -276,6 +278,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 |---------|---------|----------|
 | [Damir Sokolovsky: Unslopping a vibecoded dashboard](https://x.com/heydamir/status/2115063463063998736) | Standard X post terms | Source of the passes, measurements, and before and after states |
 | [Nexvyn: tabular-nums for numbers that change](https://x.com/nexvyn/status/2114952765193732418) | Standard X post terms | Tabular figures rule and the timer measurement in the typography pass |
+| [Emil Kowalski: a vocabulary for agents](https://x.com/emilkowalski/status/2115425807388619022), from [AI for UI](https://aiforui.dev/) | Standard X post terms | Affordance, leading, ligature, and sticky header rules, and the vocabulary file |
 
 ## License
 
