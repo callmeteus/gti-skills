@@ -57,6 +57,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | "New" badges and "PRO" tags that carry no information | Source | 05 |
 | Counts wrapped in colored pill badges with a person icon | Source | 05 |
 | Filler marketing copy ("Supercharge your workflow") | Common | 05 |
+| A tagline under every page title, restating it ("Settings" / "Manage your account settings") | Common | 05 |
 
 ## Data display
 

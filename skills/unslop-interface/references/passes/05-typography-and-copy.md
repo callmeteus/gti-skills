@@ -41,13 +41,15 @@ In Tailwind, the same rule is the `tabular-nums` class.
 4. Remove exclamation marks and emoji from labels, numbers, and status lines.
 5. Give every change value a reference: `vs last month`, `vs September`, `since Monday`. Color only the value, not the sentence.
 6. Replace greeting or filler headers with the most useful fact for the page, such as the period the data covers.
-7. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
-8. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
-9. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
+7. Do not give every page a tagline. A subtitle or one-line description under the page title belongs only on pages where it tells the user something the title and content do not, such as a landing hero or an empty state. On app screens (dashboards, settings, lists, detail views) remove taglines that restate the title or sell the feature (`Settings` / `Manage your account settings`), and never add one that the source did not have. The title alone is enough.
+8. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
+9. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
+10. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
 
 ## Check
 
 - No exclamation marks, emoji, or tracked caps remain in the UI copy.
 - Every trend value says what it is compared to.
 - The page title tells the user something they did not already know.
+- No page carries a tagline that only restates its title or sells the feature.
 - No number that updates in place shifts sideways while it changes.

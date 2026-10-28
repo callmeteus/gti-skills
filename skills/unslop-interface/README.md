@@ -183,7 +183,7 @@ Each file holds the goal, the before and after from the source, steps, and a che
 | `references/passes/02-radius.md` | Corner radius | Pills replaced, radius tokens |
 | `references/passes/03-color.md` | Color and effects | Gradients, glow, and tinted glass removed |
 | `references/passes/04-icons.md` | Icons and alignment | Emoji replaced by a line icon set, fixed inset and gap |
-| `references/passes/05-typography-and-copy.md` | Typography and copy | Caps, exclamation marks, and filler headers removed; tabular figures for changing numbers |
+| `references/passes/05-typography-and-copy.md` | Typography and copy | Caps, exclamation marks, filler headers, and redundant page taglines removed; tabular figures for changing numbers |
 | `references/passes/06-data-display.md` | Data display | Axes, units, and colors tied to a legend |
 | `references/quality/slop-tells.md` | Checklist | Every tell mapped to its pass |
 
