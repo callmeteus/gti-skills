@@ -3,3 +3,14 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Skills installed into this checkout by `node packages/cli install` (project scope).
+# The only copy of a skill is skills/<skill-id>/.
+.claude/
+.cursor/
+.agents/
+.opencode/
+.cline/
+.kilocode/
+.kiro/
+.github/skills/
