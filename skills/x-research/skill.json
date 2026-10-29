@@ -1,0 +1,7 @@
+{
+    "id": "x-research",
+    "displayName": "X Research",
+    "harnessNotes": {
+        "*": "This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill."
+    }
+}

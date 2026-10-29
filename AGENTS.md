@@ -15,7 +15,8 @@ gti-skills/
 │   ├── cli/                # Node: list, validate, build, check, install
 │   ├── artdirector/        # Node and TypeScript: the engine behind the Art Director skill
 │   └── python/
-│       └── shared/         # Python scripts shared by several skills
+│       ├── shared/         # Python scripts shared by several skills
+│       └── twitter-mcp/    # Python: the MCP server behind the X Research skill
 ├── AGENTS.md
 └── README.md
 ```
@@ -153,6 +154,7 @@ Current skills:
 | `better-tests` | Better Tests |
 | `frontend-design-review` | Frontend Design Review |
 | `web-performance-audit` | Web Performance Audit |
+| `x-research` | X Research |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

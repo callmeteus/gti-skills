@@ -10,6 +10,6 @@
         "install-skills": "node packages/cli install",
         "test": "npm run test:cli && npm run test:python",
         "test:cli": "node --test \"packages/cli/tests/*.test.mjs\"",
-        "test:python": "python -m unittest discover -s packages/python/shared/tests && python -m unittest discover -s skills/video-to-skill/tests && python -m unittest discover -s skills/video-to-markdown/tests && python -m unittest discover -s skills/artdirector/tests"
+        "test:python": "python -m unittest discover -s packages/python/shared/tests && python -m unittest discover -s packages/python/twitter-mcp/tests && python -m unittest discover -s skills/video-to-skill/tests && python -m unittest discover -s skills/video-to-markdown/tests && python -m unittest discover -s skills/artdirector/tests"
     }
 }
