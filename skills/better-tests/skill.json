@@ -1,4 +1,7 @@
 {
     "id": "better-tests",
-    "displayName": "Better Tests"
+    "displayName": "Better Tests",
+    "packs": [
+        "coding"
+    ]
 }

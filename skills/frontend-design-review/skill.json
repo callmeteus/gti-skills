@@ -1,4 +1,8 @@
 {
     "id": "frontend-design-review",
-    "displayName": "Frontend Design Review"
+    "displayName": "Frontend Design Review",
+    "packs": [
+        "design",
+        "coding"
+    ]
 }

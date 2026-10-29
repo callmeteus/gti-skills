@@ -50,17 +50,34 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 
 ## Skill Catalog
 
-| Skill | Description | Requirements | Docs |
-|-------|-------------|--------------|------|
-| **Art Director** | Local-first graphic design studio. Designs photo-led, layered social posts, posters, covers, and slides in HTML/CSS/SVG with a professional style guide and effects toolkit, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
-| **Video to Skill** | Turns a YouTube or X tutorial video into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
-| **Video to Markdown** | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
-| **UX Psychology Review** | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
-| **Unslop Interface** | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
-| **Frontend Design Review** | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
-| **Better Tests** | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mutation testing, and safe pruning of brittle suites. | None | [README](skills/better-tests/README.md) |
-| **Web Performance Audit** | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
-| **X Research** | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
+| Skill | Packs | Description | Requirements | Docs |
+|-------|-------|-------------|--------------|------|
+| **Art Director** | art | Local-first graphic design studio. Designs photo-led, layered social posts, posters, covers, and slides in HTML/CSS/SVG with a professional style guide and effects toolkit, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
+| **Video to Skill** | coding | Turns a YouTube or X tutorial video into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
+| **Video to Markdown** | research | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
+| **UX Psychology Review** | design | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
+| **Unslop Interface** | design, coding | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
+| **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
+| **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mutation testing, and safe pruning of brittle suites. | None | [README](skills/better-tests/README.md) |
+| **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
+| **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
+
+### Packs
+
+Skills are grouped into packs so you can install a whole area at once. A skill can belong to several packs. The packs are defined in [packages/cli/registry/packs.json](packages/cli/registry/packs.json).
+
+| Pack | Purpose | Skills |
+|------|---------|--------|
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Unslop Interface, Video to Skill, Web Performance Audit |
+| `design` | Interface design, design reviews, and UX | Frontend Design Review, Unslop Interface, UX Psychology Review |
+| `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, X Research |
+| `social` | Social media research, monitoring, and content | X Research |
+| `art` | Graphic design, illustration, and visual artwork | Art Director |
+| `personal` | Personal productivity, notes, and everyday tasks | None yet |
+
+```bash
+node packages/cli install --harness all --pack coding,design --scope user
+```
 
 ## Quick Start
 
@@ -85,13 +102,14 @@ The agent matches the request to the skill, installs any missing dependencies, a
 The CLI in [packages/cli](packages/cli/README.md) copies a skill into the folder each agent reads. It needs only Node.js.
 
 ```bash
-node packages/cli install --harness <ids|all> [--skill <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
+node packages/cli install --harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
 ```
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--harness` | Required | Comma separated agent ids from [Supported Agents](#supported-agents), or `all` |
 | `--skill` | `all` | Comma separated skill ids, or `all` |
+| `--pack` | None | Comma separated pack ids from [Packs](#packs), or `all`. Combined with `--skill`, installs both selections |
 | `--scope` | `project` | `project` installs into `--dest`; `user` installs into your home directory for every project |
 | `--dest` | Current directory | Project root for the project scope |
 | `--dry-run` | Off | Print what would be written |
@@ -101,6 +119,7 @@ Examples (the same commands work in macOS, Linux, and Windows PowerShell):
 ```bash
 node packages/cli install --harness cursor,claude --skill video-to-skill,video-to-markdown --dest ../my-project
 node packages/cli install --harness all --scope user
+node packages/cli install --harness claude --pack research --scope user
 node packages/cli install --harness opencode --skill artdirector --dry-run
 ```
 
@@ -121,7 +140,7 @@ node packages/cli update --harness claude --skill better-tests --scope user
 | `--check`, `--dry-run` | Off | Print which installs are outdated; download nothing |
 | `--force` | Off | Reinstall even when the commit already matches |
 | `--skip-build` | Off | Do not run `npm ci` and `npm run build` for skills with a code package |
-| `--harness`, `--skill`, `--scope`, `--dest` | Every recorded install | Install exactly this selection from the latest commit, like `install` |
+| `--harness`, `--skill`, `--pack`, `--scope`, `--dest` | Every recorded install | Install exactly this selection from the latest commit, like `install` |
 
 Without `--harness`, `update` also picks up skill folders installed before installs were recorded: it scans each agent's user folder and the project folders under the current directory for gti-skills skill names. `list` and `install` check GitHub at most once a day and print a notice when recorded installs are older than `master`.
 
@@ -139,7 +158,7 @@ Other CLI commands:
 
 | Command | Purpose |
 |---------|---------|
-| `node packages/cli list` | Show skills and agents |
+| `node packages/cli list` | Show skills, packs, and agents |
 | `node packages/cli validate` | Validate every skill |
 | `node packages/cli build` | Sync shared scripts and regenerate the per-agent guides (contributors) |
 | `node packages/cli check` | Fail when synced or generated files are stale (CI) |
@@ -295,6 +314,7 @@ Every skill in this repository must follow these rules. The full contract lives 
 | **Language rule** | `SKILL.md` instructs the agent to respond in the user's language, regardless of the language of the skill or the analyzed content. Non-negotiable. |
 | **English source** | Skill files, references, and READMEs are written in English. |
 | **Single purpose** | One skill, one job. Split broad skills instead of growing them. |
+| **Pack** | `skill.json` lists at least one pack from `packages/cli/registry/packs.json` in `packs`. |
 | **Precise triggers** | The `description` states when to use the skill and when not to. |
 | **Organized folders** | Group files into purpose-named subfolders; link each reference from the step that needs it. |
 | **Scripts over prose** | Logic the agent would retype goes in `scripts/`. |
@@ -341,7 +361,7 @@ Every skill folder is the single copy of that skill. Agents differ only in the i
 Contributions are welcome, both new skills and improvements to existing ones.
 
 1. Fork the repository and create a branch.
-2. Add `skills/<kebab-case-name>/` with `skill.json`, `SKILL.md`, and a `README.md` that follows the [skill README template](AGENTS.md#skill-readme-template).
+2. Add `skills/<kebab-case-name>/` with `skill.json` (including its `packs`), `SKILL.md`, and a `README.md` that follows the [skill README template](AGENTS.md#skill-readme-template).
 3. Put detail in `references/`, helpers in `scripts/`, and static files in `assets/`.
 4. Document every script, including flags and defaults, and put tests in the skill's `tests/` folder.
 5. Run `node packages/cli build` and `npm test`, and commit the synced and generated files.

@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { recordInstalls, stateFolder } from "../core/Installs.mjs";
+import { loadPacks, selectSkills } from "../core/Packs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { discoverSkills, loadProjectFiles, loadSkillFiles } from "../core/Skills.mjs";
 import { sourceCommit } from "../core/Source.mjs";
@@ -32,7 +33,7 @@ function markExecutables(files, destination) {
 /**
  * Installs skills into the skill folders of one or more coding agents.
  *
- * Flags: --harness <ids|all> (required), --skill <ids|all>, --scope project|user,
+ * Flags: --harness <ids|all> (required), --skill <ids|all>, --pack <ids|all>, --scope project|user,
  * --dest <project root, default current directory>, --dry-run.
  * Each installed folder is recorded with its source commit so `update` can refresh it later.
  *
@@ -61,15 +62,20 @@ export function runInstall(flags, io, environment = {}) {
 
     const harnesses = loadHarnesses();
     const skills = discoverSkills();
-    const wanted = typeof flags.skill === "string" && flags.skill !== "all" ? flags.skill.split(",").map((id) => id.trim()) : null;
-    const selectedSkills = wanted ? skills.filter((skill) => wanted.includes(skill.id)) : skills;
+    let selectedSkills;
 
-    for (const id of wanted ?? []) {
-        if (!skills.some((skill) => skill.id === id)) {
-            io.err(`Unknown skill "${id}". Known: ${skills.map((skill) => skill.id).join(", ")}`);
+    try {
+        selectedSkills = selectSkills(skills, loadPacks(), flags);
+    } catch (error) {
+        io.err(error.message);
 
-            return 1;
-        }
+        return 1;
+    }
+
+    if (selectedSkills.length === 0) {
+        io.out(`Nothing to install: pack ${flags.pack} has no skills yet.`);
+
+        return 0;
     }
 
     let selectedHarnesses;

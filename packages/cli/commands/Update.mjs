@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { readInstalls, readJson, recordInstalls, stateFolder, writeInstalls, writeJson } from "../core/Installs.mjs";
+import { loadPacks, selectSkills } from "../core/Packs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { discoverSkills } from "../core/Skills.mjs";
 import { downloadTarball, extractTarball, fetchLatestCommit, SourceStamp, updateSource } from "../core/Source.mjs";
@@ -86,7 +87,7 @@ function requestedTargets(flags, cwd, home, known) {
     }
 
     const projectRoot = resolve(cwd, typeof flags.dest === "string" ? flags.dest : ".");
-    const ids = typeof flags.skill === "string" && flags.skill !== "all" ? flags.skill.split(",").map((id) => id.trim()) : discoverSkills().map((skill) => skill.id);
+    const ids = selectSkills(discoverSkills(), loadPacks(), flags).map((skill) => skill.id);
     const targets = new Map();
 
     for (const harness of selectHarnesses(loadHarnesses(), flags.harness)) {
@@ -213,7 +214,7 @@ function reinstall(root, targets, folder, io) {
  * There are no releases: the commit hash is the version.
  *
  * Without --harness, refreshes every recorded install and any untracked install found in the user
- * folders or under the current directory. With --harness, --skill, --scope, and --dest, installs
+ * folders or under the current directory. With --harness, --skill, --pack, --scope, and --dest, installs
  * exactly that selection from the latest commit. Flags: --check, --dry-run, --force, --skip-build.
  *
  * @param {Record<string, string | boolean>} flags Command flags

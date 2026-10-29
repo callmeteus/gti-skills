@@ -42,6 +42,7 @@ describe("repository state", () => {
         assert.equal(runList({}, io), 0);
         assert.ok(io.lines.some((line) => line.includes("Art Director")));
         assert.ok(io.lines.some((line) => line.includes("muse")));
+        assert.ok(io.lines.some((line) => line.startsWith("  coding")));
     });
 });
 
@@ -51,6 +52,19 @@ describe("install", () => {
         assert.equal(runInstall({ harness: "nope" }, collect()), 1);
         assert.equal(runInstall({ harness: "claude", scope: "galaxy" }, collect()), 1);
         assert.equal(runInstall({ harness: "claude", skill: "nope" }, collect()), 1);
+        assert.equal(runInstall({ harness: "claude", pack: "nope" }, collect()), 1);
+    });
+
+    it("installs only the skills of the selected packs", () => {
+        const project = mkdtempSync(join(tmpdir(), "gti-install-"));
+        const io = collect();
+        assert.equal(runInstall({ harness: "claude", pack: "art,social" }, io, { cwd: project }), 0, io.errors.join("\n"));
+        const folder = join(project, ".claude", "skills");
+
+        for (const skill of discoverSkills()) {
+            const wanted = skill.packs.includes("art") || skill.packs.includes("social");
+            assert.equal(existsSync(join(folder, skill.id, "SKILL.md")), wanted, skill.id);
+        }
     });
 
     it("installs every skill for every agent at project scope", () => {

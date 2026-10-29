@@ -1,6 +1,9 @@
 {
     "id": "video-to-skill",
     "displayName": "Video to Skill",
+    "packs": [
+        "coding"
+    ],
     "shared": [
         {
             "from": "packages/python/shared/scripts",

@@ -1,6 +1,9 @@
 {
     "id": "artdirector",
     "displayName": "Art Director",
+    "packs": [
+        "art"
+    ],
     "package": "packages/artdirector",
     "rootPointer": "scripts/artdirector.root",
     "harnessNotes": {

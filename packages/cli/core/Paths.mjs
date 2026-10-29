@@ -12,5 +12,6 @@ export const RepoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", ".."
 export const RepoPaths = {
     skills: join(RepoRoot, "skills"),
     harnesses: join(RepoRoot, "harnesses"),
-    registry: join(RepoRoot, "packages", "cli", "registry", "harnesses.json")
+    registry: join(RepoRoot, "packages", "cli", "registry", "harnesses.json"),
+    packs: join(RepoRoot, "packages", "cli", "registry", "packs.json")
 };

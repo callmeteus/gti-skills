@@ -7,6 +7,7 @@ import { describe, it } from "node:test";
 import { parseArgs } from "../core/Args.mjs";
 import { parseFrontmatter, splitFrontmatter, validateSkillFolder } from "../core/Frontmatter.mjs";
 import { renderGenerated, renderGuide } from "../core/Generated.mjs";
+import { loadPacks, selectSkills, validateSkillPacks } from "../core/Packs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { diffTree, normalizeContent, readTree, writeTree } from "../core/Tree.mjs";
 
@@ -88,6 +89,40 @@ describe("frontmatter", () => {
     it("warns when the description has no trigger", () => {
         const { warnings } = validateSkillFolder(makeSkill(GoodSkill.replace("Use when the user asks for a demo.", "Nice.")), "demo");
         assert.equal(warnings.length, 1);
+    });
+});
+
+describe("packs", () => {
+    const packs = [{ id: "coding", name: "Coding", description: "" }, { id: "art", name: "Art", description: "" }, { id: "personal", name: "Personal", description: "" }];
+    const skills = [{ id: "a", packs: ["coding"] }, { id: "b", packs: ["coding", "art"] }, { id: "c", packs: ["art"] }];
+
+    it("loads the registry with unique ids", () => {
+        const ids = loadPacks().map((pack) => pack.id);
+        assert.ok(ids.includes("coding"));
+        assert.equal(new Set(ids).size, ids.length);
+    });
+
+    it("selects every skill by default and with all", () => {
+        assert.equal(selectSkills(skills, packs, {}).length, 3);
+        assert.equal(selectSkills(skills, packs, { pack: "all" }).length, 3);
+        assert.equal(selectSkills(skills, packs, { skill: "all" }).length, 3);
+    });
+
+    it("selects the union of packs and skills", () => {
+        assert.deepEqual(selectSkills(skills, packs, { pack: "coding" }).map((skill) => skill.id), ["a", "b"]);
+        assert.deepEqual(selectSkills(skills, packs, { pack: "art", skill: "a" }).map((skill) => skill.id), ["a", "b", "c"]);
+        assert.deepEqual(selectSkills(skills, packs, { pack: "personal" }), []);
+    });
+
+    it("rejects unknown packs and skills", () => {
+        assert.throws(() => selectSkills(skills, packs, { pack: "nope" }), /Unknown pack "nope"/);
+        assert.throws(() => selectSkills(skills, packs, { skill: "nope" }), /Unknown skill "nope"/);
+    });
+
+    it("requires every skill to name at least one known pack", () => {
+        assert.deepEqual(validateSkillPacks({ packs: ["art"] }, packs), []);
+        assert.match(validateSkillPacks({ packs: [] }, packs)[0], /no packs/);
+        assert.match(validateSkillPacks({ packs: ["nope"] }, packs)[0], /unknown pack "nope"/);
     });
 });
 

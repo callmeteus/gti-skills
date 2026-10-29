@@ -1,4 +1,8 @@
 {
     "id": "unslop-interface",
-    "displayName": "Unslop Interface"
+    "displayName": "Unslop Interface",
+    "packs": [
+        "design",
+        "coding"
+    ]
 }

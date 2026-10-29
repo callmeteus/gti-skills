@@ -1,6 +1,9 @@
 {
     "id": "video-to-markdown",
     "displayName": "Video to Markdown",
+    "packs": [
+        "research"
+    ],
     "shared": [
         {
             "from": "packages/python/shared/scripts",

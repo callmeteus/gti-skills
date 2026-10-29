@@ -78,11 +78,26 @@ Each skill has a `skill.json` manifest in its folder. It is read by `packages/cl
 |-------|----------|---------|
 | `id` | Yes | Skill ID, equal to the folder name |
 | `displayName` | Yes | Name used in documentation |
+| `packs` | Yes | List of pack ids from `packages/cli/registry/packs.json`, at least one. A skill may be in several packs |
 | `package` | No | Package the skill drives, for example `packages/artdirector` |
 | `rootPointer` | No | File inside the installed skill that receives the absolute package path at install time |
 | `shared` | No | List of `{ "from", "to" }`: copies a shared folder, for example `packages/python/shared/scripts`, into the skill |
 | `generated` | No | List of `{ "to", "template" }`: extra documents rendered from the agent registry |
 | `harnessNotes` | No | Map of agent id to one sentence added to that agent's `GUIDE.md`. The key `*` applies to every agent |
+
+## Packs
+Skills are grouped into packs so users can install a whole area at once with `--pack`. The registry `packages/cli/registry/packs.json` is the single source of truth, and `node packages/cli validate` fails when a skill has no pack or names an unknown one.
+
+| Id | Holds |
+|----|-------|
+| `coding` | Writing, testing, reviewing, and auditing code |
+| `design` | Interface design, design reviews, and UX |
+| `research` | Finding, collecting, and summarizing information from the web, video, and social media |
+| `social` | Social media research, monitoring, and content |
+| `art` | Graphic design, illustration, and visual artwork |
+| `personal` | Personal productivity, notes, and everyday tasks |
+
+Pick every pack a user would look in for the skill. To add a pack, add it to the registry, then update this table and the Packs table in `README.md`. When a skill is added or its packs change, update the Packs and Skill Catalog tables in `README.md`.
 
 ## Supported agents
 The registry `packages/cli/registry/harnesses.json` is the single source of truth. Every skill supports every agent in it: the CLI installs the same skill folder into each agent's folder, and each skill carries a generated guide per agent.
@@ -107,11 +122,11 @@ Run `node packages/cli build` after changing any skill, any shared script, or th
 
 | Command | Purpose |
 |---------|---------|
-| `node packages/cli list` | Show skills and agents |
+| `node packages/cli list` | Show skills, packs, and agents |
 | `node packages/cli validate` | Validate every skill against the standard and these rules |
 | `node packages/cli build` | Sync shared files, regenerate the per-agent guides, and validate |
 | `node packages/cli check` | Fail when anything generated is out of date |
-| `node packages/cli install --harness <ids\|all>` | Install skills into agents (`--skill`, `--scope project\|user`, `--dest`, `--dry-run`) |
+| `node packages/cli install --harness <ids\|all>` | Install skills into agents (`--skill`, `--pack`, `--scope project\|user`, `--dest`, `--dry-run`) |
 | `node packages/cli update` | Reinstall outdated installs from the latest commit on GitHub `master` (`--check`, `--force`, `--skip-build`); there are no releases |
 
 Never edit these by hand; change the source and rebuild:
@@ -271,4 +286,4 @@ Rules: use the exact section names and order above; write `None` under Environme
 ### Root README template
 The root `README.md` uses these sections in this order: centered header (title, tagline, summary, badges, navigation), `## Table of Contents`, `## What Is GTI Skills?`, `## Skill Catalog`, `## Quick Start`, `## Installation`, `## Supported Agents`, `## Compatibility`, `## How Skills Work`, `## Skill Anatomy`, `## Authoring Skills`, `## Repository Layout`, `## Contributing`, `## Security`, `## Documentation`, `## About GTI`, `## License`.
 
-When a skill is added, removed, or renamed, update the Skill Catalog, Compatibility, Repository Layout, Documentation, and License tables, plus the skill count badge, and the [Skill naming](#skill-naming) table above. Tables list skills by display name; paths and commands use the skill ID.
+When a skill is added, removed, or renamed, update the Skill Catalog, Packs, Compatibility, Repository Layout, Documentation, and License tables, plus the skill count badge, and the [Skill naming](#skill-naming) table above. Tables list skills by display name; paths and commands use the skill ID.

@@ -13,15 +13,15 @@ Usage:
   node packages/cli <command> [flags]
 
 Commands:
-  list                         Show skills and supported agents
+  list                         Show skills, packs, and supported agents
   validate [--skill <id>]      Validate skills against the Agent Skills standard
   build                        Sync shared files, validate, and regenerate harnesses/
   check                        Fail when generated files are out of date (use in CI)
   install --harness <ids|all>  Install skills into coding agents
-          [--skill <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
+          [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
   update                       Update installed skills to the latest commit on GitHub master
           [--check] [--dry-run] [--force] [--skip-build]
-          [--harness <ids|all> [--skill <ids|all>] [--scope project|user] [--dest <dir>]]
+          [--harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>]]
 `;
 
 const Commands = {

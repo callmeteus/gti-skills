@@ -1,4 +1,7 @@
 {
     "id": "web-performance-audit",
-    "displayName": "Web Performance Audit"
+    "displayName": "Web Performance Audit",
+    "packs": [
+        "coding"
+    ]
 }

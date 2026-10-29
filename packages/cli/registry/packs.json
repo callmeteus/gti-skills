@@ -1,0 +1,34 @@
+{
+    "packs": [
+        {
+            "id": "coding",
+            "name": "Coding",
+            "description": "Writing, testing, reviewing, and auditing code"
+        },
+        {
+            "id": "design",
+            "name": "Design",
+            "description": "Interface design, design reviews, and UX"
+        },
+        {
+            "id": "research",
+            "name": "Research",
+            "description": "Finding, collecting, and summarizing information from the web, video, and social media"
+        },
+        {
+            "id": "social",
+            "name": "Social",
+            "description": "Social media research, monitoring, and content"
+        },
+        {
+            "id": "art",
+            "name": "Art",
+            "description": "Graphic design, illustration, and visual artwork"
+        },
+        {
+            "id": "personal",
+            "name": "Personal",
+            "description": "Personal productivity, notes, and everyday tasks"
+        }
+    ]
+}
