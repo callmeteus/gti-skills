@@ -1,0 +1,11 @@
+[project]
+name = "weight-space-programming"
+version = "0.1.0"
+description = "Scripts para análise e edição de pesos de redes neurais"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26.0",
+]
+
+[project.scripts]
+# Adicionar scripts CLI aqui se necessário

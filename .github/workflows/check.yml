@@ -23,5 +23,8 @@ jobs:
             - name: Validate skills and generated files
               run: node packages/cli check
 
+            - name: Install Python dependencies
+              run: pip install numpy
+
             - name: Run tests
               run: npm test

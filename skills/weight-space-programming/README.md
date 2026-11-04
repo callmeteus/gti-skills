@@ -88,7 +88,7 @@ This skill turns that method into a workflow with three modes (read, fix, write)
 | numpy | Any recent | Tensor analysis and editing | No |
 | PyTorch | Any recent, optional | Loading `.pt`, `.pth`, and `.bin` checkpoints, and running large models | No |
 
-Use `python3` on macOS and Linux and `python` or `py -3` on Windows. Install numpy with `pip install numpy` if it is missing.
+Use `python3` on macOS and Linux and `python` or `py -3` on Windows. Install numpy with `pip install numpy` if it is missing. For CI, ensure numpy is installed before running tests.
 
 ## Installation
 
