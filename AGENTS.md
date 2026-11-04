@@ -171,6 +171,7 @@ Current skills:
 | `web-performance-audit` | Web Performance Audit |
 | `x-research` | X Research |
 | `weight-space-programming` | Weight Space Programming |
+| `improve-codebase-architecture` | Improve Codebase Architecture |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-10-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-11-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -62,6 +62,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
 | **Weight Space Programming** | coding, research | Reads, fixes, and writes neural network weights by reasoning about what each layer computes, with no training: infers a checkpoint's task, removes failure directions with minimal edits, and hand-builds small networks, under a forward-pass budget and held-out evaluation. | Python 3.9+, numpy; PyTorch optional | [README](skills/weight-space-programming/README.md) |
+| **Improve Codebase Architecture** | coding | Finds refactors that make a codebase easier to change and test, starting where git history shows the most change, and presents them in an HTML report with before and after diagrams written in everyday coding terms. Adapted from Matt Pocock's skill. | Git, Python 3.8+ | [README](skills/improve-codebase-architecture/README.md) |
 
 ### Packs
 
@@ -69,7 +70,7 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Unslop Interface, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Improve Codebase Architecture, Unslop Interface, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
@@ -225,6 +226,7 @@ Notes:
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |
+| Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
 
 | Platform | Status |
 |----------|--------|
@@ -341,6 +343,7 @@ gti-skills/
 │   ├── artdirector/
 │   ├── better-tests/
 │   ├── frontend-design-review/
+│   ├── improve-codebase-architecture/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
 │   ├── video-to-markdown/
@@ -412,6 +415,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/web-performance-audit/README.md](skills/web-performance-audit/README.md) | Auditing page load and Core Web Vitals with Chrome DevTools |
 | [skills/x-research/README.md](skills/x-research/README.md) | Researching X with the twitter MCP server and its web search fallback |
 | [skills/weight-space-programming/README.md](skills/weight-space-programming/README.md) | Reading, fixing, and writing neural network weights without training |
+| [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
 
 ## About GTI
 
@@ -432,6 +436,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Better Tests | Not declared |
 | Web Performance Audit | Not declared |
 | Weight Space Programming | Not declared |
+| Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.

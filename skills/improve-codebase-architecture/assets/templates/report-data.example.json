@@ -1,0 +1,75 @@
+{
+    "lang": "en",
+    "repo": "shop-api",
+    "date": "2026-11-03",
+    "scope": "Reviewed `src/orders` and `src/pricing`, the two folders with the most changes in the last 300 commits. The rest of the codebase was not reviewed.",
+    "hotspots": {
+        "folders": [
+            { "path": "src/orders", "changes": 84 },
+            { "path": "src/pricing", "changes": 51 },
+            { "path": "src/api", "changes": 22 }
+        ]
+    },
+    "candidates": [
+        {
+            "id": "order-intake",
+            "title": "Merge the order validation helpers into `OrderIntake.submit()`",
+            "strength": "strong",
+            "effort": "medium",
+            "testing": "local-stand-in",
+            "files": [
+                "src/orders/OrderHandler.ts",
+                "src/orders/OrderValidator.ts",
+                "src/orders/validateItems.ts",
+                "src/orders/validateAddress.ts",
+                "src/orders/OrderRepo.ts"
+            ],
+            "problem": "`OrderHandler` calls four helpers in a fixed order, and every route repeats that order. Adding a field to an order touches 5 files, and the tests mock 3 classes to check one rule.",
+            "change": "Create `OrderIntake.submit(order)` that validates and saves in one call. Make the four helpers private to it and point the routes at `submit()`.",
+            "gains": [
+                "A new order field touches 1 file instead of 5",
+                "Tests call `submit()` with SQLite instead of mocking 3 classes",
+                "Delete 4 exported helpers and 11 mock-heavy tests",
+                "Routes stop repeating the validation order"
+            ],
+            "before": {
+                "caption": "Every route calls the helpers itself, in the right order.",
+                "mermaid": "flowchart LR\n  R1[POST /orders] --> V[OrderValidator]\n  R2[PUT /orders/:id] --> V\n  V --> I[validateItems]\n  V --> A[validateAddress]\n  R1 --> Repo[OrderRepo]\n  R2 --> Repo\n  classDef problem stroke:#c62828,stroke-width:2px\n  class R1,R2 problem"
+            },
+            "after": {
+                "caption": "Routes make one call; the order of checks lives inside.",
+                "mermaid": "flowchart TB\n  R1[POST /orders] --> S[OrderIntake.submit]\n  R2[PUT /orders/:id] --> S\n  S --> I[validateItems]\n  S --> A[validateAddress]\n  S --> Repo[OrderRepo]\n  classDef merged stroke:#16794a,stroke-width:3px\n  class S merged"
+            }
+        },
+        {
+            "id": "pricing-client",
+            "title": "Pass a `PricingClient` into checkout instead of calling the pricing service directly",
+            "strength": "worth-exploring",
+            "effort": "small",
+            "testing": "own-service",
+            "files": [
+                "src/pricing/http.ts",
+                "src/orders/checkout.ts",
+                "src/orders/refund.ts"
+            ],
+            "problem": "`checkout.ts` and `refund.ts` each build their own HTTP calls to the pricing service, with copied retry logic. Their tests need a running pricing service.",
+            "change": "Define a `PricingClient` interface with `quote()` and `refundQuote()`. Use the HTTP client in production and an in-memory fake in tests.",
+            "gains": [
+                "Retry logic lives in one place",
+                "Checkout tests run without the pricing service",
+                "One file to change when the pricing API changes"
+            ],
+            "before": {
+                "mermaid": "flowchart LR\n  C[checkout.ts] -- HTTP + retries --> P[(pricing service)]\n  F[refund.ts] -- HTTP + retries --> P\n  classDef problem stroke:#c62828,stroke-width:2px\n  class C,F problem"
+            },
+            "after": {
+                "mermaid": "flowchart LR\n  C[checkout.ts] --> PC[PricingClient]\n  F[refund.ts] --> PC\n  PC --> H[HTTP client]\n  PC -.tests.-> Fake[in-memory fake]\n  H --> P[(pricing service)]\n  classDef merged stroke:#16794a,stroke-width:3px\n  class PC merged"
+            },
+            "adr_warning": "Goes against ADR-0004 (\"call internal services directly\"), but worth reopening: the copied retry logic has already caused two incidents."
+        }
+    ],
+    "top": {
+        "id": "order-intake",
+        "why": "It removes the most repeated code in the folder that changes most, and the tests become simpler right away."
+    }
+}
