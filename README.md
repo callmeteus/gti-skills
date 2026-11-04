@@ -224,7 +224,7 @@ Notes:
 | Unslop Interface | No | No | No | No |
 | Frontend Design Review | No | No | No | No |
 | Better Tests | No | No | No | No |
-| Security Audit | 18+ | No | No | No; target code runs only in a sandbox with no network |
+| Security Audit | 18+ | No | No | Optional: Cloudflare Radar Zero Wire page; target code runs only in a sandbox with no network |
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |

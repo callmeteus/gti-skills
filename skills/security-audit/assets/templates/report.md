@@ -48,6 +48,16 @@ Carried same-source confirmations: `<fingerprints or none>`. Changed-source reva
 |-------|-------|---------|-----------------|----------------------|
 | <title> | `<file>:<line>` | <exact fact> | <bounded step or n/a> | <safe check or n/a> |
 
+## Current threat briefings
+
+<!-- Only when the Zero Wire check ran. Otherwise write: "No current briefing check ran" and why. -->
+
+Source: [Cloudflare Radar Zero Wire](https://radar.cloudflare.com/security/zero-wire), retrieved <date and time>. Briefings may have changed since.
+
+| Briefing | CVE | Last checked | Repository marker | Verdict | Next action |
+|----------|-----|--------------|-------------------|---------|-------------|
+| <title> | <CVE IDs> | <date> | `<file>:<line>` or not applicable from source | confirmed / needs_validation / rejected / none | <action from the briefing> |
+
 ## Hardening notes
 
 <!-- Defense-in-depth suggestions with no reachable boundary violation. Keep separate from findings. -->

@@ -8,8 +8,9 @@ description: >-
   isolated agents, adversarial validation, a JSON findings file, a coverage
   ledger, Markdown reports, and an optional SARIF export. Use when the user
   asks for a security audit, security review, pen test of the code,
-  vulnerability hunt, threat review of a PR, or asks whether some code is
-  safe. Do not use for live testing of deployed systems, scanning hosts or
+  vulnerability hunt, threat review of a PR, asks whether some code is
+  safe, or asks whether the project is exposed to a current vulnerability
+  briefing. Do not use for live testing of deployed systems, scanning hosts or
   networks, writing exploits for systems the user does not own, or generic
   code quality review.
 compatibility: Node.js 18 or later for the validators and helper scripts. Running target code needs an OS-enforced sandbox; without one the skill stays source-only. Full audits work best in agents with sub-agents.
@@ -66,6 +67,7 @@ Use dummy principals, fixtures, and secrets. Do not probe deployed endpoints, ex
 
 - **Never copy a real secret.** When source, history, or fixtures expose a credential, record its file and line, its type, and a fingerprint such as the first four characters plus the length. Never put the full value in chat, `findings.json`, reports, SARIF, or agent prompts. Tell the user to rotate it; deleting it from the current tree does not remove it from history.
 - **Scanner output is a lead, not a finding.** Local tools (Semgrep, Gitleaks, OSV-Scanner, and others) can seed candidates. Every candidate still passes the candidate gate and independent validation. See [references/quality/scanner-leads.md](references/quality/scanner-leads.md).
+- **Current threat briefings.** With web access, the parent may read the public [Cloudflare Radar Zero Wire](https://radar.cloudflare.com/security/zero-wire) page to check whether the repository ships, pins, or reaches a component an urgent briefing covers. It is the only network read the workflow allows, sends nothing from the repository, and never makes a finding by itself. Follow [references/intel/zero-wire.md](references/intel/zero-wire.md) in a full audit (during setup), when the user asks whether they are affected by a current vulnerability, or when a diff changes a runtime, base image, dependency, or certificate bundle.
 - **Personal data stays out.** Use dummy principals in reproductions. If a fixture or log in the repository holds real personal data, report its location, not its content.
 
 ## Full audit setup
@@ -199,7 +201,7 @@ For each confirmed finding, identify the invariant the code must enforce and the
 
 In full audit mode, follow all six phases in order:
 
-1. **Reconnaissance:** start with the read-only inventory `node <skill-dir>/scripts/recon/detect-stack.cjs <target> --format text`, then map the source, trust boundaries, local build paths, companion selections, prior evidence, and initial deterministic coverage ledger with [references/workflow/01-reconnaissance.md](references/workflow/01-reconnaissance.md).
+1. **Reconnaissance:** start with the read-only inventory `node <skill-dir>/scripts/recon/detect-stack.cjs <target> --format text`, then, with web access, run the current threat briefing check in [references/intel/zero-wire.md](references/intel/zero-wire.md), then map the source, trust boundaries, local build paths, companion selections, prior evidence, and initial deterministic coverage ledger with [references/workflow/01-reconnaissance.md](references/workflow/01-reconnaissance.md).
 2. **Coverage-led hunting waves:** assign isolated hunters from the ledger and collect structured candidate results with [references/workflow/02-hunting.md](references/workflow/02-hunting.md), the ordinary classes in [references/attack-classes/core.md](references/attack-classes/core.md), and the selected domain companions below.
 3. **Candidate validation:** consolidate fingerprints and give every candidate to a fresh source verifier as defined in [references/workflow/03-validation-and-reporting.md](references/workflow/03-validation-and-reporting.md).
 4. **Structured output:** write all final `confirmed`, `needs_validation`, and `rejected` records to `findings.json`; validate it with `assets/schema/report-schema.json` and `node <skill-dir>/scripts/validate/validate-findings.cjs`, and validate the coverage claim with `node <skill-dir>/scripts/validate/validate-coverage-ledger.cjs`.
@@ -261,6 +263,7 @@ The audit never edits target source. When the user then asks you to fix a confir
 | `references/domains/` | Ten domain companions, split into `application/` and `platform/` |
 | `references/modes/` | Diff review and single-agent operation |
 | `references/quality/` | Using local scanners as lead generators |
+| `references/intel/zero-wire.md` | Checking the repository against current Cloudflare Radar Zero Wire briefings |
 | `assets/schema/report-schema.json` | JSON schema for the three `findings.json` verdicts |
 | `assets/templates/` | `REPORT.md`, `FINDINGS-DETAIL.md`, and `NEEDS-VALIDATION.md` skeletons |
 | `scripts/validate/` | Zero-dependency validators for `findings.json` and `coverage-ledger.json` |

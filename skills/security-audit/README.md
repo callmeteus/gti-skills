@@ -40,7 +40,7 @@
 
 Agents asked to "find vulnerabilities" tend to return checklists: missing headers, outdated dependencies, and generic advice with no attacker and no damage. Owners then spend their time disproving noise. Security Audit holds every candidate to one bar: a named lower-trust principal, a crossed trust boundary, and a concrete result, shown from source and, when a sandbox is available, a bounded local check.
 
-The skill is a port of Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill), the starting point of their vulnerability discovery harness, reorganized into this repository's layout and extended with a diff review mode, a single-agent mode, a stack inventory script, a SARIF exporter, report templates, evidence hygiene rules, and Windows support for the validators.
+The skill is a port of Cloudflare's [security-audit-skill](https://github.com/cloudflare/security-audit-skill), the starting point of their vulnerability discovery harness, reorganized into this repository's layout and extended with a diff review mode, a single-agent mode, a stack inventory script, a SARIF exporter, a check against current Cloudflare Radar Zero Wire briefings, report templates, evidence hygiene rules, and Windows support for the validators.
 
 ```text
   request
@@ -49,7 +49,7 @@ The skill is a port of Cloudflare's [security-audit-skill](https://github.com/cl
      ├── PR, branch, or commit range ─> diff review mode (answer in chat)
      └── full audit ──────────────────> six phases, files in the output directory
                                           │
-     detect-stack.cjs ──> 1 reconnaissance ──> coverage-ledger.json
+     detect-stack.cjs + Zero Wire ──> 1 reconnaissance ──> coverage-ledger.json
                           2 hunting waves (isolated agents, coverage critics)
                           3 fresh verifier per candidate
                           4 findings.json ──> validate-findings.cjs
@@ -77,6 +77,7 @@ The skill is a port of Cloudflare's [security-audit-skill](https://github.com/cl
 - **Single-agent mode (added):** keeps "the finder never confirms" in agents without sub-agents by writing verification packets for a separate session.
 - **Stack inventory (added):** `detect-stack.cjs` lists languages, manifests, companions worth checking, and security tools on PATH, without running anything.
 - **SARIF export (added):** `findings-to-sarif.cjs` turns validated findings into SARIF 2.1.0 with GitHub security-severity, code flows, and stable fingerprints.
+- **Current threat briefings (added):** reads the public [Cloudflare Radar Zero Wire](https://radar.cloudflare.com/security/zero-wire) page and checks whether the repository ships, pins, or reaches a component an urgent briefing covers, with the same verdict rules as any other candidate.
 - **Evidence hygiene (added):** secrets are recorded by location and fingerprint only, and scanner output is treated as a lead, never as a finding.
 - **Windows validators (added):** the upstream validators refused every input on Windows; they now open input safely there with a link check and file identity re-check.
 
@@ -88,6 +89,7 @@ The skill is a port of Cloudflare's [security-audit-skill](https://github.com/cl
 | Git | Any recent | Source ref, diff review, history checks | No |
 | Coding agent with sub-agents | - | Isolated hunters and verifiers in a full audit; without them the skill uses single-agent mode | No |
 | OS-enforced sandbox | - | Running target builds, tests, or fixtures with no network, an allowlisted environment, read-only source, scratch-only writes, and resource limits | No |
+| Web access | - | Optional: reading current Cloudflare Radar Zero Wire briefings | No |
 | Local scanners | Any | Optional lead generators, for example Semgrep, Gitleaks, OSV-Scanner, Trivy | No |
 
 | Platform | Notes |
@@ -169,6 +171,12 @@ Review my branch against main for security issues before I open the PR.
 ```
 
 Diff review mode: the agent reviews changed paths, their callers, and sibling routes, and answers with findings, leads, and suggested patches.
+
+```text
+Are we affected by anything urgent on Cloudflare Radar Zero Wire right now?
+```
+
+Guidance mode: the agent reads the current briefings, searches the repository for each affected runtime, dependency, kernel feature, or certificate, and answers with a table of markers, verdicts, and next actions.
 
 ```text
 Do a deep security audit of packages/billing with a budget of 40 agents and export SARIF.
@@ -284,6 +292,7 @@ Example `REPORT.md` excerpt:
 | Section | Contents |
 |---------|----------|
 | Run | Profile, scope, budget, source ref, execution policy, prior runs, scanners, partial-pass statement |
+| Current threat briefings | Zero Wire briefings checked, with retrieval date, repository markers, verdicts, and next actions |
 | Security posture | One short summary |
 | Confirmed findings | Table, then per finding: location, principal, bounded reproduction, conditions, result, impact, priority, fix |
 | Needs validation | Leads with the exact blocker and safe local or owner-observed checks, no severity |
@@ -292,7 +301,7 @@ Example `REPORT.md` excerpt:
 
 ## Security
 
-- **Network:** the workflow forbids contacting deployed endpoints, external services, registries, and cloud APIs. Target code runs only in a sandbox with no external network.
+- **Network:** the workflow forbids contacting deployed endpoints, external services, registries, and cloud APIs. Target code runs only in a sandbox with no external network. The one allowed read is the public Cloudflare Radar Zero Wire page, fetched by the parent when the agent has web access; nothing from the repository is sent.
 - **Tokens and secrets:** reproductions use dummy principals and secrets. Discovered secrets are recorded by file, line, type, and a short fingerprint, never by value.
 - **File access:** source is read-only. Writes go to the output directory outside the target; each agent writes only its own `scratch/`, and only trusted parent-side code promotes evidence into `artifacts/`.
 - **Scripts:** the four bundled scripts read files, never execute target code, and never use the network. `detect-stack.cjs` checks PATH for tools but does not run them.
@@ -355,6 +364,7 @@ The run is marked incomplete with `validation_budget_exhausted` and the unvalida
 | Project | License | Used for |
 |---------|---------|----------|
 | [Cloudflare security-audit-skill](https://github.com/cloudflare/security-audit-skill) | MIT | Workflow, attack classes, domain companions, schema, validators, and their tests |
+| [Cloudflare Radar Zero Wire](https://radar.cloudflare.com/security/zero-wire) | Public web page | Current vulnerability briefings checked against the repository |
 | [Build your own vulnerability harness (Cloudflare blog)](https://blog.cloudflare.com/build-your-own-vulnerability-harness) | Blog post | Background on the harness this skill seeded |
 
 ## License
