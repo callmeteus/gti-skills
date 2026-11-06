@@ -7,9 +7,13 @@ impersonation to talk to Shopee directly.
 Run (stdio):  python mcp_server.py
 """
 
+import functools
 import json
 import os
+import re
 import sys
+import threading
+import time
 
 # Make the repo root importable so `from shopee import ...` works regardless
 # of the process working directory.
@@ -58,12 +62,12 @@ def _safe(fn):
 
 
 # ---- keyword search (login-gated) -------------------------------------------
-# Shopee's /api/v4/search/search_items is behind the 90309999 "Login
-# Required" gate for logged-out visitors (verified 2026-11). We cross it with
-# cookies captured by login.py from the user's logged-in browser session.
+# Shopee's /api/v4/search/search_items rejects plain HTTP with captured cookies
+# (anti-bot error 90309999) and ignores headless browsers. A real, headed
+# Chrome passes, so login.py keeps a persistent profile and the search reads
+# the JSON the page itself loads.
 
 COOKIE_FILE = os.path.join(_SCRIPT_DIR, "cookies.json")
-_search_session_obj = None
 
 _SEARCH_SORT = {
     "relevancy": ("relevancy", "desc"),
@@ -74,112 +78,212 @@ _SEARCH_SORT = {
 }
 
 
-def _load_cookie_header():
-    if not os.path.exists(COOKIE_FILE):
-        return None
-    try:
-        with open(COOKIE_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-        return data.get("cookie_header") or None
-    except Exception:
-        return None
-
-
-def _search_session():
-    global _search_session_obj
-    if _search_session_obj is None:
-        from curl_cffi import requests as curl_requests
-        _search_session_obj = curl_requests.Session(impersonate="chrome")
-    return _search_session_obj
-
-
 def _parse_search_items(payload, country):
-    """Shopee search_items payload -> list of clean product rows."""
-    data = (payload or {}).get("data") or {}
+    """Shopee search_items payload -> list of clean product rows.
+
+    Handles both shapes Shopee serves: the classic `data.items[].item_basic`
+    and the current web BFF shape with the item at the root and the fields
+    split across `item_data` / `item_card_displayed_asset`.
+    """
+    payload = payload or {}
+    data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+    items = data.get("items") or payload.get("items") or []
+
+    def first(*values):
+        return next((v for v in values if v not in (None, "")), None)
+
+    def sold_number(value):
+        if isinstance(value, dict):
+            value = first(value.get("historical_sold_count"), value.get("text"),
+                          value.get("value"), value.get("count"))
+        if isinstance(value, bool) or value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return value
+        text_value = str(value).lower().replace(".", "").replace(",", ".")
+        match = re.search(r"[\d.]+", text_value)
+        if not match:
+            return None
+        amount = float(match.group(0))
+        if "mil" in text_value:
+            amount *= 1000
+        elif "k" in text_value:
+            amount *= 1000
+        return int(amount) if amount.is_integer() else amount
+
     rows = []
-    for it in data.get("items") or []:
+    for it in items:
         if not isinstance(it, dict):
             continue
-        b = it.get("item_basic") or it
-        if not isinstance(b, dict) or not b.get("itemid"):
+        b = it.get("item_basic") or {}
+        d = it.get("item_data") or {}
+        a = it.get("item_card_displayed_asset") or {}
+        price_info = d.get("item_card_display_price") or {}
+        shop_id = first(b.get("shopid"), d.get("shopid"), it.get("shopid"))
+        item_id = first(b.get("itemid"), d.get("itemid"), it.get("itemid"))
+        if not item_id:
             continue
-        shop_id, item_id = b.get("shopid"), b.get("itemid")
-        rating = b.get("item_rating") or {}
+        shop_data = d.get("shop_data") or {}
+        rating = first(b.get("item_rating"), d.get("item_rating")) or {}
         rows.append({
             "id": item_id,
             "shop_id": shop_id,
-            "name": parsers.text(b.get("name")),
+            "name": parsers.text(first(b.get("name"), a.get("name"))),
             "link": refs.product_link(country, shop_id, item_id),
-            "image": parsers.image(country, b.get("image")),
-            "images": parsers.images(country, b.get("images")),
+            "image": parsers.image(country, first(b.get("image"), a.get("image"))),
+            "images": parsers.images(country, first(b.get("images"), a.get("images"))),
             "currency": refs.CURRENCY_OF[country],
-            "price": parsers.money(b.get("price")),
+            "price": parsers.money(first(b.get("price"), price_info.get("price"))),
             "price_min": parsers.money(b.get("price_min")),
             "price_max": parsers.money(b.get("price_max")),
-            "price_before_discount": parsers.money(b.get("price_before_discount")),
-            "discount_percent": parsers.number(b.get("show_discount")) or None,
-            "sold_count": parsers.number(b.get("historical_sold")),
-            "stock": parsers.number(b.get("stock")),
+            "price_before_discount": parsers.money(first(
+                b.get("price_before_discount"), price_info.get("strikethrough_price"))),
+            "discount_percent": parsers.number(first(
+                b.get("show_discount"), price_info.get("discount"))) or None,
+            "sold_count": sold_number(first(
+                b.get("historical_sold"), d.get("item_card_display_sold_count"),
+                a.get("sold_count"))),
+            "stock": parsers.number(b.get("stock")) if b.get("stock") is not None else (
+                0 if d.get("is_sold_out") else None),
             "rating": parsers.rating_block(rating),
-            "likes_count": parsers.number(b.get("liked_count")),
-            "shop_location": parsers.text(b.get("shop_location")),
-            "is_shopee_verified": parsers.flag(b.get("shopee_verified")),
-            "is_official_shop": parsers.flag(b.get("is_official_shop")),
-            "is_adult": parsers.flag(b.get("is_adult")),
-            "listed_at": parsers.ts(b.get("ctime")),
+            "likes_count": parsers.number(first(b.get("liked_count"), d.get("liked_count"))),
+            "shop_location": parsers.text(first(b.get("shop_location"), a.get("shop_location"))),
+            "is_shopee_verified": parsers.flag(first(
+                b.get("shopee_verified"), d.get("shopee_verified"),
+                shop_data.get("is_shopee_verified"))),
+            "is_official_shop": parsers.flag(first(
+                b.get("is_official_shop"), shop_data.get("is_official_shop"))),
+            "is_adult": parsers.flag(first(b.get("is_adult"), d.get("is_adult"))),
+            "is_ad": bool(it.get("adsid")),
+            "listed_at": parsers.ts(first(b.get("ctime"), d.get("ctime"))),
         })
-    total = data.get("total_count") or data.get("total")
+    total = first(data.get("total_count"), data.get("total"), payload.get("total_count"))
     return rows, total
 
 
-def _search_request(country, keyword, sort, page, limit, min_price, max_price):
-    cookie_header = _load_cookie_header()
-    if not cookie_header:
-        return {
-            "error": "Shopee keyword search requires login. Run `python login.py` "
-                     "in the shopee-scraper folder once, log in, then retry."
-        }
+# ---- browser search ----------------------------------------------------------
+# Shopee's anti-bot (error 90309999) rejects plain HTTP with captured cookies
+# and also rejects headless Chrome: the request needs the page-generated
+# `af-ac-enc-dat` token and a `global_search_session_id`. A real, headed
+# browser passes, so the search runs there and we capture the JSON response
+# the page itself loads.
+
+BROWSER_PROFILE = os.path.join(_SCRIPT_DIR, ".browser-profile")
+
+_COOKIE_KEYS = {"name", "value", "domain", "path", "expires", "httpOnly", "secure", "sameSite"}
+
+
+def _browser_cookies():
+    """Cookies from cookies.json in Playwright's add_cookies format."""
+    if not os.path.exists(COOKIE_FILE):
+        return []
+    with open(COOKIE_FILE, encoding="utf-8") as f:
+        raw = (json.load(f) or {}).get("cookies") or []
+    out = []
+    for c in raw:
+        c = {k: v for k, v in c.items() if k in _COOKIE_KEYS}
+        same_site = (c.get("sameSite") or "").lower()
+        if same_site:
+            c["sameSite"] = {"lax": "Lax", "strict": "Strict", "none": "None"}.get(
+                same_site, "Lax")
+        else:
+            c.pop("sameSite", None)
+        if c.get("expires") in (None, 0):
+            c["expires"] = -1
+        if "domain" not in c and "url" not in c:
+            continue
+        out.append(c)
+    return out
+
+
+# Searches are serialized and rate-limited: this runs on real customer
+# accounts, so one window at a time, one page load per call, and a minimum
+# gap between searches. Slow is fine; hammering is not.
+_BROWSER_LOCK = threading.Lock()
+_BROWSER_LAST_DONE = [0.0]
+_BROWSER_MIN_INTERVAL = max(
+    0.0, float(os.environ.get("SHOPEE_MIN_INTERVAL_SECONDS", "10") or 0))
+
+
+def _search_browser(country, keyword, sort, page, limit, min_price, max_price):
+    """Run the search in a real headed Chrome and capture the page's own JSON."""
+    try:
+        from patchright.sync_api import sync_playwright
+    except ImportError:
+        return {"error": "browser fallback unavailable: pip install patchright"}
+
     if sort not in _SEARCH_SORT:
         return {"error": f"sort must be one of {', '.join(_SEARCH_SORT)}"}
     by, order = _SEARCH_SORT[sort]
-    params = {
-        "by": by, "keyword": keyword, "limit": limit,
-        "newest": (page - 1) * limit, "order": order,
-        "page_type": "search", "scenario": "PAGE_GLOBAL_SEARCH", "version": 2,
-    }
+    url = (f"{refs.site(country)}/search?keyword={keyword.replace(' ', '%20')}"
+           f"&page={page - 1}&sortBy={by}&order={order}")
+
+    captured = []
+
+    def on_response(resp):
+        if "/api/v4/search/search_items" not in resp.url:
+            return
+        try:
+            payload = resp.json()
+        except Exception:
+            return
+        data = (payload or {}).get("data")
+        items = ((data.get("items") if isinstance(data, dict) else None)
+                 or (payload or {}).get("items") or [])
+        if items and (payload or {}).get("error") in (None, 0, ""):
+            captured.append(payload)
+
+    with _BROWSER_LOCK:
+        wait = _BROWSER_MIN_INTERVAL - (time.time() - _BROWSER_LAST_DONE[0])
+        if wait > 0:
+            time.sleep(wait)
+        try:
+            with sync_playwright() as p:
+                ctx = p.chromium.launch_persistent_context(
+                    user_data_dir=BROWSER_PROFILE,
+                    channel="chrome",
+                    headless=False,
+                    locale="pt-BR",
+                    timezone_id="America/Sao_Paulo",
+                    viewport={"width": 1366, "height": 900},
+                )
+                try:
+                    tab = ctx.pages[0] if ctx.pages else ctx.new_page()
+                    tab.on("response", on_response)
+
+                    shopee_cookies = [c for c in ctx.cookies()
+                                      if "shopee" in c["domain"]]
+                    if not any(c["name"] == "SPC_U" for c in shopee_cookies):
+                        cookies = _browser_cookies()
+                        if cookies:
+                            ctx.add_cookies(cookies)
+
+                    # One navigation only. No reloads, no retries.
+                    tab.goto(url, wait_until="domcontentloaded", timeout=45000)
+
+                    deadline = time.time() + 25
+                    while time.time() < deadline and not captured:
+                        tab.wait_for_timeout(1000)
+                finally:
+                    try:
+                        ctx.close()
+                    except Exception:
+                        pass
+        except Exception as e:
+            return {"error": f"browser search failed: {type(e).__name__}: {e}"}
+        finally:
+            _BROWSER_LAST_DONE[0] = time.time()
+
+    if not captured:
+        return {"error": "Shopee did not return results in the browser. "
+                         "Run `python login.py` again and confirm you are logged in."}
+
+    rows, total = _parse_search_items(captured[0], country)
     if min_price is not None:
-        params["price_min"] = int(min_price * 100000)
+        rows = [r for r in rows if (r.get("price") or 0) >= min_price]
     if max_price is not None:
-        params["price_max"] = int(max_price * 100000)
-    headers = {
-        "accept": "application/json",
-        "x-api-source": "pc",
-        "x-requested-with": "XMLHttpRequest",
-        "x-shopee-language": "en",
-        "accept-language": refs.ACCEPT_LANGUAGE_OF[country],
-        "referer": refs.search_link(country, keyword),
-        "Cookie": cookie_header,
-    }
-    try:
-        resp = _search_session().get(
-            refs.site(country) + "/api/v4/search/search_items",
-            params=params, headers=headers, timeout=40)
-    except Exception as e:
-        return {"error": f"request failed: {type(e).__name__}: {e}"}
-    if resp.status_code in (401, 403, 418, 429):
-        return {"error": f"Shopee search blocked (HTTP {resp.status_code}). "
-                         "Cookies may have expired — run login.py again."}
-    try:
-        payload = resp.json()
-    except Exception:
-        return {"error": f"non-JSON search response (HTTP {resp.status_code})"}
-    err = payload.get("error")
-    if err == 90309999 or payload.get("redirect_to_error_page"):
-        return {"error": "Shopee search requires login (error 90309999). "
-                         "Cookies missing or expired — run login.py again."}
-    if err not in (None, 0, ""):
-        return {"error": f"upstream error {err}: {payload.get('error_msg') or ''}".strip()}
-    rows, total = _parse_search_items(payload, country)
+        rows = [r for r in rows if (r.get("price") or 0) <= max_price]
+    rows = rows[:limit]
     return {
         "country": country,
         "currency": refs.CURRENCY_OF[country],
@@ -189,6 +293,7 @@ def _search_request(country, keyword, sort, page, limit, min_price, max_price):
         "total": total,
         "count": len(rows),
         "results": rows,
+        "source": "browser",
     }
 
 
@@ -211,7 +316,7 @@ def search_trending(country: str = DEFAULT_COUNTRY) -> dict:
 
 
 @mcp.tool()
-def search_products(
+async def search_products(
     keyword: str,
     country: str = DEFAULT_COUNTRY,
     sort: str = "relevancy",
@@ -225,12 +330,23 @@ def search_products(
 
     REQUIRES a logged-in session: run `python login.py` once (it opens a
     browser for you to log in and saves the cookies), then this works.
+    Shopee blocks headless and raw HTTP requests (anti-bot error 90309999),
+    so the search runs in a real Chrome window and reads the results from
+    the page itself. Calls are serialized and spaced by at least
+    SHOPEE_MIN_INTERVAL_SECONDS (default 10s) between searches — one
+    window, one page load, no retries.
 
     sort: relevancy, sales, newest, price_asc, price_desc.
     min_price / max_price are in the market currency (BRL for country=br).
     """
-    return _safe(lambda: _search_request(
-        _country(country), keyword, sort, page, limit, min_price, max_price))
+    try:
+        cc = _country(country)
+        import anyio
+        return await anyio.to_thread.run_sync(
+            functools.partial(_search_browser, cc, keyword, sort, page, limit,
+                              min_price, max_price))
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)}
 
 
 # ---- products ----------------------------------------------------------------

@@ -13,3 +13,7 @@ venv/
 /output/
 /debug/
 **/.DS_Store
+
+# Shopee session material — never commit
+cookies.json
+.browser-profile/
