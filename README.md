@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-12-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-13-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -64,6 +64,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
 | **Weight Space Programming** | coding, research | Reads, fixes, and writes neural network weights by reasoning about what each layer computes, with no training: infers a checkpoint's task, removes failure directions with minimal edits, and hand-builds small networks, under a forward-pass budget and held-out evaluation. | Python 3.9+, numpy; PyTorch optional | [README](skills/weight-space-programming/README.md) |
 | **Improve Codebase Architecture** | coding | Finds refactors that make a codebase easier to change and test, starting where git history shows the most change, and presents them in an HTML report with before and after diagrams written in everyday coding terms. Adapted from Matt Pocock's skill. | Git, Python 3.8+ | [README](skills/improve-codebase-architecture/README.md) |
+| **Untangle Codebase** | coding | Runs one long refactor of a whole codebase or area: lists every hidden link, needless link, surplus piece, and special case, redesigns from today's requirements, and fixes everything one verified commit at a time, with an import graph, co-change history, a code skeleton, and a special-case count to measure progress. Adapted from Caldo's skill. | Git, Python 3.8+, a test command | [README](skills/untangle-codebase/README.md) |
 
 ### Packs
 
@@ -71,7 +72,7 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Improve Codebase Architecture, Security Audit, Unslop Interface, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Improve Codebase Architecture, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
@@ -229,6 +230,7 @@ Notes:
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
+| Untangle Codebase | No | 3.8+ | No | No |
 
 | Platform | Status |
 |----------|--------|
@@ -347,6 +349,7 @@ gti-skills/
 │   ├── frontend-design-review/
 │   ├── improve-codebase-architecture/
 │   ├── security-audit/
+│   ├── untangle-codebase/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
 │   ├── video-to-markdown/
@@ -420,6 +423,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/x-research/README.md](skills/x-research/README.md) | Researching X with the twitter MCP server and its web search fallback |
 | [skills/weight-space-programming/README.md](skills/weight-space-programming/README.md) | Reading, fixing, and writing neural network weights without training |
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
+| [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
 
 ## About GTI
 
@@ -442,6 +446,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Web Performance Audit | Not declared |
 | Weight Space Programming | Not declared |
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
+| Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
