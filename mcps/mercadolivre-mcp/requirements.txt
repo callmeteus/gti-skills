@@ -1,0 +1,3 @@
+mcp
+patchright
+curl-cffi

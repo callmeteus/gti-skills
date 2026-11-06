@@ -1,0 +1,17 @@
+[project]
+name = "kabum-mcp-server"
+version = "1.0.0"
+description = "Free KaBuM! MCP server for AI agents: search products on KaBuM! with live prices (BRL), no API key"
+authors = [{name = "Gio"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp",
+    "curl-cffi",
+    "httpx"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"

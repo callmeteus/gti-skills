@@ -1,0 +1,17 @@
+[project]
+name = "mercadolivre-mcp-server"
+version = "1.0.0"
+description = "Free Mercado Livre MCP server for AI agents: search products on Mercado Livre (Brasil) with live prices, no API key"
+authors = [{name = "Gio"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp",
+    "patchright",
+    "curl-cffi"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"

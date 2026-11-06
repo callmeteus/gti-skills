@@ -1,0 +1,17 @@
+[project]
+name = "zoom-mcp-server"
+version = "1.0.0"
+description = "Free Zoom (zoom.com.br) MCP server for AI agents: price comparator aggregating KaBuM!, Mercado Livre, Amazon, Magazine Luiza and others, no API key"
+authors = [{name = "Gio"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp",
+    "curl-cffi",
+    "httpx"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
