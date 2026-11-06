@@ -67,6 +67,10 @@ def search_products(query: str, page: int = 1) -> dict:
 
     Returns, per product: name, best price (R$), best store, all stores,
     store count, rating and Zoom product URL.
+
+    Shipping (frete) is not part of Zoom's comparison data: it varies by
+    store, so the buyer must check it on the store page (use the product
+    URL) or ask for a CEP-specific quote on the chosen store's MCP.
     """
     page = max(1, int(page))
     resp = _session().get(BASE + "/search", params={"q": query, "page": page}, headers=_HEADERS, timeout=40)

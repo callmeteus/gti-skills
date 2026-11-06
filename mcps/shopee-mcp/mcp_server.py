@@ -365,6 +365,12 @@ def product_details(product: str, country: str = DEFAULT_COUNTRY) -> dict:
     attributes, categories, shipping, shop profile) from a product ID
     ('<shop_id>.<item_id>') or any Shopee product URL.
 
+    `shipping` reports `is_free_shipping`, `estimated_delivery_days` and
+    `ships_from`. Shopee does not expose a precise freight value via the
+    public API; for an exact cost the buyer must enter their CEP on the
+    product page. Ask the user for their CEP and, when needed, point them
+    to the product link to calculate frete.
+
     NOTE: Shopee only serves price, stock, sold count, rating and review
     count to logged-in sessions, so those fields are null here. Live prices
     come from `deals_flash_sale` and `products_trending` instead."""
