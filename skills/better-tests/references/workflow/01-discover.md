@@ -18,6 +18,8 @@ Know the test stack and the public surface before writing a single test. New tes
 
 Run the existing suite once (or the relevant subset) and note how long it takes and whether it passes. Do not start from a red suite without telling the user.
 
+In a JavaScript or TypeScript project, also run `node <skill-dir>/scripts/tools/js-tools.mjs install` now, so Stryker and fast-check are ready for the verify step. It installs into the tools folder outside the project and does nothing when they are already there.
+
 ## Find the helpers
 
 - Test app factories, fixtures, builders, and seed data.

@@ -7,7 +7,7 @@
 **Makes coding agents write behavior-first tests with real dependencies, reproduce bugs before fixing them, prove tests fail with mutation testing, and prune brittle suites.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
-[![Runtime](https://img.shields.io/badge/runtime-none-blue.svg)](#requirements)
+[![Node.js](https://img.shields.io/badge/node-18%2B%20for%20JS%20projects-blue.svg)](#requirements)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#installation)
 [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#requirements)
 [![License](https://img.shields.io/badge/license-not%20declared-lightgrey.svg)](#license)
@@ -29,6 +29,7 @@
 - [How It Works](#how-it-works)
 - [Reference](#reference)
 - [Output](#output)
+- [Development](#development)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
 - [Acknowledgements](#acknowledgements)
@@ -62,7 +63,7 @@ Better Tests gives an agent eight rules and a workflow in three modes: write tes
 | Write API, integration, user-flow, and unit tests through the public surface | Load, performance, or security testing |
 | Replace mocks of owned code with real dependencies and Testcontainers | Set up CI pipelines on its own |
 | Reproduce bugs in a failing test before fixing them | Delete tests without replacement coverage and approval |
-| Run mutation and property-based testing to find missing tests | Install tools without asking |
+| Run mutation and property-based testing to find missing tests; in JS and TS, always Stryker and fast-check | Install anything into the project; the JS tools live in a folder outside it |
 
 ## Features
 
@@ -72,18 +73,26 @@ Better Tests gives an agent eight rules and a workflow in three modes: write tes
 - **Proof of value:** every new test is seen failing, and mutation testing finds assertions that are missing.
 - **Safe pruning:** replacement tests first, seeded bugs to compare, deletion only with approval, before and after numbers.
 - **Anti-pattern checklist:** used to review new tests and classify existing ones.
+- **Mandatory Stryker and fast-check, outside the project:** in JavaScript and TypeScript projects, `js-tools.mjs` installs both into `~/.gti-skills/tools/node` and runs them against the project from there, so the project gains no dependency, config, report, or temp folder.
 - **Language agnostic:** tool tables for JavaScript, TypeScript, Python, Java, Go, Rust, C#, and PHP.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| None | - | The skill is instructions and reference files only | - |
+| Node.js and npm | 18+ | JavaScript and TypeScript projects: installing and running Stryker and fast-check | No |
+| Stryker, Vitest/Jest/Mocha runners, fast-check, tsx | 9, 9, 4, 4 | Mandatory verify step in JavaScript and TypeScript, installed into the tools folder outside the project | Yes |
 | Docker | Any recent | Testcontainers integration tests | No |
 | Playwright | Any recent | User-flow tests and the Playwright MCP server | No |
-| Mutation or property-based tool | Per language | Verify step, for example Stryker, PIT, mutmut, fast-check, Hypothesis | No |
+| Mutation or property-based tool for other languages | Per language | Verify step, for example PIT, mutmut, Hypothesis, Stryker.NET | No |
 
-The optional tools are used only when the project has them or the user approves installing them.
+In JavaScript and TypeScript projects the agent installs the JS tools without asking, into `~/.gti-skills/tools/node` (or `GTI_TEST_TOOLS_DIR`), never into the project. Tools for other languages are used only when the project has them or the user approves installing them.
+
+To install the JS tools ahead of time:
+
+```bash
+node skills/better-tests/scripts/tools/js-tools.mjs install
+```
 
 ## Installation
 
@@ -139,7 +148,7 @@ The agent finds the test runner and existing helpers, writes HTTP-level tests ag
 |-------|:--------:|---------|
 | Target | Yes | A feature, endpoint, module, bug report, or test folder |
 | Mode | No | Write tests, fix a bug, or audit; inferred from the request |
-| Allowed tools | No | "You may install Stryker", "no Docker on this machine" |
+| Allowed tools | No | "No Docker on this machine", "you may install PIT" |
 | Scope limits | No | "Only the billing module", "report only, do not delete" |
 
 ### Examples
@@ -192,6 +201,30 @@ The agent reads a file only when a step needs it.
 | `references/rules/dependencies.md` | Mocks, fakes, Testcontainers, time, and randomness | Write tests, audit |
 | `references/rules/user-flows.md` | Playwright and the Playwright MCP server | Write tests |
 | `references/quality/anti-patterns.md` | Checklist mapped to the eight rules | Review and audit |
+| `references/tools/js-tools.md` | Stryker and fast-check from the tools folder outside the project | Discover, verify |
+
+### js-tools.mjs
+
+```bash
+node skills/better-tests/scripts/tools/js-tools.mjs install
+node skills/better-tests/scripts/tools/js-tools.mjs stryker --project . --mutate "src/orders/**/*.ts"
+node skills/better-tests/scripts/tools/js-tools.mjs workdir --project .
+node skills/better-tests/scripts/tools/js-tools.mjs property --project . <workDir>/orders.property.ts
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `install` | - | Installs `@stryker-mutator/core` and the Vitest, Jest, and Mocha runners (major 9), `fast-check` (4), and `tsx` (4) into the tools folder; no-op when present |
+| `--update` | Off | With `install`: reinstall the latest versions of the same majors |
+| `stryker` | - | Runs Stryker with the project as working directory; config, reports, and sandbox go to the project's work folder; prints a JSON summary with the mutation score |
+| `--project` | Required for `stryker`, `workdir`, `property` | Project root |
+| `--mutate` | Required for `stryker`, repeatable | Files to mutate |
+| `--runner` | Detected from `package.json` | `vitest`, `jest`, `mocha`, or `command` |
+| `--test-command` | `npm test` | Test command for the `command` runner |
+| `--concurrency` | Stryker default | Parallel test runner processes |
+| `workdir` | - | Prints the project's work folder and the relative import prefix to the project |
+| `property` | - | Runs a property file from the work folder with `tsx` |
+| `--tools-dir` | `~/.gti-skills/tools/node`, or `GTI_TEST_TOOLS_DIR` | Tools folder; refused when inside the project |
 
 ### Repository commands
 
@@ -239,7 +272,36 @@ node packages/cli build
 
 The template is `assets/templates/test-report.md`.
 
+## Development
+
+| Command | Action |
+|---------|--------|
+| `npm run test:skills` | Runs the `js-tools.mjs` tests with the other skill script tests, from the repository root |
+| `node packages/cli validate --skill better-tests` | Checks the skill against the repository rules |
+
 ## Troubleshooting
+
+<details>
+<summary><strong>The tools install fails</strong></summary>
+
+The JS tools need npm and network access to the npm registry. Fix the network or proxy and run the install again; the skill never falls back to installing into the project.
+
+```bash
+node skills/better-tests/scripts/tools/js-tools.mjs install
+```
+
+</details>
+
+<details>
+<summary><strong>Stryker cannot find the test runner</strong></summary>
+
+The runner was not detected from `package.json`. Name it, or use the project's test command:
+
+```bash
+node skills/better-tests/scripts/tools/js-tools.mjs stryker --project . --mutate "src/**/*.ts" --runner command --test-command "npm run test:unit"
+```
+
+</details>
 
 <details>
 <summary><strong>The agent does not see the skill</strong></summary>
@@ -272,7 +334,8 @@ The audit mode only proposes deletions after writing replacement tests. Review t
 ## Limitations
 
 - The rules come from short posts, not from a measured study. The audit mode treats the claim that unit tests lock in slop code as a hypothesis and checks it with seeded bugs.
-- Mutation and property-based testing depend on a tool for the project's language; without one, the verify step is limited to breaking the code by hand.
+- Mutation and property-based testing depend on a tool for the project's language. JavaScript and TypeScript always get Stryker and fast-check from the tools folder; for other languages without an approved tool, the verify step is limited to breaking the code by hand.
+- Property files for JavaScript and TypeScript run as probes outside the project with `tsx`; projects that rely on bundler-only path aliases need relative imports in those files.
 - User-flow tests need a running app and a browser; the skill does not provision environments.
 - Unit tests stay the right choice for dense pure logic; the skill does not remove them by level alone.
 

@@ -58,7 +58,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **UX Psychology Review** | design | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 | **Unslop Interface** | design, coding | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
-| **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mutation testing, and safe pruning of brittle suites. | None | [README](skills/better-tests/README.md) |
+| **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Security Audit** | coding | Defensive, source-first security review in three modes (guidance, diff review, full audit) that maps trust boundaries into a coverage ledger, hunts with isolated agents, has fresh agents try to disprove every candidate, and writes validated findings, reports, and SARIF. Adapted from Cloudflare's skill. | Node 18+, Git; a sandbox to run target code | [README](skills/security-audit/README.md) |
 | **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
@@ -236,7 +236,7 @@ Notes:
 | UX Psychology Review | No | No | No | No |
 | Unslop Interface | No | No | No | No |
 | Frontend Design Review | No | No | No | No |
-| Better Tests | No | No | No | No |
+| Better Tests | 18+ for JS and TS projects | No | No | npm registry, to install Stryker and fast-check outside the project |
 | Security Audit | 18+ | No | No | Optional: Cloudflare Radar Zero Wire page; target code runs only in a sandbox with no network |
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |

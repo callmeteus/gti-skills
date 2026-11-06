@@ -18,7 +18,7 @@ A mutation tool makes many small changes (mutants) to the code and runs the test
 
 | Language | Tool | Typical command |
 |----------|------|-----------------|
-| JavaScript, TypeScript | Stryker | `npx stryker run` |
+| JavaScript, TypeScript | Stryker (mandatory) | `node <skill-dir>/scripts/tools/js-tools.mjs stryker --project . --mutate <files>` |
 | C# | Stryker.NET | `dotnet stryker` |
 | Java, Kotlin | PIT | `mvn org.pitest:pitest-maven:mutationCoverage` |
 | Python | mutmut | `mutmut run` |
@@ -26,7 +26,9 @@ A mutation tool makes many small changes (mutants) to the code and runs the test
 | Go | Gremlins | `gremlins unleash` |
 | PHP | Infection | `vendor/bin/infection` |
 
-- Ask before installing a tool. Scope the run to the changed files or package; a full run can take a long time.
+- **JavaScript and TypeScript:** Stryker always runs, from the tools folder outside the project, as described in `references/tools/js-tools.md`. Never use `npx stryker`, `npm install`, or `npm init stryker` inside the project.
+- **Other languages:** ask before installing a tool.
+- Scope the run to the changed files or package with `--mutate`; a full run can take a long time.
 - For each surviving mutant, either add an assertion that kills it or record why it is equivalent (the change does not alter behavior).
 - Report the score for the scope you ran, not as a project-wide number.
 
@@ -36,7 +38,7 @@ A property test states a rule that holds for every valid input and lets the tool
 
 | Language | Library |
 |----------|---------|
-| JavaScript, TypeScript | fast-check |
+| JavaScript, TypeScript | fast-check (mandatory, run from the tools folder) |
 | Python | Hypothesis |
 | Java | jqwik |
 | Go | rapid |
@@ -52,8 +54,12 @@ Good properties:
 
 When a property finds a counterexample, keep it as a plain example-based test with literal values, then fix the code.
 
+In JavaScript and TypeScript, write each property in the project's work folder inside the tools folder and run it with the `property` command (see `references/tools/js-tools.md`). The property file is a probe and stays outside the project; what lands in the project is the literal example test for each counterexample. Only when the project already depends on `fast-check` may property tests live in its suite.
+
 ## Check
 
 - Each new test was seen failing at least once.
 - Surviving mutants in the changed scope are killed or explained.
-- The report lists the tools run, the scope, and the results.
+- In JavaScript and TypeScript, Stryker ran on the changed scope and at least one fast-check property was run for each piece of logic with a rule worth stating.
+- The project has no new dependency, lockfile change, config file, or report from the tools (`git status` shows only the tests you meant to add).
+- The report lists the tools run, the tools folder, the scope, and the results.

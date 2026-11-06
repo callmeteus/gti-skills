@@ -11,6 +11,10 @@ description: >-
   or says the AI-generated tests are bad, slow, or useless. Do not use for
   load or performance testing, security testing, or test infrastructure such
   as CI pipeline setup alone.
+compatibility: >-
+  For JavaScript and TypeScript projects, Node.js 18+ and npm: Stryker and
+  fast-check are always installed, into a tools folder outside the project.
+  Docker for Testcontainers. Playwright optional.
 metadata:
   display-name: Better Tests
 ---
@@ -38,7 +42,14 @@ Measure tests by the bugs they catch, not by how many exist or by line coverage.
 
 - The code under test and its test runner. Discover the stack before writing anything.
 - Docker (or a compatible runtime) when integration tests use Testcontainers. If it is missing, say so and ask before falling back to in-memory fakes.
-- Optional: Playwright and the Playwright MCP server for user-flow tests, and a mutation or property-based testing tool for the verify step. Install nothing without asking.
+- **JavaScript and TypeScript projects: Stryker and fast-check are mandatory.** Install them before the verify step, without asking, but never into the project: no dependency, lockfile, config, or report may appear in it. Use the bundled script, which installs them into a shared tools folder (default `~/.gti-skills/tools/node`) and runs them from there. Tell the user the folder path. See [references/tools/js-tools.md](references/tools/js-tools.md).
+
+  ```bash
+  node <skill-dir>/scripts/tools/js-tools.mjs install
+  ```
+
+  If the install fails (no network, no npm), stop the verify step and tell the user; never fall back to installing into the project.
+- Optional: Playwright and the Playwright MCP server for user-flow tests, and mutation or property-based tools for other languages. Ask before installing those.
 
 ## Instructions
 
@@ -49,7 +60,7 @@ Pick the mode from the request, then follow its steps in order. Read a reference
 1. **Discover.** Find the test runner, existing helpers, fixtures, containers, and conventions, and the public surface of the code (exported functions, HTTP routes, CLI commands, UI). See [references/workflow/01-discover.md](references/workflow/01-discover.md).
 2. **Choose the level.** For each behavior, pick the highest level that stays fast and deterministic: user flow, API or integration, or unit for pure logic. See [references/workflow/02-choose-level.md](references/workflow/02-choose-level.md).
 3. **Write the tests.** Follow the eight rules below. For dependencies read [references/rules/dependencies.md](references/rules/dependencies.md); for UI flows read [references/rules/user-flows.md](references/rules/user-flows.md).
-4. **Prove they catch bugs.** Run them, break the code on purpose, and confirm they fail; then run mutation or property-based tests when the stack has a tool. See [references/workflow/04-verify.md](references/workflow/04-verify.md).
+4. **Prove they catch bugs.** Run them, break the code on purpose, and confirm they fail; then run mutation and property-based tests. In JavaScript and TypeScript this always means Stryker and fast-check, run from outside the project with [references/tools/js-tools.md](references/tools/js-tools.md). See [references/workflow/04-verify.md](references/workflow/04-verify.md).
 5. **Report** with [assets/templates/test-report.md](assets/templates/test-report.md).
 
 ### Mode B: fix a bug
@@ -112,6 +123,8 @@ before deleting the 88 files.
 | `references/workflow/` | One file per step: discover, choose the level, reproduce a bug, verify, audit and prune |
 | `references/rules/` | Dependencies (mocks, fakes, Testcontainers) and user flows (Playwright) |
 | `references/quality/` | Anti-patterns used to review new tests and classify old ones |
+| `references/tools/js-tools.md` | Installing and running Stryker and fast-check from outside the project |
+| `scripts/tools/js-tools.mjs` | Installs Stryker and fast-check into the tools folder and runs them against a project |
 | `assets/templates/` | The report structure |
 
 ## Running in your agent
