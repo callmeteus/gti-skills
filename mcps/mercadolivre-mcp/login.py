@@ -1,7 +1,10 @@
 """One-time Mercado Livre login for the MCP.
 
-Opens a real Chrome with a persistent profile so the MCP can access the
-user's purchases/orders. Run:  python login.py
+Opens a real Chrome with a persistent profile. Log in in the window that
+opens; the script keeps the browser open for up to 10 minutes and saves
+the session automatically when login is detected.
+
+Run:  python login.py
 """
 import asyncio
 import json
@@ -14,10 +17,6 @@ from datetime import datetime, timezone
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 COOKIE_FILE = os.path.join(_SCRIPT_DIR, "cookies.json")
 PROFILE_DIR = os.path.join(_SCRIPT_DIR, ".browser-profile")
-
-LOGIN_INDICATORS = {"_d2id", "orguseridp", "user_id"}
-
-TIMEOUT_SECONDS = 10 * 60
 
 CHROME_USER_DATA = os.path.join(
     os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
@@ -34,28 +33,23 @@ PROFILE_FILES = [
     os.path.join("Default", "Secure Preferences"),
 ]
 
+TIMEOUT_SECONDS = 10 * 60
+
 
 def _cookies_to_header(cookies):
     return "; ".join(f"{c['name']}={c['value']}" for c in cookies if c.get("name"))
 
 
-def _logged_in(names):
-    return bool(LOGIN_INDICATORS & set(names))
-
-
 def _save(cookies):
     cookies = cookies or []
-    names = sorted({c["name"] for c in cookies})
     data = {
         "captured_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "cookie_header": _cookies_to_header(cookies),
         "cookies": cookies,
-        "logged_in": _logged_in(names),
     }
     with open(COOKIE_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"OK: {len(cookies)} cookies salvos em {COOKIE_FILE}")
-    print(f"Login detectado: {'SIM' if _logged_in(names) else 'NAO CONFIRMADO'}")
+    print(f"\nOK: {len(cookies)} cookies salvos em {COOKIE_FILE}")
 
 
 def _profile_ready():
@@ -79,6 +73,23 @@ def _seed_profile():
     return copied
 
 
+async def _is_logged_in(page):
+    try:
+        url = page.url
+        txt = await page.inner_text("body")
+    except Exception:
+        return False
+    # Must NOT be on login/identification/challenge page
+    if "login" in url or "identification" in url or "challenge" in url:
+        return False
+    # Check for strong logged-in markers (user menu, account name)
+    strong_markers = ["Sair", "Minha conta", "Meu perfil"]
+    # Also check the navigation header for the user's name
+    if any(m in txt for m in strong_markers):
+        return True
+    return False
+
+
 async def main():
     from patchright.async_api import async_playwright
 
@@ -89,14 +100,7 @@ async def main():
             print(f"Herdando a sessao do Chrome: {CHROME_USER_DATA}")
             copied = _seed_profile()
             print(f"Arquivos copiados: {len(copied)}")
-            if not _profile_ready():
-                print()
-                print("ATENCAO: nao consegui copiar o banco de cookies do Chrome.")
-                print("Feche TODAS as janelas do Chrome e rode de novo se quiser")
-                print("herdar a sessao — ou apenas faca login na janela a seguir.")
         os.makedirs(PROFILE_DIR, exist_ok=True)
-
-    last_cookies = []
 
     async with async_playwright() as p:
         ctx = await p.chromium.launch_persistent_context(
@@ -116,22 +120,23 @@ async def main():
         except Exception as e:
             print(f"Aviso ao navegar: {type(e).__name__}: {e}")
 
-        print("Faca login na janela. Pode fechar quando terminar.")
-        print("Aguardando o login...")
+        print()
+        print(">>> Faca login na janela do Chrome.")
+        print(">>> O script detecta o login automaticamente (ate 10 min).")
+        print(">>> NAO feche a janela antes de ver 'Login detectado!'.")
+        print()
 
         start = time.time()
-        try:
-            while time.time() - start < TIMEOUT_SECONDS:
-                await page.wait_for_timeout(2000)
+        last_cookies = []
+        while time.time() - start < TIMEOUT_SECONDS:
+            await page.wait_for_timeout(3000)
+            if await _is_logged_in(page):
+                print("\nLogin detectado! Salvando...")
+                await page.wait_for_timeout(5000)
                 last_cookies = await ctx.cookies()
-                if _logged_in({c["name"] for c in last_cookies}):
-                    print("Login detectado! Deixando a pagina terminar de carregar...")
-                    await page.wait_for_timeout(6000)
-                    last_cookies = await ctx.cookies()
-                    break
-        except Exception as e:
-            print(f"Aviso: janela fechada ({type(e).__name__}). "
-                  "Salvando os ultimos cookies vistos...")
+                break
+            elapsed = int(time.time() - start)
+            print(f"  aguardando login... ({elapsed}s)   ", end="\r")
 
         try:
             last_cookies = await ctx.cookies() or last_cookies
@@ -151,4 +156,3 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 EOF
-echo done
