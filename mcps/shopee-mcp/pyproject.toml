@@ -1,0 +1,18 @@
+[project]
+name = "shopee-mcp-server"
+version = "1.0.0"
+description = "Free Shopee MCP server for AI agents: search products, flash deals, shop profiles, reviews, trending, categories across 9 markets. Requires one-time login (QR or email/password)."
+authors = [{name = "Gio"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp",
+    "curl-cffi",
+    "patchright",
+    "httpx"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"

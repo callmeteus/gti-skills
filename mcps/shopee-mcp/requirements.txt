@@ -1,0 +1,4 @@
+mcp
+curl-cffi
+patchright
+httpx
