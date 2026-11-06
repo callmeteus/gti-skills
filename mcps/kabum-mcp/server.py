@@ -136,5 +136,75 @@ def product_details(product_id: str) -> dict:
     return {"error": f"could not parse product {product_id}"}
 
 
+def _session_token() -> str | None:
+    data = _get("/lg/v1/session/new-token")
+    if isinstance(data, dict):
+        return data.get("session")
+    return None
+
+
+@mcp.tool()
+def zip_lookup(cep: str) -> dict:
+    """Resolve a Brazilian CEP (postal code) to its address via KaBuM!'s
+    shipping service. Useful to confirm a CEP before quoting freight."""
+    digits = "".join(c for c in str(cep) if c.isdigit())
+    if len(digits) != 8:
+        return {"error": "CEP must have 8 digits"}
+    data = _get(f"/shipping/v1/zip-query?zip_code={digits}")
+    return data
+
+
+@mcp.tool()
+def shipping_quote(product_id: str, cep: str, quantity: int = 1) -> dict:
+    """Quote shipping (frete) options and prices for a KaBuM! product to a
+    Brazilian CEP. Returns delivery options with price (BRL), deadline in days
+    and estimated arrival date. Ask the user for their CEP if not provided."""
+    digits = "".join(c for c in str(cep) if c.isdigit())
+    if len(digits) != 8:
+        return {"error": "CEP must have 8 digits"}
+    try:
+        pid = int(product_id)
+    except (TypeError, ValueError):
+        return {"error": "product_id must be numeric"}
+    qty = max(1, int(quantity))
+    token = _session_token()
+    if not token:
+        return {"error": "could not obtain KaBuM! session token"}
+    body = {
+        "zip_code": digits,
+        "sellers": [{"seller_name": "KaBuM!", "seller_id": "0",
+                     "products": [{"code": pid, "quantity": qty, "offer_id": 0}]}],
+        "client": {"id": "", "session": token, "type": "F", "is_prime": False},
+        "store": 5,
+        "origin": "product",
+    }
+    resp = _session().post(BASE + "/shipping/v4/quotation", json=body,
+                          headers=_HEADERS, timeout=40)
+    if resp.status_code != 200:
+        return {"error": f"KaBuM! shipping API returned HTTP {resp.status_code}"}
+    try:
+        data = resp.json()
+    except Exception:
+        return {"error": "non-JSON response from KaBuM! shipping API"}
+    out = {"cep": digits, "product_id": pid, "quantity": qty, "quotes": []}
+    for q in (data.get("quotes") or []):
+        deliveries = []
+        for d in (q.get("deliveries") or []):
+            deliveries.append({
+                "name": d.get("name"),
+                "type": d.get("type"),
+                "price": d.get("price"),
+                "original_price": d.get("original_price"),
+                "max_days": d.get("max_days"),
+                "arrival_date": d.get("arrival_date")
+                    or d.get("expected_arrival_date"),
+            })
+        out["quotes"].append({
+            "seller": q.get("seller_name"),
+            "deliveries": deliveries,
+        })
+    return out
+
+
 if __name__ == "__main__":
     mcp.run()

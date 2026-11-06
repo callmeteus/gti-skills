@@ -52,7 +52,9 @@ _EXTRACT_JS = r"""
   }
   const rating = (el.querySelector('.poly-component__review-compacted .polylabel-label') || {}).textContent || null;
   const seller = (el.querySelector('.poly-component__seller') || {}).textContent || null;
-  return { title, item_id, url, price, old_price: oldPrice, rating: rating ? rating.trim() : null, seller: seller ? seller.trim() : null };
+  const shipEl = el.querySelector('.poly-component__shipping-v2, .poly-component__shipping');
+  const shipping = shipEl ? shipEl.textContent.trim().replace(/\\s+/g, ' ') : null;
+  return { title, item_id, url, price, old_price: oldPrice, rating: rating ? rating.trim() : null, seller: seller ? seller.trim() : null, shipping };
 })
 """
 
@@ -111,6 +113,55 @@ async def search_products(query: str, limit: int = 20) -> dict:
         "url": url,
         "count": len(results),
         "results": results,
+    }
+
+
+@mcp.tool()
+async def shipping_options(item_id: str, cep: str) -> dict:
+    """Quote shipping (frete) options for a Mercado Livre item to a Brazilian
+    CEP. `item_id` is the MLB... id returned by search_products. Returns
+    delivery options with cost (BRL), method and estimated delivery date.
+    Ask the user for their CEP if not provided."""
+    digits = "".join(c for c in str(cep) if c.isdigit())
+    if len(digits) != 8:
+        return {"error": "CEP must have 8 digits"}
+    iid = str(item_id).strip()
+    if not iid.upper().startswith("MLB"):
+        return {"error": "item_id must be an MLB... id from search_products"}
+    url = f"https://api.mercadolibre.com/items/{iid}/shipping_options?zip_code={digits}"
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=40) as client:
+            resp = await client.get(url)
+    except Exception as e:
+        return {"error": f"request failed: {type(e).__name__}: {e}"}
+    if resp.status_code != 200:
+        return {"error": f"Mercado Livre API returned HTTP {resp.status_code}: {resp.text[:300]}"}
+    try:
+        data = resp.json()
+    except Exception:
+        return {"error": "non-JSON response from Mercado Livre API"}
+    options = []
+    for o in (data.get("options") or []):
+        edt = o.get("estimated_delivery_time") or {}
+        options.append({
+            "id": o.get("id"),
+            "shipping_method_type": o.get("shipping_method_type"),
+            "shipping_option_type": o.get("shipping_option_type"),
+            "cost": o.get("cost"),
+            "base_cost": o.get("base_cost"),
+            "list_cost": o.get("list_cost"),
+            "currency": o.get("currency_id"),
+            "display": o.get("display"),
+            "estimated_delivery_date": edt.get("date"),
+            "shipping_hours": edt.get("shipping"),
+            "handling_hours": edt.get("handling"),
+        })
+    return {
+        "item_id": iid,
+        "cep": digits,
+        "destination": data.get("destination"),
+        "options": options,
     }
 
 

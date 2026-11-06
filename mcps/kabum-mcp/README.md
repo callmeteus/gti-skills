@@ -26,7 +26,7 @@ opencode mcp add kabum --global -- python /absolute/path/to/gti-skills/mcps/kabu
 
 | Path | Responsibility |
 |------|----------------|
-| `server.py` | MCP entry point: `search_products` tool |
+| `server.py` | MCP entry point: `search_products`, `product_details`, `zip_lookup`, `shipping_quote` tools |
 | `pyproject.toml` | Project metadata and dependencies |
 
 ## Environment

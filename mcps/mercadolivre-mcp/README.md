@@ -28,7 +28,7 @@ opencode mcp add mercadolivre --global -- python /absolute/path/to/gti-skills/mc
 
 | Path | Responsibility |
 |------|----------------|
-| `server.py` | MCP entry point: `search_products` tool |
+| `server.py` | MCP entry point: `search_products` (with shipping badge), `shipping_options` tools |
 | `pyproject.toml` | Project metadata and dependencies |
 
 ## Environment
