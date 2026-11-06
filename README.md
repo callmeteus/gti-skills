@@ -105,6 +105,18 @@ The agent matches the request to the skill, installs any missing dependencies, a
 
 The CLI in [packages/cli](packages/cli/README.md) copies a skill into the folder each agent reads. It needs only Node.js.
 
+### Install from GitHub (agent prompts)
+
+Ready-to-use installation prompts are available in [`prompts/installation/`](prompts/installation/):
+
+| Prompt | File | What it installs |
+|--------|------|------------------|
+| **Everything** | [`prompts/installation/install-all.md`](prompts/installation/install-all.md) | All skills + all MCP servers from GitHub |
+| **Skills only** | [`prompts/installation/install-skills-only.md`](prompts/installation/install-skills-only.md) | All skills from GitHub |
+| **MCPs only** | [`prompts/installation/install-mcps-only.md`](prompts/installation/install-mcps-only.md) | All MCP servers from GitHub |
+
+Each prompt is self-contained: it clones from `https://github.com/callmeteus/gti-skills.git`, installs everything, and cleans up. Just paste the prompt into your agent and it will handle the rest.
+
 ```bash
 node packages/cli install --harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
 ```
