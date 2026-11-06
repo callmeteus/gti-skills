@@ -55,15 +55,29 @@ export function venvPython(dir, platform = process.platform) {
     return platform === "win32" ? join(dir, ".venv", "Scripts", "python.exe") : join(dir, ".venv", "bin", "python");
 }
 
-function listFiles(dir, base = dir) {
+function walkFiles(dir, base = dir) {
     const files = [];
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
         if (SKIP.has(entry.name) || entry.isSymbolicLink()) continue;
         const full = join(dir, entry.name);
-        if (entry.isDirectory()) files.push(...listFiles(full, base));
-        else if (entry.isFile() && !SKIP_FILES.has(entry.name)) files.push(relative(base, full).split(sep).join("/"));
+        if (entry.isDirectory()) files.push(...walkFiles(full, base));
+        else if (entry.isFile()) files.push(relative(base, full).split(sep).join("/"));
     }
-    return files.sort();
+    return files;
+}
+
+/**
+ * The server's own files. In a git checkout only tracked files count, so logins, browser
+ * profiles, and other ignored runtime files in a developer's checkout are never copied.
+ * A downloaded source tree holds tracked files only, so it is walked.
+ */
+export function listFiles(dir, run = spawnSync) {
+    const git = run("git", ["-C", dir, "ls-files", "-z", "--", "."], { encoding: "utf8" });
+    const files = git.status === 0 && git.stdout ? git.stdout.split("\0").filter(Boolean) : walkFiles(dir);
+    return files
+        .filter((file) => !file.split("/").some((part) => SKIP.has(part)) && !SKIP_FILES.has(file.split("/").pop()))
+        .filter((file) => existsSync(join(dir, ...file.split("/"))))
+        .sort();
 }
 
 function readManifest(dir) {
@@ -80,16 +94,23 @@ function hash(text) {
 
 /**
  * Copies the server's files into its managed folder. Returns what changed.
- * Files from an earlier copy that no longer exist upstream are removed; anything else is kept.
+ * Only files this folder got from an earlier copy are overwritten or removed; a file that
+ * already exists without being in the manifest belongs to the server's runtime and is kept.
  */
 export function syncFiles(mcp, dir, commit) {
     mkdirSync(dir, { recursive: true });
     const previous = readManifest(dir);
+    const owned = new Set(previous?.files ?? []);
     const files = listFiles(mcp.source);
     let changed = 0;
+    const kept = [];
     for (const file of files) {
         const from = join(mcp.source, ...file.split("/"));
         const to = join(dir, ...file.split("/"));
+        if (existsSync(to) && !owned.has(file)) {
+            kept.push(file);
+            continue;
+        }
         const same = existsSync(to) && readFileSync(to).equals(readFileSync(from));
         if (!same) {
             mkdirSync(join(to, ".."), { recursive: true });
@@ -105,9 +126,9 @@ export function syncFiles(mcp, dir, commit) {
         }
     }
     const requirements = hash(readFileSync(join(mcp.source, "requirements.txt"), "utf8"));
-    const manifest = { name: mcp.name, commit, files, requirements, depsInstalled: previous?.depsInstalled ?? null };
+    const manifest = { name: mcp.name, commit, files: files.filter((file) => !kept.includes(file)), requirements, depsInstalled: previous?.depsInstalled ?? null };
     writeFileSync(join(dir, Manifest), `${JSON.stringify(manifest, null, 4)}\n`);
-    return { changed, removed, fresh: previous === null, depsCurrent: previous?.depsInstalled === requirements && existsSync(venvPython(dir)) };
+    return { changed, removed, kept, fresh: previous === null, depsCurrent: previous?.depsInstalled === requirements && existsSync(venvPython(dir)) };
 }
 
 export function markDepsInstalled(dir) {

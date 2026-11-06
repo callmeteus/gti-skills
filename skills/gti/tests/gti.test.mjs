@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { spawnSync } from "node:child_process";
 import { gzipSync } from "node:zlib";
 
 import { listEntries, matchEntries, readConfig, setEntry } from "../scripts/core/agents.mjs";
@@ -71,6 +72,26 @@ test("sync copies sources, removes files dropped upstream, and keeps runtime sta
     assert.equal(readFileSync(join(dir, "server.py"), "utf8"), "print('kabum v3')\n");
     assert.ok(existsSync(join(dir, "cookies.json")));
     assert.ok(existsSync(join(dir, "data", "cache.db")));
+});
+
+test("copies only git-tracked files from a checkout and never overwrites runtime files it does not own", (t) => {
+    const source = sourceTree(t);
+    spawnSync("git", ["-C", source.root, "init", "-q"]);
+    write(source.root, { ".gitignore": ".browser-profile/" + String.fromCharCode(10), "mcps/shopee-mcp/.browser-profile/Default/Cookies": "dev login" });
+    spawnSync("git", ["-C", source.root, "add", "-A"]);
+    const shopee = discoverMcps(source.root)[1];
+    const dir = join(temp(t), "shopee");
+    write(dir, { "shopee/api.py": "runtime copy" });
+
+    const first = syncFiles(shopee, dir, source.commit);
+    assert.ok(!existsSync(join(dir, ".browser-profile")));
+    assert.deepEqual(first.kept, ["shopee/api.py"]);
+    assert.equal(readFileSync(join(dir, "shopee", "api.py"), "utf8"), "runtime copy");
+
+    write(dir, { ".browser-profile/Default/Cookies": "real login" });
+    const second = syncFiles(shopee, dir, source.commit);
+    assert.deepEqual(second.removed, []);
+    assert.equal(readFileSync(join(dir, ".browser-profile", "Default", "Cookies"), "utf8"), "real login");
 });
 
 test("carries login state from an older install folder", (t) => {
