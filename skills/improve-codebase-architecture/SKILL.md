@@ -62,6 +62,7 @@ Follow the steps in order. Read a reference file only when its step starts.
 
 4. **Work through the chosen candidate.** Ask the open decisions in numbered rounds with a recommended answer each, look up facts yourself, and update `GLOSSARY.md` and ADRs as decisions are made. See [references/workflow/04-discuss.md](references/workflow/04-discuss.md).
 5. **Compare API designs (optional).** When the user wants options, produce three or four very different designs and recommend one. See [references/workflow/05-design-options.md](references/workflow/05-design-options.md).
+6. **Implement and report the change.** After the user confirms, change the code as agreed, then tell them in a few short paragraphs: what is different now from their side, their own example under the new behavior, exactly where it applies and where it does not, and what you could not verify and why. See [references/workflow/06-implement-and-report.md](references/workflow/06-implement-and-report.md).
 
 Nothing in the repository changes during steps 1 to 3. Change code only after the user confirms the plan from step 4.
 
@@ -98,7 +99,7 @@ and asks for confirmation before touching code.
 
 | Path | Purpose |
 |------|---------|
-| `references/workflow/` | One file per step: scope, explore, report, discuss, design options |
+| `references/workflow/` | One file per step: scope, explore, report, discuss, design options, implement and report |
 | `references/concepts/` | Module design, plain language, testing by dependency type, glossary and ADR formats |
 | `references/quality/` | Report checklist |
 | `scripts/` | Hotspot scan and report renderer |

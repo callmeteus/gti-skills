@@ -70,6 +70,7 @@ This skill is adapted from Matt Pocock's `improve-codebase-architecture`. It kee
 - **Testing by dependency type:** each candidate says how to test it: pure code, a local stand-in, your own service, or a third-party API.
 - **Guided follow-up:** numbered rounds of questions with a recommended answer each, until the plan is agreed.
 - **Design options:** three or four very different API designs for the chosen refactor, with a recommendation.
+- **Change report:** after the agreed refactor, a short message that says what is different for the user, replays their own example, names exactly where the change applies and where it does not, and states what was not verified and why.
 - **Self-contained:** the companion skills of the original are folded into this folder.
 
 ## Requirements
@@ -170,7 +171,8 @@ Let's do candidate 1. Show me three different API designs first.
           │
   5. Options       optional: 3 or 4 API designs, one recommendation
           │
-  6. Plan          user confirms before any code changes
+  6. Implement     after the user confirms the plan: change the code, then a short report
+                   (what changed, the user's own example, where it applies, what was not verified)
 ```
 
 ## Reference
@@ -215,6 +217,7 @@ The data format is documented in `references/workflow/03-report.md`, with a full
 | `references/workflow/03-report.md` | Data fields, language, diagrams, rendering | Step 3 |
 | `references/workflow/04-discuss.md` | Rounds of questions, glossary and ADR updates | Step 4 |
 | `references/workflow/05-design-options.md` | Several API designs and a recommendation | Step 5 |
+| `references/workflow/06-implement-and-report.md` | Implementing the agreed plan and the four-part change report | Step 6 |
 | `references/concepts/module-design.md` | Small API with logic inside, the merge test | Steps 2 to 5 |
 | `references/concepts/plain-language.md` | Banned jargon and plain replacements | Steps 3 and 4 |
 | `references/concepts/testing-by-dependency.md` | Testing approach per dependency type | Steps 2 and 4 |
