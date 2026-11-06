@@ -23,7 +23,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { AGENTS, MANUAL_AGENTS, entryScript, existingAgents, matchEntries, readConfig, setEntry, writeConfig } from "./core/agents.mjs";
-import { carryState, discoverMcps, installDeps, installDir, markDepsInstalled, syncFiles, venvPython } from "./core/mcps.mjs";
+import { carryState, checkServer, discoverMcps, installDeps, installDir, markDepsInstalled, syncFiles, venvPython } from "./core/mcps.mjs";
 import { cachedSource, ensureLatestSource, gtiHome, stampedCommit } from "./core/source.mjs";
 
 function parseArgs(argv) {
@@ -89,7 +89,7 @@ function configsFor(userHome) {
 }
 
 /** Plans and applies MCP work. Exported for tests. */
-export function runMcps({ mode, names, agents, source, home, userHome, dryRun, skipDeps, deps = installDeps, io }) {
+export function runMcps({ mode, names, agents, source, home, userHome, dryRun, skipDeps, deps = installDeps, check = checkServer, io }) {
     const all = discoverMcps(source.root);
     const configs = configsFor(userHome);
     const touched = new Set();
@@ -135,6 +135,10 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
                 markDepsInstalled(dir);
                 line.deps = "installed";
             }
+            if (!skipDeps) {
+                const health = check(mcp, dir);
+                if (!health.ok) line.failed = health.error;
+            }
         } else {
             line.files = managed ? "would sync" : "would install";
         }
@@ -145,7 +149,7 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
             if (config.error) continue;
             if (!targets.some((t) => t.config === config)) targets.push({ config, key: mcp.name, from: null });
         }
-        for (const target of targets) {
+        for (const target of line.failed ? [] : targets) {
             if (target.config.error) {
                 line.registrations.push(`${target.config.agent}: ${target.config.error}`);
                 continue;
@@ -169,6 +173,7 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
         }
         io.out(`mcp      ${line.name}: files ${line.files}${line.deps ? `, deps ${line.deps}` : ""}`);
         for (const reg of line.registrations) io.out(`           ${reg}`);
+        if (line.failed) io.out(`           FAILED to start, agent entries left unchanged: ${line.failed}`);
         if (line.carried.length) io.out(`           kept login state: ${[...new Set(line.carried)].join(", ")}`);
         if (line.login) io.out(`           one-time login if needed: ${line.login}`);
     }

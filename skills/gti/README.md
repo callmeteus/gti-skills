@@ -68,6 +68,7 @@ The skill bundles a small Node.js script. It downloads the latest commit into th
 - **No clone needed:** the latest commit is downloaded from GitHub into the CLI's own sources folder and reused by both.
 - **Managed MCP copies:** each server lives in `~/.gti-skills/mcps/<name>/` with its own `.venv`; requirements are reinstalled only when they change, and the needed Chromium build is installed.
 - **State kept:** runtime files the servers write are never removed, and when an entry moves from an older copy its login state (for example Shopee cookies and browser profile) is carried over.
+- **Start check:** after an update each server is started once and must answer an MCP `initialize` request; if it does not, agent entries stay on the old copy and the error is shown.
 - **Safe config edits:** OpenCode, Claude Code, Cursor, Kiro, Antigravity, and Codex configs are edited in place, keeping the entry's other settings, with a timestamped backup and an atomic write.
 - **Dry run and status:** `--dry-run` shows every change first; `status` lists skill versions and where each MCP is registered.
 
@@ -184,6 +185,7 @@ Shows which skills are out of date and where each MCP server is registered.
   3. MCPs       discover mcps/* and packages/python/*-mcp in the source
                 for each server already managed or registered:
                   copy files ──> carry login state from the old copy ──> .venv + pip + Chromium
+                  start check (MCP initialize) ──> on failure, leave agent entries alone
                   repoint matching entries in agent configs ──> backup + atomic write
   4. Report     skills, servers, entries, backups, logins, restart
 ```

@@ -163,3 +163,23 @@ export function installDeps(mcp, dir, options = {}) {
         if (result.status !== 0) throw new Error(`${args.slice(1, 3).join(" ")} failed for ${mcp.name}.`);
     }
 }
+
+/**
+ * Starts the server once and sends an MCP initialize request over stdio.
+ * Returns { ok: true } when it answers, or { ok: false, error } with the end of its stderr.
+ */
+export function checkServer(mcp, dir, run = spawnSync) {
+    const input = `${JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "gti", version: "1" } } })}\n`;
+    const result = run(venvPython(dir), [join(dir, mcp.entry)], { input, encoding: "utf8", timeout: 60000, cwd: dir });
+    const answered = String(result.stdout ?? "").split("\n").some((line) => {
+        try {
+            const message = JSON.parse(line);
+            return message.id === 1 && message.result;
+        } catch {
+            return false;
+        }
+    });
+    if (answered) return { ok: true };
+    const stderr = String(result.stderr ?? "").trim().split("\n").slice(-3).join(" | ");
+    return { ok: false, error: result.error?.code === "ETIMEDOUT" ? "no answer within 60 s" : stderr || `exit ${result.status}` };
+}

@@ -43,6 +43,7 @@ function sourceTree(t, extra = {}) {
 }
 
 const quiet = { out: () => {}, err: () => {} };
+const ok = () => ({ ok: true });
 
 test("discovers MCP servers with their entry script, aliases, browser, and login", (t) => {
     const mcps = discoverMcps(sourceTree(t).root);
@@ -125,7 +126,7 @@ test("mcps update repoints existing registrations, carries state, backs up confi
         ".config/opencode/opencode.json": JSON.stringify({ mcp: { servers: { shopee: { type: "local", command: ["py", join(oldShopee, "mcp_server.py")] } } } }),
     });
     const installed = [];
-    const { report, backups } = runMcps({ mode: "update", source, home, userHome, io: quiet, deps: (mcp) => installed.push(mcp.name) });
+    const { report, backups } = runMcps({ mode: "update", source, home, userHome, io: quiet, deps: (mcp) => installed.push(mcp.name) , check: ok });
 
     assert.deepEqual(report.map((r) => [r.name, r.status ?? r.files]), [["kabum", "not installed"], ["shopee", "installed"], ["twitter", "not installed"]]);
     assert.deepEqual(installed, ["shopee"]);
@@ -136,9 +137,23 @@ test("mcps update repoints existing registrations, carries state, backs up confi
     assert.equal(backups.length, 1);
     assert.ok(readdirSync(join(userHome, ".config", "opencode")).some((f) => f.includes(".gti-backup-")));
 
-    const again = runMcps({ mode: "update", source, home, userHome, io: quiet, deps: (mcp) => installed.push(mcp.name) });
+    const again = runMcps({ mode: "update", source, home, userHome, io: quiet, deps: (mcp) => installed.push(mcp.name) , check: ok });
     assert.equal(again.backups.length, 0);
     assert.equal(again.report[1].registrations[0], "opencode:shopee current");
+});
+
+test("a server that fails to start keeps the agent entries on the old copy", (t) => {
+    const source = sourceTree(t);
+    const home = temp(t);
+    const userHome = temp(t);
+    const original = { mcp: { servers: { kabum: { type: "local", command: ["py", "/old/kabum-mcp/server.py"] } } } };
+    write(userHome, { ".config/opencode/opencode.json": JSON.stringify(original) });
+    const lines = [];
+    const { report, backups } = runMcps({ mode: "update", source, home, userHome, io: { out: (l) => lines.push(l), err: () => {} }, deps: () => {}, check: () => ({ ok: false, error: "ModuleNotFoundError: No module named 'x'" }) });
+    assert.equal(report[0].failed, "ModuleNotFoundError: No module named 'x'");
+    assert.deepEqual(JSON.parse(readFileSync(join(userHome, ".config/opencode/opencode.json"), "utf8")), original);
+    assert.equal(backups.length, 0);
+    assert.ok(lines.some((l) => l.includes("FAILED to start, agent entries left unchanged")));
 });
 
 test("mcps install registers in the chosen agents and dry-run writes nothing", (t) => {
@@ -151,7 +166,7 @@ test("mcps install registers in the chosen agents and dry-run writes nothing", (
     assert.equal(readFileSync(join(userHome, ".cursor/mcp.json"), "utf8"), "{}");
     assert.ok(!existsSync(join(home, "mcps", "kabum")));
 
-    runMcps({ mode: "install", names: ["kabum"], agents: "cursor", source, home, userHome, io: quiet, deps: () => {} });
+    runMcps({ mode: "install", names: ["kabum"], agents: "cursor", source, home, userHome, io: quiet, deps: () => {}, check: ok });
     const cursor = JSON.parse(readFileSync(join(userHome, ".cursor/mcp.json"), "utf8"));
     assert.deepEqual(cursor.mcpServers.kabum.args, [join(home, "mcps", "kabum", "server.py")]);
 

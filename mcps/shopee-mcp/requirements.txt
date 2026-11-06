@@ -1,4 +1,7 @@
-mcp
+mcp>=1.2,<2
 curl-cffi
 patchright
 httpx
+marshmallow>=4,<5
+bottle
+cheroot

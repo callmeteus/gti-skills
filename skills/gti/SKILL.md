@@ -72,7 +72,8 @@ For each gti-skills MCP server that is already managed or already registered in 
 1. Copies the latest files into `~/.gti-skills/mcps/<name>/`. Files the server wrote at runtime (cookies, browser profiles, `.env`) are kept; files removed upstream are removed.
 2. If an agent entry pointed at an older copy, carries over its login state (for example Shopee's `cookies.json` and `.browser-profile/`) so the user does not log in again.
 3. Creates `.venv` with Python 3.10+, installs `requirements.txt` when it changed, and installs the Chromium build the server needs.
-4. Points every matching entry (same name, such as `kabum` or `kabum-mcp`, or a path through the server's folder) at the managed copy, keeping the entry's other settings, after backing up the config file as `<file>.gti-backup-<time>`.
+4. Starts the server once and sends an MCP `initialize` request. If it does not answer, the output says `FAILED to start` with the error, and the agent entries keep pointing at the old copy; report the error to the user.
+5. Points every matching entry (same name, such as `kabum` or `kabum-mcp`, or a path through the server's folder) at the managed copy, keeping the entry's other settings, after backing up the config file as `<file>.gti-backup-<time>`.
 
 Servers that are neither managed nor registered are listed as `not installed`; offer `mcps install` for them. Cline, Kilo Code, GitHub Copilot, and Muse Code keep MCP settings where the script does not write; for those, give the user the command and argument the output shows so they can add it in the agent's MCP settings.
 
