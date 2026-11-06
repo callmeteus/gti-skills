@@ -466,7 +466,7 @@ def list_orders(country: str = DEFAULT_COUNTRY) -> dict:
                 viewport={"width": 1366, "height": 900},
             )
             page = ctx.pages[0] if ctx.pages else ctx.new_page()
-            page.goto(f"{refs.site(country)}/user/purchase/order/list",
+            page.goto(f"{refs.site(country)}/user/purchase",
                       wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(12000)
             url = page.url
