@@ -174,6 +174,7 @@ Current skills:
 | `improve-codebase-architecture` | Improve Codebase Architecture |
 | `security-audit` | Security Audit |
 | `untangle-codebase` | Untangle Codebase |
+| `gti` | GTI |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

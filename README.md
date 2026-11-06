@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-13-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-14-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -58,6 +58,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **UX Psychology Review** | design | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 | **Unslop Interface** | design, coding | Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display. | None | [README](skills/unslop-interface/README.md) |
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
+| **GTI** | coding, personal | Keeps gti-skills current with one command (`/gti update`): updates every installed gti-skills skill from the latest GitHub commit, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at, with backups. Works without a clone. | Node 18+, Python 3.10+ for MCP servers | [README](skills/gti/README.md) |
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Security Audit** | coding | Defensive, source-first security review in three modes (guidance, diff review, full audit) that maps trust boundaries into a coverage ledger, hunts with isolated agents, has fresh agents try to disprove every candidate, and writes validated findings, reports, and SARIF. Adapted from Cloudflare's skill. | Node 18+, Git; a sandbox to run target code | [README](skills/security-audit/README.md) |
@@ -72,12 +73,12 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Improve Codebase Architecture, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, GTI, Improve Codebase Architecture, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
 | `art` | Graphic design, illustration, and visual artwork | Art Director |
-| `personal` | Personal productivity, notes, and everyday tasks | None yet |
+| `personal` | Personal productivity, notes, and everyday tasks | GTI |
 
 ```bash
 node packages/cli install --harness all --pack coding,design --scope user
@@ -236,6 +237,7 @@ Notes:
 | UX Psychology Review | No | No | No | No |
 | Unslop Interface | No | No | No | No |
 | Frontend Design Review | No | No | No | No |
+| GTI | 18+ | 3.10+ (MCP servers) | No | GitHub; PyPI and browser downloads for MCP servers |
 | Better Tests | 18+ for JS and TS projects | No | No | npm registry, to install Stryker and fast-check outside the project |
 | Security Audit | 18+ | No | No | Optional: Cloudflare Radar Zero Wire page; target code runs only in a sandbox with no network |
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
@@ -359,6 +361,7 @@ gti-skills/
 │   ├── artdirector/
 │   ├── better-tests/
 │   ├── frontend-design-review/
+│   ├── gti/
 │   ├── improve-codebase-architecture/
 │   ├── security-audit/
 │   ├── untangle-codebase/
@@ -429,6 +432,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/ux-psychology-review/README.md](skills/ux-psychology-review/README.md) | Reviewing conversion screens with UX psychology principles |
 | [skills/unslop-interface/README.md](skills/unslop-interface/README.md) | Removing the generated look from interfaces in six passes |
 | [skills/frontend-design-review/README.md](skills/frontend-design-review/README.md) | Design reviews with severity and building distinctive interfaces |
+| [skills/gti/README.md](skills/gti/README.md) | Updating skills and MCP servers with `/gti` |
 | [skills/better-tests/README.md](skills/better-tests/README.md) | Writing tests that catch bugs and pruning brittle suites |
 | [skills/security-audit/README.md](skills/security-audit/README.md) | Defensive security reviews, full audits with a coverage ledger, and SARIF export |
 | [skills/web-performance-audit/README.md](skills/web-performance-audit/README.md) | Auditing page load and Core Web Vitals with Chrome DevTools |
@@ -453,6 +457,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | UX Psychology Review | Not declared |
 | Unslop Interface | Not declared |
 | Frontend Design Review | Not declared |
+| GTI | Not declared |
 | Better Tests | Not declared |
 | Security Audit | MIT, see [LICENSE](skills/security-audit/LICENSE); adapted from Cloudflare's security-audit-skill |
 | Web Performance Audit | Not declared |
