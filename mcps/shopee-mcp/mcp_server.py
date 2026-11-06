@@ -446,5 +446,38 @@ def categories_list(country: str = DEFAULT_COUNTRY) -> dict:
     return _safe(lambda: api.categories_list(country=cc))
 
 
+@mcp.tool()
+def list_orders(country: str = DEFAULT_COUNTRY) -> dict:
+    """List the logged-in user's Shopee purchases with shipping status.
+
+    Requires a logged-in session: run `python login.py` first. Uses the saved
+    browser profile. Returns the purchases page text (order ids and statuses).
+    """
+    import os
+    from patchright.sync_api import sync_playwright
+    profile = BROWSER_PROFILE
+    if not os.path.exists(profile):
+        return {"error": "not logged in: run `python login.py` first"}
+    try:
+        with sync_playwright() as p:
+            ctx = p.chromium.launch_persistent_context(
+                user_data_dir=profile, channel="chrome", headless=False,
+                locale="pt-BR", timezone_id="America/Sao_Paulo",
+                viewport={"width": 1366, "height": 900},
+            )
+            page = ctx.pages[0] if ctx.pages else ctx.new_page()
+            page.goto(f"{refs.site(country)}/user/purchase/order/list",
+                      wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(12000)
+            url = page.url
+            text = page.inner_text("body")[:4000]
+            ctx.close()
+    except Exception as e:
+        return {"error": f"browser failed: {type(e).__name__}: {e}"}
+    if "login" in url.lower() or "verify" in url.lower():
+        return {"error": "not logged in: run `python login.py` first", "url": url}
+    return {"url": url, "text": text}
+
+
 if __name__ == "__main__":
     mcp.run()

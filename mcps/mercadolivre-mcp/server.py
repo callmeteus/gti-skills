@@ -165,5 +165,40 @@ async def shipping_options(item_id: str, cep: str) -> dict:
     }
 
 
+@mcp.tool()
+async def list_orders() -> dict:
+    """List the logged-in user's Mercado Livre purchases with shipping status.
+
+    Requires a logged-in session: run `python login.py` first. Uses a real
+    browser and the saved profile. Returns the purchases page text and any
+    detected order/pack ids and shipping statuses.
+    """
+    import os
+    profile = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".browser-profile")
+    if not os.path.exists(profile):
+        return {"error": "not logged in: run `python login.py` first"}
+    from patchright.async_api import async_playwright
+    async with async_playwright() as p:
+        ctx = await p.chromium.launch_persistent_context(
+            user_data_dir=profile, channel="chrome", headless=_HEADLESS,
+            locale="pt-BR", timezone_id="America/Sao_Paulo",
+            viewport={"width": 1366, "height": 900},
+        )
+        page = ctx.pages[0] if ctx.pages else await ctx.new_page()
+        try:
+            await page.goto("https://myaccount.mercadolivre.com.br/my_purchases/list",
+                            timeout=60000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(10000)
+            url = page.url
+            text = (await page.inner_text("body"))[:4000]
+        except Exception as e:
+            await ctx.close()
+            return {"error": f"navigation failed: {type(e).__name__}: {e}"}
+        await ctx.close()
+    if "login" in url.lower() or "identification" in url.lower():
+        return {"error": "not logged in: run `python login.py` first", "url": url}
+    return {"url": url, "text": text}
+
+
 if __name__ == "__main__":
     mcp.run()
