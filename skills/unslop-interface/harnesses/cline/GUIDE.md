@@ -34,4 +34,5 @@ Open the Skills tab in the Cline panel to see and toggle installed skills.
 ## Notes
 
 - The name field must match the folder name exactly.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Cline](https://docs.cline.bot/customization/skills) (path source: official).

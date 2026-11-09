@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `unslop-interface` is li
 ## Notes
 
 - Copilot also reads .claude/skills and .agents/skills. Works in VS Code agent mode, Copilot CLI, and the cloud agent.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [GitHub Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-skills) (path source: official).

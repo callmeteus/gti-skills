@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `frontend-design-review`
 ## Notes
 
 - Workspace skills take priority over user skills with the same name.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Kiro](https://kiro.dev/docs/skills/) (path source: official).

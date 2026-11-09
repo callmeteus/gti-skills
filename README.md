@@ -236,8 +236,8 @@ Notes:
 | Video to Skill | No | 3.8+ | Yes | YouTube, X |
 | Video to Markdown | No | 3.8+ | Yes | YouTube, X |
 | UX Psychology Review | No | No | No | No |
-| Unslop Interface | No | No | No | No |
-| Frontend Design Review | No | No | No | No |
+| Unslop Interface | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |
+| Frontend Design Review | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |
 | Gestures | 18+ (tests only) | No | No | No |
 | GTI | 18+ | 3.10+ (MCP servers) | No | GitHub; PyPI and browser downloads for MCP servers |
 | Better Tests | 18+ for JS and TS projects | No | No | npm registry, to install Stryker and fast-check outside the project |
@@ -378,6 +378,7 @@ gti-skills/
 ├── packages/                  # Code packages
 │   ├── cli/                   # list, validate, build, check, install
 │   ├── artdirector/           # Engine behind the Art Director skill
+│   ├── lintapple/             # UI linter shared by Frontend Design Review and Unslop Interface
 │   └── python/
 │       ├── shared/            # Scripts shared by the video skills
 │       └── twitter-mcp/       # MCP server behind the X Research skill
@@ -428,6 +429,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [packages/python/shared/README.md](packages/python/shared/README.md) | Scripts shared by the video skills |
 | [packages/python/twitter-mcp/README.md](packages/python/twitter-mcp/README.md) | The `twitter` MCP server used by the X Research skill |
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
+| [packages/lintapple/README.md](packages/lintapple/README.md) | Vendored lintapple UI linter and the runner shared by the UI skills |
 | [packages/artdirector/ARCHITECTURE.md](packages/artdirector/ARCHITECTURE.md) | Art Director design decisions and limitations |
 | [skills/artdirector/README.md](skills/artdirector/README.md) | Art Director installation, CLI, and workflow |
 | [skills/video-to-skill/README.md](skills/video-to-skill/README.md) | Generating skills from tutorial videos |
@@ -459,8 +461,8 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Video to Skill | Not declared |
 | Video to Markdown | Not declared |
 | UX Psychology Review | Not declared |
-| Unslop Interface | Not declared |
-| Frontend Design Review | Not declared |
+| Unslop Interface | Not declared; the shared [packages/lintapple](packages/lintapple/LICENSE) is MIT |
+| Frontend Design Review | Not declared; the shared [packages/lintapple](packages/lintapple/LICENSE) is MIT |
 | Gestures | MIT, see [LICENSE](skills/gestures/LICENSE); adapted from Emil Kowalski's gestures skill |
 | GTI | Not declared |
 | Better Tests | Not declared |

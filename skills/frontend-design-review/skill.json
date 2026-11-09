@@ -4,5 +4,20 @@
     "packs": [
         "design",
         "coding"
-    ]
+    ],
+    "package": "packages/lintapple",
+    "rootPointer": "scripts/lintapple/lintapple.root",
+    "shared": [
+        {
+            "from": "packages/lintapple/agent/scripts",
+            "to": "scripts/lintapple"
+        },
+        {
+            "from": "packages/lintapple/agent/references",
+            "to": "references/lintapple"
+        }
+    ],
+    "harnessNotes": {
+        "*": "Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built."
+    }
 }

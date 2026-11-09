@@ -7,7 +7,7 @@
 **Removes the generated look from dashboards and app screens in six ordered passes: spacing, radius, color, icons, typography and copy, and data display.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
-[![Runtime](https://img.shields.io/badge/runtime-none-blue.svg)](#requirements)
+[![Node.js](https://img.shields.io/badge/node-22%2B%20for%20lintapple-blue.svg)](#requirements)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#installation)
 [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#requirements)
 [![License](https://img.shields.io/badge/license-not%20declared-lightgrey.svg)](#license)
@@ -71,13 +71,16 @@ Unslop Interface gives an agent a fixed order of six passes, a checklist of the 
 - **Keeps the information:** every number, item, and action stays; only decoration and filler go.
 - **Precise vocabulary:** the report names each fix with its UI term (affordance, leading, tabular numbers, sticky positioning).
 - **Report template:** before and after per pass, changed files, new tokens, and tells kept on purpose.
-- **No dependencies:** works from source code, a screenshot, or both.
+- **Measured before and after (added):** when the app runs, the bundled lintapple linter measures gaps, insets, radii, contrast, fonts, type sizes, tabular numbers, and banned copy in Chromium; findings join the inventory under the pass that fixes them, and the report shows counts before and after. Shared with Frontend Design Review through `packages/lintapple`.
+- **Works without tools:** from source code, a screenshot, or both; lintapple is used only when the app can run.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| None | - | The skill is instructions and reference files only | - |
+| Node.js | 22+ | Runs lintapple, the measured UI checks (optional) | No |
+| lintapple | 0.1.24, from `packages/lintapple` | Measured checks of the rendered page; built on install and update, or run with `npx` | Yes |
+| Chromium for Playwright | Matches lintapple's Playwright | Browser lintapple drives; the runner prints the install command when it is missing | No |
 
 The agent needs to read images to work from screenshots. Without image input, share the component code.
 
@@ -188,6 +191,27 @@ Each file holds the goal, the before and after from the source, steps, and a che
 | `references/passes/06-data-display.md` | Data display | Axes, units, colors tied to a legend, sticky table headers |
 | `references/quality/slop-tells.md` | Checklist | Every tell mapped to its pass |
 | `references/quality/vocabulary.md` | Vocabulary | Precise UI terms to name each fix in the report |
+| `references/lintapple/lintapple.md` | Measured checks | Running lintapple, adapting its policy, reading findings (shared with Frontend Design Review) |
+
+### scripts/lintapple/run.mjs
+
+Shared with the other UI skill and synced from `packages/lintapple/agent`.
+
+```bash
+node skills/unslop-interface/scripts/lintapple/run.mjs http://localhost:3000 --project <app folder> --config <policy file>
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
+| `--project` | Current folder | The app folder; its `ui-policy.json` and `node_modules/lintapple` are used when present |
+| `--config` | Project policy, else the default | Policy file adapted to the design system |
+| `--ready` | None | Selector that is visible when the page is ready |
+| `--interactions` | None | lintapple interaction plan for menus, dialogs, and other states |
+| `--out` | OS temp folder | Where to save the full JSON report |
+| `--top` | `15` | Problem groups printed in the summary |
+| `--write-policy FILE` | - | Writes the default policy to adapt |
+| `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
 
 ### Repository commands
 
@@ -238,6 +262,28 @@ The template is `assets/templates/unslop-report.md`.
 ## Troubleshooting
 
 <details>
+<summary><strong>lintapple says Chromium is missing</strong></summary>
+
+Playwright's browser is not installed. Run the command the runner prints, for example:
+
+```bash
+cd packages/lintapple && npx playwright install chromium
+```
+
+</details>
+
+<details>
+<summary><strong>lintapple reports every font and size as wrong</strong></summary>
+
+The default policy expects Apple system fonts and a fixed type scale. Write it out, set `fonts`, `fontSizes`, and `typeRules` to the project's design system, and pass it with `--config`:
+
+```bash
+node skills/unslop-interface/scripts/lintapple/run.mjs --write-policy /tmp/ui-policy.json
+```
+
+</details>
+
+<details>
 <summary><strong>The agent does not see the skill</strong></summary>
 
 Restart the agent session after installing, and confirm the folder is in the path your agent reads (see the table in [Installation](#installation)).
@@ -269,6 +315,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 
 - The Damir Sokolovsky clip is silent. The pass order and measurements come from the frames; the reasons and general rules are written for this skill.
 - Reviews from a screenshot cannot see hover, focus, loading, or responsive states.
+- lintapple measures only a running page, and measures layout gaps, alignment, and radii only on elements marked with `data-ui-*` attributes or policy selectors.
 - The skill polishes look and copy, not flows, conversion, or accessibility.
 - Chart changes depend on the data the screen actually has; the agent cannot invent a new series.
 
@@ -278,6 +325,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 |---------|---------|----------|
 | [Damir Sokolovsky: Unslopping a vibecoded dashboard](https://x.com/heydamir/status/2115063463063998736) | Standard X post terms | Source of the passes, measurements, and before and after states |
 | [Nexvyn: tabular-nums for numbers that change](https://x.com/nexvyn/status/2114952765193732418) | Standard X post terms | Tabular figures rule and the timer measurement in the typography pass |
+| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured checks before and after the passes, vendored in `packages/lintapple` |
 | [Emil Kowalski: a vocabulary for agents](https://x.com/emilkowalski/status/2115425807388619022), from [AI for UI](https://aiforui.dev/) | Standard X post terms | Affordance, leading, ligature, and sticky header rules, and the vocabulary file |
 
 ## License

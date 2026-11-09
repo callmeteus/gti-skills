@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `frontend-design-review`
 ## Notes
 
 - Cursor CLI reads the same folders. Cursor also loads .agents/skills, .claude/skills, and .codex/skills.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Cursor / Cursor CLI](https://cursor.com/docs/skills) (path source: official).

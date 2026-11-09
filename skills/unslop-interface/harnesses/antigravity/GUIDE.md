@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `unslop-interface` is li
 ## Notes
 
 - Older versions use .agent/skills. Antigravity 2.0 documents ~/.gemini/config/skills for user scope; the IDE and codelab use ~/.gemini/antigravity/skills.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Antigravity](https://antigravity.google/docs/skills) (path source: official).

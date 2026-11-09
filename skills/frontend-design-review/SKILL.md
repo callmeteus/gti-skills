@@ -36,7 +36,7 @@ Do not use this skill to optimize what a screen asks the user to do (use `ux-psy
 - **Create mode:** the purpose of the interface, its users, and the stack. Optional: brand assets and an existing design system.
 - **The `unslop-interface` skill.** `node packages/cli install` installs it next to this one. See step "Calling Unslop Interface" below.
 
-No tools need to be installed. When you can run the app, take screenshots to check states, reflow, and focus.
+No tools need to be installed for a review from code or screenshots. When the app runs, take screenshots to check states, reflow, and focus, and measure it with **lintapple**, a UI linter bundled with this skill (Node.js 22+ and Chromium for Playwright). See [references/lintapple/lintapple.md](references/lintapple/lintapple.md).
 
 ## Pick the mode
 
@@ -50,12 +50,13 @@ When the request mixes both ("review this and then fix it"), run Mode 1 first, t
 ## Mode 1: Design review
 
 1. **Identify the user task and the scope.** Name the task the UI serves ("export last month's invoices") and the scope: one component, a feature, or a whole flow. Read the review type modifier that fits (PR, Creative, Design, Accessibility) in [references/review/type-modifiers.md](references/review/type-modifiers.md).
-2. **Check the design system.** Find the matching components and patterns, compare against Figma, and verify tokens, variants, and states. See [references/review/design-system.md](references/review/design-system.md).
-3. **Inventory generic AI aesthetics with Unslop Interface.** Run its inventory step only (the slop tells list) and record each tell as a finding. Do not run its passes in a review unless the user asked for fixes.
-4. **Evaluate the three pillars.** Frictionless insight to action, Quality is craft (including the accessibility grade), and Trustworthy building. See [references/review/pillars.md](references/review/pillars.md).
-5. **Score and prioritize.** Mark every issue blocking, major, or minor with the rules in the pillars file.
-6. **Recommend.** Give each issue a concrete fix that uses the design system's own component or token, and name the Unslop Interface pass that fixes each slop tell.
-7. **Run the quick checklist** in [references/quality/quick-checklist.md](references/quality/quick-checklist.md), then write the report with [assets/templates/review-report.md](assets/templates/review-report.md).
+2. **Measure the rendered UI** when the app runs (a dev server or preview URL). Adapt the lintapple policy to the design system's fonts, type scale, spacing steps, breakpoints, and themes, then run `node <skill-dir>/scripts/lintapple/run.mjs <url> --config <policy>`. Each confirmed finding is evidence for a finding in the review, with its selector, measured value, and expected value; unresolved checks are "to verify". Severity still comes from the pillars file: accessibility and contrast failures feed the accessibility grade. See [references/lintapple/lintapple.md](references/lintapple/lintapple.md).
+3. **Check the design system.** Find the matching components and patterns, compare against Figma, and verify tokens, variants, and states. See [references/review/design-system.md](references/review/design-system.md).
+4. **Inventory generic AI aesthetics with Unslop Interface.** Run its inventory step only (the slop tells list) and record each tell as a finding. Do not run its passes in a review unless the user asked for fixes.
+5. **Evaluate the three pillars.** Frictionless insight to action, Quality is craft (including the accessibility grade), and Trustworthy building. See [references/review/pillars.md](references/review/pillars.md).
+6. **Score and prioritize.** Mark every issue blocking, major, or minor with the rules in the pillars file.
+7. **Recommend.** Give each issue a concrete fix that uses the design system's own component or token, and name the Unslop Interface pass that fixes each slop tell.
+8. **Run the quick checklist** in [references/quality/quick-checklist.md](references/quality/quick-checklist.md), then write the report with [assets/templates/review-report.md](assets/templates/review-report.md).
 
 ## Mode 2: Create
 
@@ -63,7 +64,8 @@ When the request mixes both ("review this and then fix it"), run Mode 1 first, t
 2. **Respect the existing system.** When the product has a design system, build with its components and tokens, and express the direction inside it (layout, composition, motion, copy). Never fork a parallel system.
 3. **Build.** Match the code's complexity to the direction: a maximalist direction earns elaborate code, a minimalist one earns restraint and precision. Keep it production-grade: real states, responsive layout, keyboard access, and WCAG 2.1 AA contrast.
 4. **Check against slop with Unslop Interface.** Run its inventory on the result. Remove every tell the direction did not choose on purpose, using its passes. List the effects the direction keeps on purpose (for example a grain overlay in a retro direction) as intentional.
-5. **Review your own build** with Mode 1 steps 4 to 7, then report the direction, the files, and the review.
+5. **Measure the build** with lintapple (Mode 1 step 2) and fix every confirmed finding, unless the direction chose it on purpose; say which.
+6. **Review your own build** with Mode 1 steps 5 to 8, then report the direction, the files, the lintapple result, and the review.
 
 ## Calling Unslop Interface
 
@@ -114,6 +116,8 @@ the grain as intentional. Reviews the build against the pillars and reports.
 | `references/create/` | Aesthetic direction and how Mode 2 resolves conflicts with Unslop Interface |
 | `references/quality/` | Quick pre-approval checklist and good and bad review examples |
 | `assets/templates/` | The review report structure |
+| `references/lintapple/` | Running lintapple, adapting its policy, and reading its findings (shared with Unslop Interface) |
+| `scripts/lintapple/run.mjs` | Runs lintapple against a URL and prints a summary (shared with Unslop Interface) |
 
 ## Running in your agent
 

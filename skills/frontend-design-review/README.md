@@ -7,7 +7,7 @@
 **Reviews frontend work against the design system and three quality pillars, or builds distinctive interfaces, and calls Unslop Interface to remove the generic AI look.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
-[![Runtime](https://img.shields.io/badge/runtime-none-blue.svg)](#requirements)
+[![Node.js](https://img.shields.io/badge/node-22%2B%20for%20lintapple-blue.svg)](#requirements)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#installation)
 [![Platforms](https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](#requirements)
 [![License](https://img.shields.io/badge/license-not%20declared-lightgrey.svg)](#license)
@@ -78,13 +78,16 @@ Frontend Design Review gives an agent two modes. Mode 1 reviews code, a PR, Figm
 - **Design system first:** Storybook and Figma Dev Mode workflow, token checks, every state, and documented exceptions.
 - **Review type modifiers:** PR, Creative, Design, and Accessibility reviews, each with its own focus.
 - **Unslop Interface integration:** its inventory runs in both modes, and a conflict table says when a bold direction may keep an effect Unslop would remove.
+- **Measured checks with lintapple (added):** when the app runs, a bundled UI linter measures fonts, type scale, control gaps and insets, layout, radii, overflow, contrast, and accessibility in Chromium; each confirmed finding becomes evidence with its measured and expected value. Shared with Unslop Interface through `packages/lintapple`.
 - **Report template:** verdict, counts, findings with evidence, design system, slop tells, pillars, and what was not checked.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| None | - | The skill is instructions and reference files only | - |
+| Node.js | 22+ | Runs lintapple, the measured UI checks (optional) | No |
+| lintapple | 0.1.24, from `packages/lintapple` | Measured checks of the rendered page; built on install and update, or run with `npx` | Yes |
+| Chromium for Playwright | Matches lintapple's Playwright | Browser lintapple drives; the runner prints the install command when it is missing | No |
 | Unslop Interface skill | Same repository | Slop inventory and passes | No, install it with the same command |
 | Figma Dev Mode or Storybook | Any | Design system comparison in reviews | No |
 
@@ -173,18 +176,21 @@ Review this dashboard and fix the blocking and major issues.
   Review                                  Create
   1. Task and scope, review type          1. Purpose, tone, constraints,
           │                                  differentiation
-  2. Design system: Figma, tokens,                │
-     states, exceptions                   2. Respect the design system
+  2. lintapple on the running page                │
+     (policy adapted to the system)       2. Respect the design system
           │                                       │
-  3. Unslop Interface inventory           3. Build to the direction
+  3. Design system: Figma, tokens,        3. Build to the direction
+     states, exceptions                           │
+          │                               4. Unslop inventory, remove
+  4. Unslop Interface inventory              unchosen tells
           │                                       │
-  4. Three pillars, accessibility grade   4. Unslop inventory, remove
-          │                                  unchosen tells
-  5. Severity                                     │
-          │                               5. Review own build (steps 4-7)
-  6. Recommendations                              │
+  5. Three pillars, accessibility grade   5. lintapple, fix confirmed findings
           │                                       │
-  7. Quick checklist, report  <───────────────────┘
+  6. Severity                             6. Review own build (steps 5-8)
+          │                                       │
+  7. Recommendations                              │
+          │                                       │
+  8. Quick checklist, report  <───────────────────┘
 ```
 
 ## Reference
@@ -195,13 +201,34 @@ The agent reads a file only when a step needs it.
 
 | File | Purpose | Used in |
 |------|---------|---------|
-| `references/review/design-system.md` | Storybook and Figma workflow, token and state checks, exceptions | Review step 2, Create step 2 |
-| `references/review/pillars.md` | The three pillars, accessibility grades, severity rules | Review steps 4 and 5 |
+| `references/review/design-system.md` | Storybook and Figma workflow, token and state checks, exceptions | Review step 3, Create step 2 |
+| `references/review/pillars.md` | The three pillars, accessibility grades, severity rules | Review steps 5 and 6 |
 | `references/review/type-modifiers.md` | Focus per review type: PR, Creative, Design, Accessibility | Review step 1 |
 | `references/create/aesthetic-direction.md` | Committing to a direction, typography, color, motion, composition | Create step 1 |
 | `references/create/unslop-handoff.md` | What each mode takes from Unslop Interface and which rule wins | Both modes |
-| `references/quality/quick-checklist.md` | Pre-approval checklist by pillar | Review step 7 |
+| `references/quality/quick-checklist.md` | Pre-approval checklist by pillar | Review step 8 |
 | `references/quality/pattern-examples.md` | Good and bad findings, hierarchy, exceptions, directions | Both modes |
+| `references/lintapple/lintapple.md` | Running lintapple, adapting its policy, reading findings (shared with Unslop Interface) | Measured checks |
+
+### scripts/lintapple/run.mjs
+
+Shared with the other UI skill and synced from `packages/lintapple/agent`.
+
+```bash
+node skills/frontend-design-review/scripts/lintapple/run.mjs http://localhost:3000 --project <app folder> --config <policy file>
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
+| `--project` | Current folder | The app folder; its `ui-policy.json` and `node_modules/lintapple` are used when present |
+| `--config` | Project policy, else the default | Policy file adapted to the design system |
+| `--ready` | None | Selector that is visible when the page is ready |
+| `--interactions` | None | lintapple interaction plan for menus, dialogs, and other states |
+| `--out` | OS temp folder | Where to save the full JSON report |
+| `--top` | `15` | Problem groups printed in the summary |
+| `--write-policy FILE` | - | Writes the default policy to adapt |
+| `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
 
 ### Repository commands
 
@@ -255,6 +282,28 @@ The template is `assets/templates/review-report.md`.
 ## Troubleshooting
 
 <details>
+<summary><strong>lintapple says Chromium is missing</strong></summary>
+
+Playwright's browser is not installed. Run the command the runner prints, for example:
+
+```bash
+cd packages/lintapple && npx playwright install chromium
+```
+
+</details>
+
+<details>
+<summary><strong>lintapple reports every font and size as wrong</strong></summary>
+
+The default policy expects Apple system fonts and a fixed type scale. Write it out, set `fonts`, `fontSizes`, and `typeRules` to the project's design system, and pass it with `--config`:
+
+```bash
+node skills/frontend-design-review/scripts/lintapple/run.mjs --write-policy /tmp/ui-policy.json
+```
+
+</details>
+
+<details>
 <summary><strong>The agent does not see the skill</strong></summary>
 
 Restart the agent session after installing, and confirm the folder is in the path your agent reads (see the table in [Installation](#installation)).
@@ -291,6 +340,7 @@ The design system should win over the aesthetic guidelines. Point the agent to t
 - Reviews from screenshots cannot grade keyboard access, focus order, or screen reader output; the grade is marked partial.
 - The accessibility grade covers WCAG 2.1 A and AA criteria the agent can check; it does not replace testing with assistive technology.
 - Figma comparison needs access to the file or exported frames.
+- lintapple measures only what renders: it needs a running page, checks child frames separately, and measures layout gaps, alignment, and radii only on elements marked with `data-ui-*` attributes or policy selectors.
 - Severity is a judgment with written rules, not a measurement; the report says why when a level is uncertain.
 - Create mode produces one direction per run; ask again for alternatives.
 
@@ -300,6 +350,7 @@ The design system should win over the aesthetic guidelines. Point the agent to t
 |---------|---------|----------|
 | [Anthropic: frontend-design skill](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Apache 2.0 | Creative frontend principles in create mode |
 | [@Quirinevwm](https://github.com/Quirinevwm) | Not declared | Quality pillar framework and design review workflow |
+| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured UI checks, vendored in `packages/lintapple` with open pull requests #8 and #9 ported |
 
 ## License
 

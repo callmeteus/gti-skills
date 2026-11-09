@@ -14,6 +14,7 @@ gti-skills/
 ├── packages/               # Code packages. Never put a skill here.
 │   ├── cli/                # Node: list, validate, build, check, install
 │   ├── artdirector/        # Node and TypeScript: the engine behind the Art Director skill
+│   ├── lintapple/          # Node and TypeScript: UI linter shared by Frontend Design Review and Unslop Interface
 │   └── python/
 │       ├── shared/         # Python scripts shared by several skills
 │       └── twitter-mcp/    # Python: the MCP server behind the X Research skill
@@ -133,6 +134,7 @@ Never edit these by hand; change the source and rebuild:
 
 - `harnesses/<agent-id>/GUIDE.md` in every skill (source: the registry and `skill.json`)
 - `scripts/lib`, `scripts/setup`, `scripts/download`, `scripts/transcript`, and `scripts/frames` inside the video skills (source: `packages/python/shared/scripts`)
+- `scripts/lintapple` and `references/lintapple` inside Frontend Design Review and Unslop Interface (source: `packages/lintapple/agent`)
 - `references/harnesses/install-locations.md` (source: the registry)
 
 Tests:
@@ -141,6 +143,7 @@ Tests:
 |---------|--------|
 | `npm test` | CLI tests and every Python test |
 | `cd packages/artdirector && npm test` | Art Director engine |
+| `cd packages/lintapple && npm test` | lintapple linter, including the ported upstream pull requests; needs `npx playwright install chromium` |
 
 ## Language
 All skill files must be written in English. 

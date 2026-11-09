@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `frontend-design-review`
 ## Notes
 
 - Scan paths come from community guides; /etc/codex/skills is the admin location. Codex configuration lives in ~/.codex.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Codex](https://developers.openai.com/codex/skills) (path source: community).

@@ -46,6 +46,16 @@ Write one block per pass that changed something. Skip passes with no tells.
 - **After:**
 - **Files:**
 
+## Measured checks (lintapple)
+
+Skip when the app could not run; say why.
+
+| Rule | Before | After |
+|------|-------:|------:|
+| | | |
+
+Policy: <file, and the fonts, scale, and spacing steps it uses>
+
 ## Tokens introduced
 
 | Token | Value | Used for |

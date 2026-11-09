@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `unslop-interface` is li
 ## Notes
 
 - Nested .claude/skills folders inside subdirectories also load when working there.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Claude / Claude Code](https://code.claude.com/docs/en/skills) (path source: official).

@@ -34,4 +34,5 @@ Run `kilo debug skill` to list the skills Kilo discovered.
 ## Notes
 
 - Folders named skills-<mode>, such as skills-code, load only in that mode.
+- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
 - Documentation: [Kilo Code](https://kilo.ai/docs/customize/skills) (path source: official).

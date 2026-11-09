@@ -28,6 +28,14 @@ Ordered by severity, then by pillar.
 |---|----------|--------|----------|-------|----------------|
 | 1 | Blocking | Quality craft | `File.tsx:22` | | |
 
+## Measured checks (lintapple)
+
+Skip when the app could not run; say why.
+
+- **URL and policy:** <url>, <policy file, and the fonts, scale, and breakpoints it uses>
+- **Result:** <n> problems, <n> unresolved, by rule
+- **Not covered:** <child frames, unmeasured controls, unmarked layout groups>
+
 ## Design system
 
 - **Tokens:** <hardcoded values found, and the token for each>
