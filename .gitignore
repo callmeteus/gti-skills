@@ -14,3 +14,12 @@ Thumbs.db
 .kilocode/
 .kiro/
 .github/skills/
+
+# MCP server session material (logins, cookies, browser profiles, secrets). Never commit.
+mcps/**/cookies.json
+mcps/**/.browser-profile/
+mcps/**/.env
+mcps/**/.venv/
+packages/python/*-mcp/cookies.json
+packages/python/*-mcp/.browser-profile/
+packages/python/*-mcp/.env
