@@ -1,0 +1,8 @@
+{
+    "id": "gestures",
+    "displayName": "Gestures",
+    "packs": [
+        "coding",
+        "design"
+    ]
+}

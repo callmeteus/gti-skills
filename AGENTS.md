@@ -175,6 +175,7 @@ Current skills:
 | `security-audit` | Security Audit |
 | `untangle-codebase` | Untangle Codebase |
 | `gti` | GTI |
+| `gestures` | Gestures |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

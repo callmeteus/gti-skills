@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gesture demo</title>
+<style>
+  :root { --bg: #f6f6f4; --fg: #1d1d1b; --card: #fff; --line: #e3e2de; --accent: #d9442b; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #141413; --fg: #ededea; --card: #1f1f1d; --line: #33322f; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); padding: 24px 16px 120px; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+  section { margin-bottom: 28px; }
+  button { font: inherit; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+  .toast { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; max-width: 360px; cursor: grab; user-select: none; }
+  .hold { position: relative; overflow: hidden; }
+  .hold .fill { position: absolute; inset: 0; background: var(--accent); opacity: .25; transform-origin: left; transform: scaleX(0); }
+  .overlay { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; height: 60vh; background: var(--card); border-radius: 16px 16px 0 0; border-top: 1px solid var(--line); padding: 12px 16px; }
+  .grip { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 12px; }
+  @media (hover: hover) and (pointer: fine) { button:hover { border-color: var(--fg); } }
+</style>
+</head>
+<body>
+<h1>gesture.js demo</h1>
+
+<section>
+  <p>Swipe the toast right to dismiss it. A short fast flick works too.</p>
+  <div class="toast" id="toast">Saved. Swipe me away.</div>
+</section>
+
+<section>
+  <p>Hold to delete. Release early to cancel.</p>
+  <button class="hold" id="hold"><span class="fill" id="fill"></span><span id="hold-label">Hold to delete</span></button>
+</section>
+
+<section>
+  <button id="open">Open sheet</button>
+</section>
+
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Sheet">
+  <div class="grip"></div>
+  <p>Drag me down, or catch me mid-animation.</p>
+  <button data-no-drag id="close">Close</button>
+</div>
+
+<script type="module">
+import { createDrag, createHold, shouldDismiss } from "../templates/gesture.js";
+
+// Swipe-to-dismiss: x axis, dismisses in the direction it would leave.
+const toast = document.getElementById("toast");
+const width = () => toast.offsetWidth;
+const swipe = createDrag(toast, {
+  axis: "x",
+  bounds: { min: 0 },
+  onUpdate: (x) => {
+    toast.style.opacity = String(1 - Math.min(x / width(), 1));
+    // Leaving: hide as soon as it is off its own width, without waiting for the spring to settle.
+    if (x >= width()) { swipe.stop(); toast.hidden = true; }
+  },
+  onRelease: ({ offset, velocity }) => shouldDismiss({ offset, velocity, distance: width() }) ? width() * 1.2 : 0,
+});
+window.demo = { swipe };
+
+// Hold: linear while held, fast ease-out on cancel.
+const fill = document.getElementById("fill");
+createHold(document.getElementById("hold"), {
+  duration: 1200,
+  onProgress: (p) => { fill.style.transform = `scaleX(${p})`; },
+  onComplete: () => { document.getElementById("hold-label").textContent = "Deleted"; },
+});
+
+// Bottom sheet: one value drives the sheet and the overlay.
+const sheet = document.getElementById("sheet");
+const overlay = document.getElementById("overlay");
+const closed = () => sheet.offsetHeight + 24;
+const drawer = createDrag(sheet, {
+  axis: "y",
+  value: closed(),
+  bounds: { min: 0 },
+  onUpdate: (y) => {
+    const progress = 1 - Math.min(Math.max(y / closed(), 0), 1);
+    overlay.style.opacity = String(progress * 0.4);
+    overlay.style.pointerEvents = progress > 0 ? "auto" : "none";
+  },
+  onRelease: ({ offset, velocity }) => shouldDismiss({ offset, velocity, distance: sheet.offsetHeight }) ? closed() : 0,
+});
+window.demo.drawer = drawer;
+// Measure lazily: the closed position depends on layout, which can change after load.
+addEventListener("resize", () => { if (!drawer.dragging && drawer.value > 0) drawer.set(closed()); });
+// Button-driven moves: no velocity, so no bounce.
+document.getElementById("open").onclick = () => drawer.animateTo(0, { spring: { stiffness: 300, damping: 34 } });
+document.getElementById("close").onclick = () => drawer.animateTo(closed(), { spring: { stiffness: 300, damping: 34 } });
+overlay.onclick = () => drawer.animateTo(closed());
+addEventListener("keydown", (e) => { if (e.key === "Escape") drawer.animateTo(closed()); });
+</script>
+</body>
+</html>
