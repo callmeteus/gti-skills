@@ -20,6 +20,19 @@ Always respond in the user's language, regardless of the language used in this s
 
 Agentic research over X/Twitter via the free `twitter` MCP server (Playwright browser automation, no API key, no intermediary). The MCP drives one shared headless browser with a logged-in X session. Search and timelines need that login; X shows almost nothing to logged-out visitors.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- Never use the write actions (post, reply, like, retweet) unless the request named them. On `LOGIN_REQUIRED`, continue with the web search fallback and report it, instead of asking the user to log in.
+
 ## Available MCP Tools
 
 All tools are provided by the `twitter` MCP server. If no `twitter_*` tools are available, tell the user the MCP server is not configured (setup: `packages/python/twitter-mcp/README.md` in the gti-skills repository) and use the web search fallback described in [When a Tool Fails](#when-a-tool-fails).

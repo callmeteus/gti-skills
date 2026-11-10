@@ -18,6 +18,19 @@ metadata:
 
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- The video is still required; without one, say so and stop. Infer the skill name, purpose, and triggers from the video's title, description, and content, target every agent, and state these choices at the top of the report.
+
 ## When to use
 
 - The user shares a tutorial, demo, screencast, or talk and wants an agent skill built from it.

@@ -4,6 +4,7 @@ import { dirname, join, relative, sep } from "node:path";
 const NamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LanguageRule = /respond in the user'?s language/i;
 const MaxBodyLines = 500;
+const AutonomousRule = /^## Autonomous Mode[ \t]*\r?$/m;
 
 /**
  * Splits SKILL.md text into its frontmatter block and body.
@@ -150,6 +151,10 @@ export function validateSkillFolder(skillDir, expectedName) {
 
     if (!LanguageRule.test(body)) {
         errors.push("missing the Core Rule: always respond in the user's language");
+    }
+
+    if (!AutonomousRule.test(body)) {
+        errors.push("missing the Autonomous Mode section: what the skill does when the user says to work without asking");
     }
 
     if (/[–—]/.test(text)) {

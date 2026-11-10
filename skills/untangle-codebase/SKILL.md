@@ -30,6 +30,21 @@ metadata:
 
 Always respond in the user's language, regardless of the language used in this skill, the code, or its comments. Code, identifiers, commit messages, and the decision log follow the project's existing language and conventions.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- Step 1 asks nothing: do the Comments and Tests additions only when the request named them, protect the public surfaces you would have proposed, and keep `.untangle/` out of git with `.git/info/exclude`.
+- If the working tree has uncommitted changes, keep working in the current checkout: create the `untangle/<date>` branch there (the changes come along untouched), never stash, discard, or commit them, and stage only the files each fix changed. When a fix must edit a file that already has the user's uncommitted changes, skip that fix and list it as pending.
+- Every "stop and ask" case in the guardrails becomes a pending item with the safe choice taken: keep the public surface unchanged, keep both diverging behaviors, and leave the scope where it was. Stop only when the time or token budget runs out, then run the behavior check and write the final report.
+
 ## Goal
 
 Start a thorough refactor of this codebase and complete it to the end. Treat this as a goal, not a suggestion list: keep going until the done criteria in step 5 hold, or until the user stops you.

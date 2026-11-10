@@ -29,6 +29,19 @@ Always respond in the user's language, regardless of the language used in this s
 
 A gesture is direct manipulation: while the finger is down, the UI is the finger; the moment it lifts, physics takes over. Every rule below follows from that split, and none of it depends on the framework. The framework only decides where you attach the gesture and how you avoid re-rendering on every move.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- Choose the tool with the first-decision rules (drawer library, the project's library, or `gesture.js`) and build. The real-phone test is pending for the user; say so.
+
 ## First decision: build it, or use something that exists?
 
 A drawer done right needs momentum dragging, an overlay that fades with drag progress, velocity-aware dismissal, focus trapping, and Escape to close. That is weeks of edge cases.

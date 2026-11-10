@@ -22,6 +22,10 @@ description: >-
 ## Core Rule
 
 Always respond in the user's language, regardless of the language used in this skill.
+
+## Autonomous Mode
+
+When the user says to work on your own, take the recommended option at every decision and do not stop to ask.
 `;
 
 /**
@@ -68,6 +72,9 @@ describe("frontmatter", () => {
 
         const noRule = validateSkillFolder(makeSkill(GoodSkill.replace("respond in the user's language", "reply")), "demo");
         assert.ok(noRule.errors.some((error) => error.includes("Core Rule")));
+
+        const noAutonomous = validateSkillFolder(makeSkill(GoodSkill.replace("## Autonomous Mode", "## Other")), "demo");
+        assert.ok(noAutonomous.errors.some((error) => error.includes("Autonomous Mode")));
 
         const longDescription = validateSkillFolder(makeSkill(GoodSkill.replace("Does a demo.", "x".repeat(1100))), "demo");
         assert.ok(longDescription.errors.some((error) => error.includes("1024")));

@@ -5,6 +5,9 @@ All skills in this repository MUST instruct the agent to respond in the user's l
 
 This rule is non-negotiable and must be included in every `SKILL.md` created or modified in this repository. 
 
+## Autonomous Mode Rule
+Every skill MUST also have a `## Autonomous Mode` section in its `SKILL.md`, right after the Core Rule. It says what the skill does when the user asks it to work alone ("do it yourself", "faz você mesmo", "não precisa me chamar"): take the recommended option at every decision instead of asking, open nothing for the user (no browser tabs, viewers, or servers to look at) while still writing every file, never take a gated irreversible or outward action that the request did not allow (list it as pending), and finish with one report of decisions, work, pending items, and what was not verified. Under `In this skill:`, name each place this skill would otherwise stop, ask, wait, or open something, and what it does instead. `node packages/cli validate` fails when the section is missing.
+
 ## Repository Layout
 
 ```text

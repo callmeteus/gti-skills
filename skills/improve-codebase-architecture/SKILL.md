@@ -27,6 +27,21 @@ metadata:
 
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze. The HTML report also uses the user's language for its prose; keep code names as they are in the code.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- Render the report without `--open` (`render_report.py <file> --strict`) and give its path at the end instead of asking which candidate to explore.
+- Pick the candidate with the highest strength; break ties by the biggest gain for the least effort. Answer every round of step 4 with its recommended answer and record the answers in `GLOSSARY.md` and ADRs as usual.
+- Skip the plan confirmation and go on to step 6: implement, run the tests, and report. Keep public APIs and stored data formats unchanged; when a design would change them, choose the option that does not, and list the other as pending.
+
 ## When to use
 
 - The user asks for an architecture review, refactoring ideas, or "where should we clean up first".
@@ -54,7 +69,7 @@ Follow the steps in order. Read a reference file only when its step starts.
 
 1. **Decide where to look.** Take the user's target, or find the hot spots with `scripts/explore/hotspots.py`. Read the glossary and ADRs for the area. See [references/workflow/01-scope.md](references/workflow/01-scope.md) and [references/concepts/project-docs.md](references/concepts/project-docs.md).
 2. **Explore and collect candidates.** Use a subagent with a fresh context when available. Record files, the problem and the gain with numbers, the dependency type, effort, and strength for three to six candidates. See [references/workflow/02-explore.md](references/workflow/02-explore.md) and [references/concepts/testing-by-dependency.md](references/concepts/testing-by-dependency.md).
-3. **Write the report.** Fill a JSON data file in the OS temp folder from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), and render it. Give the user the absolute path, then ask which candidate they want to explore. Do not design APIs yet. See [references/workflow/03-report.md](references/workflow/03-report.md).
+3. **Write the report.** Fill a JSON data file in the OS temp folder from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), and render it. Give the user the absolute path, then ask which candidate they want to explore. Do not design APIs yet. Add `--open` only when the user is following along; in Autonomous Mode render without it and keep going. See [references/workflow/03-report.md](references/workflow/03-report.md).
 
    ```bash
    python3 <skill-dir>/scripts/report/render_report.py <tmp>/architecture-review.json --strict --open

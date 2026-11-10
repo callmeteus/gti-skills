@@ -68,7 +68,8 @@ python3 <skill-dir>/scripts/report/render_report.py <tmp>/architecture-review.js
 - The script validates the data and prints the path of the HTML file it wrote in the OS temp folder.
 - `--strict` refuses to write the page when it finds design-book jargon and prints each word with its replacement. Fix the text and run again.
 - `--open` opens the page in the default browser. Also give the user the absolute path.
+- In Autonomous Mode (the user said "do it yourself" or "no need to ask me"), leave out `--open`: the page is still written, and its path goes in the final report.
 
 ## After the report
 
-Do not propose detailed APIs yet. Ask the user which candidate they want to explore, in their language.
+Do not propose detailed APIs yet. Ask the user which candidate they want to explore, in their language. In Autonomous Mode, do not ask: take the candidate with the highest strength (ties: the biggest gain for the least effort) and continue with step 4.

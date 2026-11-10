@@ -21,6 +21,20 @@ metadata:
 
 Always respond in the user's language, regardless of the language used in this skill or any content you analyze.
 
+## Autonomous Mode
+
+When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
+
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and note the decision and the reason.
+- **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the skill produces and give the paths at the end.
+- **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials. List each one as pending instead.
+- **Finish with one report:** the decisions you took and why, what you did, what is pending, and what you could not verify.
+
+In this skill:
+
+- When the chrome-devtools MCP tools are missing, use the Lighthouse CLI fallback without asking first, and say which tool produced the numbers.
+- Audit only pages that open without a login; list pages that need one as pending. Never type credentials.
+
 ## When to use
 
 - The user asks why a page is slow, or for a performance, page speed, or Lighthouse audit of a URL.
