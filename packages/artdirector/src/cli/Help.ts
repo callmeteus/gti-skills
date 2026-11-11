@@ -23,6 +23,8 @@ ${commands}
 Also:
   status        Print project, session, and variants as JSON
   variants      List variants
+  history       List every art in this chat session with its variants
+  moodboard     List the session mood board; "moodboard add --image|--color|--note|--variant", "moodboard remove --id"
   demo          Run the end-to-end demonstration
   help          Show this help
 

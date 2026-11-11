@@ -24,7 +24,13 @@
         "loader-circle": '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
         "mouse-pointer-2": '<path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/>',
         "archive": '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
-        "circle-check": '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'
+        "circle-check": '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+        "pin": '<path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+        "image-plus": '<path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/>',
+        "palette": '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+        "sticky-note": '<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',
+        "chevron-right": '<path d="m9 18 6-6-6-6"/>',
+        "layers": '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>'
     };
 
     function icon(name, extra) {
@@ -52,7 +58,16 @@
             downloading: "Downloading {format}... {kb} KB", exported: "Exported {file} in {s}s.", exportFailed: "Export failed: {message}",
             promptHead: "Art Director: edit variant \"{id}\" ({w}x{h}).", promptFile: "File: {file}",
             promptWhole: "whole board", promptSelector: "{what}, selector `{selector}`",
-            promptTail: "Change only what these comments ask and keep the rest of the piece. Save the file, run the render check once for this variant, then stop."
+            promptTail: "Change only what these comments ask and keep the rest of the piece. Save the file, run the render check once for this variant, then stop.",
+            promptArt: "Art: {title} (pass --request {id} to the CLI).",
+            moodboard: "Mood board", current: "Current", variantCount: "{n} variants", variantOne: "1 variant", noArtVariants: "No variants in this art yet.",
+            pin: "Pin", unpin: "Unpin", toastPinned: "Pinned {id} to the mood board.", toastUnpinned: "Removed {id} from the mood board.",
+            moodDrop: "Add images: click, drop, or paste", moodCaption: "Caption (optional)", moodAddColor: "Add color",
+            moodNotePlaceholder: "A reference, a word, a feeling", moodAddNote: "Add note",
+            moodHint: "Shared by every art in this chat. The agent reads it before each new piece.",
+            moodEmpty: "The mood board is empty", moodEmptyHint: "Add images, colors, and notes, or pin variants from the gallery.",
+            moodMissing: "This variant no longer exists.", moodByAgent: "agent", moodByYou: "you",
+            moodTooBig: "{name} is over 15 MB.", moodNotImage: "{name} is not an image.", moodAdded: "Added to the mood board."
         },
         pt: {
             studio: "Estúdio", gallery: "Galeria", preview: "Prévia",
@@ -72,7 +87,16 @@
             downloading: "Baixando {format}... {kb} KB", exported: "{file} exportado em {s}s.", exportFailed: "Falha ao exportar: {message}",
             promptHead: "Art Director: edite a variante \"{id}\" ({w}x{h}).", promptFile: "Arquivo: {file}",
             promptWhole: "arte inteira", promptSelector: "{what}, seletor `{selector}`",
-            promptTail: "Mude só o que estes comentários pedem e mantenha o resto da peça. Salve o arquivo, rode o render check uma vez nesta variante e pare."
+            promptTail: "Mude só o que estes comentários pedem e mantenha o resto da peça. Salve o arquivo, rode o render check uma vez nesta variante e pare.",
+            promptArt: "Arte: {title} (passe --request {id} para a CLI).",
+            moodboard: "Mood board", current: "Atual", variantCount: "{n} variantes", variantOne: "1 variante", noArtVariants: "Nenhuma variante nesta arte ainda.",
+            pin: "Fixar", unpin: "Desafixar", toastPinned: "{id} fixada no mood board.", toastUnpinned: "{id} removida do mood board.",
+            moodDrop: "Adicionar imagens: clique, solte ou cole", moodCaption: "Legenda (opcional)", moodAddColor: "Adicionar cor",
+            moodNotePlaceholder: "Uma referência, uma palavra, uma sensação", moodAddNote: "Adicionar nota",
+            moodHint: "Compartilhado por todas as artes deste chat. O agente lê antes de cada peça nova.",
+            moodEmpty: "O mood board está vazio", moodEmptyHint: "Adicione imagens, cores e notas, ou fixe variantes pela galeria.",
+            moodMissing: "Esta variante não existe mais.", moodByAgent: "agente", moodByYou: "você",
+            moodTooBig: "{name} passa de 15 MB.", moodNotImage: "{name} não é uma imagem.", moodAdded: "Adicionado ao mood board."
         },
         es: {
             studio: "Estudio", gallery: "Galería", preview: "Vista previa",
@@ -92,7 +116,16 @@
             downloading: "Descargando {format}... {kb} KB", exported: "{file} exportado en {s}s.", exportFailed: "Error al exportar: {message}",
             promptHead: "Art Director: edita la variante \"{id}\" ({w}x{h}).", promptFile: "Archivo: {file}",
             promptWhole: "pieza completa", promptSelector: "{what}, selector `{selector}`",
-            promptTail: "Cambia solo lo que piden estos comentarios y conserva el resto de la pieza. Guarda el archivo, ejecuta el render check una vez para esta variante y detente."
+            promptTail: "Cambia solo lo que piden estos comentarios y conserva el resto de la pieza. Guarda el archivo, ejecuta el render check una vez para esta variante y detente.",
+            promptArt: "Pieza: {title} (pasa --request {id} a la CLI).",
+            moodboard: "Mood board", current: "Actual", variantCount: "{n} variantes", variantOne: "1 variante", noArtVariants: "Aún no hay variantes en esta pieza.",
+            pin: "Fijar", unpin: "Quitar", toastPinned: "{id} fijada en el mood board.", toastUnpinned: "{id} quitada del mood board.",
+            moodDrop: "Añadir imágenes: haz clic, suelta o pega", moodCaption: "Leyenda (opcional)", moodAddColor: "Añadir color",
+            moodNotePlaceholder: "Una referencia, una palabra, una sensación", moodAddNote: "Añadir nota",
+            moodHint: "Compartido por todas las piezas de este chat. El agente lo lee antes de cada pieza nueva.",
+            moodEmpty: "El mood board está vacío", moodEmptyHint: "Añade imágenes, colores y notas, o fija variantes desde la galería.",
+            moodMissing: "Esta variante ya no existe.", moodByAgent: "agente", moodByYou: "tú",
+            moodTooBig: "{name} supera 15 MB.", moodNotImage: "{name} no es una imagen.", moodAdded: "Añadido al mood board."
         }
     };
     const LANGS = Object.keys(STRINGS);
@@ -120,7 +153,10 @@
         lang: storedLang() || normalizeLang(navigator.language) || "en",
         mode: "gallery",
         snapshot: null,
-        activeId: null,
+        arts: [],
+        mood: [],
+        artOpen: {},
+        active: null,
         pick: null,
         canvasObserver: null,
         exporting: null
@@ -151,6 +187,7 @@
     });
 
     window.addEventListener("message", onPick);
+    document.addEventListener("paste", onPaste);
 
     function setLang(lang) {
         state.lang = normalizeLang(lang) || "en";
@@ -190,46 +227,86 @@
     }
 
     async function refresh() {
-        state.snapshot = await api("/v1/session");
+        const [snapshot, history, mood] = await Promise.all([
+            api("/v1/session"),
+            api("/v1/history"),
+            api("/v1/moodboard")
+        ]);
+        state.snapshot = snapshot;
+        state.arts = history.arts || [];
+        state.mood = mood.items || [];
         document.getElementById("project-name").textContent = state.snapshot.project.name;
 
-        if (!variantById(state.activeId)) {
-            state.activeId = state.snapshot.project.activeVariantId || (variants()[0] && variants()[0].id) || null;
+        if (!variantByKey(state.active)) {
+            const current = state.arts.find((art) => art.current) || state.arts[0];
+            const first = current ? withArt(current).find((item) => item.id === state.snapshot.project.activeVariantId) || withArt(current)[0] : null;
+            state.active = first ? keyOf(first) : null;
         }
 
         setLang(storedLang() || normalizeLang(state.snapshot.project.language) || state.lang);
     }
 
-    // New variants written by the agent show up without a reload. The open preview is left alone.
+    // New arts and variants written by the agent show up without a reload. The open preview is left alone.
     async function watchVariants() {
         if (document.hidden || !state.snapshot) {
             return;
         }
 
         try {
-            const snap = await api("/v1/session");
-            const before = variants().map((item) => item.id).join("|");
-            const after = (snap.variants || []).map((item) => item.id).join("|");
-            state.snapshot = snap;
+            const [history, mood] = await Promise.all([api("/v1/history"), api("/v1/moodboard")]);
+            const before = signature(state.arts);
+            const moodBefore = state.mood.map((item) => item.id).join("|");
+            state.arts = history.arts || [];
+            state.mood = mood.items || [];
+            const artsChanged = before !== signature(state.arts);
+            const current = state.arts.find((art) => art.current);
 
-            if (before !== after) {
-                if (state.mode === "gallery") {
-                    render();
-                } else {
-                    paintVariantList();
-                }
+            if (current) {
+                document.getElementById("project-name").textContent = current.title;
+            }
+            const moodChanged = moodBefore !== state.mood.map((item) => item.id).join("|");
+
+            if (state.mode === "gallery" && (artsChanged || moodChanged)) {
+                render();
+            } else if (state.mode === "moodboard" && moodChanged) {
+                render();
+            } else if (state.mode === "preview" && artsChanged) {
+                paintVariantList();
             }
         } catch {
             return;
         }
     }
 
-    function variants() {
-        return (state.snapshot && state.snapshot.variants) ? state.snapshot.variants : [];
+    function signature(arts) {
+        return arts.map((art) => `${art.requestId || ""}:${art.current}:${art.variants.map((item) => `${item.id}=${item.status}`).join(",")}`).join("|");
     }
 
-    function variantById(id) {
-        return variants().find((item) => item.id === id);
+    // A variant is addressed by its art (request) and id, since ids repeat across arts.
+    function keyOf(variant) {
+        return `${variant.requestId || ""}/${variant.id}`;
+    }
+
+    function withArt(art) {
+        return art.variants.map((item) => ({ ...item, requestId: art.requestId, artTitle: art.title }));
+    }
+
+    function variants() {
+        return state.arts.flatMap(withArt);
+    }
+
+    function variantByKey(key) {
+        return key ? variants().find((item) => keyOf(item) === key) : undefined;
+    }
+
+    function artworkSrc(variant) {
+        const request = variant.requestId ? `&request=${encodeURIComponent(variant.requestId)}` : "";
+        return `/artwork/${encodeURIComponent(variant.id)}?token=${TOKEN}${request}`;
+    }
+
+    function pinOf(variant) {
+        return state.mood.find((item) => item.kind === "variant" && item.variantId === variant.id
+            && (item.requestId || "") === (variant.requestId || ""));
     }
 
     function render() {
@@ -239,32 +316,52 @@
 
         clearCanvasObserver();
         stage.classList.remove("is-canvas");
-        main.classList.toggle("is-wide", state.mode === "gallery");
+        stage.ondragover = null;
+        stage.ondragleave = null;
+        stage.ondrop = null;
+        main.classList.toggle("is-wide", state.mode !== "preview");
 
         if (state.mode === "gallery") {
             renderGallery();
+        } else if (state.mode === "moodboard") {
+            renderMoodboard();
         } else {
             renderPreview();
         }
     }
 
     function renderGallery() {
-        const list = variants().filter((item) => item.status !== "rejected");
-        const rejected = variants().filter((item) => item.status === "rejected");
         rail.innerHTML = "";
         inspect.innerHTML = "";
-        stage.innerHTML = (list.length
-            ? `<div class="gallery">${list.map(variantCard).join("")}</div>`
-            : `<div class="empty"><h2>${t("noVariants")}</h2><p>${t("noVariantsHint")}</p></div>`)
-            + (rejected.length
-                ? `<details class="rejected"><summary>${icon("archive")}${t("rejected")} (${rejected.length})</summary>
-                    <div class="gallery">${rejected.map(variantCard).join("")}</div>
-                </details>`
-                : "");
+
+        if (!state.arts.some((art) => art.variants.length)) {
+            stage.innerHTML = `<div class="empty"><h2>${t("noVariants")}</h2><p>${t("noVariantsHint")}</p></div>`;
+            return;
+        }
+
+        stage.innerHTML = state.arts.map(artSection).join("");
+        // Only a choice that differs from the default is remembered, so an art closes once it is no longer current.
+        stage.querySelectorAll("details.art").forEach((node) => {
+            node.addEventListener("toggle", () => {
+                const key = node.getAttribute("data-art");
+
+                if (node.open === node.classList.contains("is-current")) {
+                    delete state.artOpen[key];
+                } else {
+                    state.artOpen[key] = node.open;
+                }
+            });
+        });
         stage.querySelectorAll("[data-status]").forEach((button) => {
             button.onclick = (event) => {
                 event.stopPropagation();
-                void setStatus(button.getAttribute("data-id"), button.getAttribute("data-status"));
+                void setStatus(button.getAttribute("data-key"), button.getAttribute("data-status"));
+            };
+        });
+        stage.querySelectorAll("[data-pin]").forEach((button) => {
+            button.onclick = (event) => {
+                event.stopPropagation();
+                void togglePin(button.getAttribute("data-key"));
             };
         });
         stage.querySelectorAll("[data-variant]").forEach((card) => {
@@ -279,28 +376,98 @@
         observeFits(stage);
     }
 
+    // One collapsible section per art in this chat, newest first. The current art starts open.
+    function artSection(art) {
+        const key = art.requestId || "project";
+        const open = state.artOpen[key] !== undefined ? state.artOpen[key] : art.current;
+        const all = withArt(art);
+        const list = all.filter((item) => item.status !== "rejected");
+        const rejected = all.filter((item) => item.status === "rejected");
+        return `<details class="art${art.current ? " is-current" : ""}" data-art="${escape(key)}"${open ? " open" : ""}>
+            <summary>
+                <span class="art-title">${icon("chevron-right", "chevron")}${icon("layers")}<strong>${escape(art.title)}</strong>${art.current ? `<span class="tag">${t("current")}</span>` : ""}</span>
+                <span class="art-meta">${escape(formatDate(art.createdAt))} · ${all.length === 1 ? t("variantOne") : t("variantCount", { n: all.length })}</span>
+            </summary>
+            ${list.length
+                ? `<div class="gallery">${list.map(variantCard).join("")}</div>`
+                : `<p class="muted">${t("noArtVariants")}</p>`}
+            ${rejected.length
+                ? `<details class="rejected"><summary>${icon("chevron-right", "chevron")}${icon("archive")}${t("rejected")} (${rejected.length})</summary>
+                    <div class="gallery">${rejected.map(variantCard).join("")}</div>
+                </details>`
+                : ""}
+        </details>`;
+    }
+
+    function formatDate(value) {
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return "";
+        }
+
+        const locale = state.lang === "pt" ? "pt-BR" : state.lang;
+        return date.toLocaleString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    }
+
     function variantCard(variant) {
-        const id = escape(variant.id);
+        const key = escape(keyOf(variant));
+        const pinned = Boolean(pinOf(variant));
+        const pin = `<button type="button" class="${pinned ? "is-pinned" : ""}" data-key="${key}" data-pin>${icon("pin")}${pinned ? t("unpin") : t("pin")}</button>`;
         const actions = variant.status === "rejected"
-            ? `<button type="button" data-id="${id}" data-status="draft">${icon("rotate-ccw")}${t("restore")}</button>`
+            ? `<button type="button" data-key="${key}" data-status="draft">${icon("rotate-ccw")}${t("restore")}</button>`
             : variant.status === "accepted"
-                ? `<button type="button" data-id="${id}" data-status="draft">${icon("rotate-ccw")}${t("undoAccept")}</button>
-                   <button type="button" data-id="${id}" data-status="rejected">${icon("x")}${t("reject")}</button>`
-                : `<button type="button" class="accept" data-id="${id}" data-status="accepted">${icon("check")}${t("accept")}</button>
-                   <button type="button" data-id="${id}" data-status="rejected">${icon("x")}${t("reject")}</button>`;
-        return `<article class="card is-${escape(variant.status)}" data-variant="${id}" tabindex="0">
-            ${previewFrame(`/artwork/${encodeURIComponent(variant.id)}?token=${TOKEN}`, variant.title, variant.width, variant.height)}
+                ? `<button type="button" data-key="${key}" data-status="draft">${icon("rotate-ccw")}${t("undoAccept")}</button>
+                   <button type="button" data-key="${key}" data-status="rejected">${icon("x")}${t("reject")}</button>${pin}`
+                : `<button type="button" class="accept" data-key="${key}" data-status="accepted">${icon("check")}${t("accept")}</button>
+                   <button type="button" data-key="${key}" data-status="rejected">${icon("x")}${t("reject")}</button>${pin}`;
+        return `<article class="card is-${escape(variant.status)}" data-variant="${key}" tabindex="0">
+            ${previewFrame(artworkSrc(variant), variant.title, variant.width, variant.height)}
             <header><strong>${escape(variant.title)}</strong><span class="badge">${variant.status === "accepted" ? icon("circle-check") : ""}${escape(t(`status_${variant.status}`))}</span></header>
             <footer>${escape(formatName(variant))} · ${variant.width}×${variant.height}</footer>
             <div class="card-actions">${actions}</div>
         </article>`;
     }
 
-    async function setStatus(id, status) {
+    async function togglePin(key) {
+        const variant = variantByKey(key);
+
+        if (!variant) {
+            return;
+        }
+
+        const pinned = pinOf(variant);
+
+        try {
+            if (pinned) {
+                await api("/v1/moodboard/remove", { method: "POST", body: JSON.stringify({ id: pinned.id }) });
+            } else {
+                await api("/v1/moodboard", {
+                    method: "POST",
+                    body: JSON.stringify({ kind: "variant", request: variant.requestId, variantId: variant.id })
+                });
+            }
+
+            await refresh();
+            toast(t(pinned ? "toastUnpinned" : "toastPinned", { id: variant.id }));
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    }
+
+    async function setStatus(key, status) {
+        const variant = variantByKey(key);
+
+        if (!variant) {
+            return;
+        }
+
+        const id = variant.id;
+
         try {
             await api("/v1/variants/status", {
                 method: "POST",
-                body: JSON.stringify({ id, status })
+                body: JSON.stringify({ id, status, request: variant.requestId })
             });
             await refresh();
             toast(t(status === "rejected" ? "toastRejected" : status === "accepted" ? "toastAccepted" : "toastRestored", { id }));
@@ -328,15 +495,15 @@
         return match ? sizeLabel(match) : (variant.direction || `${variant.width}×${variant.height}`);
     }
 
-    async function openPreview(id) {
-        state.activeId = id;
+    async function openPreview(key) {
+        state.active = key;
         state.pick = null;
 
         setMode("preview");
     }
 
     function renderPreview() {
-        const variant = variantById(state.activeId);
+        const variant = variantByKey(state.active);
 
         if (!variant) {
             rail.innerHTML = "";
@@ -354,7 +521,7 @@
                 </div>
                 <div class="canvas" data-art-width="${variant.width}" data-art-height="${variant.height}">
                     <div class="canvas-fit">
-                        <iframe id="live-frame" src="/artwork/${encodeURIComponent(variant.id)}?token=${TOKEN}" title="${t("artworkPreview")}"></iframe>
+                        <iframe id="live-frame" src="${artworkSrc(variant)}" title="${t("artworkPreview")}"></iframe>
                     </div>
                 </div>
             </div>`;
@@ -400,12 +567,21 @@
             return;
         }
 
-        rail.innerHTML = `<h2>${t("variants")}</h2><div class="variant-list">${variants().filter((item) => item.status !== "rejected" || item.id === state.activeId).map((item) =>
-            `<button type="button" class="${item.id === state.activeId ? "is-on" : ""}" data-open="${escape(item.id)}">
-                <strong>${escape(item.title)}</strong>
-                <span>${escape(formatName(item))} · ${item.width}×${item.height}</span>
-            </button>`
-        ).join("")}</div>`;
+        rail.innerHTML = `<h2>${t("variants")}</h2>${state.arts.map((art) => {
+            const list = withArt(art).filter((item) => item.status !== "rejected" || keyOf(item) === state.active);
+
+            if (!list.length) {
+                return "";
+            }
+
+            return `<h3 class="rail-art">${escape(art.title)}${art.current ? ` <span class="tag">${t("current")}</span>` : ""}</h3>
+                <div class="variant-list">${list.map((item) =>
+                    `<button type="button" class="${keyOf(item) === state.active ? "is-on" : ""}" data-open="${escape(keyOf(item))}">
+                        <strong>${escape(item.title)}</strong>
+                        <span>${escape(formatName(item))} · ${item.width}×${item.height}</span>
+                    </button>`
+                ).join("")}</div>`;
+        }).join("")}`;
         rail.querySelectorAll("[data-open]").forEach((button) => {
             button.onclick = () => openPreview(button.getAttribute("data-open"));
         });
@@ -442,7 +618,7 @@
         };
         document.getElementById("copy-prompt").onclick = copyPrompt;
         document.getElementById("clear-notes").onclick = () => {
-            saveNotes(variant.id, []);
+            saveNotes(state.active, []);
             paintNotes();
         };
         inspect.querySelectorAll("[data-export]").forEach((button) => {
@@ -479,8 +655,8 @@
     }
 
     // Comments live in this browser only. The prompt is the hand-off, so no harness needs a trigger.
-    function notesKey(id) {
-        return `artdirector:notes:${state.snapshot.project.name}:${id}`;
+    function notesKey(key) {
+        return `artdirector:notes:${key}`;
     }
 
     function loadNotes(id) {
@@ -510,9 +686,9 @@
             return;
         }
 
-        const notes = loadNotes(state.activeId);
+        const notes = loadNotes(state.active);
         notes.push({ text, selection: state.pick });
-        saveNotes(state.activeId, notes);
+        saveNotes(state.active, notes);
         note.value = "";
         state.pick = null;
         paintTarget();
@@ -527,16 +703,16 @@
             return;
         }
 
-        const notes = loadNotes(state.activeId);
+        const notes = loadNotes(state.active);
         list.innerHTML = notes.map((item, index) => `<li>
                 <div><span class="where">${escape(item.selection ? describe(item.selection) : t("wholeBoard"))}</span>${escape(item.text)}</div>
                 <button type="button" class="link" data-remove="${index}" aria-label="${t("removeComment", { n: index + 1 })}">${icon("trash-2")}${t("remove")}</button>
             </li>`).join("");
         list.querySelectorAll("[data-remove]").forEach((button) => {
             button.onclick = () => {
-                const next = loadNotes(state.activeId);
+                const next = loadNotes(state.active);
                 next.splice(Number(button.getAttribute("data-remove")), 1);
-                saveNotes(state.activeId, next);
+                saveNotes(state.active, next);
                 paintNotes();
             };
         });
@@ -546,7 +722,7 @@
     }
 
     function sendMarks() {
-        const marks = loadNotes(state.activeId)
+        const marks = loadNotes(state.active)
             .map((item, index) => ({ n: index + 1, selector: item.selection ? item.selection.selector : null }))
             .filter((item) => item.selector);
         postToFrame({ type: "artdirector-marks", marks });
@@ -561,7 +737,7 @@
     }
 
     function buildPrompt(notes) {
-        const variant = variantById(state.activeId);
+        const variant = variantByKey(state.active);
 
         if (!variant || !notes.length) {
             return "";
@@ -569,9 +745,14 @@
 
         const lines = [
             t("promptHead", { id: variant.id, w: variant.width, h: variant.height }),
-            t("promptFile", { file: variant.htmlFile || variant.htmlPath }),
-            ""
+            t("promptFile", { file: variant.htmlFile || variant.htmlPath })
         ];
+
+        if (variant.requestId) {
+            lines.push(t("promptArt", { title: variant.artTitle, id: variant.requestId }));
+        }
+
+        lines.push("");
 
         notes.forEach((item, index) => {
             const where = item.selection
@@ -631,7 +812,8 @@
     // rendering and shows real bytes once the download starts.
     async function exportAs(formatId) {
         const format = FORMATS.find((item) => item.id === formatId);
-        const id = state.activeId;
+        const variant = variantByKey(state.active);
+        const id = variant ? variant.id : null;
 
         if (!format || !id || state.exporting) {
             return;
@@ -651,7 +833,7 @@
             const res = await fetch("/v1/export", {
                 method: "POST",
                 headers,
-                body: JSON.stringify({ id, format: format.api })
+                body: JSON.stringify({ id, format: format.api, request: variant.requestId })
             });
 
             if (!res.ok) {
@@ -705,6 +887,158 @@
             window.clearInterval(timer);
             state.exporting = null;
             paintExport();
+        }
+    }
+
+    function renderMoodboard() {
+        rail.innerHTML = "";
+        inspect.innerHTML = "";
+        const items = state.mood;
+        stage.innerHTML = `<div class="mood-tools">
+                <label class="mood-drop" id="mood-drop">${icon("image-plus")}<span>${t("moodDrop")}</span>
+                    <input type="file" id="mood-file" accept="image/*" multiple hidden>
+                </label>
+                <form class="mood-form" id="mood-color">
+                    ${icon("palette")}
+                    <input type="color" id="mood-color-value" value="#c23b22" aria-label="${t("moodAddColor")}">
+                    <input type="text" id="mood-color-caption" placeholder="${t("moodCaption")}">
+                    <button type="submit">${t("moodAddColor")}</button>
+                </form>
+                <form class="mood-form" id="mood-note">
+                    ${icon("sticky-note")}
+                    <input type="text" id="mood-note-text" placeholder="${t("moodNotePlaceholder")}">
+                    <button type="submit">${t("moodAddNote")}</button>
+                </form>
+            </div>
+            <p class="muted mood-hint">${t("moodHint")}</p>
+            ${items.length
+                ? `<div class="mood">${items.map(moodItem).join("")}</div>`
+                : `<div class="empty"><h2>${t("moodEmpty")}</h2><p>${t("moodEmptyHint")}</p></div>`}`;
+
+        document.getElementById("mood-file").onchange = (event) => {
+            void uploadImages([...event.target.files]);
+            event.target.value = "";
+        };
+        const drop = document.getElementById("mood-drop");
+        stage.ondragover = (event) => {
+            event.preventDefault();
+            drop.classList.add("is-over");
+        };
+        stage.ondragleave = () => drop.classList.remove("is-over");
+        stage.ondrop = (event) => {
+            event.preventDefault();
+            drop.classList.remove("is-over");
+            void uploadImages([...event.dataTransfer.files]);
+        };
+        document.getElementById("mood-color").onsubmit = (event) => {
+            event.preventDefault();
+            void addMood({
+                kind: "color",
+                color: document.getElementById("mood-color-value").value,
+                caption: document.getElementById("mood-color-caption").value
+            });
+        };
+        document.getElementById("mood-note").onsubmit = (event) => {
+            event.preventDefault();
+            const text = document.getElementById("mood-note-text").value.trim();
+
+            if (text) {
+                void addMood({ kind: "note", text });
+            }
+        };
+        stage.querySelectorAll("[data-remove-mood]").forEach((button) => {
+            button.onclick = (event) => {
+                event.stopPropagation();
+                void removeMood(button.getAttribute("data-remove-mood"));
+            };
+        });
+        stage.querySelectorAll("[data-open-mood]").forEach((node) => {
+            node.onclick = () => {
+                if (variantByKey(node.getAttribute("data-open-mood"))) {
+                    openPreview(node.getAttribute("data-open-mood"));
+                }
+            };
+        });
+        observeFits(stage);
+    }
+
+    function moodItem(item) {
+        const by = `<span class="mood-by">${item.source === "agent" ? t("moodByAgent") : t("moodByYou")}</span>`;
+        const remove = `<button type="button" class="link" data-remove-mood="${escape(item.id)}">${icon("trash-2")}${t("remove")}</button>`;
+        const caption = item.caption ? `<p>${escape(item.caption)}</p>` : "";
+        let body = "";
+
+        if (item.kind === "image") {
+            body = `<img src="${item.url}?token=${TOKEN}" alt="${escape(item.caption || "")}" loading="lazy">${caption}`;
+        } else if (item.kind === "color") {
+            body = `<div class="swatch" style="background:${escape(item.color)}"></div><p><code>${escape(item.color)}</code></p>${caption}`;
+        } else if (item.kind === "note") {
+            body = `<blockquote>${escape(item.text)}</blockquote>`;
+        } else if (item.missing) {
+            body = `<p class="muted">${t("moodMissing")}</p>`;
+        } else {
+            const key = `${item.requestId || ""}/${item.variantId}`;
+            body = `<div class="mood-variant" data-open-mood="${escape(key)}">
+                    ${previewFrame(`${item.url}${item.url.includes("?") ? "&" : "?"}token=${TOKEN}`, item.title, item.width, item.height)}
+                </div>
+                <p><strong>${escape(item.title)}</strong> · ${escape(item.artTitle)}</p>${caption}`;
+        }
+
+        return `<figure class="mood-item is-${escape(item.kind)}">${body}<figcaption>${by}${remove}</figcaption></figure>`;
+    }
+
+    async function addMood(payload) {
+        try {
+            await api("/v1/moodboard", { method: "POST", body: JSON.stringify(payload) });
+            await refresh();
+            toast(t("moodAdded"));
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    }
+
+    async function removeMood(id) {
+        try {
+            await api("/v1/moodboard/remove", { method: "POST", body: JSON.stringify({ id }) });
+            await refresh();
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    }
+
+    async function uploadImages(files) {
+        for (const file of files) {
+            if (!file.type.startsWith("image/")) {
+                toast(t("moodNotImage", { name: file.name }), "error");
+                continue;
+            }
+
+            if (file.size > 15 * 1024 * 1024) {
+                toast(t("moodTooBig", { name: file.name }), "error");
+                continue;
+            }
+
+            const data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+            const name = file.name && file.name.includes(".") ? file.name : `pasted.${file.type.split("/")[1] || "png"}`;
+            await addMood({ kind: "image", name, data });
+        }
+    }
+
+    function onPaste(event) {
+        if (state.mode !== "moodboard" || !event.clipboardData) {
+            return;
+        }
+
+        const files = [...event.clipboardData.files].filter((file) => file.type.startsWith("image/"));
+
+        if (files.length) {
+            event.preventDefault();
+            void uploadImages(files);
         }
     }
 

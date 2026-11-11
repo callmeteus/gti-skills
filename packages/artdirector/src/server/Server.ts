@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { ArtErrors, Auth, Paths } from "../core";
 import { UnifiedRenderer } from "../renderer";
-import { ProjectContext } from "../session";
+import { MoodBoard, ProjectContext, StudioScope } from "../session";
 import { Http } from "./Http";
 import { StudioRoutes } from "./Routes";
 import { StudioLock } from "./StudioLock";
@@ -21,12 +21,12 @@ export class StudioServer {
     private http?: ReturnType<typeof createServer>;
 
     /**
-     * @param ctx Project context
+     * @param scope Arts the studio serves
      * @param port Listen port
      * @param token Studio token
      */
     constructor(
-        private readonly ctx: ProjectContext,
+        private readonly scope: StudioScope,
         private port: number,
         private readonly token: string
     ) {}
@@ -38,7 +38,7 @@ export class StudioServer {
      * @returns Public URL including the token
      */
     async listen(): Promise<string> {
-        const routes = new StudioRoutes(this.ctx, this.renderer);
+        const routes = new StudioRoutes(this.scope, this.renderer);
         const candidates = Array.from({ length: PORT_ATTEMPTS + 1 }, (_, i) => this.port + i);
         candidates.push(0);
 
@@ -80,7 +80,7 @@ export class StudioServer {
      * Stops the server and renderer.
      */
     async close(): Promise<void> {
-        StudioLock.release(this.ctx.stateDir(), this.port);
+        StudioLock.release(this.scope.stateDir(), this.port);
         await this.renderer.close();
         await new Promise<void>((resolve, reject) => {
             if (!this.http) {
@@ -144,10 +144,23 @@ export class StudioServer {
             if (req.method === "GET" && url.pathname.startsWith("/artwork/")) {
                 const [id = "", ...asset] = url.pathname.slice("/artwork/".length).split("/").map(decodeURIComponent);
 
+                const request = Http.query(url, "request");
+
                 if (asset.length > 0 && asset.join("/")) {
-                    routes.artworkAsset(id, asset.join("/"), res);
+                    routes.artworkAsset(id, asset.join("/"), res, request);
                 } else {
-                    routes.artwork(id, res);
+                    routes.artwork(id, res, request);
+                }
+
+                return;
+            }
+
+            if (req.method === "GET" && url.pathname.startsWith("/moodboard/")) {
+                const id = decodeURIComponent(url.pathname.slice("/moodboard/".length));
+                const board = new MoodBoard(this.scope.moodboardDir());
+
+                if (!Http.file(res, Paths.confine(board.dir, board.imagePath(id)))) {
+                    throw ArtErrors.notFound("Mood board image not found.");
                 }
 
                 return;
@@ -187,7 +200,7 @@ export class StudioServer {
     private assertToken(req: IncomingMessage, url: URL): void {
         const header = req.headers.authorization;
         const bearer = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-        Auth.assert(this.ctx.root, bearer ?? cookieToken(req) ?? Http.query(url, "token"));
+        Auth.matches(this.token, bearer ?? cookieToken(req) ?? Http.query(url, "token"));
     }
 
     /**
@@ -242,6 +255,7 @@ function cookieToken(req: IncomingMessage): string | undefined {
 
 /**
  * Starts a studio server for a project, or reuses the healthy one in its lock.
+ * A temporary request shares one studio with every other request of its chat.
  *
  * @param options Port and project context
  * @returns Server (absent when reused), URL, and whether it was reused
@@ -249,17 +263,19 @@ function cookieToken(req: IncomingMessage): string | undefined {
 export async function startStudio(options: {
     ctx: ProjectContext;
     port?: number;
-}): Promise<{ server?: StudioServer; url: string; token: string; port: number; reused: boolean }> {
-    const token = Auth.loadOrCreate(options.ctx.root);
-    const stateDir = options.ctx.stateDir();
+}): Promise<{ server?: StudioServer; url: string; token: string; port: number; reused: boolean; tokenPath: string }> {
+    const scope = StudioScope.of(options.ctx);
+    const stateDir = scope.stateDir();
+    const tokenPath = join(stateDir, "token");
+    const token = Auth.loadOrCreateFile(tokenPath);
     const lock = StudioLock.read(stateDir);
 
     if (lock && await StudioLock.healthy(lock, token)) {
-        return { url: lock.url, token, port: lock.port, reused: true };
+        return { url: lock.url, token, port: lock.port, reused: true, tokenPath };
     }
 
     const port = options.port ?? Number(process.env.ARTDIRECTOR_PORT ?? 4730);
-    const server = new StudioServer(options.ctx, port, token);
+    const server = new StudioServer(scope, port, token);
     const url = await server.listen();
     StudioLock.write(stateDir, {
         pid: process.pid,
@@ -272,6 +288,7 @@ export async function startStudio(options: {
         url,
         token,
         port: server.boundPort(),
-        reused: false
+        reused: false,
+        tokenPath
     };
 }

@@ -77,7 +77,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 | This skill does | This skill does not |
 |-----------------|---------------------|
 | Keep brand tokens, brief, direction, variants, and history in one project | Call image-generation APIs |
-| Serve a token-gated localhost studio with a gallery with accept and reject, and a preview with element comments and export | Run a language model. The agent applies the prompt the user pastes. |
+| Serve a token-gated localhost studio with a gallery grouped by art with accept and reject, a preview with element comments and export, and a shared mood board | Run a language model. The agent applies the prompt the user pastes. |
 | Teach a professional visual bar: style guides, an effects toolkit, and photo treatments | Ship finished designs to copy. References set the level, never the layout |
 | Find openly licensed photos and remove backgrounds with a local model | Generate or alter images |
 | Export PNG, JPEG, PDF, HTML, and SVG for compositions with an SVG root | Reconstruct SVG from HTML-only artboards |
@@ -90,7 +90,8 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Effects toolkit:** grain, paper, smoke, duotone, scrims, halftone, cutout shadows, 3D and glossy type, echo stacks, brush edges, ornaments, icons, and line fitting, included with `{{> effect}}`
 - **Photo pipeline:** search CC0 photos with credits and cut out subjects locally; local images work in the studio, the audit, and every export
 - **Templates for repeatable formats:** infographic, data visual, and carousel slide, filled from the brief or a tokens file
-- **Gallery:** every variant at its real ratio, with Accept and Reject; rejected variants move to a Rejected area and can be restored
+- **Gallery grouped by art:** every art requested in the same chat keeps its own group, newest first; each variant shows at its real ratio with Accept, Reject, and Pin; rejected variants move to a Rejected area and can be restored
+- **Mood board:** images (upload, drop, or paste), colors, notes, and pinned variants shared by every art in the chat; the agent reads it before each new piece
 - **Preview:** the full-size artwork with PNG, JPEG, or PDF export and a progress indicator; audit findings stay with the agent
 - **Studio in three languages:** English, Portuguese, and Spanish; the agent passes the language of your prompt with `--lang`, and a switcher in the studio overrides it
 - **Element comments:** click elements in the preview, comment on each, and copy one prompt for any agent, with no polling or trigger needed
@@ -228,10 +229,11 @@ init ──> brief ──> shape ──> generate ──> render check ──> s
 2. Studio asks only for missing essentials.
 3. Choose a **rendered** visual direction (not a paragraph of adjectives).
 4. Agent writes HTML/CSS/SVG variants into `.artdirector/variants/`, audits and renders each one once, and fixes construction defects.
-5. Gallery compares real artboards.
+5. Gallery compares real artboards, one group per art requested in the chat.
 6. Preview: click elements, write comments, and copy the prompt into the chat.
 7. Agent edits the file and runs the render check once; click Reload in Preview.
 8. Accept the variants you keep, reject the rest (restorable), and export PNG, JPEG, or PDF from Preview.
+9. Pin variants and add images, colors, and notes to the Mood board; the agent reads it before the next art in the chat.
 
 Template production (repeatable campaigns) and art direction (original compositions) share the same session.
 
@@ -251,6 +253,8 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | `brief` | Record goal, audience, format, and constraints | `--goal`, `--audience`, `--format`, `--tone` |
 | `status` | Print project, session, and variants as JSON | |
 | `resume` | Recover the project, session, and pending live events | |
+| `history` | List every art requested in this chat, newest first, with its variants | |
+| `moodboard` | List the chat's mood board; `moodboard add` adds an image, color, note, or pinned variant; `moodboard remove` deletes one | `--image`, `--color`, `--note`, `--variant`, `--from-request`, `--caption`, `--id` |
 
 ### Design
 
@@ -259,7 +263,7 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | `shape` | Choose a visual direction from rendered alternatives | `--direction` |
 | `generate` | Fill a template for a repeatable format, or return techniques, templates, and effects for original work | `--template`, `--tokens`, `--id` |
 | `variants` | List variants; `variants add` registers agent-written HTML | `--file`, `--title` |
-| `studio` | Start the browser studio with Gallery and Preview | `--open`, `--port` (default `4730`) |
+| `studio` | Start the browser studio with Gallery, Preview, and Mood board, or reuse the chat's running studio | `--open`, `--port` (default `4730`) |
 | `live` | Alias of `studio` | `--open` |
 | `critique` | Review against the quality floor | |
 
@@ -344,7 +348,7 @@ Art Director isolates project state per chat. The CLI reads agent session variab
 | Mode | How to get it | Where state lives |
 |------|---------------|-------------------|
 | Temporary (default) | `init --name "<name>"` | Per-chat folder under the OS temp directory |
-| Fresh context in the same chat | `init --new --name "<name>"` | New per-chat folder |
+| Fresh context in the same chat | `init --new --name "<name>"` | New request folder in the same chat; earlier arts stay in the studio history |
 | Permanent | `init --permanent --name "<name>"` | `.artdirector/` in the current repository |
 
 ```text
@@ -356,9 +360,12 @@ Art Director isolates project state per chat. The CLI reads agent session variab
 ├── history.jsonl                # Accept, reject, and edit history
 ├── events.json                  # Pending Live Mode events
 ├── studio.json                  # Running studio details
+├── moodboard/                   # Mood board: board.json and files/
 ├── exports/                     # Rendered output
 └── token                        # Studio access token (gitignored)
 ```
+
+A temporary chat keeps one folder per art under `requests/<request-id>/`, plus the chat-wide `session.json` index, `token`, `studio.json`, and `moodboard/` beside them.
 
 ## Architecture
 
@@ -474,7 +481,8 @@ python3 -m pip install "rembg[cpu]"
 - **ClickClick coverage:** ClickClick handles PNG and JPEG. PDF, live overlay, and audit stay on Playwright.
 - **Network fonts:** offline renders fall back to system fonts unless `@font-face` files are added locally.
 - **Photo resolution:** cutouts and photos smaller than the area they fill look soft; prefer sources at least as large as the board.
-- **Studio reuse:** sharing one running studio between projects (`StudioLock`) is not finished in the package yet; see the known issue in the [package README](../../packages/artdirector/README.md#testing).
+- **Mood board images:** PNG, JPEG, GIF, WebP, SVG, and AVIF up to 15 MB each. Web links are not fetched; save the image first.
+- **One studio per chat:** arts from different chats never share a studio or a mood board.
 
 ## Acknowledgements
 

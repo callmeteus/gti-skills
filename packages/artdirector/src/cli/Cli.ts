@@ -21,7 +21,7 @@ import { CritiquePrompts, Directions, Formats, QualityStandard } from "../design
 import { DemoWorkflow } from "../demo";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
 import { startStudio } from "../server";
-import { ContextResolver, type ProjectContext } from "../session";
+import { ContextResolver, MoodBoard, StudioScope, type ProjectContext } from "../session";
 import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { helpText } from "./Help";
@@ -178,7 +178,7 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
                 port: started.port,
                 reused: started.reused,
                 bind: "127.0.0.1",
-                tokenPath: join(ctx.stateDir(), "token"),
+                tokenPath: started.tokenPath,
                 scope: ContextResolver.describe(resolution)
             }
         }, json);
@@ -257,6 +257,23 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
                 scope: ContextResolver.describe(resolution)
             }
         }, json);
+    }
+
+    if (parsed.command === "history") {
+        const arts = StudioScope.of(ctx).arts();
+        return finish({
+            ok: true,
+            command: "history",
+            summary: `${arts.length} art(s) in this session`,
+            data: {
+                arts,
+                scope: ContextResolver.describe(resolution)
+            }
+        }, json);
+    }
+
+    if (parsed.command === "moodboard") {
+        return finish(moodboard(StudioScope.of(ctx), parsed.rest[0], parsed.flags, workspace), json);
     }
 
     if (parsed.command === ArtCommand.CRITIQUE) {
@@ -427,6 +444,87 @@ function addVariant(
             htmlPath,
             absolutePath: abs
         }
+    };
+}
+
+/**
+ * Lists, adds, or removes mood board entries shared by every art in the session.
+ *
+ * @param scope Studio scope
+ * @param action `add`, `remove`, or empty to list
+ * @param flags `--image`, `--color`, `--note`, `--variant` (+ `--from-request`), `--caption`, `--id`
+ * @param workspace Workspace for relative paths
+ * @returns Command result
+ */
+function moodboard(
+    scope: StudioScope,
+    action: string | undefined,
+    flags: Record<string, string | boolean>,
+    workspace: string
+): CommandResult {
+    const board = new MoodBoard(scope.moodboardDir());
+    const caption = flagString(flags, "caption");
+
+    if (action === "add") {
+        const image = flagString(flags, "image");
+        const color = flagString(flags, "color");
+        const note = flagString(flags, "note");
+        const variant = flagString(flags, "variant");
+        let item;
+
+        if (image) {
+            item = board.addImageFile(isAbsolute(image) ? image : resolve(workspace, image), "agent", caption);
+        } else if (color) {
+            item = board.addColor(color, "agent", caption);
+        } else if (note) {
+            item = board.addNote(note, "agent");
+        } else if (variant) {
+            const owner = scope.get(flagString(flags, "from-request"));
+            owner.variant(variant);
+            item = board.addVariant(scope.requestIdOf(owner), variant, "agent", caption);
+        } else {
+            throw ArtErrors.project("moodboard add needs --image <path>, --color <hex>, --note <text>, or --variant <id>.");
+        }
+
+        return {
+            ok: true,
+            command: "moodboard",
+            summary: `Added ${item.kind} ${item.id} to the mood board`,
+            data: { item, dir: board.dir }
+        };
+    }
+
+    if (action === "remove") {
+        const item = board.remove(flagString(flags, "id") ?? "");
+        return {
+            ok: true,
+            command: "moodboard",
+            summary: `Removed ${item.id} from the mood board`,
+            data: { item }
+        };
+    }
+
+    const items = board.items().map((item) => {
+        if (item.file) {
+            return { ...item, path: join(board.filesDir(), item.file) };
+        }
+
+        if (item.variantId) {
+            try {
+                const owner = scope.get(item.requestId);
+                return { ...item, path: Paths.confine(owner.root, owner.variant(item.variantId).htmlPath) };
+            } catch {
+                return { ...item, missing: true };
+            }
+        }
+
+        return item;
+    });
+    return {
+        ok: true,
+        command: "moodboard",
+        summary: `${items.length} mood board item(s)`,
+        data: { items, dir: board.dir }
     };
 }
 

@@ -19,6 +19,8 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 | `adapt` | Duplicate HTML at a new size | New variant |
 | `export` | Do not fake files | PNG/JPEG via ClickClick when available, else Playwright; PDF/SVG via Playwright |
 | `resume` | Read session, pending events | `resume --json` |
+| `history` | List every art in this chat, newest first, with its variants | `history --json` |
+| `moodboard` | Read references before each new art; add what the user sends | `moodboard --json`, `moodboard add --image\|--color\|--note\|--variant`, `moodboard remove --id` |
 | `effects` | Look up the effects toolkit | `effects --json`, `effects --id <id> --json` |
 
 ## Session storage
@@ -28,10 +30,15 @@ State is isolated per chat and, inside a chat, per request. Default storage is t
 ```text
 <temp>/artdirector/
 +-- sessions/<session-key>/
+    +-- session.json        request index and the active request
+    +-- token, studio.json  one studio for the whole chat
+    +-- moodboard/          board.json and files/, shared by every request
     +-- requests/<request-id>/
-        +-- .artdirector/   project, brand, brief, session, variants, history, token
+        +-- .artdirector/   project, brand, brief, session, variants, history
         +-- exports/        default export output
 ```
+
+Each request is one art. The studio shows every request of the chat as its own group in Gallery, newest first, and follows the active request.
 
 | Flag | Effect |
 | --- | --- |
@@ -65,4 +72,4 @@ Write the file anywhere inside the absolute `scope.variantsDir`, then register i
 
 ## Studio reuse
 
-`studio` reuses the request's healthy lock at `.artdirector/studio.json`. If that port is taken by another process, it tries the next free port (20 attempts), then lets the OS assign one. Two chats started at the same time get separate studios and separate ports.
+`studio` reuses the healthy lock at `studio.json` in the chat's session folder (or `.artdirector/studio.json` for a permanent project), so every request in a chat shares one studio. If that port is taken by another process, it tries the next free port (20 attempts), then lets the OS assign one. Two chats started at the same time get separate studios and separate ports.

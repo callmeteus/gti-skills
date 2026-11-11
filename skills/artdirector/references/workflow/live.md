@@ -1,11 +1,12 @@
 # Studio and comments
 
-The studio is a local server at `127.0.0.1` with a bearer token. There is no shell endpoint. It has two views.
+The studio is a local server at `127.0.0.1` with a bearer token. There is no shell endpoint. One chat has one studio, and it has three views.
 
 | View | What the user does |
 |------|--------------------|
-| Gallery | Sees every registered variant at its real ratio, accepts or rejects it (rejected variants move to a restorable Rejected area), and opens one |
-| Preview | Sees the variant full size, clicks elements to comment, copies the prompt, and exports PNG, JPEG, or PDF |
+| Gallery | Sees every art requested in this chat as its own group, newest first (the current art open, earlier ones collapsed). Each variant shows at its real ratio; the user accepts or rejects it (rejected variants move to a restorable Rejected area in their art), pins it to the mood board, or opens it |
+| Preview | Sees the variant full size, clicks elements to comment, copies the prompt, and exports PNG, JPEG, or PDF. The rail lists the variants of every art |
+| Mood board | Adds images (upload, drop, or paste), colors, and notes, and sees pinned variants. Shared by every art in the chat |
 
 ## Comments become a prompt
 
@@ -23,7 +24,7 @@ Change only what these comments ask and keep the rest of the piece. Save the fil
 
 When the prompt arrives:
 
-1. Open the file at `File:`. Do not search for it.
+1. Open the file at `File:`. Do not search for it. A comment on an earlier art adds an `Art:` line with `--request <id>`; pass that flag to `audit` and `export` in the render check.
 2. Find each element by its selector, or by the quoted text when the selector no longer matches.
 3. Apply each numbered comment to that element only. "whole board" comments apply to the composition.
 4. Save, run the render check once ([../output/render-check.md](../output/render-check.md)), and stop. The user clicks Reload in Preview to see the change.

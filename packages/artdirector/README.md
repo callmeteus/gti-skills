@@ -32,7 +32,7 @@ npm run dev -- help
 |------|----------------|
 | `src/cli/` | Argument parsing and command dispatch |
 | `src/commands/` | Command registry and metadata |
-| `src/session/` | Per-chat project scope and context resolution |
+| `src/session/` | Per-chat project scope, context resolution, studio scope (every art in a chat), and the mood board |
 | `src/server/` | Local studio HTTP API and the per-project studio lock |
 | `src/renderer/` | ClickClick and Playwright renderer |
 | `src/audit/` | Deterministic rendering checks |

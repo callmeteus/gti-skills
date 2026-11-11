@@ -75,7 +75,9 @@ If `status` fails with `PROJECT`, init then open the studio:
 
 Set `--lang` from the language of the user's prompt: `pt` for Portuguese, `es` for Spanish, and `en` for English or any other language. The studio interface and the prompts it produces use that language. Pass `--lang` again on any later command if the user switches language.
 
-Open the returned `url` (includes the localhost token). That UI has two views: **Gallery** (every variant) and **Preview** (one variant with element comments and export). Accepted and rejected status is set in Gallery and shows up in `variants --json`. The studio does not show audit findings; fixing them is your job in the render check.
+Open the returned `url` (includes the localhost token). That UI has three views: **Gallery** (every art requested in this chat, newest first, each with its variants), **Preview** (one variant with element comments and export), and **Mood board** (references shared by every art in the chat). Accepted and rejected status is set in Gallery and shows up in `variants --json`. The studio does not show audit findings; fixing them is your job in the render check.
+
+One chat has one studio. A later `init --new` in the same chat adds a new group to the running studio, and `studio` answers `reused: true` with the same URL, so do not open it again.
 
 ## Running in your agent
 
@@ -86,7 +88,7 @@ The skill works the same in every coding agent. If you need install paths, how t
 ArtDirector isolates state by chat. The CLI reads `OPENCODE_SESSION_ID`, `PASEO_AGENT_ID`, and similar agent session variables automatically, then keeps each chat's project in its own temporary folder under the OS temp directory.
 
 - **Default:** a new request is temporary. Nothing is written into the user's repository. The `init`/`status` JSON includes `scope.workspace`, `scope.root`, `scope.stateDir`, `scope.variantsDir`, and `scope.exportsDir`.
-- **New artwork request in the same chat:** start a fresh isolated context with `init --new --name "<name>" --json`. Do not reuse the previous request's brand, brief, or variants for an unrelated piece.
+- **New artwork request in the same chat:** start a fresh isolated context with `init --new --name "<name>" --json`. Do not reuse the previous request's brand, brief, or variants for an unrelated piece. The earlier arts stay in the studio history; `history --json` lists them. The mood board is the one thing every art in the chat shares.
 - **Permanent repository state:** only when the user asks to keep the project in the repository, for example to commit it to Git, run `init --permanent --name "<name>" --json`. This writes `.artdirector/` in the repository. Every later command in that chat keeps using it.
 - **Explicit chat id:** pass `--session <id>` when the agent does not expose a session variable. Never invent the same id for two chats.
 - **Exports:** `export` writes to the session temp folder by default. Pass `--out <path inside the workspace>` when the user wants the final file delivered into the repository.
@@ -110,11 +112,11 @@ Always read paths from the JSON instead of assuming `.artdirector/` exists in th
 Follow the user's intent. Do not run a long questionnaire when the brief already implies defaults. Do not read ArtDirector package source (`src/`, `Routes.ts`, `Audit.ts`) to discover how to work - use this skill and the CLI wrapper.
 
 1. **init** once when `status` returns `PROJECT`. The CLI reuses the chat's active request; for a new unrelated piece in the same chat use `init --new`. Skip exploring the whole repo. Use `init --permanent` only when the user asks to keep state in the repository.
-2. **brief** only for missing essentials (goal, format, audience). If the user already said "story teaser for X", that is enough.
+2. **brief** only for missing essentials (goal, format, audience). If the user already said "story teaser for X", that is enough. Then read the mood board with `moodboard --json` and use what is on it as references. When the user sends reference images, colors, or words in the chat, add them with `moodboard add` first. Follow [references/workflow/moodboard.md](references/workflow/moodboard.md).
 3. **generate** - write **2 to 4 complete HTML variants** on disk in one pass (different directions, or the same art at the sizes they asked for). Vary the backgrounds deliberately: do not ship only dark pieces - include at least one lighter or contrasting treatment unless the brief clearly calls for darkness. Original work: write each piece to an absolute path inside the `scope.variantsDir` returned by `init`, then register it with `variants add --id "<id>" --file "<absolute html path>"`. Never invent a repository `.artdirector/variants/<id>/artwork.html` path. Templates: `generate --template <id> --json` with `formatIds` when they want several sizes of the same piece.
 4. **Render check, once.** For each variant run `audit --id <id> --json` and `export --id <id> --format png --json`, then look at the PNG. Fix construction defects only: text touching or crossing the edge, copy in the story chrome, an empty band where the art ends early, a floating or crooked object, blurred type, collisions, missing glyphs, broken assets. One fix pass, no taste edits. Follow [references/output/render-check.md](references/output/render-check.md).
 5. **Hand over.** Start `studio --open --json` if it is not running. Tell the user the variant ids and the studio URL. **Stop. Wait for them.** Do not audit again. Do not rewrite the tail, the tree, or the gradient because you dislike the render.
-6. **Changes** arrive as a prompt the user copies from Preview and pastes into the chat: variant id, file path, and numbered comments with a CSS selector each. Edit only those elements in that file, run the render check once, then stop again. See [references/workflow/live.md](references/workflow/live.md).
+6. **Changes** arrive as a prompt the user copies from Preview and pastes into the chat: variant id, file path, and numbered comments with a CSS selector each. Edit only those elements in that file, run the render check once, then stop again. When the prompt names an earlier art with `--request <id>`, pass that flag to `audit` and `export` so they target that art. See [references/workflow/live.md](references/workflow/live.md).
 7. **Final audit / export** when they accept a variant or explicitly ask to export.
 
 Forbidden after the render check:

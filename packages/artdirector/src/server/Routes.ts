@@ -7,7 +7,6 @@ import { CommandRegistry, LiveActions } from "../commands";
 import {
     ArtCommand,
     ArtErrors,
-    Auth,
     ExportFormat,
     Ids,
     LiveEventType,
@@ -20,7 +19,7 @@ import {
 } from "../core";
 import { CritiquePrompts, DirectionCatalog, Directions, Formats, OutputFormats, QualityStandard } from "../design";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
-import { ProjectContext } from "../session";
+import { MoodBoard, MoodKind, ProjectContext, StudioScope, type MoodItem } from "../session";
 import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { Http } from "./Http";
@@ -30,13 +29,29 @@ import { Http } from "./Http";
  */
 export class StudioRoutes {
     /**
-     * @param ctx Project context
+     * @param scope Arts the studio serves
      * @param renderer Shared renderer
      */
     constructor(
-        private readonly ctx: ProjectContext,
+        private readonly scope: StudioScope,
         private readonly renderer: UnifiedRenderer
     ) {}
+
+    /**
+     * The art the agent is working on now.
+     *
+     * @returns Current context
+     */
+    private get ctx(): ProjectContext {
+        return this.scope.current();
+    }
+
+    /**
+     * @returns Mood board shared by every art in the studio
+     */
+    private board(): MoodBoard {
+        return new MoodBoard(this.scope.moodboardDir());
+    }
 
     /**
      * Dispatches a `/v1` request.
@@ -51,6 +66,42 @@ export class StudioRoutes {
 
         if (method === "GET" && path === "/v1/session") {
             Http.json(res, 200, this.snapshot());
+            return;
+        }
+
+        if (method === "GET" && path === "/v1/history") {
+            Http.json(res, 200, {
+                ok: true,
+                arts: this.scope.arts()
+            });
+            return;
+        }
+
+        if (method === "GET" && path === "/v1/moodboard") {
+            Http.json(res, 200, {
+                ok: true,
+                items: this.moodItems()
+            });
+            return;
+        }
+
+        if (method === "POST" && path === "/v1/moodboard") {
+            const body = await Http.jsonBody(req);
+            const item = this.addMoodItem(body);
+            Http.json(res, 200, {
+                ok: true,
+                item
+            });
+            return;
+        }
+
+        if (method === "POST" && path === "/v1/moodboard/remove") {
+            const body = await Http.jsonBody(req);
+            const item = this.board().remove(String(body.id ?? ""));
+            Http.json(res, 200, {
+                ok: true,
+                item
+            });
             return;
         }
 
@@ -124,7 +175,7 @@ export class StudioRoutes {
 
         if (method === "POST" && path === "/v1/variants/status") {
             const body = await Http.jsonBody(req);
-            const variant = this.setStatus(String(body.id), body.status as VariantStatus);
+            const variant = this.setStatus(this.scope.get(requestOf(body)), String(body.id), body.status as VariantStatus);
             Http.json(res, 200, {
                 ok: true,
                 variant
@@ -175,10 +226,11 @@ export class StudioRoutes {
 
         if (method === "POST" && path === "/v1/audit") {
             const body = await Http.jsonBody(req);
-            const variant = this.ctx.variant(String(body.id));
-            const htmlPath = Paths.confine(this.ctx.root, variant.htmlPath);
-            const report = await ArtworkAudit.run(htmlPath, variant, this.renderer, this.ctx.root);
-            this.ctx.setPhase(SessionPhase.AUDIT);
+            const ctx = this.scope.get(requestOf(body));
+            const variant = ctx.variant(String(body.id));
+            const htmlPath = Paths.confine(ctx.root, variant.htmlPath);
+            const report = await ArtworkAudit.run(htmlPath, variant, this.renderer, ctx.root);
+            ctx.setPhase(SessionPhase.AUDIT);
             Http.json(res, 200, {
                 ok: true,
                 report
@@ -190,7 +242,7 @@ export class StudioRoutes {
             const body = await Http.jsonBody(req);
             const id = String(body.id);
             const format = (body.format as ExportFormat | undefined) ?? ExportFormat.PNG;
-            const result = await this.exportVariant(id, format);
+            const result = await this.exportVariant(this.scope.get(requestOf(body)), id, format);
             const ext = format === ExportFormat.JPEG ? "jpg" : format;
             const filename = `${id}.${ext}`;
             const buffer = result.buffer;
@@ -248,7 +300,8 @@ export class StudioRoutes {
             liveActions: LiveActions,
             pendingEvent: this.ctx.pendingEvent(),
             queue: this.ctx.pendingEvents(),
-            tokenPath: Auth.tokenPath(this.ctx.root)
+            requestId: this.scope.requestIdOf(this.ctx),
+            tokenPath: join(this.scope.stateDir(), "token")
         };
     }
 
@@ -257,10 +310,13 @@ export class StudioRoutes {
      *
      * @param id Variant id
      * @param res Response
+     * @param request Request id of the art; empty means the current art
      */
-    artwork(id: string, res: ServerResponse): void {
-        const variant = this.ctx.variant(id);
-        const file = Paths.confine(this.ctx.root, variant.htmlPath);
+    artwork(id: string, res: ServerResponse, request?: string): void {
+        const ctx = this.scope.get(request);
+        const variant = ctx.variant(id);
+        const file = Paths.confine(ctx.root, variant.htmlPath);
+        const suffix = request ? `?request=${encodeURIComponent(request)}` : "";
 
         if (!existsSync(file)) {
             throw ArtErrors.notFound(`Artwork file missing: ${variant.htmlPath}`);
@@ -268,7 +324,7 @@ export class StudioRoutes {
 
         const html = HtmlDocument.mapLocalReferences(
             Effects.expand(readFileSync(file, "utf8")),
-            (reference) => `/artwork/${encodeURIComponent(id)}/${reference.split("/").map(encodeURIComponent).join("/")}`
+            (reference) => `/artwork/${encodeURIComponent(id)}/${reference.split("/").map(encodeURIComponent).join("/")}${suffix}`
         );
 
         res.writeHead(200, {
@@ -285,11 +341,13 @@ export class StudioRoutes {
      * @param id Variant id
      * @param assetPath Path relative to the artwork HTML
      * @param res Response
+     * @param request Request id of the art; empty means the current art
      */
-    artworkAsset(id: string, assetPath: string, res: ServerResponse): void {
-        const variant = this.ctx.variant(id);
-        const htmlFile = Paths.confine(this.ctx.root, variant.htmlPath);
-        const file = Paths.confine(this.ctx.root, join(dirname(htmlFile), assetPath));
+    artworkAsset(id: string, assetPath: string, res: ServerResponse, request?: string): void {
+        const ctx = this.scope.get(request);
+        const variant = ctx.variant(id);
+        const htmlFile = Paths.confine(ctx.root, variant.htmlPath);
+        const file = Paths.confine(ctx.root, join(dirname(htmlFile), assetPath));
 
         if (!Http.file(res, file)) {
             throw ArtErrors.notFound(`Artwork asset missing: ${assetPath}`);
@@ -343,15 +401,16 @@ export class StudioRoutes {
     /**
      * Updates variant status and active/accepted pointers.
      *
+     * @param ctx Art that owns the variant
      * @param id Variant id
      * @param status Next status
      * @returns Variant
      */
-    private setStatus(id: string, status: VariantStatus): ArtworkVariant {
-        const variant = this.ctx.variant(id);
+    private setStatus(ctx: ProjectContext, id: string, status: VariantStatus): ArtworkVariant {
+        const variant = ctx.variant(id);
         variant.status = status;
-        this.ctx.upsertVariant(variant);
-        const project = this.ctx.project();
+        ctx.upsertVariant(variant);
+        const project = ctx.project();
 
         if (status === VariantStatus.SELECTED) {
             project.activeVariantId = id;
@@ -360,7 +419,7 @@ export class StudioRoutes {
             project.activeVariantId = id;
         }
 
-        this.ctx.writeProject(project);
+        ctx.writeProject(project);
         return variant;
     }
 
@@ -443,6 +502,67 @@ export class StudioRoutes {
     }
 
     /**
+     * Mood board entries with the URLs and variant details the studio needs.
+     *
+     * @returns Entries, newest first
+     */
+    private moodItems(): Array<MoodItem & { url?: string; missing?: boolean }> {
+        return this.board().items().reverse().map((item) => {
+            if (item.kind === MoodKind.IMAGE) {
+                return { ...item, url: `/moodboard/${encodeURIComponent(item.id)}` };
+            }
+
+            if (item.kind !== MoodKind.VARIANT || !item.variantId) {
+                return item;
+            }
+
+            try {
+                const ctx = this.scope.get(item.requestId);
+                const variant = ctx.variant(item.variantId);
+                const suffix = item.requestId ? `?request=${encodeURIComponent(item.requestId)}` : "";
+                return {
+                    ...item,
+                    title: variant.title,
+                    artTitle: ctx.project().name,
+                    width: variant.width,
+                    height: variant.height,
+                    url: `/artwork/${encodeURIComponent(variant.id)}${suffix}`
+                };
+            } catch {
+                return { ...item, missing: true };
+            }
+        });
+    }
+
+    /**
+     * Adds a mood board entry from the studio.
+     *
+     * @param body `{ kind, caption, name + data (base64) | color | text | request + variantId }`
+     * @returns Entry
+     */
+    private addMoodItem(body: Record<string, unknown>): MoodItem {
+        const board = this.board();
+        const caption = typeof body.caption === "string" ? body.caption : undefined;
+
+        switch (body.kind) {
+            case MoodKind.IMAGE:
+                return board.addImageData(String(body.name ?? ""), Buffer.from(String(body.data ?? ""), "base64"), "studio", caption);
+            case MoodKind.COLOR:
+                return board.addColor(String(body.color ?? ""), "studio", caption);
+            case MoodKind.NOTE:
+                return board.addNote(String(body.text ?? ""), "studio");
+            case MoodKind.VARIANT: {
+                const request = requestOf(body);
+                const id = String(body.variantId ?? "");
+                this.scope.get(request).variant(id);
+                return board.addVariant(request, id, "studio", caption);
+            }
+            default:
+                throw ArtErrors.project(`Unknown mood board kind: ${String(body.kind)}`);
+        }
+    }
+
+    /**
      * Enqueues a live event from the studio.
      *
      * @param body Request body
@@ -502,22 +622,33 @@ export class StudioRoutes {
     /**
      * Exports a variant through the unified renderer.
      *
+     * @param ctx Art that owns the variant
      * @param id Variant id
      * @param format Format
      * @returns Render result
      */
-    private async exportVariant(id: string, format: ExportFormat) {
-        const variant = this.ctx.variant(id);
-        const htmlPath = Paths.confine(this.ctx.root, variant.htmlPath);
+    private async exportVariant(ctx: ProjectContext, id: string, format: ExportFormat) {
+        const variant = ctx.variant(id);
+        const htmlPath = Paths.confine(ctx.root, variant.htmlPath);
         const html = readFileSync(htmlPath, "utf8");
-        this.ctx.setPhase(SessionPhase.EXPORT);
+        ctx.setPhase(SessionPhase.EXPORT);
         return this.renderer.render({
             html,
             baseDir: dirname(htmlPath),
-            root: this.ctx.root,
+            root: ctx.root,
             format
         });
     }
+}
+
+/**
+ * Reads the art a request targets.
+ *
+ * @param body Request body
+ * @returns Request id, or undefined for the current art
+ */
+function requestOf(body: Record<string, unknown>): string | undefined {
+    return typeof body.request === "string" && body.request ? body.request : undefined;
 }
 
 /**

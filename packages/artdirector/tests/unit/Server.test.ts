@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Auth } from "../../src/core";
-import { ProjectContext } from "../../src/session";
+import { ProjectContext, StudioScope } from "../../src/session";
 import { startStudio, StudioServer } from "../../src/server";
 
 describe("studio server", () => {
@@ -14,7 +14,7 @@ describe("studio server", () => {
         root
     });
     const token = Auth.loadOrCreate(root);
-    const server = new StudioServer(ProjectContext.open(root), 4742, token);
+    const server = new StudioServer(StudioScope.of(ProjectContext.open(root)), 4742, token);
 
     beforeAll(async () => {
         await server.listen();

@@ -3,3 +3,7 @@ export { ContextResolver } from "./Resolver";
 export type { ContextOptions, ContextResolution, CreateOptions } from "./Resolver";
 export { Scope } from "./Scope";
 export type { SessionIdentity, SessionRecord, SessionRequest } from "./Scope";
+export { MoodBoard, MoodKind } from "./MoodBoard";
+export type { MoodItem } from "./MoodBoard";
+export { StudioScope } from "./StudioScope";
+export type { ArtSummary } from "./StudioScope";
