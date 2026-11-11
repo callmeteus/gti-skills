@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -160,8 +160,18 @@ describe("update", () => {
         assert.ok(check.lines.some((line) => line.startsWith("outdated better-tests")));
         assert.ok(!github.calls.some((url) => url.includes("/tarball/")), "--check downloads nothing");
 
+        // Two earlier downloads: the newer one may still run a studio, so only the oldest goes.
+        for (const [name, seconds] of [["oldest000000", 1000], ["previous0000", 2000]]) {
+            mkdirSync(join(stateDir, "sources", name), { recursive: true });
+            const stamp = join(stateDir, "sources", name, ".gti-skills-source.json");
+            writeFileSync(stamp, "{}");
+            utimesSync(stamp, seconds, seconds);
+        }
+
         const io = collect();
         assert.equal(await runUpdate({}, io, { cwd: project, home, stateDir, fetch: github.fetch }), 0, io.errors.join("\n"));
+        assert.ok(!existsSync(join(stateDir, "sources", "oldest000000")));
+        assert.ok(existsSync(join(stateDir, "sources", "previous0000")));
         assert.equal(readInstalls(stateDir)[0].commit, Latest);
         assert.ok(existsSync(join(project, ".claude", "skills", "better-tests", "SKILL.md")));
         assert.ok(existsSync(join(stateDir, "sources", Latest.slice(0, 12), ".gti-skills-source.json")));

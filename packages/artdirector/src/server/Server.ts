@@ -19,6 +19,8 @@ const PORT_ATTEMPTS = 20;
 export class StudioServer {
     private renderer = new UnifiedRenderer();
     private http?: ReturnType<typeof createServer>;
+    /** Package folder this server was started from; an update may delete it while the server runs. */
+    private readonly packageRoot = Paths.packageRoot();
 
     /**
      * @param scope Arts the studio serves
@@ -100,6 +102,11 @@ export class StudioServer {
      * @param routes API routes
      */
     private async dispatch(req: IncomingMessage, res: ServerResponse, routes: StudioRoutes): Promise<void> {
+        if (!existsSync(join(this.packageRoot, "package.json"))) {
+            this.retire(res);
+            return;
+        }
+
         try {
             const host = req.headers.host ?? "127.0.0.1";
             const url = new URL(req.url ?? "/", `http://${host}`);
@@ -178,6 +185,23 @@ export class StudioServer {
     }
 
     /**
+     * Answers a studio whose package folder was removed (usually by an update), then shuts it down
+     * and frees the port so the next `studio` command starts a working one.
+     *
+     * @param res Response
+     */
+    private retire(res: ServerResponse): void {
+        res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(
+            "This Art Director studio was started from an install that has since been updated or removed.\n" +
+            "Ask the agent to run `studio --open` again; it opens a new studio with the same artwork.\n"
+        );
+        res.once("finish", () => {
+            void this.close().catch(() => undefined);
+        });
+    }
+
+    /**
      * Rejects requests that are not loopback.
      *
      * @param req Request
@@ -200,7 +224,8 @@ export class StudioServer {
     private assertToken(req: IncomingMessage, url: URL): void {
         const header = req.headers.authorization;
         const bearer = header?.startsWith("Bearer ") ? header.slice(7) : undefined;
-        Auth.matches(this.token, bearer ?? cookieToken(req) ?? Http.query(url, "token"));
+        // An explicit token wins over the cookie, which may be stale from an earlier studio on this host.
+        Auth.matches(this.token, bearer ?? Http.query(url, "token") ?? cookieToken(req, this.port));
     }
 
     /**
@@ -223,19 +248,31 @@ export class StudioServer {
         res.writeHead(200, {
             "Content-Type": "text/html; charset=utf-8",
             "Cache-Control": "no-store",
-            "Set-Cookie": `artdirector_token=${this.token}; Path=/; HttpOnly; SameSite=Strict`
+            "Set-Cookie": `${cookieName(this.port)}=${this.token}; Path=/; HttpOnly; SameSite=Strict`
         });
         res.end(html);
     }
 }
 
 /**
+ * Cookie name for one studio. Browsers share cookies across ports on the same host, so each port
+ * gets its own name and two studios never overwrite each other's token.
+ *
+ * @param port Studio port
+ * @returns Cookie name
+ */
+function cookieName(port: number): string {
+    return `artdirector_token_${port}`;
+}
+
+/**
  * Reads the studio token from the request cookie.
  *
  * @param req Request
+ * @param port Studio port
  * @returns Token or undefined
  */
-function cookieToken(req: IncomingMessage): string | undefined {
+function cookieToken(req: IncomingMessage, port: number): string | undefined {
     const header = req.headers.cookie;
 
     if (!header) {
@@ -245,7 +282,7 @@ function cookieToken(req: IncomingMessage): string | undefined {
     for (const part of header.split(";")) {
         const [name, ...rest] = part.trim().split("=");
 
-        if (name === "artdirector_token") {
+        if (name === cookieName(port)) {
             return rest.join("=");
         }
     }

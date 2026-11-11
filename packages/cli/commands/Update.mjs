@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, renameSync } from "node:fs";
+import { existsSync, readdirSync, renameSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -101,6 +101,37 @@ function requestedTargets(flags, cwd, home, known) {
     }
 
     return [...targets.values()];
+}
+
+/**
+ * Removes old source downloads, keeping the latest and the one before it. Programs started from
+ * the previous source, such as a running Art Director studio, still read files from it.
+ *
+ * @param {string} folder State folder
+ * @param {string} latest Commit that was just installed
+ */
+function pruneSources(folder, latest) {
+    const sources = join(folder, "sources");
+    const older = readdirSync(sources)
+        .filter((entry) => entry !== sourceName(latest) && !entry.endsWith(".partial"))
+        .map((entry) => ({ entry, time: downloadedAt(join(sources, entry)) }))
+        .sort((a, b) => b.time - a.time);
+
+    for (const { entry } of older.slice(1)) {
+        removeDirectory(join(sources, entry));
+    }
+}
+
+/**
+ * @param {string} root Source tree root
+ * @returns {number} When the source was downloaded, or 0 when it has no stamp
+ */
+function downloadedAt(root) {
+    try {
+        return statSync(join(root, SourceStamp)).mtimeMs;
+    } catch {
+        return 0;
+    }
 }
 
 /**
@@ -316,11 +347,7 @@ export async function runUpdate(flags, io, environment = {}) {
     writeInstalls(folder, readInstalls(folder).filter((record) => existsSync(record.destination)));
 
     if (ok && removed.length === 0) {
-        for (const entry of readdirSync(join(folder, "sources"))) {
-            if (entry !== sourceName(latest)) {
-                removeDirectory(join(folder, "sources", entry));
-            }
-        }
+        pruneSources(folder, latest);
     }
 
     io.out(ok ? `Updated ${refresh.length} install(s) to ${short(latest)}.` : "Some installs failed; see the errors above.");

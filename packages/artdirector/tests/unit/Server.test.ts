@@ -24,6 +24,19 @@ describe("studio server", () => {
         await server.close();
     });
 
+    it("opens from the URL token even when the browser holds a stale cookie from another studio", async () => {
+        const res = await fetch(`http://127.0.0.1:4742/?token=${token}`, {
+            headers: { Cookie: "artdirector_token=stale; artdirector_token_4742=also-stale" }
+        });
+        expect(res.status).toBe(200);
+        expect(res.headers.get("set-cookie")).toContain(`artdirector_token_4742=${token}`);
+
+        const viaCookie = await fetch("http://127.0.0.1:4742/v1/session", {
+            headers: { Cookie: `artdirector_token_4731=other; artdirector_token_4742=${token}` }
+        });
+        expect(viaCookie.status).toBe(200);
+    });
+
     it("rejects missing tokens and serves the session with a valid token", async () => {
         const denied = await fetch("http://127.0.0.1:4742/v1/session");
         expect(denied.status).toBe(401);
