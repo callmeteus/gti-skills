@@ -90,10 +90,11 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Effects toolkit:** grain, paper, smoke, duotone, scrims, halftone, cutout shadows, 3D and glossy type, echo stacks, brush edges, ornaments, icons, and line fitting, included with `{{> effect}}`
 - **Photo pipeline:** search CC0 photos with credits and cut out subjects locally; local images work in the studio, the audit, and every export
 - **Templates for repeatable formats:** infographic, data visual, and carousel slide, filled from the brief or a tokens file
-- **Gallery grouped by art:** every art requested in the same chat keeps its own group, newest first; each variant shows at its real ratio with Accept, Reject, and Pin; rejected variants move to a Rejected area and can be restored
+- **Gallery grouped by art:** every art requested in the same chat keeps its own group, newest first; each variant shows at its real ratio with Accept, Reject, Pin, and Copy; rejected variants move to a Rejected area and can be restored
 - **Mood board:** images (upload, drop, or paste), colors, notes, and pinned variants shared by every art in the chat; the agent reads it before each new piece
 - **Guidelines that learn:** the agent turns lasting feedback ("never put the logo there", "too busy") into dos and don'ts, per workspace or for all your work, and follows them in every later chat; edit, flip, or remove them in the studio
 - **Preview:** the full-size artwork with PNG, JPEG, or PDF export and a progress indicator; audit findings stay with the agent
+- **Copy PNG:** for quick use, Copy (Gallery card) and Copy PNG (Preview) render the variant and put the PNG on the clipboard; when the browser blocks the clipboard, the PNG downloads instead
 - **Studio in three languages:** English, Portuguese, and Spanish; the agent passes the language of your prompt with `--lang`, and a switcher in the studio overrides it
 - **Element comments:** click elements in the preview, comment on each, and copy one prompt for any agent, with no polling or trigger needed
 - **Refinement commands:** `bolder`, `quieter`, `typeset`, `colorize`, `layout`, `distill`, `adapt`, `polish`
@@ -233,7 +234,7 @@ init ──> brief ──> shape ──> generate ──> render check ──> s
 5. Gallery compares real artboards, one group per art requested in the chat.
 6. Preview: click elements, write comments, and copy the prompt into the chat.
 7. Agent edits the file and runs the render check once; click Reload in Preview.
-8. Accept the variants you keep, reject the rest (restorable), and export PNG, JPEG, or PDF from Preview.
+8. Accept the variants you keep, reject the rest (restorable), and export PNG, JPEG, or PDF from Preview, or copy a PNG straight to the clipboard.
 9. Pin variants and add images, colors, and notes to the Mood board; the agent reads it before the next art in the chat.
 10. The agent saves what your feedback teaches as dos and don'ts and follows them in every later piece; review them in Guidelines.
 

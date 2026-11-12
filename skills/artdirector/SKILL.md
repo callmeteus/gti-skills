@@ -76,7 +76,7 @@ If `status` fails with `PROJECT`, init then open the studio:
 
 Set `--lang` from the language of the user's prompt: `pt` for Portuguese, `es` for Spanish, and `en` for English or any other language. The studio interface and the prompts it produces use that language. Pass `--lang` again on any later command if the user switches language.
 
-Open the returned `url` (includes the localhost token). That UI has four views: **Gallery** (every art requested in this chat, newest first, each with its variants), **Preview** (one variant with element comments and export), **Mood board** (references shared by every art in the chat), and **Guidelines** (the user's dos and don'ts, which outlive the chat). Accepted and rejected status is set in Gallery and shows up in `variants --json`. The studio does not show audit findings; fixing them is your job in the render check.
+Open the returned `url` (includes the localhost token). That UI has four views: **Gallery** (every art requested in this chat, newest first, each with its variants), **Preview** (one variant with element comments, export, and copy as PNG), **Mood board** (references shared by every art in the chat), and **Guidelines** (the user's dos and don'ts, which outlive the chat). Accepted and rejected status is set in Gallery and shows up in `variants --json`. The studio does not show audit findings; fixing them is your job in the render check.
 
 One chat has one studio. A later `init --new` in the same chat adds a new group to the running studio, and `studio` answers `reused: true` with the same URL, so do not open it again.
 

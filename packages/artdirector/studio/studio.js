@@ -9,6 +9,8 @@
         { id: "jpg", api: "jpeg", ext: "jpg", label: "JPEG" },
         { id: "pdf", api: "pdf", ext: "pdf", label: "PDF" }
     ];
+    // Copy renders a PNG like export, but puts it on the clipboard instead of downloading it.
+    const COPY = { id: "copy", api: "png", ext: "png", label: "PNG" };
 
     // Lucide icons (ISC), inlined so the studio works offline. See NOTICE.md.
     const ICONS = {
@@ -77,7 +79,10 @@
             rulesEmpty: "No guidelines yet", rulesEmptyHint: "Write a rule here, or tell the agent what you like and dislike. It saves what it learns.",
             ruleLearned: "learned", ruleByYou: "you", ruleHits: "confirmed {n}x", ruleEdit: "Edit", ruleSave: "Save", ruleCancel: "Cancel",
             ruleFlip: "Flip", ruleAdded: "Rule added.", ruleConfirmed: "That rule already existed; confirmed it again.", ruleFlipped: "Rule flipped.",
-            rulesDont: "Don'ts", rulesDo: "Dos", ruleRemoved: "Rule removed."
+            rulesDont: "Don'ts", rulesDo: "Dos", ruleRemoved: "Rule removed.",
+            copyImage: "Copy PNG", copyTitle: "Copy as PNG to paste anywhere", copying: "Copying...",
+            copiedImage: "Copied {id} as PNG in {s}s. Paste it anywhere.", copyImageFailed: "Copy failed: {message}",
+            copyUnsupported: "This browser cannot copy images. Use the PNG export.", copyBlockedDownloaded: "The browser blocked the clipboard, so {file} was downloaded instead."
         },
         pt: {
             studio: "Estúdio", gallery: "Galeria", preview: "Prévia",
@@ -113,7 +118,10 @@
             rulesEmpty: "Nenhuma diretriz ainda", rulesEmptyHint: "Escreva uma regra aqui, ou diga ao agente do que você gosta e do que não gosta. Ele salva o que aprende.",
             ruleLearned: "aprendida", ruleByYou: "você", ruleHits: "confirmada {n}x", ruleEdit: "Editar", ruleSave: "Salvar", ruleCancel: "Cancelar",
             ruleFlip: "Inverter", ruleAdded: "Regra adicionada.", ruleConfirmed: "Essa regra já existia; foi confirmada de novo.", ruleFlipped: "Regra invertida.",
-            rulesDont: "Evitar", rulesDo: "Fazer", ruleRemoved: "Regra removida."
+            rulesDont: "Evitar", rulesDo: "Fazer", ruleRemoved: "Regra removida.",
+            copyImage: "Copiar PNG", copyTitle: "Copiar como PNG para colar em qualquer lugar", copying: "Copiando...",
+            copiedImage: "{id} copiada como PNG em {s}s. É só colar.", copyImageFailed: "Falha ao copiar: {message}",
+            copyUnsupported: "Este navegador não copia imagens. Use a exportação PNG.", copyBlockedDownloaded: "O navegador bloqueou o clipboard, então {file} foi baixado no lugar."
         },
         es: {
             studio: "Estudio", gallery: "Galería", preview: "Vista previa",
@@ -149,7 +157,10 @@
             rulesEmpty: "Aún no hay pautas", rulesEmptyHint: "Escribe una regla aquí, o dile al agente qué te gusta y qué no. Guarda lo que aprende.",
             ruleLearned: "aprendida", ruleByYou: "tú", ruleHits: "confirmada {n}x", ruleEdit: "Editar", ruleSave: "Guardar", ruleCancel: "Cancelar",
             ruleFlip: "Invertir", ruleAdded: "Regla añadida.", ruleConfirmed: "Esa regla ya existía; se confirmó de nuevo.", ruleFlipped: "Regla invertida.",
-            rulesDont: "Evitar", rulesDo: "Hacer", ruleRemoved: "Regla eliminada."
+            rulesDont: "Evitar", rulesDo: "Hacer", ruleRemoved: "Regla eliminada.",
+            copyImage: "Copiar PNG", copyTitle: "Copiar como PNG para pegar donde quieras", copying: "Copiando...",
+            copiedImage: "{id} copiada como PNG en {s}s. Pégala donde quieras.", copyImageFailed: "Error al copiar: {message}",
+            copyUnsupported: "Este navegador no copia imágenes. Usa la exportación PNG.", copyBlockedDownloaded: "El navegador bloqueó el portapapeles, así que se descargó {file}."
         }
     };
     const LANGS = Object.keys(STRINGS);
@@ -406,6 +417,13 @@
                 void togglePin(button.getAttribute("data-key"));
             };
         });
+        stage.querySelectorAll("[data-copy-key]").forEach((button) => {
+            button.onclick = (event) => {
+                event.stopPropagation();
+                void copyImage(button.getAttribute("data-copy-key"));
+            };
+        });
+        paintExport();
         stage.querySelectorAll("[data-variant]").forEach((card) => {
             card.onclick = () => openPreview(card.getAttribute("data-variant"));
             card.onkeydown = (event) => {
@@ -455,7 +473,8 @@
     function variantCard(variant) {
         const key = escape(keyOf(variant));
         const pinned = Boolean(pinOf(variant));
-        const pin = `<button type="button" class="${pinned ? "is-pinned" : ""}" data-key="${key}" data-pin>${icon("pin")}${pinned ? t("unpin") : t("pin")}</button>`;
+        const pin = `<button type="button" class="${pinned ? "is-pinned" : ""}" data-key="${key}" data-pin>${icon("pin")}${pinned ? t("unpin") : t("pin")}</button>`
+            + `<button type="button" class="icon-only" data-copy-key="${key}" title="${escape(t("copyTitle"))}" aria-label="${escape(t("copyTitle"))}">${icon("copy")}</button>`;
         const actions = variant.status === "rejected"
             ? `<button type="button" data-key="${key}" data-status="draft">${icon("rotate-ccw")}${t("restore")}</button>`
             : variant.status === "accepted"
@@ -589,7 +608,7 @@
             </section>
             <section class="block">
                 <h2>${t("export")}</h2>
-                <div class="row" id="export-row">${FORMATS.map((item) =>
+                <div class="row" id="export-row"><button type="button" data-copy-image title="${escape(t("copyTitle"))}">${icon("copy")}${t("copyImage")}</button>${FORMATS.map((item) =>
                     `<button type="button" data-export="${item.id}">${icon("file-down")}${item.label}</button>`
                 ).join("")}</div>
                 <div class="progress" id="progress" hidden>
@@ -663,6 +682,9 @@
             saveNotes(state.active, []);
             paintNotes();
         };
+        inspect.querySelectorAll("[data-copy-image]").forEach((button) => {
+            button.onclick = () => copyImage(state.active);
+        });
         inspect.querySelectorAll("[data-export]").forEach((button) => {
             button.onclick = () => exportAs(button.getAttribute("data-export"));
         });
@@ -834,6 +856,19 @@
             button.classList.toggle("is-busy", Boolean(mine));
             button.innerHTML = mine ? `${icon("loader-circle", "spin")}${t("exporting")}` : `${icon("file-down")}${format.label}`;
         });
+        const copying = (key) => Boolean(busy && busy.format === COPY.id && busy.key === key);
+        inspect.querySelectorAll("[data-copy-image]").forEach((button) => {
+            const mine = copying(state.active);
+            button.disabled = Boolean(busy);
+            button.classList.toggle("is-busy", mine);
+            button.innerHTML = mine ? `${icon("loader-circle", "spin")}${t("copying")}` : `${icon("copy")}${t("copyImage")}`;
+        });
+        stage.querySelectorAll("[data-copy-key]").forEach((button) => {
+            const mine = copying(button.getAttribute("data-copy-key"));
+            button.disabled = Boolean(busy);
+            button.classList.toggle("is-busy", mine);
+            button.innerHTML = mine ? icon("loader-circle", "spin") : icon("copy");
+        });
         const progress = document.getElementById("progress");
 
         if (!progress) {
@@ -851,18 +886,12 @@
     }
 
     // The server renders first and then streams the file, so the bar is indeterminate while
-    // rendering and shows real bytes once the download starts.
-    async function exportAs(formatId) {
-        const format = FORMATS.find((item) => item.id === formatId);
-        const variant = variantByKey(state.active);
-        const id = variant ? variant.id : null;
-
-        if (!format || !id || state.exporting) {
-            return;
-        }
-
+    // rendering and shows real bytes once the download starts. Resolves with the file.
+    async function renderFile(variant, format) {
+        const id = variant.id;
+        const key = keyOf(variant);
         const started = Date.now();
-        state.exporting = { format: format.id, ratio: null, label: t("rendering", { format: format.label }) };
+        state.exporting = { format: format.id, key, ratio: null, label: t("rendering", { format: format.label }) };
         paintExport();
         const timer = window.setInterval(() => {
             if (state.exporting && state.exporting.ratio === null) {
@@ -907,29 +936,85 @@
                 received += value.length;
                 state.exporting = {
                     format: format.id,
+                    key,
                     ratio: total ? received / total : null,
                     label: t("downloading", { format: format.label, kb: Math.round(received / 1024) })
                 };
                 paintExport();
             }
 
-            const blob = new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `${id}.${format.ext}`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-            toast(t("exported", { file: `${id}.${format.ext}`, s: ((Date.now() - started) / 1000).toFixed(1) }));
-        } catch (err) {
-            toast(t("exportFailed", { message: err.message }), "error");
+            return new Blob(chunks, { type: res.headers.get("Content-Type") || "application/octet-stream" });
         } finally {
             window.clearInterval(timer);
             state.exporting = null;
             paintExport();
         }
+    }
+
+    async function exportAs(formatId) {
+        const format = FORMATS.find((item) => item.id === formatId);
+        const variant = variantByKey(state.active);
+
+        if (!format || !variant || state.exporting) {
+            return;
+        }
+
+        const started = Date.now();
+
+        try {
+            download(await renderFile(variant, format), `${variant.id}.${format.ext}`);
+            toast(t("exported", { file: `${variant.id}.${format.ext}`, s: ((Date.now() - started) / 1000).toFixed(1) }));
+        } catch (err) {
+            toast(t("exportFailed", { message: err.message }), "error");
+        }
+    }
+
+    // Quick path: render a PNG and put it on the clipboard. The ClipboardItem is created right
+    // away with a pending blob, so the browser keeps the click's permission while the server renders.
+    async function copyImage(key) {
+        const variant = variantByKey(key);
+
+        if (!variant || state.exporting) {
+            return;
+        }
+
+        if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) {
+            toast(t("copyUnsupported"), "error");
+            return;
+        }
+
+        const started = Date.now();
+        const png = renderFile(variant, COPY).then((blob) => (blob.type === "image/png" ? blob : new Blob([blob], { type: "image/png" })));
+        png.catch(() => undefined);
+
+        try {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+            toast(t("copiedImage", { id: variant.id, s: ((Date.now() - started) / 1000).toFixed(1) }));
+        } catch (err) {
+            let blob;
+
+            try {
+                blob = await png;
+            } catch (renderError) {
+                toast(t("copyImageFailed", { message: renderError.message }), "error");
+                return;
+            }
+
+            // The browser refused the clipboard (permission or policy): hand the PNG over as a download instead.
+            download(blob, `${variant.id}.png`);
+            toast(t("copyBlockedDownloaded", { file: `${variant.id}.png` }), "error");
+        }
+    }
+
+    function download(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     }
 
     function renderMoodboard() {

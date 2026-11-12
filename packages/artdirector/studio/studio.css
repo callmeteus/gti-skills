@@ -917,3 +917,6 @@ textarea { min-height: 72px; resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
     .icon.chevron { transition: none; }
 }
+
+.card-actions button.icon-only { padding-left: 8px; padding-right: 8px; }
+.card-actions button.icon-only .icon { margin: 0; }
