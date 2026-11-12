@@ -21,7 +21,7 @@ import { CritiquePrompts, Directions, Formats, QualityStandard } from "../design
 import { DemoWorkflow } from "../demo";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
 import { startStudio } from "../server";
-import { ContextResolver, MoodBoard, StudioScope, type ProjectContext } from "../session";
+import { ContextResolver, GuidelineKind, Guidelines, MoodBoard, StudioScope, type ProjectContext } from "../session";
 import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { helpText } from "./Help";
@@ -100,6 +100,10 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
                 ? { effect: Effects.read(id) }
                 : { effects: Effects.list().map((item) => ({ id: item.id, kind: item.kind, summary: item.summary })) }
         }, json);
+    }
+
+    if (parsed.command === "guidelines") {
+        return finish(guidelines(Guidelines.for(workspace), parsed.rest[0], parsed.flags), json);
     }
 
     const resolution = ContextResolver.open({
@@ -525,6 +529,80 @@ function moodboard(
         command: "moodboard",
         summary: `${items.length} mood board item(s)`,
         data: { items, dir: board.dir }
+    };
+}
+
+/**
+ * Lists, adds, edits, or removes the dos and don'ts the agent learned from the user.
+ *
+ * @param store Guidelines for the user and this workspace
+ * @param action `add`, `edit`, `remove`, or empty to list
+ * @param flags `--do` or `--dont` <text>, `--why`, `--scope user|workspace`, `--from-request`, `--variant`, `--quote`, `--id`, `--text`, `--kind`
+ * @returns Command result
+ */
+function guidelines(store: Guidelines, action: string | undefined, flags: Record<string, string | boolean>): CommandResult {
+    const files = { user: store.userFile, workspace: store.workspaceFile };
+
+    if (action === "add") {
+        const doText = flagString(flags, "do");
+        const dontText = flagString(flags, "dont");
+
+        if (Boolean(doText) === Boolean(dontText)) {
+            throw ArtErrors.project("guidelines add needs exactly one of --do <text> or --dont <text>.");
+        }
+
+        const added = store.add({
+            kind: doText ? GuidelineKind.DO : GuidelineKind.DONT,
+            text: doText ?? dontText ?? "",
+            why: flagString(flags, "why"),
+            scope: flagString(flags, "scope"),
+            source: "agent",
+            evidence: {
+                requestId: flagString(flags, "from-request"),
+                variantId: flagString(flags, "variant"),
+                quote: flagString(flags, "quote")
+            }
+        });
+        const verb = added.reversed ? "Flipped" : added.reinforced ? "Confirmed" : "Learned";
+        return {
+            ok: true,
+            command: "guidelines",
+            summary: `${verb} ${added.rule.kind} ${added.rule.id} (${added.rule.scope}): ${added.rule.text}`,
+            data: { ...added, files }
+        };
+    }
+
+    if (action === "edit") {
+        const rule = store.update(flagString(flags, "id") ?? "", {
+            text: flagString(flags, "text"),
+            why: flagString(flags, "why"),
+            kind: flagString(flags, "kind"),
+            scope: flagString(flags, "scope")
+        });
+        return {
+            ok: true,
+            command: "guidelines",
+            summary: `Updated ${rule.id}: ${rule.text}`,
+            data: { rule, files }
+        };
+    }
+
+    if (action === "remove") {
+        const rule = store.remove(flagString(flags, "id") ?? "");
+        return {
+            ok: true,
+            command: "guidelines",
+            summary: `Removed ${rule.id}: ${rule.text}`,
+            data: { rule, files }
+        };
+    }
+
+    const rules = store.list();
+    return {
+        ok: true,
+        command: "guidelines",
+        summary: rules.length ? store.brief().join("\n") : "No guidelines yet",
+        data: { rules, brief: store.brief(), files }
     };
 }
 

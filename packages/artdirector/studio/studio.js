@@ -30,6 +30,9 @@
         "palette": '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
         "sticky-note": '<path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/>',
         "chevron-right": '<path d="m9 18 6-6-6-6"/>',
+        "ban": '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+        "pencil": '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+        "repeat": '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
         "layers": '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>'
     };
 
@@ -67,7 +70,14 @@
             moodHint: "Shared by every art in this chat. The agent reads it before each new piece.",
             moodEmpty: "The mood board is empty", moodEmptyHint: "Add images, colors, and notes, or pin variants from the gallery.",
             moodMissing: "This variant no longer exists.", moodByAgent: "agent", moodByYou: "you",
-            moodTooBig: "{name} is over 15 MB.", moodNotImage: "{name} is not an image.", moodAdded: "Added to the mood board."
+            moodTooBig: "{name} is over 15 MB.", moodNotImage: "{name} is not an image.", moodAdded: "Added to the mood board.",
+            guidelines: "Guidelines", ruleDo: "Do", ruleDont: "Don't", ruleText: "One rule, for example: keep the logo at the top",
+            ruleWhy: "Why (optional)", ruleAdd: "Add rule", ruleScopeWorkspace: "This workspace", ruleScopeUser: "Everywhere",
+            rulesHint: "The agent learns these from your feedback and follows them in every new piece. Workspace rules apply only to {workspace}; Everywhere rules apply to all your work.",
+            rulesEmpty: "No guidelines yet", rulesEmptyHint: "Write a rule here, or tell the agent what you like and dislike. It saves what it learns.",
+            ruleLearned: "learned", ruleByYou: "you", ruleHits: "confirmed {n}x", ruleEdit: "Edit", ruleSave: "Save", ruleCancel: "Cancel",
+            ruleFlip: "Flip", ruleAdded: "Rule added.", ruleConfirmed: "That rule already existed; confirmed it again.", ruleFlipped: "Rule flipped.",
+            rulesDont: "Don'ts", rulesDo: "Dos", ruleRemoved: "Rule removed."
         },
         pt: {
             studio: "Estúdio", gallery: "Galeria", preview: "Prévia",
@@ -96,7 +106,14 @@
             moodHint: "Compartilhado por todas as artes deste chat. O agente lê antes de cada peça nova.",
             moodEmpty: "O mood board está vazio", moodEmptyHint: "Adicione imagens, cores e notas, ou fixe variantes pela galeria.",
             moodMissing: "Esta variante não existe mais.", moodByAgent: "agente", moodByYou: "você",
-            moodTooBig: "{name} passa de 15 MB.", moodNotImage: "{name} não é uma imagem.", moodAdded: "Adicionado ao mood board."
+            moodTooBig: "{name} passa de 15 MB.", moodNotImage: "{name} não é uma imagem.", moodAdded: "Adicionado ao mood board.",
+            guidelines: "Diretrizes", ruleDo: "Fazer", ruleDont: "Evitar", ruleText: "Uma regra, por exemplo: manter o logo no topo",
+            ruleWhy: "Por quê (opcional)", ruleAdd: "Adicionar regra", ruleScopeWorkspace: "Este workspace", ruleScopeUser: "Em tudo",
+            rulesHint: "O agente aprende estas regras com o seu feedback e segue em cada peça nova. Regras do workspace valem só para {workspace}; regras \"Em tudo\" valem para todo o seu trabalho.",
+            rulesEmpty: "Nenhuma diretriz ainda", rulesEmptyHint: "Escreva uma regra aqui, ou diga ao agente do que você gosta e do que não gosta. Ele salva o que aprende.",
+            ruleLearned: "aprendida", ruleByYou: "você", ruleHits: "confirmada {n}x", ruleEdit: "Editar", ruleSave: "Salvar", ruleCancel: "Cancelar",
+            ruleFlip: "Inverter", ruleAdded: "Regra adicionada.", ruleConfirmed: "Essa regra já existia; foi confirmada de novo.", ruleFlipped: "Regra invertida.",
+            rulesDont: "Evitar", rulesDo: "Fazer", ruleRemoved: "Regra removida."
         },
         es: {
             studio: "Estudio", gallery: "Galería", preview: "Vista previa",
@@ -125,7 +142,14 @@
             moodHint: "Compartido por todas las piezas de este chat. El agente lo lee antes de cada pieza nueva.",
             moodEmpty: "El mood board está vacío", moodEmptyHint: "Añade imágenes, colores y notas, o fija variantes desde la galería.",
             moodMissing: "Esta variante ya no existe.", moodByAgent: "agente", moodByYou: "tú",
-            moodTooBig: "{name} supera 15 MB.", moodNotImage: "{name} no es una imagen.", moodAdded: "Añadido al mood board."
+            moodTooBig: "{name} supera 15 MB.", moodNotImage: "{name} no es una imagen.", moodAdded: "Añadido al mood board.",
+            guidelines: "Pautas", ruleDo: "Hacer", ruleDont: "Evitar", ruleText: "Una regla, por ejemplo: mantener el logo arriba",
+            ruleWhy: "Por qué (opcional)", ruleAdd: "Añadir regla", ruleScopeWorkspace: "Este workspace", ruleScopeUser: "En todo",
+            rulesHint: "El agente aprende estas reglas de tus comentarios y las sigue en cada pieza nueva. Las reglas del workspace valen solo para {workspace}; las de \"En todo\" valen para todo tu trabajo.",
+            rulesEmpty: "Aún no hay pautas", rulesEmptyHint: "Escribe una regla aquí, o dile al agente qué te gusta y qué no. Guarda lo que aprende.",
+            ruleLearned: "aprendida", ruleByYou: "tú", ruleHits: "confirmada {n}x", ruleEdit: "Editar", ruleSave: "Guardar", ruleCancel: "Cancelar",
+            ruleFlip: "Invertir", ruleAdded: "Regla añadida.", ruleConfirmed: "Esa regla ya existía; se confirmó de nuevo.", ruleFlipped: "Regla invertida.",
+            rulesDont: "Evitar", rulesDo: "Hacer", ruleRemoved: "Regla eliminada."
         }
     };
     const LANGS = Object.keys(STRINGS);
@@ -155,6 +179,10 @@
         snapshot: null,
         arts: [],
         mood: [],
+        rules: [],
+        rulesWorkspace: "",
+        editingRule: null,
+        ruleKind: "dont",
         artOpen: {},
         active: null,
         pick: null,
@@ -227,14 +255,17 @@
     }
 
     async function refresh() {
-        const [snapshot, history, mood] = await Promise.all([
+        const [snapshot, history, mood, guides] = await Promise.all([
             api("/v1/session"),
             api("/v1/history"),
-            api("/v1/moodboard")
+            api("/v1/moodboard"),
+            api("/v1/guidelines")
         ]);
         state.snapshot = snapshot;
         state.arts = history.arts || [];
         state.mood = mood.items || [];
+        state.rules = guides.rules || [];
+        state.rulesWorkspace = guides.workspace || "";
         document.getElementById("project-name").textContent = state.snapshot.project.name;
 
         if (!variantByKey(state.active)) {
@@ -253,11 +284,14 @@
         }
 
         try {
-            const [history, mood] = await Promise.all([api("/v1/history"), api("/v1/moodboard")]);
+            const [history, mood, guides] = await Promise.all([api("/v1/history"), api("/v1/moodboard"), api("/v1/guidelines")]);
             const before = signature(state.arts);
             const moodBefore = state.mood.map((item) => item.id).join("|");
+            const rulesBefore = ruleSignature(state.rules);
             state.arts = history.arts || [];
             state.mood = mood.items || [];
+            state.rules = guides.rules || [];
+            const rulesChanged = rulesBefore !== ruleSignature(state.rules);
             const artsChanged = before !== signature(state.arts);
             const current = state.arts.find((art) => art.current);
 
@@ -270,12 +304,18 @@
                 render();
             } else if (state.mode === "moodboard" && moodChanged) {
                 render();
+            } else if (state.mode === "guidelines" && rulesChanged && !state.editingRule && !guidelineDraft()) {
+                render();
             } else if (state.mode === "preview" && artsChanged) {
                 paintVariantList();
             }
         } catch {
             return;
         }
+    }
+
+    function ruleSignature(rules) {
+        return rules.map((rule) => `${rule.id}:${rule.updatedAt}`).join("|");
     }
 
     function signature(arts) {
@@ -325,6 +365,8 @@
             renderGallery();
         } else if (state.mode === "moodboard") {
             renderMoodboard();
+        } else if (state.mode === "guidelines") {
+            renderGuidelines();
         } else {
             renderPreview();
         }
@@ -960,6 +1002,171 @@
             };
         });
         observeFits(stage);
+    }
+
+    // Dos and don'ts. The agent writes most of them from the user's feedback; the user can add, edit, flip, or remove any.
+    function renderGuidelines() {
+        rail.innerHTML = "";
+        inspect.innerHTML = "";
+        const rules = state.rules;
+        const workspace = state.rulesWorkspace.split(/[\\/]/).filter(Boolean).pop() || state.rulesWorkspace;
+        const column = (kind) => {
+            const list = rules.filter((rule) => rule.kind === kind);
+            const title = kind === "dont" ? t("rulesDont") : t("rulesDo");
+            return `<section class="rules is-${kind}">
+                    <h2>${icon(kind === "dont" ? "ban" : "circle-check")}${title}<span class="count">${list.length}</span></h2>
+                    ${list.map(ruleCard).join("")}
+                </section>`;
+        };
+
+        stage.innerHTML = `<form class="rule-form" id="rule-form">
+                <div class="rule-kind" role="radiogroup">
+                    <button type="button" role="radio" data-rule-kind="dont" aria-checked="${state.ruleKind === "dont"}">${icon("ban")}${t("ruleDont")}</button>
+                    <button type="button" role="radio" data-rule-kind="do" aria-checked="${state.ruleKind === "do"}">${icon("circle-check")}${t("ruleDo")}</button>
+                </div>
+                <input type="text" id="rule-text" maxlength="300" placeholder="${escape(t("ruleText"))}" aria-label="${escape(t("ruleText"))}">
+                <input type="text" id="rule-why" maxlength="500" placeholder="${escape(t("ruleWhy"))}" aria-label="${escape(t("ruleWhy"))}">
+                <select id="rule-scope" aria-label="Scope">
+                    <option value="workspace">${t("ruleScopeWorkspace")}</option>
+                    <option value="user">${t("ruleScopeUser")}</option>
+                </select>
+                <button type="submit">${t("ruleAdd")}</button>
+            </form>
+            <p class="muted mood-hint">${escape(t("rulesHint", { workspace }))}</p>
+            ${rules.length
+                ? `<div class="rules-grid">${column("dont")}${column("do")}</div>`
+                : `<div class="empty"><h2>${t("rulesEmpty")}</h2><p>${t("rulesEmptyHint")}</p></div>`}`;
+
+        stage.querySelectorAll("[data-rule-kind]").forEach((button) => {
+            button.onclick = () => {
+                state.ruleKind = button.getAttribute("data-rule-kind");
+                stage.querySelectorAll("[data-rule-kind]").forEach((item) => {
+                    item.setAttribute("aria-checked", String(item === button));
+                });
+            };
+        });
+        document.getElementById("rule-form").onsubmit = (event) => {
+            event.preventDefault();
+            const text = document.getElementById("rule-text").value.trim();
+
+            if (text) {
+                void addRule({
+                    kind: state.ruleKind,
+                    text,
+                    why: document.getElementById("rule-why").value,
+                    scope: document.getElementById("rule-scope").value
+                });
+            }
+        };
+        stage.querySelectorAll("[data-rule-action]").forEach((button) => {
+            button.onclick = () => {
+                const id = button.getAttribute("data-rule-id");
+                const action = button.getAttribute("data-rule-action");
+                const rule = state.rules.find((item) => item.id === id);
+
+                if (!rule) {
+                    return;
+                }
+
+                if (action === "remove") {
+                    void changeRule("/v1/guidelines/remove", { id }, t("ruleRemoved"));
+                } else if (action === "flip") {
+                    void changeRule("/v1/guidelines/update", { id, kind: rule.kind === "do" ? "dont" : "do" }, t("ruleFlipped"));
+                } else if (action === "edit") {
+                    state.editingRule = id;
+                    render();
+                    const input = document.getElementById("rule-edit-text");
+                    input && input.focus();
+                } else if (action === "cancel") {
+                    state.editingRule = null;
+                    render();
+                }
+            };
+        });
+        const editForm = document.getElementById("rule-edit");
+
+        if (editForm) {
+            editForm.onsubmit = (event) => {
+                event.preventDefault();
+                const id = state.editingRule;
+                state.editingRule = null;
+                void changeRule("/v1/guidelines/update", {
+                    id,
+                    text: document.getElementById("rule-edit-text").value,
+                    why: document.getElementById("rule-edit-why").value,
+                    scope: document.getElementById("rule-edit-scope").value
+                });
+            };
+        }
+    }
+
+    function ruleCard(rule) {
+        const scope = rule.scope === "user" ? t("ruleScopeUser") : t("ruleScopeWorkspace");
+
+        if (state.editingRule === rule.id) {
+            return `<form class="rule is-editing" id="rule-edit">
+                    <input type="text" id="rule-edit-text" maxlength="300" value="${escape(rule.text)}" aria-label="${escape(t("ruleText"))}">
+                    <input type="text" id="rule-edit-why" maxlength="500" value="${escape(rule.why || "")}" placeholder="${escape(t("ruleWhy"))}" aria-label="${escape(t("ruleWhy"))}">
+                    <div class="rule-actions">
+                        <select id="rule-edit-scope" aria-label="Scope">
+                            <option value="workspace"${rule.scope === "workspace" ? " selected" : ""}>${t("ruleScopeWorkspace")}</option>
+                            <option value="user"${rule.scope === "user" ? " selected" : ""}>${t("ruleScopeUser")}</option>
+                        </select>
+                        <button type="submit">${t("ruleSave")}</button>
+                        <button type="button" class="link" data-rule-action="cancel" data-rule-id="${escape(rule.id)}">${t("ruleCancel")}</button>
+                    </div>
+                </form>`;
+        }
+
+        const last = rule.evidence && rule.evidence.length ? rule.evidence[rule.evidence.length - 1] : null;
+        const quote = last && last.quote ? `<blockquote>${escape(last.quote)}</blockquote>` : "";
+        const hits = rule.hits > 1 ? `<span>${t("ruleHits", { n: rule.hits })}</span>` : "";
+        const action = (name, label, glyph) =>
+            `<button type="button" class="link" data-rule-action="${name}" data-rule-id="${escape(rule.id)}">${icon(glyph)}${label}</button>`;
+
+        return `<article class="rule">
+                <p class="rule-text">${escape(rule.text)}</p>
+                ${rule.why ? `<p class="rule-why">${escape(rule.why)}</p>` : ""}
+                ${quote}
+                <div class="rule-meta">
+                    <span class="tag${rule.scope === "user" ? " is-user" : ""}">${escape(scope)}</span>
+                    <span class="mood-by">${rule.source === "agent" ? t("ruleLearned") : t("ruleByYou")}</span>
+                    ${hits}
+                </div>
+                <div class="rule-actions">
+                    ${action("edit", t("ruleEdit"), "pencil")}
+                    ${action("flip", t("ruleFlip"), "repeat")}
+                    ${action("remove", t("remove"), "trash-2")}
+                </div>
+            </article>`;
+    }
+
+    function guidelineDraft() {
+        const input = document.getElementById("rule-text");
+        return Boolean(input && input.value.trim());
+    }
+
+    async function addRule(payload) {
+        try {
+            const body = await api("/v1/guidelines", { method: "POST", body: JSON.stringify(payload) });
+            await refresh();
+            toast(body.reversed ? t("ruleFlipped") : body.reinforced ? t("ruleConfirmed") : t("ruleAdded"));
+        } catch (err) {
+            toast(err.message, "error");
+        }
+    }
+
+    async function changeRule(path, payload, message) {
+        try {
+            await api(path, { method: "POST", body: JSON.stringify(payload) });
+            await refresh();
+
+            if (message) {
+                toast(message);
+            }
+        } catch (err) {
+            toast(err.message, "error");
+        }
     }
 
     function moodItem(item) {

@@ -77,7 +77,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 | This skill does | This skill does not |
 |-----------------|---------------------|
 | Keep brand tokens, brief, direction, variants, and history in one project | Call image-generation APIs |
-| Serve a token-gated localhost studio with a gallery grouped by art with accept and reject, a preview with element comments and export, and a shared mood board | Run a language model. The agent applies the prompt the user pastes. |
+| Serve a token-gated localhost studio with a gallery grouped by art with accept and reject, a preview with element comments and export, a shared mood board, and the user's guidelines | Run a language model. The agent applies the prompt the user pastes. |
 | Teach a professional visual bar: style guides, an effects toolkit, and photo treatments | Ship finished designs to copy. References set the level, never the layout |
 | Find openly licensed photos and remove backgrounds with a local model | Generate or alter images |
 | Export PNG, JPEG, PDF, HTML, and SVG for compositions with an SVG root | Reconstruct SVG from HTML-only artboards |
@@ -92,6 +92,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Templates for repeatable formats:** infographic, data visual, and carousel slide, filled from the brief or a tokens file
 - **Gallery grouped by art:** every art requested in the same chat keeps its own group, newest first; each variant shows at its real ratio with Accept, Reject, and Pin; rejected variants move to a Rejected area and can be restored
 - **Mood board:** images (upload, drop, or paste), colors, notes, and pinned variants shared by every art in the chat; the agent reads it before each new piece
+- **Guidelines that learn:** the agent turns lasting feedback ("never put the logo there", "too busy") into dos and don'ts, per workspace or for all your work, and follows them in every later chat; edit, flip, or remove them in the studio
 - **Preview:** the full-size artwork with PNG, JPEG, or PDF export and a progress indicator; audit findings stay with the agent
 - **Studio in three languages:** English, Portuguese, and Spanish; the agent passes the language of your prompt with `--lang`, and a switcher in the studio overrides it
 - **Element comments:** click elements in the preview, comment on each, and copy one prompt for any agent, with no polling or trigger needed
@@ -234,6 +235,7 @@ init ──> brief ──> shape ──> generate ──> render check ──> s
 7. Agent edits the file and runs the render check once; click Reload in Preview.
 8. Accept the variants you keep, reject the rest (restorable), and export PNG, JPEG, or PDF from Preview.
 9. Pin variants and add images, colors, and notes to the Mood board; the agent reads it before the next art in the chat.
+10. The agent saves what your feedback teaches as dos and don'ts and follows them in every later piece; review them in Guidelines.
 
 Template production (repeatable campaigns) and art direction (original compositions) share the same session.
 
@@ -255,6 +257,7 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | `resume` | Recover the project, session, and pending live events | |
 | `history` | List every art requested in this chat, newest first, with its variants | |
 | `moodboard` | List the chat's mood board; `moodboard add` adds an image, color, note, or pinned variant; `moodboard remove` deletes one | `--image`, `--color`, `--note`, `--variant`, `--from-request`, `--caption`, `--id` |
+| `guidelines` | List the dos and don'ts for this workspace and user; `guidelines add` learns one (a repeat confirms it, the opposite kind flips it); `guidelines edit` and `guidelines remove` change one | `--do`, `--dont`, `--why`, `--scope` (`workspace` or `user`), `--quote`, `--variant`, `--from-request`, `--id`, `--text`, `--kind` |
 
 ### Design
 
@@ -263,7 +266,7 @@ Run from source without building with `npm run dev -- <command>` inside `package
 | `shape` | Choose a visual direction from rendered alternatives | `--direction` |
 | `generate` | Fill a template for a repeatable format, or return techniques, templates, and effects for original work | `--template`, `--tokens`, `--id` |
 | `variants` | List variants; `variants add` registers agent-written HTML | `--file`, `--title` |
-| `studio` | Start the browser studio with Gallery, Preview, and Mood board, or reuse the chat's running studio | `--open`, `--port` (default `4730`) |
+| `studio` | Start the browser studio with Gallery, Preview, Mood board, and Guidelines, or reuse the chat's running studio | `--open`, `--port` (default `4730`) |
 | `live` | Alias of `studio` | `--open` |
 | `critique` | Review against the quality floor | |
 
@@ -366,6 +369,15 @@ Art Director isolates project state per chat. The CLI reads agent session variab
 ```
 
 A temporary chat keeps one folder per art under `requests/<request-id>/`, plus the chat-wide `session.json` index, `token`, `studio.json`, and `moodboard/` beside them.
+
+Guidelines outlive chats and live outside both folders, in `~/.artdirector/` (moved with `ARTDIRECTOR_GUIDELINES_HOME`):
+
+```text
+~/.artdirector/
+├── guidelines.json                    # Rules for all of the user's work
+└── workspaces/<name>-<hash>/
+    └── guidelines.json                # Rules for one workspace
+```
 
 ## Architecture
 
@@ -483,6 +495,7 @@ python3 -m pip install "rembg[cpu]"
 - **Photo resolution:** cutouts and photos smaller than the area they fill look soft; prefer sources at least as large as the board.
 - **Mood board images:** PNG, JPEG, GIF, WebP, SVG, and AVIF up to 15 MB each. Web links are not fetched; save the image first.
 - **One studio per chat:** arts from different chats never share a studio or a mood board.
+- **Guidelines follow the folder:** workspace rules are keyed by the workspace path, so moving or renaming the folder starts an empty set; user rules are unaffected.
 
 ## Acknowledgements
 

@@ -7,3 +7,5 @@ export { MoodBoard, MoodKind } from "./MoodBoard";
 export type { MoodItem } from "./MoodBoard";
 export { StudioScope } from "./StudioScope";
 export type { ArtSummary } from "./StudioScope";
+export { Guidelines, GuidelineKind, GuidelineScope } from "./Guidelines";
+export type { Guideline, GuidelineAdded, GuidelineEvidence, GuidelineInput } from "./Guidelines";

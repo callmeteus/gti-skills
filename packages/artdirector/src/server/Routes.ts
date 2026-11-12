@@ -19,7 +19,7 @@ import {
 } from "../core";
 import { CritiquePrompts, DirectionCatalog, Directions, Formats, OutputFormats, QualityStandard } from "../design";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
-import { MoodBoard, MoodKind, ProjectContext, StudioScope, type MoodItem } from "../session";
+import { Guidelines, MoodBoard, MoodKind, ProjectContext, StudioScope, type MoodItem } from "../session";
 import { Effects, TemplateApply, TemplateCatalog } from "../templates";
 import { Techniques } from "../techniques";
 import { Http } from "./Http";
@@ -51,6 +51,13 @@ export class StudioRoutes {
      */
     private board(): MoodBoard {
         return new MoodBoard(this.scope.moodboardDir());
+    }
+
+    /**
+     * @returns Dos and don'ts for the user and the studio's workspace
+     */
+    private guidelines(): Guidelines {
+        return Guidelines.for(this.ctx.workspace);
     }
 
     /**
@@ -101,6 +108,58 @@ export class StudioRoutes {
             Http.json(res, 200, {
                 ok: true,
                 item
+            });
+            return;
+        }
+
+        if (method === "GET" && path === "/v1/guidelines") {
+            const store = this.guidelines();
+            Http.json(res, 200, {
+                ok: true,
+                rules: store.list(),
+                workspace: store.workspace
+            });
+            return;
+        }
+
+        if (method === "POST" && path === "/v1/guidelines") {
+            const body = await Http.jsonBody(req);
+            const added = this.guidelines().add({
+                kind: String(body.kind ?? ""),
+                text: String(body.text ?? ""),
+                why: typeof body.why === "string" ? body.why : undefined,
+                scope: typeof body.scope === "string" ? body.scope : undefined,
+                source: "studio"
+            });
+            Http.json(res, 200, {
+                ok: true,
+                ...added
+            });
+            return;
+        }
+
+        if (method === "POST" && path === "/v1/guidelines/update") {
+            const body = await Http.jsonBody(req);
+            const text = (key: string) => typeof body[key] === "string" ? body[key] as string : undefined;
+            const rule = this.guidelines().update(String(body.id ?? ""), {
+                text: text("text"),
+                why: text("why"),
+                kind: text("kind"),
+                scope: text("scope")
+            });
+            Http.json(res, 200, {
+                ok: true,
+                rule
+            });
+            return;
+        }
+
+        if (method === "POST" && path === "/v1/guidelines/remove") {
+            const body = await Http.jsonBody(req);
+            const rule = this.guidelines().remove(String(body.id ?? ""));
+            Http.json(res, 200, {
+                ok: true,
+                rule
             });
             return;
         }

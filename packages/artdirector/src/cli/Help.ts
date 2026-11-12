@@ -25,6 +25,7 @@ Also:
   variants      List variants
   history       List every art in this chat session with its variants
   moodboard     List the session mood board; "moodboard add --image|--color|--note|--variant", "moodboard remove --id"
+  guidelines    List the dos and don'ts learned from the user; "guidelines add --do|--dont <text> [--why] [--scope user|workspace]", "guidelines edit --id", "guidelines remove --id"
   demo          Run the end-to-end demonstration
   help          Show this help
 

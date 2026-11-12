@@ -32,7 +32,7 @@ npm run dev -- help
 |------|----------------|
 | `src/cli/` | Argument parsing and command dispatch |
 | `src/commands/` | Command registry and metadata |
-| `src/session/` | Per-chat project scope, context resolution, studio scope (every art in a chat), and the mood board |
+| `src/session/` | Per-chat project scope, context resolution, studio scope (every art in a chat), the mood board, and the guidelines that outlive chats |
 | `src/server/` | Local studio HTTP API and the per-project studio lock |
 | `src/renderer/` | ClickClick and Playwright renderer |
 | `src/audit/` | Deterministic rendering checks |
@@ -68,6 +68,7 @@ npm run dev -- help
 | `ARTDIRECTOR_BIN` | unset | Path of a built CLI the skill wrapper should run |
 | `ARTDIRECTOR_HOME` | unset | Package folder the skill wrapper should use |
 | `ARTDIRECTOR_STATE_HOME` | `<temp>/artdirector` | Folder that holds temporary sessions |
+| `ARTDIRECTOR_GUIDELINES_HOME` | `~/.artdirector` | Folder that holds the user and workspace guidelines |
 
 ## Testing
 
@@ -75,6 +76,6 @@ npm run dev -- help
 npm test
 ```
 
-The suites cover the core, formats, templates, session scope, the studio server (including port fallback and lock reuse), and the skill wrapper and demo workflow.
+The suites cover the core, formats, templates, session scope, session history and the mood board, guidelines, the studio server (including port fallback and lock reuse), and the skill wrapper and demo workflow.
 
 See [../../README.md](../../README.md) for the full repository.

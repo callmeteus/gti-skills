@@ -21,6 +21,7 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 | `resume` | Read session, pending events | `resume --json` |
 | `history` | List every art in this chat, newest first, with its variants | `history --json` |
 | `moodboard` | Read references before each new art; add what the user sends | `moodboard --json`, `moodboard add --image\|--color\|--note\|--variant`, `moodboard remove --id` |
+| `guidelines` | Read the user's dos and don'ts before each new art; save what feedback teaches you | `guidelines --json`, `guidelines add --do\|--dont <text> [--why] [--scope user\|workspace]`, `guidelines edit --id`, `guidelines remove --id` |
 | `effects` | Look up the effects toolkit | `effects --json`, `effects --id <id> --json` |
 
 ## Session storage
@@ -37,6 +38,8 @@ State is isolated per chat and, inside a chat, per request. Default storage is t
         +-- .artdirector/   project, brand, brief, session, variants, history
         +-- exports/        default export output
 ```
+
+Guidelines are the exception: they outlive chats, so they live in `~/.artdirector/` (`guidelines.json` for the user, `workspaces/<key>/guidelines.json` per workspace). Set `ARTDIRECTOR_GUIDELINES_HOME` to move them.
 
 Each request is one art. The studio shows every request of the chat as its own group in Gallery, newest first, and follows the active request.
 
