@@ -61,6 +61,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Paragraphs with heading-tight line height (around 1.2) | Source (Kowalski clip) | 05 |
 | Decorative ligatures in body or UI text | Source (Kowalski clip) | 05 |
 | A tagline under every page title, restating it ("Settings" / "Manage your account settings") | Common | 05 |
+| Helper text that narrates the interface: what each control does, how the feature works inside, what it is not | Common | 05 |
 
 ## Data display
 

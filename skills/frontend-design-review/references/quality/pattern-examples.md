@@ -24,6 +24,12 @@ No evidence, no severity, no fix, and no criterion.
 
 **Good:** one filled "Save changes" button, "Cancel" as a secondary button, and "Reset to defaults" moved into an overflow menu.
 
+## Copy and creation flows
+
+**Bad:** a Teams page with the paragraph "A team shares the MCP, the key of that MCP, the agent, and the runner with the people on the list. It is not organization-wide sharing.", a team name field and a "Create team" button always open under it, and the same form shown to every user.
+
+**Good:** the title "Teams", one short line only if the page needs it ("Share resources across your team."), the list of teams or its empty state, and a "Create team" button in the header that opens a modal with the name field. Only admins see the button, and the API rejects the request from anyone else.
+
 ## Design system exceptions
 
 **Bad:** a new `FancyDropdown` component that copies the system `Select` and changes its radius and shadow.

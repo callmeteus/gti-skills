@@ -8,6 +8,9 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - **Action hierarchy:** one or two primary actions per view. Secondary actions use progressive disclosure.
 - **Onboarding:** explain a feature when it is introduced. Prefer smart defaults over configuration.
 - **Navigation:** clear entry and exit points. Back or cancel is always available. Deep flows have breadcrumbs.
+- **Creation in a modal:** creating an item (a team, a project, a key) starts from one primary button, usually in the page header, and opens a modal with the form. The page itself shows the list, or its empty state. A create form that is always open on the page competes with the content.
+- **Permissions:** an action only some roles may take (for example, only admins create teams) is hidden from users who cannot take it, or disabled with the reason when knowing it exists helps them. The server enforces the same rule; hiding the button is not the check.
+- **No narration:** copy says what the user gains, not how the interface works. Text that explains each control, the feature's internals, or what the feature is not belongs in the docs or a tooltip.
 
 ## 1. Frictionless insight to action
 
@@ -17,7 +20,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - Is the primary action obvious, and is there only one?
 - After each step, does the screen say what happens next?
 
-**Red flags:** excessive clicks, several competing primary buttons, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
+**Red flags:** excessive clicks, several competing primary buttons, create forms always open on list pages, actions shown to users who are not allowed to take them, helper text that narrates the interface, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
 
 ## 2. Quality is craft
 
@@ -53,7 +56,7 @@ Check at least: text contrast (AA: 4.5:1 for body text, 3:1 for large text and U
 | Severity | Rule | Examples |
 |----------|------|----------|
 | Blocking | The user cannot complete the task, or the UI fails WCAG 2.1 A | Dead end, unreachable action by keyboard, missing form labels |
-| Major | The task completes with clear friction, confusion, a trust gap, or a broken design system contract | Two primary buttons, missing error state, opaque error, AI content with no disclaimer, custom duplicate component |
+| Major | The task completes with clear friction, confusion, a trust gap, or a broken design system contract | Two primary buttons, missing error state, opaque error, create action shown to a role that cannot use it, AI content with no disclaimer, custom duplicate component |
 | Minor | Polish that does not block or confuse | A hardcoded value with a token, a slop tell in decoration, a small Figma drift |
 
 When unsure between two levels, pick the lower one and say why.

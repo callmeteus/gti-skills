@@ -22,6 +22,9 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] One or two primary actions per view; secondary actions are disclosed progressively
 - [ ] Every screen answers "What can I do?" and "What happens next?"
 - [ ] Back or cancel is always available; deep flows have breadcrumbs
+- [ ] Creating an item opens a modal from one primary button; no create form sits open on the page
+- [ ] Actions limited to some roles are hidden or disabled for the others, and the server enforces the rule
+- [ ] No text narrates the interface; copy says what the user gains
 
 ## Quality craft
 

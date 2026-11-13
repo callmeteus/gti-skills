@@ -96,6 +96,7 @@ The two skills disagree on purpose in one place. Unslop Interface moves a UI tow
 - The design system wins. Tokens, components, and approved Figma specs override the aesthetic guidelines in this skill; a deviation is a finding that needs design approval, not a fix to make silently.
 - Every finding names its evidence: the file and line, the screenshot region, or the Figma frame.
 - Never mark a finding blocking without saying what the user cannot do because of it.
+- Never narrate the interface in copy you write or approve. Create flows open in a modal, and actions limited to some roles stay out of reach for the others.
 - Keep the information and the flow. A review recommends; it changes code only when the user asked for fixes.
 - Do not invent a design system rule. When there is no system, say so and review against the pillars and the aesthetic direction only.
 - AI-generated content in the UI needs a visible disclaimer. Its absence is always a finding.

@@ -46,11 +46,12 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 5. Give every change value a reference: `vs last month`, `vs September`, `since Monday`. Color only the value, not the sentence.
 6. Replace greeting or filler headers with the most useful fact for the page, such as the period the data covers.
 7. Do not give every page a tagline. A subtitle or one-line description under the page title belongs only on pages where it tells the user something the title and content do not, such as a landing hero or an empty state. On app screens (dashboards, settings, lists, detail views) remove taglines that restate the title or sell the feature (`Settings` / `Manage your account settings`), and never add one that the source did not have. The title alone is enough.
-8. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
-9. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
-10. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
-11. Give paragraphs more leading than headings. Body text set as tight as a heading (around `1.2`) is cramped; loosen it, and stop before the lines drift apart. Keep line height as a token, not a value per element.
-12. Keep decorative or discretionary ligatures for display text such as a hero title. Body and UI text use the font's standard ligatures only.
+8. Do not narrate the interface. Helper text that explains what the controls on the screen do, how the feature works inside, or what it is not reads like a spec pasted into the UI: `A team shares the MCP, its key, the agent, and the runner with the people on the list. It is not organization-wide sharing.` Cut it. When the page needs a line, say what the user gains, in one short sentence: `Share resources across your team.` Rules, limits, and edge cases go in the docs or a tooltip on the control they concern, not in a paragraph on the page.
+9. Turn decorative badges into plain text when they only show a count. Keep a badge only when it signals state the user must act on.
+10. Remove hype words, "AI" suffixes, and tags that are not features. Fix grammar ("fewer", not "less", for countable items).
+11. Use tabular figures (`font-variant-numeric: tabular-nums`, Tailwind `tabular-nums`) for numbers that change in place (timers, counters, prices, live stats, progress percentages, animated count-ups) and for numbers that line up in columns. Proportional digits make a changing number wobble and a column of numbers misalign. Apply it to the number element, not to the whole page, so running text keeps its proportional figures. A monospace number font already has equal digit widths.
+12. Give paragraphs more leading than headings. Body text set as tight as a heading (around `1.2`) is cramped; loosen it, and stop before the lines drift apart. Keep line height as a token, not a value per element.
+13. Keep decorative or discretionary ligatures for display text such as a hero title. Body and UI text use the font's standard ligatures only.
 
 ## Check
 
@@ -58,5 +59,6 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 - Every trend value says what it is compared to.
 - The page title tells the user something they did not already know.
 - No page carries a tagline that only restates its title or sells the feature.
+- No text on the page explains what the controls do or how the feature works inside.
 - No number that updates in place shifts sideways while it changes.
 - Paragraphs read without cramped or floating lines, and no decorative ligatures appear in body text.

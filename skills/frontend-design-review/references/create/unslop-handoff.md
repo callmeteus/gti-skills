@@ -17,7 +17,7 @@ This skill calls `unslop-interface` in both modes. The two skills share one enem
 | Neutral base, color only for meaning | May be overridden | The direction names a dominant color and its accents |
 | No new gradients, glow, or glass | Gradients, grain, mesh, and dramatic shadows allowed | The effect is named in the direction and used consistently; glow on every card and purple-to-violet gradients stay banned |
 | No display font | Display face allowed for headings | Body and UI text stay in a refined, readable face |
-| Plain, quiet type and copy | Always applies | Exclamation marks, emoji icons, hype words, "Welcome back!" headers, redundant taglines, and numbers without context are never part of a direction |
+| Plain, quiet type and copy | Always applies | Exclamation marks, emoji icons, hype words, "Welcome back!" headers, redundant taglines, text that narrates the interface, and numbers without context are never part of a direction |
 | Spacing scale, radius family, icon alignment, tabular figures, affordance, sticky table headers | Always applies | These are craft, not style |
 
 When the product has a design system, the design system wins over both skills.
