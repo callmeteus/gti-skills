@@ -1,0 +1,51 @@
+{
+    "_note": "Illustrative values. Replace the provider and model IDs with the IDs returned by discovery or declared by the user. Never store credentials here.",
+    "version": 1,
+    "updated": "2026-11-14T15:00:00Z",
+    "roles": {
+        "orchestrator": {
+            "provider": "claude",
+            "model": "claude-opus-5.5",
+            "note": "user preference; illustrative name"
+        },
+        "executor": {
+            "provider": "opencode",
+            "model": "deepseek-v4.1-flash",
+            "note": "user preference; illustrative name"
+        }
+    },
+    "fallbacks": [
+        {
+            "when": "rate_limit",
+            "provider": "opencode",
+            "model": "deepseek-v4.1-flash-free",
+            "note": "same family, free tier, healthy"
+        },
+        {
+            "when": "quota_exhausted",
+            "provider": "cline",
+            "model": "beam-1.0",
+            "note": "user-declared provider; only if the Cline surface can launch it"
+        }
+    ],
+    "routes": [
+        {
+            "when": {
+                "taskType": "scout",
+                "latency": "high"
+            },
+            "provider": "opencode",
+            "model": "deepseek-v4.1-flash-free",
+            "note": "cheap and fast for read-only work"
+        },
+        {
+            "when": {
+                "context": ">128000"
+            },
+            "provider": "claude",
+            "model": "claude-opus-5.5",
+            "note": "large-context work goes to the orchestrator-class model"
+        }
+    ],
+    "avoid": []
+}

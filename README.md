@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-15-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-16-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -60,6 +60,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
 | **Gestures** | coding, design | Builds drags, swipes, sheets, and hold-to-confirm that track the finger 1:1 and stay interruptible, in plain JavaScript or any framework, with a dependency-free gesture module and a recipe per framework. Adapted from Emil Kowalski's skill. | A browser with Pointer Events | [README](skills/gestures/README.md) |
 | **GTI** | coding, personal | Keeps gti-skills current with one command (`/gti update`): updates every installed gti-skills skill from the latest GitHub commit, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at, with backups. Works without a clone. | Node 18+, Python 3.10+ for MCP servers | [README](skills/gti/README.md) |
+| **Maestro** | coding, personal | Orchestrates a request as delegated tasks: plans on the strongest model, remembers the user's model preferences, discovers the providers and models the harness can run, routes each task by context, speed, cost, and health, spawns cheaper workers, reuses their chats for review and fixes, falls back on rate limits, and never does the work itself. Detects Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo, and other harnesses. | A harness with subagents or a worker CLI on PATH, Git | [README](skills/maestro/README.md) |
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Security Audit** | coding | Defensive, source-first security review in three modes (guidance, diff review, full audit) that maps trust boundaries into a coverage ledger, hunts with isolated agents, has fresh agents try to disprove every candidate, and writes validated findings, reports, and SARIF. Adapted from Cloudflare's skill. | Node 18+, Git; a sandbox to run target code | [README](skills/security-audit/README.md) |
@@ -74,12 +75,12 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Maestro, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
 | `art` | Graphic design, illustration, and visual artwork | Art Director |
-| `personal` | Personal productivity, notes, and everyday tasks | GTI |
+| `personal` | Personal productivity, notes, and everyday tasks | GTI, Maestro |
 
 ```bash
 node packages/cli install --harness all --pack coding,design --scope user
@@ -246,6 +247,7 @@ Notes:
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
+| Maestro | No | No | No | No; worker commands use the host's own tools |
 | Untangle Codebase | No | 3.8+ | No | No |
 
 | Platform | Status |
@@ -375,6 +377,7 @@ gti-skills/
 │   ├── gestures/
 │   ├── gti/
 │   ├── improve-codebase-architecture/
+│   ├── maestro/
 │   ├── security-audit/
 │   ├── untangle-codebase/
 │   ├── unslop-interface/
@@ -455,6 +458,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/x-research/README.md](skills/x-research/README.md) | Researching X with the twitter MCP server and its web search fallback |
 | [skills/weight-space-programming/README.md](skills/weight-space-programming/README.md) | Reading, fixing, and writing neural network weights without training |
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
+| [skills/maestro/README.md](skills/maestro/README.md) | Orchestrating tasks across cheap workers with review gates and reusable chats |
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
 
 ## About GTI
@@ -480,6 +484,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Web Performance Audit | Not declared |
 | Weight Space Programming | Not declared |
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
+| Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project |
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
 

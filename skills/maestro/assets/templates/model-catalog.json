@@ -1,0 +1,76 @@
+{
+    "_note": "Illustrative catalog. Replace the IDs and metadata with the output of discovery. Use unknown instead of guessing.",
+    "version": 1,
+    "updated": "2026-11-14T15:00:00Z",
+    "providers": {
+        "opencode": {
+            "surface": "opencode-cli",
+            "healthy": true,
+            "models": [
+                {
+                    "id": "deepseek-v4.1-flash-free",
+                    "aliases": ["DeepSeek v4.1 Flash Free"],
+                    "context": 128000,
+                    "quality": "medium",
+                    "speed": "fast",
+                    "cost": "free",
+                    "tools": true,
+                    "reasoning": false,
+                    "limits": {
+                        "rpm": 20,
+                        "rpd": null,
+                        "tpm": null
+                    },
+                    "health": "healthy",
+                    "cooldownUntil": null,
+                    "source": "user",
+                    "lastChecked": "2026-11-14T15:00:00Z"
+                },
+                {
+                    "id": "deepseek-v4.1-flash",
+                    "aliases": ["DeepSeek v4.1 Flash"],
+                    "context": 128000,
+                    "quality": "medium",
+                    "speed": "fast",
+                    "cost": "low",
+                    "tools": true,
+                    "reasoning": false,
+                    "limits": {
+                        "rpm": 60,
+                        "rpd": null,
+                        "tpm": null
+                    },
+                    "health": "healthy",
+                    "cooldownUntil": null,
+                    "source": "user",
+                    "lastChecked": "2026-11-14T15:00:00Z"
+                }
+            ]
+        },
+        "cline": {
+            "surface": "cline-extension",
+            "healthy": true,
+            "models": [
+                {
+                    "id": "beam-1.0",
+                    "aliases": ["Beam 1.0"],
+                    "context": "unknown",
+                    "quality": "unknown",
+                    "speed": "unknown",
+                    "cost": "unknown",
+                    "tools": "unknown",
+                    "reasoning": "unknown",
+                    "limits": {
+                        "rpm": null,
+                        "rpd": null,
+                        "tpm": null
+                    },
+                    "health": "unknown",
+                    "cooldownUntil": null,
+                    "source": "user",
+                    "lastChecked": "2026-11-14T15:00:00Z"
+                }
+            ]
+        }
+    }
+}
