@@ -34,6 +34,6 @@ Ask the agent which skills it has loaded and check that `maestro` is listed.
 ## Notes
 
 - Older versions use .agent/skills. Antigravity 2.0 documents ~/.gemini/config/skills for user scope; the IDE and codelab use ~/.gemini/antigravity/skills.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
-- Antigravity exposes background agents in its manager surface. If the surface cannot return a chat id, use a worker CLI from the adapter table so reviews can reuse the chat.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Antigravity runs through the agy CLI, easiest via Paseo's antigravity provider. It uses full access only; every tool call runs without asking.
 - Documentation: [Antigravity](https://antigravity.google/docs/skills) (path source: official).

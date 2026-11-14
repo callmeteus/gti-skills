@@ -169,3 +169,11 @@ The failure modes below are the ones Maestro must actively avoid. Each one names
 **Why it fails:** The worker truncates the input or misses files, and the result looks plausible.
 
 **Fix:** Context is a hard filter. Choose a model that fits, or split the task into smaller scout tasks.
+
+## 22. Provider assumption
+
+**Symptom:** Maestro routes to Hermes, Pi, Cline, or another runtime because it is on the supported list, without checking that the CLI is installed and authenticated.
+
+**Why it fails:** The spawn fails, the run stalls, and the ledger has a worker that never existed.
+
+**Fix:** Check `list_providers`, `--version`, and `--help` before routing. If the provider is missing, install it on the worker host or mark it unavailable and choose a fallback.

@@ -34,6 +34,6 @@ Ask the agent which skills it has loaded and check that `maestro` is listed.
 ## Notes
 
 - Nested .claude/skills folders inside subdirectories also load when working there.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
 - Claude Code subagents run through the Task or Agent tool. For a chat you can re-enter, use claude -p --session-id <uuid> and claude -p --resume <uuid>.
 - Documentation: [Claude / Claude Code](https://code.claude.com/docs/en/skills) (path source: official).

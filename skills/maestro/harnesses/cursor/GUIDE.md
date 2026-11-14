@@ -34,6 +34,6 @@ Ask the agent which skills it has loaded and check that `maestro` is listed.
 ## Notes
 
 - Cursor CLI reads the same folders. Cursor also loads .agents/skills, .claude/skills, and .codex/skills.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
 - Cursor can return a resumable chat id from its subagent tool and the Cursor CLI resumes with --resume; use whichever path gives a chat id you can prompt again.
 - Documentation: [Cursor / Cursor CLI](https://cursor.com/docs/skills) (path source: official).

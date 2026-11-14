@@ -34,6 +34,6 @@ Ask the agent which skills it has loaded and check that `maestro` is listed.
 ## Notes
 
 - Workspace skills take priority over user skills with the same name.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
 - Kiro has no standard resumable CLI session. Use a worker CLI from the adapter table when reviews must return to the same chat.
 - Documentation: [Kiro](https://kiro.dev/docs/skills/) (path source: official).

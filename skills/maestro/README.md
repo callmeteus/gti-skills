@@ -39,7 +39,7 @@
 
 Most agent work mixes two jobs that want different models: deciding what to do, and doing it. Maestro separates them. It runs on the strongest model available, turns the request into a plan and a set of self-contained task briefs, and spawns cheaper worker agents to execute each step. The workers write the code and run the commands; Maestro reviews the evidence, decides the verdict, and sends fixes back to the chat that produced the work.
 
-The skill also remembers how the user likes to work. It stores an orchestrator preference, an executor preference, fallbacks, routes, and an avoid list in `~/.maestro/preferences.json`, with per-project overrides in `.maestro/preferences.json`. It discovers the providers and models the harness can actually run, keeps their context, quality, speed, cost, limits, and health in a catalog, and routes every task to a model that fits. When a provider hits a rate limit, Maestro cools it down and moves to the next candidate instead of retrying the same model. It works with any harness that can spawn subagents or run a resumable worker CLI, detects Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo, and other hosts, records every worker chat id, and reuses those chats for review and fix rounds. A run is simple (one worker, one review) or complex (waves of parallel tasks with a review gate after each wave). In both cases, Maestro never does the task itself.
+The skill also remembers how the user likes to work. It stores an orchestrator preference, an executor preference, fallbacks, routes, and an avoid list in `~/.maestro/preferences.json`, with per-project overrides in `.maestro/preferences.json`. It discovers the providers and models the harness can actually run, keeps their context, quality, speed, cost, limits, and health in a catalog, and routes every task to a model that fits. When a provider hits a rate limit, Maestro cools it down and moves to the next candidate instead of retrying the same model. It works with any harness that can spawn subagents or run a resumable worker CLI, detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, and any ACP provider, records every worker chat id, and reuses those chats for review and fix rounds. A run is simple (one worker, one review) or complex (waves of parallel tasks with a review gate after each wave). In both cases, Maestro never does the task itself.
 
 ```text
   request
@@ -84,13 +84,13 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 - **Suggestions, not assumptions:** repeated choices can prompt a preference suggestion, but only the user makes it durable.
 - **Chat reuse:** every worker chat id is recorded at spawn, and the first review plus every fix round go back to that same chat.
 - **Harness detection:** native agent tools first, then a resumable worker CLI, then a clear stop with no silent fallback.
-- **Harness adapters:** exact spawn, resume, and model flags for Paseo, Claude Code, Codex, OpenCode, Kilo, Cursor, Command Code, and a generic fallback.
+- **Harness adapters:** exact spawn, resume, and model flags for Paseo, Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, ACP providers, and a generic fallback.
 - **Simple and complex runs:** one worker for small work, waves with dependencies and review gates for larger work.
 - **Plans on demand:** `/maestro plan` writes the execution plan without spawning workers.
 - **Evidence-first review:** a six-gate rubric, explicit commands and diffs, and four verdicts: PASS, FIX, REASSIGN, ESCALATE.
 - **Fix loop in place:** numbered findings go to the same chat, with a default limit of two rounds before a reassignment.
 - **Persistent ledger:** `run.json`, `workers.jsonl`, decisions, audit, task briefs, and a final report survive context resets.
-- **Anti-pattern library:** twenty-one failure modes, including doing the work yourself, context dumping, review theater, orphan chats, preference amnesia, hardcoded model IDs, and retrying a rate limit.
+- **Anti-pattern library:** twenty-two failure modes, including doing the work yourself, context dumping, review theater, orphan chats, preference amnesia, hardcoded model IDs, provider assumption, and retrying a rate limit.
 - **Budget caps:** worker, wave, and fix-round limits, with token and cost recorded when the harness reports them.
 - **Language rule:** the skill always answers in the user's language, regardless of the language of the skill.
 
@@ -100,7 +100,7 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 |------------|---------|---------|:--------------:|
 | Coding agent with subagents or a resumable session | Any supported agent | Spawns workers and re-enters their chats | No |
 | Configured provider and model | Current | The worker runtime and the routing catalog | No |
-| Worker CLI, when the host has no resumable subagent | Current | Paseo, Claude Code, Codex, OpenCode, Kilo, or Cursor CLI | No |
+| Worker CLI, when the host has no resumable subagent | Current | Paseo, Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Cursor, Hermes, or an ACP host | No |
 | Git | Any recent | Diffs, branches, and worktrees for parallel work | No |
 | Project checks | - | Tests, typecheck, lint, and build used as review evidence | No |
 
@@ -148,7 +148,39 @@ New-Item -ItemType Directory -Force .claude\skills | Out-Null
 Copy-Item -Recurse skills\maestro .claude\skills\
 ```
 
-Each agent has a short guide in `skills/maestro/harnesses/<id>/GUIDE.md` covering install paths, how to invoke the skill, and how to confirm it loaded.
+Each registry agent has a short guide in `skills/maestro/harnesses/<id>/GUIDE.md` covering install paths, how to invoke the skill, and how to confirm it loaded. The extra runtimes below are documented in `references/harness/adapters.md`.
+
+### Worker runtimes
+
+Maestro can drive these worker runtimes even when the skill is installed in a different agent. The adapter reference has the exact flags.
+
+| Runtime | Spawn and resume | Notes |
+|---------|------------------|-------|
+| Paseo | `create_agent` then `send_agent_prompt`; CLI `paseo run --no-wait --json` then `paseo send` | Universal: Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP |
+| Claude / Claude Code | `claude -p --session-id <uuid>` then `claude -p --resume <uuid>` | `--model` selects the model |
+| Codex | `codex exec --json` then `codex exec resume <id>` | `codex debug models` lists models |
+| OpenCode | `opencode run --session <id>` then the same `--session` | `opencode models` lists models |
+| Kilo | `kilo run --session <id>` then the same `--session` | `kilo models --verbose` |
+| Cline | `cline "<brief>" --json --auto-approve true` then `cline --id <id>` | Auto-approves tools by default; prefer `--worktree` |
+| Command Code | `command-code -p -n <worker> --output-format json` then `-p -r <worker>` | `--list-models` |
+| Pi | `pi --print --session-id <id> --model <model>` then `--session <id>` | `pi --list-models` |
+| Hermes | Paseo `create_agent({provider:"hermes"})` then `send_agent_prompt` | ACP server; direct `hermes acp` |
+| Cursor | `agent -p` then `agent --resume="<chat-id>"` | Check `agent --help` |
+| Antigravity | Paseo `create_agent({provider:"antigravity"})` | Runs `agy` with full access |
+| Muse Code | Paseo `create_agent({provider:"muse"})` | Native Paseo provider |
+| Any ACP provider | Paseo `create_agent({provider:"<id>"})` | `list_providers` for the id |
+
+### Other skill folders
+
+The CLI installer manages the ten agents in the table above. To use Maestro inside Hermes, Pi, or Command Code, copy the skill folder to the agent's own skills directory:
+
+| Agent | Project folder | User folder |
+|-------|----------------|-------------|
+| Hermes | `.hermes/skills` | `~/.hermes/skills` |
+| Pi | `.pi/skills` | `~/.pi/agent/skills` |
+| Command Code | `.commandcode/skills` (or `.agents/skills`) | `~/.commandcode/skills` (or `~/.agents/skills`) |
+
+Hermes also scans `.agents/skills` when it is listed in `skills.external_dirs`. Pi loads `.pi/skills` after project trust. Command Code gives `.commandcode/skills` priority over `.agents/skills`. Restart the agent session after copying.
 
 ### Optional dependency pre-install
 
@@ -160,6 +192,12 @@ claude --version
 codex --version
 opencode --version
 kilo --version
+cline --version
+command-code --version
+pi --version
+hermes --version
+agy --version
+muse --version
 agent --version
 ```
 
@@ -172,9 +210,11 @@ paseo provider ls
 opencode models
 kilo models --verbose
 codex debug models --bundled
+pi --list-models
+command-code --list-models
 ```
 
-Cline, Cursor, Claude Code, and Command Code may not enumerate models from the CLI in every version. Declare those IDs in `~/.maestro/providers.json`, then reference them from `~/.maestro/preferences.json`; Maestro marks unknown capabilities as `unknown` instead of guessing.
+Cline, Cursor, and Claude Code may not enumerate models from the CLI in every version. Declare missing IDs in `~/.maestro/providers.json`, then reference them from `~/.maestro/preferences.json`; Maestro marks unknown capabilities as `unknown` instead of guessing.
 
 ## Quick Start
 
@@ -573,6 +613,13 @@ Free and paid variants are separate models in the catalog, with separate limits.
 </details>
 
 <details>
+<summary><strong>Maestro does not see Hermes, Pi, or Cline</strong></summary>
+
+Install the CLI on the machine where the worker runs, sign in, and check `--version`. If Paseo is available, run `paseo provider ls` and install the provider from its catalog; Paseo can drive Hermes, Pi, Cline, Cursor, Kilo, Antigravity, Muse, and other ACP agents. Direct CLI paths and skill folders are in `references/harness/adapters.md`.
+
+</details>
+
+<details>
 <summary><strong>The report says something was not verified</strong></summary>
 
 That is intentional. A check that could not run, a platform that was not tested, or a UI state that was not rendered is listed instead of being treated as a pass. Reproduce the check with the commands in the report, or accept the gap explicitly.
@@ -586,6 +633,9 @@ That is intentional. A check that could not run, a platform that was not tested,
 - Chat reuse depends on the harness. Hosts without a resumable session fall back to a written result plus a fresh reviewer.
 - Model selection is not universal. When the host cannot choose a model, the worker runs on the default and the ledger records it.
 - Model discovery is provider-specific. Cline, Cursor, Claude Code, and Command Code may need user-declared IDs, and unknown capabilities stay `unknown`.
+- Hermes, Pi, Cline, Antigravity, and Muse are easiest through Paseo. Direct CLI support varies by version.
+- ACP providers need Paseo or another ACP host. Maestro does not parse the ACP JSON-RPC stream itself.
+- Cline auto-approves tools by default. Use a worktree or a sandbox, and treat it as a privileged worker.
 - The catalog is a cache, not a guarantee. Free tiers, quotas, prices, and model IDs change; refresh before relying on them.
 - Routing is a heuristic, not a benchmark. The review still decides whether the work is good.
 - Token and cost reporting is partial. Maestro records them when the harness reports them and uses worker and round caps otherwise.
@@ -600,6 +650,7 @@ That is intentional. A check that could not run, a platform that was not tested,
 | [Maestro Skills](https://maestroskills.dev/) | MIT | The command-first interface, persistent memory layer, wave execution, and curated anti-pattern library that inspired this skill |
 | [Paseo](https://paseo.sh/docs/orchestration-workflows) | Apache-2.0 | The orchestration model and the MCP and CLI tools used by the Paseo adapter |
 | [Paseo providers](https://paseo.sh/docs/providers), [OpenCode](https://opencode.ai/docs/), [Kilo](https://kilo.ai/docs/) | Respective | The provider discovery and model-limit commands in the catalog reference |
+| [Pi CLI](https://docs.pi.dev/latest/cli), [Hermes ACP](https://hermes-agent.nousresearch.com/docs/user-guide/features/acp), [Cline CLI](https://cline.bot/cli), [Command Code](https://commandcode.ai/docs/skills) | Respective | The spawn, resume, model, and skill paths documented in the adapters |
 | [Claude Code](https://code.claude.com/docs/en/cli-reference), [Codex](https://developers.openai.com/codex/developer-commands), [OpenCode](https://opencode.ai/docs/), [Cursor CLI](https://cursor.com/docs/cli/overview) | Respective | The session, resume, and model flags documented in the adapters |
 
 ## License

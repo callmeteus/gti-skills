@@ -34,6 +34,6 @@ Ask the agent which skills it has loaded and check that `maestro` is listed.
 ## Notes
 
 - Scan paths come from community guides; /etc/codex/skills is the admin location. Codex configuration lives in ~/.codex.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
 - Codex records a session id in codex exec --json output and resumes it with codex exec resume <session-id>.
 - Documentation: [Codex](https://developers.openai.com/codex/skills) (path source: community).

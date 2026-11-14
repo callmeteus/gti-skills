@@ -123,9 +123,9 @@ codex debug models --bundled
 
 Use `--bundled` when you want the catalog bundled with the installed binary without a refresh.
 
-### Claude Code
+### Claude and Claude Code
 
-There is no documented model-list command in every version. `--model` accepts aliases such as `haiku`, `sonnet`, `opus`, and `fable`, or a full model ID. Record the aliases the installed version documents, and use user-declared entries for anything else.
+Claude is the provider; Claude Code is the CLI. There is no documented model-list command in every version. `--model` accepts aliases such as `haiku`, `sonnet`, `opus`, and `fable`, or a full model ID. Record the aliases the installed version documents, and use user-declared entries for anything else.
 
 ### Cursor
 
@@ -133,11 +133,45 @@ The model list lives in the app and the CLI model flag. Check `agent --help` for
 
 ### Cline
 
-Cline configures models in its own extension settings. There is no standard model-list command across versions. Declare the model in the catalog with `source: user`, and route to it only when the host or a worker surface can actually launch it.
+The CLI is `cline`. `cline --help`, `cline config`, and `cline auth` show the installed surface, but the current version does not document a `--list-models` flag. Use the provider's model list or declare the ID with `source: user`. Cline skills live in `.cline/skills/` and `~/.cline/skills/`.
 
 ### Command Code
 
-Use the model list in the app settings, or the `model` field of the agent tool when it is offered. Declare anything else with `source: user`.
+```bash
+command-code --list-models
+```
+
+Use the installed CLI's list, or the `model` field of the agent tool when it is offered. Declare anything else with `source: user`.
+
+### Pi
+
+```bash
+pi --list-models
+pi --list-models <search>
+```
+
+`--list-models` accepts exact IDs, fuzzy matches, and globs. Pi skills live in `~/.pi/agent/skills/` and `.pi/skills/`.
+
+### Hermes
+
+```text
+list_models({ provider: "hermes" })
+```
+
+Hermes is an ACP provider. Use Paseo's `list_models` to get the inventory; direct setup uses `hermes model`, and ACP clients receive the model list. Declare anything else with `source: user`.
+
+### Antigravity and Muse Code
+
+```text
+list_models({ provider: "antigravity" })
+list_models({ provider: "muse" })
+```
+
+Both are Paseo native providers. Use Paseo's model list; direct CLIs are provider-managed.
+
+### Any ACP provider
+
+Paseo's ACP catalog covers Cline, Cursor, Kilo, Hermes, Gemini CLI, GitHub Copilot, Goose, Amp, Auggie, Qwen, Kimi, Junie, and others. Use `list_providers` for the exact id and `list_models({provider})` for the inventory.
 
 ### Generic fallback
 

@@ -7,17 +7,18 @@ description: >-
   it, and never does the task itself. Persists the user's model preferences,
   discovers the providers and models the harness can run, routes each task by
   capability, context, speed, cost, and health, and falls back on a rate limit.
-  Detects the host harness (Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo)
-  and uses native subagents or a resumable CLI to reuse worker chats for
-  reviews. Use when the user wants a task orchestrated across agents or
-  providers, asks for Maestro or /maestro, wants a strong planner with cheap
-  workers, or wants a plan plus execution with review gates. Do not use for a
-  single small edit the current agent can finish directly, for a diff review
-  without delegation, or when no subagent runtime is available.
+  Detects the host harness (Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo,
+  Cline, Command Code, Pi, Hermes, ACP) and reuses worker chats for reviews.
+  Use when the user wants a task orchestrated across agents or providers, asks
+  for Maestro or /maestro, wants a strong planner with cheap workers, or wants
+  a plan plus execution with review gates. Do not use for a single small edit
+  the current agent can finish directly, for a diff review without delegation,
+  or when no subagent runtime is available.
 compatibility: >-
   An agent that can spawn subagents, or a worker CLI on PATH (paseo, claude,
-  codex, opencode, kilo, agent, cursor-agent). No scripts are bundled; provider
-  discovery may use the harness's own network access.
+  codex, opencode, kilo, cline, command-code, pi, agent, cursor-agent, hermes,
+  agy, muse). No scripts are bundled; provider discovery may use the harness's
+  own network access.
 license: No license declared
 metadata:
   display-name: Maestro
@@ -124,12 +125,12 @@ The ledger is the memory. After a context reset or compaction, read `run.json`, 
 Maestro must know how to spawn and re-enter a chat in the harness it runs in. Detect in this order:
 
 1. **Native agent tools in the session.** A tool that creates an agent and a tool that prompts the same agent (for example Paseo `create_agent` and `send_agent_prompt`, or a host subagent tool that returns a resumable id).
-2. **A worker CLI on PATH.** `paseo`, `claude`, `codex`, `opencode`, `kilo`, `agent` or `cursor-agent`. Verify it with `--version` and `--help` before using a flag.
+2. **A worker CLI or ACP host on PATH.** `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `agent` or `cursor-agent`, `hermes`, `agy`, `muse`. Paseo can launch any provider in its catalog, including Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and other ACP agents. Verify a CLI with `--version` and `--help` before using a flag.
 3. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
 The first review always goes to the chat that produced the work. Ask the same chat for evidence and send fixes there. Open a new chat only for a second opinion, a reassignment, or when the recorded chat is no longer available, and record why.
 
-Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has the exact spawn, resume, and model flags for Paseo, Claude Code, Codex, OpenCode, Kilo, Cursor, Command Code, and the generic fallback.
+Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has exact spawn, resume, and model flags for Paseo, Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, ACP providers, and the generic fallback.
 
 ## Preferences and model routing
 
@@ -149,7 +150,7 @@ Preferences live outside the run: `~/.maestro/preferences.json` for the machine 
 | T2 Builder | Focused edits, tests, scripts, docs, small refactors |
 | T3 Deep | Architecture, hard debugging, security-sensitive work, integration |
 
-Before the first spawn, discover the catalog with the harness's own commands, for example Paseo `list_providers` and `list_models`, `opencode models`, `kilo models --verbose`, or `codex debug models`. Never invent a model ID or a capability.
+Before the first spawn, discover the catalog with the harness's own commands, for example Paseo `list_providers` and `list_models`, OpenCode `opencode models`, Kilo `kilo models --verbose`, Pi `pi --list-models`, or Command Code `command-code --list-models`. Never invent a model ID or a capability.
 
 Every task gets a routing target and a reason. The router hard-filters by health, context, tools, reasoning, and the avoid list, then scores by task type. A scout prefers speed and cost; a build prefers quality and tools; a verify prefers quality and context. When a provider is rate-limited, Maestro sets a cooldown and moves to the next candidate. It does not retry the same model, and it does not do the task itself.
 

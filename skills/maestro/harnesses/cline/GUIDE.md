@@ -34,6 +34,6 @@ Open the Skills tab in the Cline panel to see and toggle installed skills.
 ## Notes
 
 - The name field must match the folder name exactly.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
-- Cline has no standard resumable CLI session. Use a worker CLI from the adapter table when reviews must return to the same chat.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- The Cline CLI runs a prompt with cline "<brief>" --json -m <model> and resumes with cline --id <session-id>. It auto-approves tools by default; prefer --worktree.
 - Documentation: [Cline](https://docs.cline.bot/customization/skills) (path source: official).

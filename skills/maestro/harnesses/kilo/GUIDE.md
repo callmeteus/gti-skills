@@ -34,6 +34,6 @@ Run `kilo debug skill` to list the skills Kilo discovered.
 ## Notes
 
 - Folders named skills-<mode>, such as skills-code, load only in that mode.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker, read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
 - Kilo shares the OpenCode CLI shape: kilo run --session <id> continues the recorded chat, and -m selects the worker model.
 - Documentation: [Kilo Code](https://kilo.ai/docs/customize/skills) (path source: official).
