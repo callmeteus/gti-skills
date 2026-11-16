@@ -52,22 +52,35 @@ Record the primary candidate, one fallback, and the reason. The reason is mandat
 
 ## Spawn sequence
 
-1. Read [../harness/adapters.md](../harness/adapters.md) and pick the adapter.
+1. Read [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md) and [../harness/adapters.md](../harness/adapters.md). Pick the spawner first, then the adapter that reaches it.
 2. Write the brief to `.maestro/tasks/<task-id>/brief.md`.
 3. Route the task and record the primary, the fallback, and the reason.
-4. Create the worker chat on the primary. Capture the id and model.
-5. Append a record to `.maestro/workers.jsonl` with the provider, model, chat, and routing reason.
+4. Create the worker chat on the primary through the chosen orchestrator. Capture the id and model.
+5. Append a record to `.maestro/workers.jsonl` with the orchestrator, provider, model, chat, and routing reason.
 6. Send the brief as the first prompt.
-7. Append an `audit.jsonl` record with the action, chat, model, provider, and adapter.
+7. Append an `audit.jsonl` record with the action, chat, model, provider, adapter, and orchestrator.
 8. Continue with the ledger or the next task; do not poll.
 
 Example of the record:
 
 ```json
-{"id":"w2.1","task":"Add the CSV serializer and route","type":"build","tier":"T2","provider":"opencode","model":"deepseek-v4.1-flash","adapter":"paseo-mcp","chat":"agent_123","resumable":true,"status":"running","verdict":null,"rounds":0,"routing":"executor role; healthy; quality fits a low-difficulty build","attempts":[]}
+{"id":"w2.1","task":"Add the CSV serializer and route","type":"build","tier":"T2","provider":"opencode","model":"deepseek-v4.1-flash","adapter":"paseo-mcp","orchestrator":"paseo","chat":"agent_123","resumable":true,"status":"running","verdict":null,"rounds":0,"routing":"executor role; healthy; quality fits a low-difficulty build","attempts":[]}
 ```
 
 The `chat` field is mandatory. A worker without a recorded chat id cannot be reviewed in place.
+
+## Delegate through an MCP orchestrator
+
+A spawner MCP server is an adapter, not a replacement for the plan. Keep the task boundary and the review.
+
+- **Use the documented spawn and send tools.** Do not assume a name; take it from `tools/list` and record it in `.maestro/orchestrators.json`.
+- **Send the same brief.** The MCP transport changes, the brief contract does not.
+- **Record the orchestration id.** It is the `chat` field. The review and every fix go back to that id.
+- **Stay inside the capability.** A coordination server can hold the brief, the status, and the shared files, but it cannot start a turn. Use it beside the spawner, not instead of it.
+- **Keep nesting shallow.** If the orchestrator spawns its own workers, require per-task evidence in its reply. A blended summary is not evidence. Two levels is the maximum; flatten the plan when the orchestrator cannot attribute work.
+- **Fall back cleanly.** If the MCP server fails, disappears, or lacks model selection, use the CLI adapter from [../harness/adapters.md](../harness/adapters.md) and record the switch with the error.
+
+OpenAgents example: publish the brief and status through the Workspace coordination server, delegate the code through `openagents coder delegate --to codex --task "<brief>" --json`, and send the review with `openagents coder chat -p "<review>" --session <id> --json`. If the workspace server is the only OpenAgents surface, it is coordination only; do not report a spawn that did not happen.
 
 ## Parallelism
 
@@ -98,6 +111,10 @@ Providers fail in different ways. Classify the error before doing anything:
 | Context overflow | Drop the model, choose one with more context, or split the task |
 | Tool unsupported | Drop the model, choose one with tools |
 | Timeout or `5xx` | Retry once on the same model, then spawn the fallback |
+| MCP tool missing or renamed | Refresh `tools/list`, record the version gap, use the CLI adapter |
+| MCP auth required | Mark the server `auth-required`, use the fallback, never put the token in the brief |
+| MCP server is coordination-only | Keep it for shared state and spawn through the CLI adapter |
+| Nested orchestrator returns one blended summary | Send it back for per-task evidence, or flatten to direct workers |
 
 Rules:
 

@@ -34,6 +34,6 @@ Run `muse skills list` to see the skills Muse discovered.
 ## Notes
 
 - Based on one community report: muse skills list scans ~/.agents/skills, ~/.claude/skills, and ~/.codex/skills.
-- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md before the first spawn, and record the worker chat id before the first prompt.
+- Maestro delegates every step. Load the model preferences and the provider catalog before choosing a worker. Sweep the orchestration MCP servers before the first spawn: use any server with a real spawn and send contract, and treat a coordination server as shared state, not as a spawner. Paseo can drive Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP providers. Read references/harness/adapters.md and references/harness/mcp-orchestrators.md before the first spawn, and record the worker chat id before the first prompt.
 - Muse Code is a Paseo native provider. Use list_models and create_agent; direct CLI support varies.
 - Documentation: [Muse Code](https://www.withone.ai/blog/muse-code-skills-not-mcp) (path source: community).

@@ -1,0 +1,81 @@
+{
+  "updatedAt": "2026-11-16T12:00:00Z",
+  "sweep": {
+    "sessionNative": true,
+    "configured": ["paseo", "openagents-workspace"],
+    "knownLocal": ["openagents-workspace", "openagents-coder"],
+    "remote": ["openagents-docs"]
+  },
+  "servers": [
+    {
+      "name": "paseo",
+      "transport": "stdio",
+      "source": "session",
+      "role": "spawner",
+      "tools": {
+        "spawn": "create_agent",
+        "send": "send_agent_prompt",
+        "status": "get_agent_status",
+        "cancel": "cancel_agent",
+        "list": "list_agents",
+        "models": "list_models"
+      },
+      "auth": "harness-session",
+      "resumable": true,
+      "status": "ready",
+      "notes": "Native provider and ACP catalog; preferred when present."
+    },
+    {
+      "name": "openagents-workspace",
+      "transport": "stdio",
+      "source": "harness-config",
+      "role": "coordination",
+      "tools": {
+        "spawn": null,
+        "send": null,
+        "status": "workspace_get_agents",
+        "read": "workspace_get_history",
+        "write": "workspace_write_file",
+        "approve": "workspace_request_approval"
+      },
+      "auth": "env:OA_WORKSPACE_TOKEN",
+      "resumable": false,
+      "status": "ready",
+      "notes": "No message-post or mention tool in the verified build. Use it for shared state, not delegation."
+    },
+    {
+      "name": "openagents-coder",
+      "transport": "stdio",
+      "source": "known-local",
+      "role": "read-only",
+      "tools": {
+        "spawn": null,
+        "send": null,
+        "read": "openagents mcp serve"
+      },
+      "auth": "harness-session",
+      "resumable": false,
+      "status": "read-only",
+      "notes": "Delegation uses openagents coder delegate or openagents coder chat --session."
+    },
+    {
+      "name": "openagents-docs",
+      "transport": "http",
+      "source": "remote",
+      "role": "read-only",
+      "tools": {
+        "read": "read_doc",
+        "models": "list_models"
+      },
+      "auth": "none",
+      "resumable": false,
+      "status": "ready",
+      "notes": "Docs and model prices only."
+    }
+  ],
+  "selected": {
+    "spawner": "paseo",
+    "coordination": "openagents-workspace",
+    "reason": "Paseo exposes a resumable spawn and send contract with model selection; the workspace supplies shared files and status."
+  }
+}

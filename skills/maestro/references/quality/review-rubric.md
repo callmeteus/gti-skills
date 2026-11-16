@@ -104,6 +104,17 @@ For security, money, data loss, public interfaces, or production changes:
 
 The review also records whether the chosen model fit the task. A task that needed T3 and ran on T1 is a routing finding; a task that used a frontier model for a rename is a cost finding. Record the route, the reason, and the attempts, and use the model-fit section in [../workflow/04-review.md](../workflow/04-review.md).
 
+## Orchestration check
+
+When the worker was reached through an MCP orchestrator:
+
+- The server had a real spawn tool and a send tool, both confirmed by `tools/list`.
+- The review and every fix went to the same chat id the spawn returned.
+- If a coordination server held the brief or the evidence, the chat still carried the authoritative result.
+- If the orchestrator was nested, it returned per-task evidence and child chat ids, not one blended summary.
+- The orchestrator's own PASS was not accepted as Maestro's verdict.
+- No tool was called that the installed version does not list.
+
 ## Review the review
 
 Before accepting a PASS, Maestro asks:
@@ -113,5 +124,6 @@ Before accepting a PASS, Maestro asks:
 - Did I compare the files to the brief's scope?
 - Did I check the test that proves the main behavior?
 - Is there a finding I am downgrading because the worker is likable or fast?
+- Did a coordination server's summary stand in for evidence from the chat that did the work?
 
 If any answer is weak, the review is not done.

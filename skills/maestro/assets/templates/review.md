@@ -29,6 +29,7 @@ Maestro fills this in.
 | Public surface | <pass or fail> | `<file or none>` |
 | Secrets | <pass or fail> | `<file or none>` |
 | Model fit | <pass or fail> | <route, reason, and attempts> |
+| Orchestration | <pass or fail> | <spawner, send tool, same chat id, per-task evidence> |
 
 ## Gates
 
@@ -45,6 +46,7 @@ Maestro fills this in.
 
 ```text
 ROUTE     <provider/model and reason>
+ORCHEST   <spawner and coordination server, with role>
 ATTEMPTS  <primary, fallback, errors, cooldowns>
 ROUND     <n>
 VERDICT   <PASS | FIX | REASSIGN | ESCALATE>

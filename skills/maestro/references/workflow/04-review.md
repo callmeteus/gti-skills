@@ -45,6 +45,17 @@ Maestro checks the evidence itself:
 
 If the evidence is missing, do not guess. Ask the same chat for the missing evidence.
 
+## Review inside an MCP orchestrator
+
+The chat is still the review target, even when an MCP server owns it.
+
+- Send the self-review and every fix through the orchestrator's send tool, to the same id that produced the work.
+- If a coordination server holds the brief and the evidence files, read them there, but do not accept the shared copy as a substitute for the chat.
+- When the orchestrator is nested, ask for per-task evidence and review each child chat whose id it returned. A blended summary is not evidence.
+- The orchestrator's own PASS is not Maestro's verdict. Maestro decides from the evidence and the diff.
+
+If the orchestrator cannot attribute work to a task, flatten the plan and use direct workers for the next wave. Record the decision and the reason.
+
 ## Step 3: verdict
 
 | Verdict | When | Next |
@@ -127,6 +138,7 @@ Write `.maestro/tasks/<task-id>/review.md`:
 ```text
 TASK      w2.1 Add the CSV serializer and route
 WORKER    agent_123, T2, opencode/deepseek-v4.1-flash
+ORCHEST   paseo spawner, openagents-workspace coordination
 ROUTE     executor role; healthy; quality fits a low-difficulty build
 ATTEMPTS  1 rate limit on the primary, 0 on the fallback
 ROUND     1
@@ -148,3 +160,5 @@ Append the verdict to `workers.jsonl` and `audit.jsonl`.
 - **Scope blindness:** ignoring a changed file because the main change works.
 - **Fix by Maestro:** editing the file instead of sending the finding back.
 - **Infinite loop:** more than two fix rounds on the same issue.
+- **Orchestrator theater:** accepting a coordinator's summary as evidence because the integration looked impressive.
+- **Ghost delegation:** reporting a spawn from a server that only exposed coordination tools.

@@ -1,24 +1,25 @@
 ---
 name: maestro
 description: >-
-  Orchestrates a request as delegated tasks: Maestro runs on the strongest
+  Orchestrates requests as delegated tasks: Maestro runs on the strongest
   model, classifies simple and complex work, writes the plan, spawns cheaper
-  worker agents for every step, reviews each result in the chat that produced
-  it, and never does the task itself. Persists the user's model preferences,
-  discovers the providers and models the harness can run, routes each task by
-  capability, context, speed, cost, and health, and falls back on a rate limit.
-  Detects the host harness (Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo,
-  Cline, Command Code, Pi, Hermes, ACP) and reuses worker chats for reviews.
-  Use when the user wants a task orchestrated across agents or providers, asks
-  for Maestro or /maestro, wants a strong planner with cheap workers, or wants
-  a plan plus execution with review gates. Do not use for a single small edit
-  the current agent can finish directly, for a diff review without delegation,
-  or when no subagent runtime is available.
+  workers for every step, reviews each result in the chat that produced it,
+  and never does the task. Persists model preferences, discovers the providers
+  and models the harness can run, routes each task by capability, context,
+  speed, cost, and health, and falls back on a rate limit. Detects the host
+  harness (Paseo, Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command
+  Code, Pi, Hermes, ACP), probes orchestration MCP servers such as OpenAgents,
+  and delegates through any with a spawn and send contract. Reuses worker chats
+  for reviews. Use when the user wants a task orchestrated across agents or
+  providers, asks for Maestro or /maestro, wants a strong planner with cheap
+  workers, or a plan plus execution with review gates. Do not use for a single
+  small edit the current agent can finish, for a diff review without
+  delegation, or when no subagent runtime is available.
 compatibility: >-
   An agent that can spawn subagents, or a worker CLI on PATH (paseo, claude,
   codex, opencode, kilo, cline, command-code, pi, agent, cursor-agent, hermes,
-  agy, muse). No scripts are bundled; provider discovery may use the harness's
-  own network access.
+  agy, muse), or an MCP client able to load an orchestration server. No scripts
+  are bundled; provider discovery may use the harness's own network access.
 license: No license declared
 metadata:
   display-name: Maestro
@@ -45,6 +46,8 @@ In this skill:
 - Intake asks nothing. Take the recommended reading of an ambiguous request, record the assumption, and continue. Only a missing worker runtime stops the run, and then the report says so.
 - Plan approval is skipped. Choose the safe wave order and the cheapest tier that fits, then record both.
 - Model choice is not a question. Read the preferences, route by the task profile, and record the reason. If the preferred model is cooling or rate-limited, use the next candidate. Persist only an explicit durable preference, never a one-off choice.
+- The MCP sweep asks nothing. Probe the available servers, classify them by tool schema, and use the best spawner. Record a server that needs OAuth as pending instead of starting a login that waits for the user.
+- Never edit a user-global harness config to add an MCP server. Use a session-scoped config or the CLI adapter, and list the global registration as pending.
 - Worker spawn waits for nobody. Spawn the selected workers, including in parallel, and continue with the ledger while they run.
 - Review does not ask the user to judge. Maestro decides PASS, FIX, or REASSIGN. Only a product decision or a gated action becomes a pending item.
 - A stalled worker gets one status prompt in the same chat, then a reassignment. No polling loops and no unchanged retries.
@@ -77,6 +80,7 @@ The request text selects the command. `/maestro` is the same as `maestro run`.
 | `/maestro report` | Write and print the final report from the ledger |
 | `/maestro preferences` | Show, set, or forget model roles, fallbacks, routes, and avoid entries |
 | `/maestro providers` | List discovered providers, models, capabilities, limits, health, and cooldowns |
+| `/maestro orchestrators` | List the detected orchestration MCP servers, their role, tools, and status; add `--refresh` to sweep again |
 
 ## Workflow
 
@@ -91,9 +95,9 @@ Maestro run:
 - [ ] 5. Finish: integrate, verify, report, keep the chats
 ```
 
-1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the harness and worker runtime, load the user and project preferences, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `.maestro/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
-2. **Plan.** Simple work gets one task; complex work gets waves, dependencies, model tiers, and a review gate per wave. Every task gets a routing target and a reason. Maestro writes the plan itself. See [references/workflow/02-plan.md](references/workflow/02-plan.md).
-3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Route to the chosen model, record the chat id, model, adapter, and reason in `.maestro/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
+1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `.maestro/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
+2. **Plan.** Simple work gets one task; complex work gets waves, dependencies, model tiers, and a review gate per wave. Every task gets a routing target, an orchestrator, and a reason. Maestro writes the plan itself. See [references/workflow/02-plan.md](references/workflow/02-plan.md).
+3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `.maestro/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
 4. **Review.** Ask the same chat for evidence, verify it independently, then decide PASS, FIX, REASSIGN, or ESCALATE. Fix rounds go back to the same chat. See [references/workflow/04-review.md](references/workflow/04-review.md).
 5. **Finish.** Integrate parallel work with a worker, run an independent verifier for complex runs, write the report, and leave the chats open for follow-up. See [references/workflow/05-finish.md](references/workflow/05-finish.md).
 
@@ -108,6 +112,7 @@ Everything lives in `.maestro/` at the project root. Keep it out of git by addin
 ├── plan.md           # complex runs only
 ├── preferences.json  # project model roles, routes, fallbacks
 ├── providers.json    # project catalog overrides and declared models
+├── orchestrators.json # detected MCP orchestrators, roles, tools, status
 ├── decisions.jsonl   # append-only decisions and reasons
 ├── audit.jsonl       # append-only spawn, review, fix, verify, report actions
 ├── tasks/
@@ -124,13 +129,44 @@ The ledger is the memory. After a context reset or compaction, read `run.json`, 
 
 Maestro must know how to spawn and re-enter a chat in the harness it runs in. Detect in this order:
 
-1. **Native agent tools in the session.** A tool that creates an agent and a tool that prompts the same agent (for example Paseo `create_agent` and `send_agent_prompt`, or a host subagent tool that returns a resumable id).
-2. **A worker CLI or ACP host on PATH.** `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `agent` or `cursor-agent`, `hermes`, `agy`, `muse`. Paseo can launch any provider in its catalog, including Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and other ACP agents. Verify a CLI with `--version` and `--help` before using a flag.
-3. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
+1. **An orchestration MCP server with a spawn and a send tool.** Sweep session-native tools, the harness MCP config, and known local or remote servers. Use a resumable server when one exists, and record its role and capability mapping.
+2. **Native agent tools in the session.** A tool that creates an agent and a tool that prompts the same agent (for example Paseo `create_agent` and `send_agent_prompt`, or a host subagent tool that returns a resumable id).
+3. **A worker CLI or ACP host on PATH.** `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `agent` or `cursor-agent`, `hermes`, `agy`, `muse`, and `openagents`. Paseo can launch any provider in its catalog, including Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and other ACP agents. Verify a CLI with `--version` and `--help` before using a flag.
+4. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
 The first review always goes to the chat that produced the work. Ask the same chat for evidence and send fixes there. Open a new chat only for a second opinion, a reassignment, or when the recorded chat is no longer available, and record why.
 
-Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has exact spawn, resume, and model flags for Paseo, Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, ACP providers, and the generic fallback.
+Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has exact spawn, resume, and model flags for Paseo, Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, OpenAgents, ACP providers, and the generic fallback. Read [references/harness/mcp-orchestrators.md](references/harness/mcp-orchestrators.md) before the MCP sweep.
+
+## MCP orchestrators
+
+Many harnesses expose agents over the Model Context Protocol, and OpenAgents adds a workspace that can coordinate several of them. Maestro probes what is available instead of assuming a fixed product.
+
+At intake, in this order:
+
+1. **Session-native MCP tools.** Already loaded, so they are the shortest path.
+2. **The harness MCP inventory.** For example `claude mcp list`, `codex mcp list --json`, `opencode mcp list`, or Paseo's provider tools.
+3. **Known local servers when the CLI is installed.** `agn mcp-server` for OpenAgents Workspace, and `openagents mcp serve` for OpenAgents Coder.
+4. **Known remote servers.** `openagents.com/mcp/docs` without a login, and `openagents.com/mcp` with OAuth.
+
+Classify each server by tool schema, not by name:
+
+| Role | Contract | Use |
+|---|---|---|
+| Spawner | `spawn` plus `send`, ideally `status`, `cancel`, and model selection | Delegate and review in the same chat |
+| Coordination | Workspace history, agents, files, todos, approvals | Shared context, published briefs, status, and evidence |
+| Read-only | Docs, models, account identity | Discovery only |
+
+A coordination server is not a spawner. A read-only server is not an orchestrator. Never call a tool that posts, spends, or starts work during discovery, and never invent a tool the server does not list.
+
+OpenAgents Coder delegates through `openagents coder delegate --to <agent> --task "<brief>" --json` or `openagents coder chat -p "<brief>" --session <id> --json`, and its MCP surfaces are read-only. OpenAgents Workspace exposes coordination tools, not a message-post tool in the verified build, so Maestro uses it for shared state and finds a real spawn surface for the work.
+
+When the CLI is installed but the harness has no server configured, load it for the worker with the harness's session-scoped flag: Claude Code `--mcp-config`, Codex `-c mcp_servers.<name>...`, or OpenCode `OPENCODE_CONFIG`. If the harness has no session-scoped path, use the CLI adapter and do not edit the user's global config.
+
+Record every server in `.maestro/orchestrators.json`, select one spawner and one coordination server, and add an `orchestrator` field to every worker record. Prefer a session-scoped MCP config over editing a user-global one; in autonomous mode, a global registration is pending.
+
+An orchestrator that spawns its own workers is still a worker to Maestro. Give it a bounded task, require per-task evidence, review in its thread, and never accept its PASS as the verdict. Keep nesting to two levels.
+
 
 ## Preferences and model routing
 
@@ -185,6 +221,10 @@ The rubric is in [references/quality/review-rubric.md](references/quality/review
 - **Record the routing reason.** Every spawn says why this model, and every fallback says which error triggered it.
 - **Never invent a model.** Use discovery or the user's declared ID. Mark unknown capabilities as `unknown`.
 - **The orchestrator preference is advisory.** The harness owns the main model; say so instead of pretending to switch.
+- **MCP is discovered, not assumed.** Probe the server, classify it by tool schema, and record the exact capability mapping. A server name in a doc is not proof that the installed version exposes the tool.
+- **Coordination is not delegation.** A workspace server without a spawn and send contract does not start work. Use it for shared state and find a real spawn surface.
+- **No global MCP edits without permission.** Prefer a session-scoped config or the CLI adapter. In autonomous mode, a user-global registration is pending.
+- **A nested orchestrator is still a worker.** It gets a bounded task and per-task evidence, and its PASS is not Maestro's verdict.
 
 ## Done when
 
@@ -192,6 +232,7 @@ The rubric is in [references/quality/review-rubric.md](references/quality/review
 - The full project checks pass, verified by an independent worker for complex runs.
 - No worker changed a file outside its scope without a recorded decision.
 - Every task has a routing reason and every fallback has an attempt record.
+- Every delegated task records the orchestrator and adapter used, and any nested orchestrator returned per-task evidence.
 - Preferences changed only on an explicit durable instruction.
 - The final report names every chat id, model, change, check, and open item.
 
@@ -201,13 +242,15 @@ The rubric is in [references/quality/review-rubric.md](references/quality/review
 |---|---|
 | `references/workflow/` | One file per step, in order |
 | `references/harness/adapters.md` | Spawn, resume, and model flags per harness |
+| `references/harness/mcp-orchestrators.md` | MCP sweep, capability contract, OpenAgents, and nested-orchestrator rules |
 | `references/harness/run-state.md` | Ledger schema and resume protocol |
 | `references/routing/` | Persistent preferences, provider catalog, and the router |
 | `references/quality/review-rubric.md` | The six review gates and verdicts |
 | `references/quality/anti-patterns.md` | Failure modes to avoid |
-| `assets/templates/` | Plan, brief, review, report, preferences, and catalog templates |
+| `assets/templates/` | Plan, brief, review, report, preferences, catalog, and orchestrator registry templates |
 | `assets/examples/run-example.md` | A worked complex run |
 | `assets/examples/routing-example.md` | Rate-limit fallbacks and model trade-offs |
+| `assets/examples/mcp-orchestration-example.md` | A worked OpenAgents sweep, delegation, fallback, and review |
 
 ## Running in your agent
 

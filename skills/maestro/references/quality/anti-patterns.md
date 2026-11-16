@@ -177,3 +177,35 @@ The failure modes below are the ones Maestro must actively avoid. Each one names
 **Why it fails:** The spawn fails, the run stalls, and the ledger has a worker that never existed.
 
 **Fix:** Check `list_providers`, `--version`, and `--help` before routing. If the provider is missing, install it on the worker host or mark it unavailable and choose a fallback.
+
+## 23. MCP by brand name
+
+**Symptom:** Maestro calls `create_agent` on a server that never listed it, or assumes every OpenAgents server can delegate.
+
+**Why it fails:** The tool call errors, or worse, a different tool with a similar name runs with the wrong arguments.
+
+**Fix:** Probe `tools/list`, map capabilities to the exact names the server reports, and record the mapping in `.maestro/orchestrators.json`.
+
+## 24. Coordination mistaken for delegation
+
+**Symptom:** Maestro writes a brief to a workspace, reads the history back, and reports the task as spawned.
+
+**Why it fails:** No worker ever started, and the review has nothing to check.
+
+**Fix:** A server qualifies as a spawner only with a spawn tool and a send tool. A coordination server holds shared state; it does not start a turn.
+
+## 25. Nested orchestrator as a black box
+
+**Symptom:** Another orchestrator receives a wave, returns one blended summary, and Maestro accepts it as evidence.
+
+**Why it fails:** Individual tasks cannot be reviewed, and a failure hides inside the summary.
+
+**Fix:** Require per-task evidence and child chat ids. If the orchestrator cannot attribute the work, flatten the plan and use direct workers.
+
+## 26. Global config by convenience
+
+**Symptom:** Maestro adds an MCP server to the user's global harness config so the next run is easier.
+
+**Why it fails:** It changes the user's environment without permission and can affect unrelated projects.
+
+**Fix:** Prefer a session-scoped MCP config or the CLI adapter. Treat a global registration as a gated action and, in autonomous mode, write it to pending.

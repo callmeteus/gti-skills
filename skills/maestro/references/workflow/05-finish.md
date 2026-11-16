@@ -35,8 +35,18 @@ The run is not done until the verifier's evidence passes or the failing item is 
 - [ ] The diff matches the plan's scope.
 - [ ] No gated action ran without permission.
 - [ ] Every worker chat id is in `workers.jsonl`.
+- [ ] Every delegated task records its orchestrator, and any nested orchestrator returned per-task evidence.
 - [ ] The report names what was not verified.
 - [ ] No dev server, watcher, or background process is left running.
+
+## MCP orchestrators at the end
+
+Update `.maestro/orchestrators.json` with the final status of every server used: `ready` on success, `auth-required` on a login that never completed, `error` with the last error, and `unavailable` when the server disappeared. Keep the capability mapping, because the next run does not have to rediscover it.
+
+- Close tunnels a worker opened, with `tunnel_close`, and stop anything the workspace started.
+- Do not delete workspace files or routines. They are the shared evidence; deleting them is irreversible and needs permission.
+- Publish the final report to a coordination workspace only when the user asked for it or the run's rules require it. A workspace with other members is outward-facing, so it is a gated action.
+- Keep hosted worker chats and child chats open, like local ones. If the orchestration service bills per seat or per thread, say so in the report.
 
 ## Learn from the run
 
@@ -61,6 +71,7 @@ goal    Add CSV export to the reports page
 waves   3/3 passed
 workers 5 spawned, 5 passed, 0 reassigned
 routes  5 primary, 1 rate-limit fallback, 0 blocked
+mcp     paseo spawner, openagents-workspace coordination
 checks  test pass, typecheck pass, lint pass, build pass
 chats   w1.1 agent_101, w1.2 agent_102, w2.1 agent_123, w2.2 agent_104, w3.1 agent_105
 open    none
@@ -105,6 +116,7 @@ The report must stand alone. A new session or a different agent should be able t
 - The goal and done criteria.
 - The plan and the waves.
 - Every worker, chat id, model, and verdict.
+- The orchestrator and MCP servers used, with their role and any shared artifacts.
 - The changes and the checks.
 - The pending items and the open questions.
 - The commands needed to reproduce the verification.

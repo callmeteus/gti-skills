@@ -45,6 +45,7 @@ Rules:
 | `type` | `scout`, `build`, `verify`, or `synthesize` |
 | `tier` | `T1`, `T2`, or `T3` |
 | `route` | Primary `provider/model` and the reason from the router |
+| `orchestrator` | The MCP spawner or adapter that will own the chat |
 | `depends` | Task ids that must pass first |
 | `scope` | Files, folders, or surfaces the task owns |
 | `done` | Criteria specific to this task |
@@ -108,6 +109,8 @@ Before spawning, Maestro answers these:
 - Does every task have a check that proves it?
 - Is every dependency in an earlier wave?
 - Does every task have a route, a fallback, and a reason?
+- Does every task name an orchestrator that can spawn a chat and resume it?
+- If a coordination server is used, is there still a real spawner for the work?
 - Does any wave contain two writers for the same file?
 - Is the cheapest tier used for each task?
 - Is there a verifier for the whole run?
@@ -137,6 +140,10 @@ ROUTES
   w2.2  opencode/deepseek-v4.1-flash       build, executor preference
   w3.1  claude/claude-opus-5.5             verify, quality and context
   w3.2  opencode/deepseek-v4.1-flash       synth, executor preference
+
+ORCHESTRATORS
+  all   paseo spawner (resumable chats)
+  shared openagents-workspace coordination (brief, status, evidence files)
 ```
 
 Each route also gets a fallback. If the primary is cooling, the fallback is the next candidate from the router, not a guess.

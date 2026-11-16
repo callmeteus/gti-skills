@@ -10,6 +10,7 @@
 | Orchestrator preference | `<provider>/<model>` |
 | Executor preference | `<provider>/<model>` |
 | Adapter | `<adapter>` |
+| Orchestrator MCP | `<spawner>` spawner, `<coordination>` coordination |
 | Budget | `<n> workers, <n> fix rounds, <n> waves` |
 | Base | `<branch or commit>` |
 | Isolation | `<shared checkout or worktree>` |
@@ -78,6 +79,15 @@ Gate: <what Maestro must see before done>
 | `w2.1` | `<provider>/<model>` | <why this model fits> | `<provider>/<model>` |
 | `w2.2` | `<provider>/<model>` | <why this model fits> | `<provider>/<model>` |
 | `w3.1` | `<provider>/<model>` | <why this model fits> | `<provider>/<model>` |
+
+## Orchestrators
+
+| Server | Role | Tools used | Status |
+|---|---|---|---|
+| `<name>` | spawner | `<spawn>`, `<send>`, `<status>` | ready |
+| `<name>` | coordination | `<read>`, `<write>` | ready |
+
+Each task uses the selected spawner unless its row says otherwise. A coordination server holds shared briefs and evidence; it does not start a turn.
 
 ## Parallel safety
 

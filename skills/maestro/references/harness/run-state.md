@@ -11,6 +11,7 @@
 ├── plan.md
 ├── preferences.json
 ├── providers.json
+├── orchestrators.json
 ├── decisions.jsonl
 ├── audit.jsonl
 ├── tasks/
@@ -31,8 +32,33 @@ These live outside the run report and are read at intake.
 | Project | `.maestro/preferences.json` | Project overrides |
 | User | `~/.maestro/providers.json` | Model catalog, limits, health, cooldowns |
 | Project | `.maestro/providers.json` | Project overrides and declared entries |
+| Project | `.maestro/orchestrators.json` | MCP servers found in this run, their role, tools, and status |
 
 `MAESTRO_HOME` replaces `~/.maestro` when set. Keep these files out of git. They contain no credentials, only provider and model IDs plus health.
+
+## orchestrators.json
+
+Written at intake by the MCP sweep. It records what was found, not what was hoped for.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `updatedAt` | string | ISO timestamp of the sweep |
+| `sweep` | object | `sessionNative`, `configured`, `knownLocal`, `remote` |
+| `servers` | array | One entry per server |
+| `servers[].name` | string | Server name |
+| `servers[].transport` | string | `stdio` or `http` |
+| `servers[].source` | string | `session`, `harness-config`, `known-local`, `remote` |
+| `servers[].role` | string | `spawner`, `coordination`, `read-only` |
+| `servers[].tools` | object | Capability to exact tool name |
+| `servers[].auth` | string | `none`, `harness-session`, `oauth`, or `env:<NAME>` |
+| `servers[].resumable` | boolean | Whether a send tool exists |
+| `servers[].status` | string | `ready`, `auth-required`, `read-only`, `unavailable`, `error` |
+| `servers[].notes` | string | Version caveats and limits |
+| `selected` | object | `spawner`, `coordination`, `reason` |
+
+Never store a token, header, or credential in this file. Store the environment variable name instead.
+
+Use [../../assets/templates/orchestrator-registry.json](../../assets/templates/orchestrator-registry.json).
 
 ## run.json
 
@@ -49,7 +75,7 @@ One object, updated in place at every phase change.
 | `constraints` | string[] | Rules the workers must keep |
 | `risk` | string[] | Risk flags |
 | `budget` | object | `workersMax`, `fixRoundsMax`, `wavesMax`, `tokenCap` |
-| `harness` | object | `name`, `adapter`, `resumable` |
+| `harness` | object | `name`, `adapter`, `resumable`, `orchestrator`, `mcp` |
 | `routing` | object | `orchestrator`, `executor`, `catalogUpdated` |
 | `checklist` | object | Boolean per workflow step |
 | `pending` | string[] | Gated actions and open decisions |
@@ -68,7 +94,7 @@ Example:
   "constraints": ["Keep the existing auth middleware"],
   "risk": [],
   "budget": {"workersMax": 12, "fixRoundsMax": 2, "wavesMax": 6, "tokenCap": null},
-  "harness": {"name": "paseo", "adapter": "paseo-mcp", "resumable": true},
+  "harness": {"name": "paseo", "adapter": "paseo-mcp", "resumable": true, "orchestrator": "paseo", "mcp": ["paseo", "openagents-workspace"]},
   "routing": {
     "orchestrator": {"provider": "claude", "model": "claude-opus-5.5", "source": "user"},
     "executor": {"provider": "opencode", "model": "deepseek-v4.1-flash", "source": "user"},
@@ -95,6 +121,7 @@ One JSON object per line, appended when a worker is spawned and updated in place
 | `routing` | Why this model was chosen |
 | `attempts` | Every provider/model attempt with its result and cooldown |
 | `adapter` | Adapter name from `adapters.md` |
+| `orchestrator` | MCP spawner or adapter that owns the chat, or `null` |
 | `chat` | Chat or session id, or null |
 | `resumable` | Whether the chat can be prompted again |
 | `status` | `spawned`, `running`, `done`, `blocked`, `failed`, `cancelled` |
@@ -106,7 +133,7 @@ One JSON object per line, appended when a worker is spawned and updated in place
 Example:
 
 ```json
-{"id":"w2.1","task":"Add the CSV serializer and route","type":"build","tier":"T2","provider":"opencode","model":"deepseek-v4.1-flash","routing":"executor role; healthy; quality fits a low-difficulty build","attempts":[{"provider":"opencode","model":"deepseek-v4.1-flash","result":"rate_limit","cooldownUntil":"2026-11-14T15:12:00Z"},{"provider":"opencode","model":"deepseek-v4.1-flash-free","result":"done"}],"adapter":"paseo-mcp","chat":"agent_123","resumable":true,"status":"done","verdict":"PASS","rounds":1,"files":["src/reports/csv.ts","src/reports/route.ts"],"notes":null}
+{"id":"w2.1","task":"Add the CSV serializer and route","type":"build","tier":"T2","provider":"opencode","model":"deepseek-v4.1-flash","routing":"executor role; healthy; quality fits a low-difficulty build","attempts":[{"provider":"opencode","model":"deepseek-v4.1-flash","result":"rate_limit","cooldownUntil":"2026-11-14T15:12:00Z"},{"provider":"opencode","model":"deepseek-v4.1-flash-free","result":"done"}],"adapter":"paseo-mcp","orchestrator":"paseo","chat":"agent_123","resumable":true,"status":"done","verdict":"PASS","rounds":1,"files":["src/reports/csv.ts","src/reports/route.ts"],"notes":null}
 ```
 
 ## decisions.jsonl
@@ -141,7 +168,7 @@ The task folder is the audit trail for one task. Keep it even after PASS.
 After a context reset, a compaction, or a new session:
 
 1. Read `.maestro/run.json`.
-2. Read `~/.maestro/preferences.json`, `.maestro/preferences.json`, and `~/.maestro/providers.json`. Drop models that are cooling or unavailable.
+2. Read `~/.maestro/preferences.json`, `.maestro/preferences.json`, `~/.maestro/providers.json`, and `.maestro/orchestrators.json`. Drop models that are cooling or unavailable, and drop MCP servers marked `unavailable` or `auth-required`.
 3. Read `.maestro/workers.jsonl` and take the last record per task.
 4. Read the last ten lines of `decisions.jsonl`.
 5. Find the first task whose verdict is not `PASS`.

@@ -10,6 +10,7 @@
 | Waves | `<passed>/<total>` |
 | Workers | `<spawned> spawned, <passed> passed, <reassigned> reassigned |
 | Checks | `<test, typecheck, lint, build>` |
+| MCP | `<spawner> spawner, <coordination> coordination` |
 | Maestro model | `<model>` |
 
 <Three sentences: what was asked, what changed, and whether it is proven.>
@@ -22,10 +23,17 @@
 
 ## Workers
 
-| Task | Type | Tier | Provider/model | Adapter | Chat | Rounds | Verdict |
-|---|---|---|---|---|---|---|---|
-| `w1.1` | scout | T1 | `<provider>/<model>` | <adapter> | `<id>` | 0 | PASS |
-| `w2.1` | build | T2 | `<provider>/<model>` | <adapter> | `<id>` | 1 | PASS |
+| Task | Type | Tier | Provider/model | Adapter | Orchestrator | Chat | Rounds | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| `w1.1` | scout | T1 | `<provider>/<model>` | <adapter> | <orchestrator> | `<id>` | 0 | PASS |
+| `w2.1` | build | T2 | `<provider>/<model>` | <adapter> | <orchestrator> | `<id>` | 1 | PASS |
+
+## Orchestrators
+
+| Server | Role | Tools used | Status | Shared artifacts |
+|---|---|---|---|---|
+| `<name>` | spawner | `<spawn>`, `<send>` | ready | <chat ids> |
+| `<name>` | coordination | `<read>`, `<write>` | ready | <files> |
 
 ## Routing
 

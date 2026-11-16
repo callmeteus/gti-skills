@@ -4,11 +4,14 @@ Maestro must spawn workers and re-enter their chats in whatever harness it runs 
 
 ## Detection order
 
-1. **Native agent tools in the session.** A create-agent tool plus a prompt-agent tool, or a subagent tool that returns a resumable id.
-2. **A worker CLI on PATH.** Try in this order: `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `agent`, `cursor-agent`, `hermes`, `agy`, `muse`. Confirm with `--version` and `--help` before using a flag.
-3. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
+1. **An orchestration MCP server.** A server that exposes a spawn tool and a send tool, discovered from the session, the harness MCP config, or a known local or remote server. Classify it with [mcp-orchestrators.md](mcp-orchestrators.md) before using it.
+2. **Native agent tools in the session.** A create-agent tool plus a prompt-agent tool, or a subagent tool that returns a resumable id.
+3. **A worker CLI on PATH.** Try in this order: `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `openagents`, `agent`, `cursor-agent`, `hermes`, `agy`, `muse`. Confirm with `--version` and `--help` before using a flag.
+4. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
 If Paseo is installed, prefer it for any provider it lists. It is the shortest path to Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and the ACP catalog.
+
+If OpenAgents is installed, separate its two products: `agn` is the Workspace launcher and its MCP server is coordination, while `openagents` is Coder and its CLI can delegate to Claude Code, Codex, OpenCode, and Coder.
 
 Record the chosen adapter in `run.json` and in every worker record.
 
@@ -16,8 +19,11 @@ Record the chosen adapter in `run.json` and in every worker record.
 
 | Harness | Spawn | Reuse the same chat | Model selection | Resumable |
 |---|---|---|---|---|
+| MCP spawner | Its spawn tool | Its send tool with the same id | Its model tool or parameter | When `send` exists |
 | Paseo MCP tools | `create_agent` | `send_agent_prompt` with the same `agentId` | Profiles, then `list_providers` and `list_models` | Yes |
 | Paseo CLI | `paseo run --no-wait --json` | `paseo send <agentId>` | `--provider` and `--model` | Yes |
+| OpenAgents Coder | `openagents coder delegate --to <agent> --task "<brief>" --json` | `openagents coder chat -p "<review>" --session <id> --json` | `--model`, `openagents coder models list` | Yes, with `--session` |
+| OpenAgents Workspace | No spawn tool in the verified MCP build | Not applicable | Workspace agent config | Coordination only |
 | Claude / Claude Code | `claude -p --session-id <uuid>` | `claude -p --resume <uuid>` | `--model` | Yes |
 | Claude Code native Task | Task or Agent tool | Only if the tool returns a resumable id | Subagent type or settings | Depends |
 | Codex | `codex exec --json` | `codex exec resume <session-id>` | `-m` | Yes |
@@ -99,6 +105,33 @@ Use it this way:
 5. `get_agent_activity` or `get_agent_status` for progress, and `cancel_agent` for a stall.
 
 Do not hardcode provider ids or assume a provider is installed. If `list_providers` does not show it, install its CLI on the daemon host or use a direct adapter. Paseo is also the recommended path for Hermes, Cline, Cursor, Kilo, Antigravity, and Muse when Maestro runs outside those tools.
+
+## MCP orchestrators and OpenAgents
+
+An MCP server can be a spawner, a coordination plane, or a read-only catalog. Read [mcp-orchestrators.md](mcp-orchestrators.md) for the sweep, the capability contract, and the safety rules. In short:
+
+- Use a server only when its own `tools/list` shows a spawn tool and a send tool. Record the exact tool names.
+- A coordination server without `send` cannot start work and cannot be reviewed in place.
+- Prefer a session-scoped MCP config over a user-global edit.
+
+OpenAgents has two surfaces:
+
+```bash
+# Workspace: coordination tools over stdio; token from OA_WORKSPACE_TOKEN
+agn mcp-server --workspace-id <id> --channel-name <name> --agent-name <name> --endpoint <url>
+
+# Coder: read-only MCP tools over stdio
+openagents mcp serve
+
+# Coder: the actual delegation
+openagents coder delegate --to codex --task "<brief>" --json
+openagents coder chat -p "<brief>" --session <id> --json
+openagents coder chat -p "<review or fix>" --session <id> --json
+```
+
+OpenAgents Workspace exposes workspace state, files, todos, approvals, and notifications, but no message-post tool in the verified build. Use it for shared context and publish the brief there; delegate through Coder, through a workspace thread that routes to Maestro, or through a post tool only if the installed version lists one. Verify `agn mcp-server --help`, because older builds used `--network` and `--token`.
+
+The hosted docs server needs no login: `https://openagents.com/mcp/docs` lists `list_docs`, `search_docs`, `read_doc`, `list_models`, and `list_payment_methods`. The account server at `https://openagents.com/mcp` requires OAuth or a login key and adds `whoami`.
 
 ## Claude and Claude Code
 
@@ -321,6 +354,9 @@ Record the id before the first prompt. Common ways:
 - Cursor: the chat id from `--output-format json` or `agent ls`.
 - Hermes: the Paseo `agentId`; direct ACP sessions live in `~/.hermes/state.db` and `hermes sessions`.
 - Antigravity and Muse Code: the Paseo `agentId`.
+- MCP spawner: the id returned by its spawn tool, and the same id on its send tool.
+- OpenAgents Coder: the id printed by `openagents coder delegate --json` or `openagents coder chat --json`; continue with `--session <id>`. `openagents coder sessions list` shows saved chats.
+- OpenAgents Workspace: the workspace agent name and channel from `workspace_get_agents`; the workspace MCP server does not create per-task chats.
 
 Write it to `workers.jsonl` immediately. A worker without a chat id is not reviewable.
 
@@ -344,6 +380,10 @@ Discover the catalog before the first spawn, and refresh when `/maestro provider
 | Antigravity | Paseo `list_models({provider: "antigravity"})` | Direct `agy` is provider-managed |
 | Muse Code | Paseo `list_models({provider: "muse"})` | Paseo exposes the native provider |
 | Any ACP provider | Paseo `list_models({provider: "<id>"})` | Get the id from `list_providers` |
+| MCP spawner | Its model tool, or the model parameter on its spawn tool | Record `default` when it has neither |
+| OpenAgents Coder | `openagents coder models list`, `openagents coder agents list` | Lists Coder models and the agents installed on the machine |
+| OpenAgents Workspace | `workspace_get_agents` | Lists workspace agents and their types, not model capabilities |
+| OpenAgents docs MCP | `list_models` at `openagents.com/mcp/docs` | Docs and prices only |
 
 Record the command, the timestamp, and the catalog source. Never invent a model ID or a context size. Use `unknown` when discovery does not provide it.
 
@@ -367,6 +407,9 @@ The exact ID comes from discovery or the user's declared catalog, not from this 
 | Antigravity | Paseo `provider: "antigravity"` plus `settings` |
 | Muse Code | Paseo `provider: "muse"` plus `settings` |
 | Any ACP provider | Paseo `provider: "<id>"` plus `settings` |
+| MCP spawner | The model field in its spawn tool, or its model switch tool |
+| OpenAgents Coder | `--model` on `delegate` or `chat`; `openagents coder models set <slug>` for its own loop |
+| OpenAgents Workspace | The agent's configured model; Maestro cannot change it through the workspace MCP server |
 
 If the harness cannot select a model, record `default`. Do not pretend a tier was applied when it was not.
 
@@ -397,6 +440,10 @@ If the harness cannot select a model, record `default`. Do not pretend a tier wa
 | Worker fails twice | Reassign to a higher tier or another model family |
 | Review finds a blocker | Send a numbered FIX to the same chat |
 | Chat is gone | Reassign with the previous result and review files |
+| MCP server has no spawn tool | Record `coordination`, use it for shared state, and pick another spawner |
+| MCP server has no send tool | Record `resumable: false` and use the written-result review path |
+| MCP auth required | Start the harness OAuth flow or hand off the login; never put a token in a brief |
+| MCP tool name missing | Use `tools/list`; record the version gap and do not call the missing tool |
 
 ## Do not invent flags
 

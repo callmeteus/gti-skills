@@ -21,11 +21,12 @@ Turn the request into a run record before spawning anything. Intake is the only 
 5. **Flag risk.** Mark anything irreversible, outward-facing, secret-bearing, production-facing, or money-related.
 6. **Load preferences.** Read `~/.maestro/preferences.json` and `.maestro/preferences.json`. Resolve the orchestrator and executor roles, with the project overriding the user.
 7. **Discover the catalog.** Use the harness's own commands from [../routing/02-catalog.md](../routing/02-catalog.md) and refresh when the cache is older than a day. Record provider, model, context, quality, speed, cost, tools, limits, and health.
-8. **Choose the tier and the route.** T1 for read-only work, T2 for focused edits, T3 for architecture or hard debugging. Pick the default executor candidate with [../routing/03-router.md](../routing/03-router.md). Do not use T3 by default.
-9. **Set the budget.** Workers, fix rounds, waves, and an optional token cap. The defaults are 12 workers, 2 fix rounds per task, and 6 waves.
-10. **Detect the harness.** Read [../harness/adapters.md](../harness/adapters.md). Record the adapter name, the spawn command or tool, and whether the chat can be resumed.
-11. **Create the ledger.** Write `run.json`, create `workers.jsonl` and `decisions.jsonl`, and add `.maestro/` to `.git/info/exclude`.
-12. **Print the run header.** Use the interface below. Keep it short.
+8. **Sweep the MCP orchestrators.** Follow [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md). Check session-native tools, the harness MCP inventory, known local servers, and known remote servers. Classify each by tool schema into spawner, coordination, or read-only. Pick one spawner and, when useful, one coordination server. Write `.maestro/orchestrators.json`.
+9. **Choose the tier and the route.** T1 for read-only work, T2 for focused edits, T3 for architecture or hard debugging. Pick the default executor candidate with [../routing/03-router.md](../routing/03-router.md). Do not use T3 by default.
+10. **Set the budget.** Workers, fix rounds, waves, and an optional token cap. The defaults are 12 workers, 2 fix rounds per task, and 6 waves.
+11. **Detect the harness.** Read [../harness/adapters.md](../harness/adapters.md). Record the adapter name, the spawn command or tool, and whether the chat can be resumed.
+12. **Create the ledger.** Write `run.json`, create `workers.jsonl`, `orchestrators.json`, and `decisions.jsonl`, and add `.maestro/` to `.git/info/exclude`.
+13. **Print the run header.** Use the interface below. Keep it short.
 
 ## Simple or complex
 
@@ -93,7 +94,25 @@ Read both preference files before choosing anything. The user scope is `~/.maest
 
 Then discover the catalog. Use the provider's own command from [../routing/02-catalog.md](../routing/02-catalog.md). Do not hardcode IDs and do not assume a marketing name is an ID.
 
+If an orchestration MCP server is available, record it in `.maestro/orchestrators.json` and use its model tool when it has one. OpenAgents Coder lists models with `openagents coder models list`; the OpenAgents docs MCP lists prices with `list_models`. A coordination server usually does not know model capabilities, so keep the provider catalog as the source of truth.
+
 If no model passes the hard filters, stop before spawning and report which filter excluded every candidate. Do not start a run that cannot execute.
+
+## MCP sweep and orchestrator choice
+
+Run the sweep before choosing an adapter. The order is session tools, harness config, known local servers, then known remote servers. Probe with `initialize` and `tools/list`; never call a tool that posts, spends, or starts work during discovery.
+
+| Result | Action |
+|---|---|
+| A server with spawn and send | Use it as the spawner. Record the exact tool names and whether the chat is resumable |
+| A server with coordination tools only | Use it for shared files, history, status, and approvals; keep looking for a spawner |
+| A read-only server | Use it for docs and model discovery; keep looking for a spawner |
+| A server that needs OAuth | Start the harness login when the harness supports it, or mark it pending; do not block the run |
+| Nothing | Continue with the native agent tools or the CLI adapter |
+
+Prefer a session-scoped MCP config over a user-global edit. In autonomous mode, a user-global registration is pending, never an action.
+
+Narrate a non-obvious choice in one short line in the user's language, for example: "OpenAgents Workspace is available, so the brief goes there and the build runs through OpenAgents Coder."
 
 ## Run header
 
@@ -105,6 +124,7 @@ goal    Add CSV export to the reports page
 done    CSV route returns text/csv, header row, tests pass, no UI regressions
 budget  12 workers, 2 fix rounds, 6 waves
 harness paseo (native tools, resumable chats)
+mcp     paseo spawner, openagents-workspace coordination
 orchestr claude/claude-opus-5.5 (preference)
 executor opencode/deepseek-v4.1-flash (healthy; free fallback ready)
 ```
@@ -117,6 +137,7 @@ goal    Rename the billing flag and update its call sites
 done    No old name remains, tests pass, no public flag change
 budget  1 worker, 2 fix rounds
 harness claude (CLI session, resumable)
+mcp     none (CLI adapter)
 orchestr claude/claude-opus-5.5 (preference)
 executor opencode/deepseek-v4.1-flash (healthy)
 ```
@@ -130,6 +151,7 @@ MAESTRO  run-2026-11-14-001  complex  review
 goal    Add CSV export to the reports page
 budget  3/12 workers  1/6 waves  1/2 fix rounds
 routes  1 rate-limit fallback, 0 blocked
+mcp     paseo spawner, openagents-workspace coordination
 
 WAVE 1  discover                 2/2 PASS
   w1.1  scout  T1  agent_101     PASS
@@ -167,7 +189,7 @@ Write the first record before spawning:
   "constraints": ["Keep the existing auth middleware"],
   "risk": [],
   "budget": {"workersMax": 12, "fixRoundsMax": 2, "wavesMax": 6, "tokenCap": null},
-  "harness": {"name": "paseo", "adapter": "paseo-mcp", "resumable": true},
+  "harness": {"name": "paseo", "adapter": "paseo-mcp", "resumable": true, "orchestrator": "paseo", "mcp": ["paseo", "openagents-workspace"]},
   "routing": {
     "orchestrator": {"provider": "claude", "model": "claude-opus-5.5", "source": "user"},
     "executor": {"provider": "opencode", "model": "deepseek-v4.1-flash", "source": "user"},
