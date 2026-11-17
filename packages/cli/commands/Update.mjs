@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, renameSync, statSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { readInstalls, readJson, recordInstalls, stateFolder, writeInstalls, writeJson } from "../core/Installs.mjs";
 import { loadPacks, selectSkills } from "../core/Packs.mjs";
@@ -101,6 +101,70 @@ function requestedTargets(flags, cwd, home, known) {
     }
 
     return [...targets.values()];
+}
+
+/**
+ * Builds install records for skills that exist in this CLI's source but are missing from a full
+ * install folder. A partial install stays exactly as the user chose it.
+ *
+ * @param {import("../core/Installs.mjs").InstallRecord[]} known Recorded installs
+ * @param {import("../core/Installs.mjs").InstallRecord[]} untracked Install folders found on disk
+ * @param {Record<string, string | boolean>} flags Command flags
+ * @returns {import("../core/Installs.mjs").InstallRecord[]} Missing install records
+ */
+function newInstallTargets(known, untracked, flags) {
+    if (flags["install-new"] !== true || flags["no-install-new"] === true) {
+        return [];
+    }
+
+    const skills = discoverSkills();
+    const byId = new Map(skills.map((skill) => [skill.id, skill]));
+    const packIds = new Set(skills.flatMap((skill) => skill.packs));
+    const taken = new Set([...known, ...untracked].map((record) => record.destination));
+    const groups = new Map();
+
+    for (const record of known) {
+        const folder = dirname(record.destination);
+        const key = [record.scope, record.scope === "project" ? record.projectRoot : "", folder].join("|");
+        const group = groups.get(key) ?? { scope: record.scope, projectRoot: record.projectRoot, folder, harnesses: record.harnesses, ids: new Set(), full: false };
+        group.ids.add(record.skill);
+        group.full = group.full || record.full === true;
+        groups.set(key, group);
+    }
+
+    const targets = [];
+
+    for (const group of groups.values()) {
+        const installedPacks = new Set();
+
+        for (const id of group.ids) {
+            for (const pack of byId.get(id)?.packs ?? []) {
+                installedPacks.add(pack);
+            }
+        }
+
+        const coversAll = packIds.size > 0 && [...packIds].every((id) => installedPacks.has(id));
+
+        if (!group.full && !coversAll) {
+            continue;
+        }
+
+        for (const skill of skills) {
+            if (group.ids.has(skill.id)) {
+                continue;
+            }
+
+            const destination = join(group.folder, skill.id);
+
+            if (taken.has(destination) || existsSync(destination)) {
+                continue;
+            }
+
+            targets.push({ destination, skill: skill.id, harnesses: group.harnesses, scope: group.scope, projectRoot: group.projectRoot, commit: null, installedAt: "" });
+        }
+    }
+
+    return targets;
 }
 
 /**
@@ -245,8 +309,10 @@ function reinstall(root, targets, folder, io) {
  * There are no releases: the commit hash is the version.
  *
  * Without --harness, refreshes every recorded install and any untracked install found in the user
- * folders or under the current directory. With --harness, --skill, --pack, --scope, and --dest, installs
- * exactly that selection from the latest commit. Flags: --check, --dry-run, --force, --skip-build.
+ * folders or under the current directory. With --install-new, it also installs skills that are
+ * missing from an install that uses every pack; a partial install stays as chosen. With --harness,
+ * --skill, --pack, --scope, and --dest, installs exactly that selection from the latest commit.
+ * Flags: --check, --dry-run, --force, --skip-build, --install-new, --no-install-new.
  *
  * @param {Record<string, string | boolean>} flags Command flags
  * @param {{ out: (line: string) => void, err: (line: string) => void }} io Output channels
@@ -273,9 +339,16 @@ export async function runUpdate(flags, io, environment = {}) {
 
     const known = readInstalls(folder).filter((record) => existsSync(record.destination));
     let targets;
+    let fresh = [];
 
     try {
-        targets = typeof flags.harness === "string" ? requestedTargets(flags, cwd, home, known) : [...known, ...findUntracked(known, cwd, home)];
+        if (typeof flags.harness === "string") {
+            targets = requestedTargets(flags, cwd, home, known);
+        } else {
+            const untracked = findUntracked(known, cwd, home);
+            fresh = newInstallTargets(known, untracked, flags);
+            targets = [...known, ...untracked, ...fresh];
+        }
     } catch (error) {
         io.err(error.message);
 
@@ -288,11 +361,15 @@ export async function runUpdate(flags, io, environment = {}) {
         return 0;
     }
 
+    const freshDestinations = new Set(fresh.map((target) => target.destination));
     const stale = targets.filter((target) => flags.force === true || target.commit !== latest);
+    const staleDestinations = new Set(stale.map((target) => target.destination));
 
     for (const target of targets) {
-        const label = stale.includes(target) ? `${short(target.commit)} -> ${short(latest)}` : "up to date";
-        io.out(`${stale.includes(target) ? "outdated" : "current "} ${target.skill} at ${target.destination} (${label})`);
+        const isNew = freshDestinations.has(target.destination);
+        const isStale = staleDestinations.has(target.destination);
+        const label = isNew ? `new -> ${short(latest)}` : isStale ? `${short(target.commit)} -> ${short(latest)}` : "up to date";
+        io.out(`${isNew ? "new     " : isStale ? "outdated" : "current "} ${target.skill} at ${target.destination} (${label})`);
     }
 
     if (stale.length === 0) {
@@ -302,7 +379,18 @@ export async function runUpdate(flags, io, environment = {}) {
     }
 
     if (flags.check === true || flags["dry-run"] === true) {
-        io.out(`${stale.length} install(s) would be updated. Run \`node packages/cli update\` to apply.`);
+        const added = stale.filter((target) => freshDestinations.has(target.destination)).length;
+        const updated = stale.length - added;
+
+        if (updated > 0) {
+            io.out(`${updated} install(s) would be updated.`);
+        }
+
+        if (added > 0) {
+            io.out(`${added} new skill install(s) would be added.`);
+        }
+
+        io.out("Run `node packages/cli update` to apply.");
 
         return 0;
     }
@@ -318,7 +406,7 @@ export async function runUpdate(flags, io, environment = {}) {
     }
 
     const available = new Set(readdirSync(join(root, "skills")));
-    const removed = stale.filter((target) => !available.has(target.skill));
+    const removed = stale.filter((target) => !freshDestinations.has(target.destination) && !available.has(target.skill));
 
     for (const target of removed) {
         io.err(`Skill ${target.skill} does not exist on ${source.branch}; left ${target.destination} as it is.`);
@@ -350,7 +438,11 @@ export async function runUpdate(flags, io, environment = {}) {
         pruneSources(folder, latest);
     }
 
-    io.out(ok ? `Updated ${refresh.length} install(s) to ${short(latest)}.` : "Some installs failed; see the errors above.");
+    const added = refresh.filter((target) => freshDestinations.has(target.destination)).length;
+    const updated = refresh.length - added;
+    const summary = [updated > 0 ? `Updated ${updated} install(s)` : null, added > 0 ? `installed ${added} new install(s)` : null].filter(Boolean).join(" and ");
+
+    io.out(ok ? `${summary || "Nothing changed"} at ${short(latest)}.` : "Some installs failed; see the errors above.");
 
     return ok ? 0 : 1;
 }

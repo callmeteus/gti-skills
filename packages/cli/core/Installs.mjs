@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
  * @property {string} projectRoot Project root used for the project scope
  * @property {string | null} commit Commit the files came from, or null when unknown
  * @property {string} installedAt ISO timestamp
+ * @property {boolean} [full] Whether the folder holds at least one skill from every pack
  */
 
 /**
@@ -84,7 +85,7 @@ export function recordInstalls(folder, records) {
     for (const record of records) {
         const previous = byDestination.get(record.destination);
         const harnesses = new Set([...(previous?.harnesses ?? []), ...record.harnesses]);
-        byDestination.set(record.destination, { ...record, harnesses: [...harnesses].sort() });
+        byDestination.set(record.destination, { ...previous, ...record, harnesses: [...harnesses].sort() });
     }
 
     writeInstalls(folder, [...byDestination.values()]);

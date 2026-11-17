@@ -53,7 +53,7 @@ From this folder, replace `node packages/cli` with `node .`.
 | `build` | Sync shared scripts, regenerate the per-agent guides, and validate |
 | `check` | Exit 1 when synced or generated files are stale; writes nothing |
 | `install --harness <ids\|all>` | Install skills. Flags: `--skill <ids\|all>`, `--pack <ids\|all>`, `--scope project\|user`, `--dest <dir>`, `--dry-run`. Records each installed folder and its commit |
-| `update` | Reinstall outdated installs from the latest `master` commit. Flags: `--check`, `--dry-run`, `--force`, `--skip-build`, and the `install` selection flags |
+| `update` | Reinstall outdated installs from the latest `master` commit. `--install-new` also installs skills missing from a full install; a partial install stays as chosen. Flags: `--check`, `--dry-run`, `--force`, `--skip-build`, `--install-new`, `--no-install-new`, and the `install` selection flags |
 
 ## Environment
 

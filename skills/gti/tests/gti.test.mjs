@@ -9,7 +9,7 @@ import { gzipSync } from "node:zlib";
 import { listEntries, matchEntries, readConfig, setEntry } from "../scripts/core/agents.mjs";
 import { carryState, discoverMcps, syncFiles, venvPython } from "../scripts/core/mcps.mjs";
 import { ensureLatestSource, extractTarball } from "../scripts/core/source.mjs";
-import { runMcps } from "../scripts/gti.mjs";
+import { runMcps, skillsUpdate } from "../scripts/gti.mjs";
 
 function temp(t) {
     const dir = mkdtempSync(join(tmpdir(), "gti-"));
@@ -193,6 +193,22 @@ test("mcps install registers in the chosen agents and dry-run writes nothing", (
 
     assert.throws(() => runMcps({ mode: "install", names: ["nope"], source, home, userHome, io: quiet }), /Unknown MCP: nope/);
     assert.throws(() => runMcps({ mode: "install", names: ["kabum"], agents: "cline", source, home, userHome, io: quiet }), /Cannot register in cline/);
+});
+
+test("skills update asks the CLI for new skills by default and honors --no-install-new", () => {
+    const calls = [];
+    const run = (command, args) => {
+        calls.push(args);
+        return { status: 0 };
+    };
+    const source = { root: "C:/gti-skills", commit: "c".repeat(40) };
+
+    skillsUpdate(source, { passthrough: [] }, quiet, run);
+    assert.ok(calls[0].includes("--install-new"));
+
+    skillsUpdate(source, { passthrough: ["--no-install-new"] }, quiet, run);
+    assert.ok(!calls[1].includes("--install-new"));
+    assert.ok(calls[1].includes("--no-install-new"));
 });
 
 test("downloads the latest commit into the shared sources folder with the CLI's stamp", async (t) => {

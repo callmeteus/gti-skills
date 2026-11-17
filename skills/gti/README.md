@@ -4,7 +4,7 @@
 
 > One command keeps every gti-skills skill and MCP server current
 
-**Updates installed gti-skills skills in every agent from the latest GitHub commit, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at.**
+**Updates installed gti-skills skills in every agent from the latest GitHub commit, installs skills that are new in that commit, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Node.js](https://img.shields.io/badge/node-18%2B-blue.svg)](#requirements)
@@ -65,6 +65,7 @@ The skill bundles a small Node.js script. It downloads the latest commit into th
 ## Features
 
 - **One command:** `/gti update` updates skills and MCP servers; `/gti skills update` and `/gti mcps update` do one side; free text such as "atualiza pra mim" works too.
+- **New skills arrive automatically:** update also installs skills that are new in the latest commit for installs that use every pack; a partial install stays as chosen. Use `--no-install-new` to skip this.
 - **No clone needed:** the latest commit is downloaded from GitHub into the CLI's own sources folder and reused by both.
 - **Managed MCP copies:** each server lives in `~/.gti-skills/mcps/<name>/` with its own `.venv`; requirements are reinstalled only when they change, and the needed Chromium build is installed.
 - **State kept:** runtime files the servers write are never removed, and when an entry moves from an older copy its login state (for example Shopee cookies and browser profile) is carried over.
@@ -130,7 +131,7 @@ Each agent has a short guide in `skills/gti/harnesses/<id>/GUIDE.md` covering in
 /gti atualiza pra mim por favor
 ```
 
-The agent runs `gti.mjs update`: every installed gti-skills skill is updated to the latest commit, every gti-skills MCP server already in use is refreshed in `~/.gti-skills/mcps/`, agent entries are pointed there with a backup, and the agent tells you what changed and whether to restart or log in.
+The agent runs `gti.mjs update`: every installed gti-skills skill is updated to the latest commit, any skill that is new in that commit is installed for installs that use every pack, every gti-skills MCP server already in use is refreshed in `~/.gti-skills/mcps/`, agent entries are pointed there with a backup, and the agent tells you what changed and whether to restart or log in.
 
 ## Usage
 
@@ -149,7 +150,7 @@ The agent runs `gti.mjs update`: every installed gti-skills skill is updated to 
 /gti update
 ```
 
-Updates skills and the MCP servers already in use.
+Updates skills, installs new skills in the packs already in use, and updates the MCP servers already in use.
 
 ```text
 /gti skills update
@@ -181,7 +182,8 @@ Shows which skills are out of date and where each MCP server is registered.
   1. Source     GitHub API: latest commit on master
                 ──> ~/.gti-skills/sources/<commit-12>/ (download once, stamp file)
                     no network: fall back to the newest downloaded commit
-  2. Skills     node <source>/packages/cli update   (records, untracked installs, builds)
+  2. Skills     node <source>/packages/cli update --install-new
+                (records, untracked installs, missing skills, builds)
   3. MCPs       discover mcps/* and packages/python/*-mcp in the source
                 for each server already managed or registered:
                   copy files ──> carry login state from the old copy ──> .venv + pip + Chromium
@@ -206,7 +208,8 @@ node skills/gti/scripts/gti.mjs status
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `update` | - | `skills update`, then `mcps update` |
-| `skills update` | - | Runs the CLI `update` from the latest commit; other flags such as `--check` and `--force` are passed through |
+| `skills update` | - | Runs the CLI `update` from the latest commit with `--install-new`; other flags such as `--check` and `--force` are passed through |
+| `--no-install-new` | Off | Do not add skills that are missing from an install; the default does add them |
 | `mcps update` | - | Refreshes servers that are managed or registered in a supported agent |
 | `mcps install <names>` | - | Installs servers and registers them; names or `all` |
 | `mcps list` | - | Each server, whether it is managed, and every matching agent entry |
@@ -234,8 +237,9 @@ Agent config files written:
 
 ```text
 source   latest is 041d7fc (already downloaded)
-skills   node packages/cli update
-Everything is at 041d7fc.
+skills   node packages/cli update --install-new
+new      maestro at ~/.config/opencode/skills/maestro (new -> 041d7fc)
+Updated 1 install(s) and installed 1 new install(s) at 041d7fc.
 mcp      kabum: files installed, deps installed
            opencode:kabum repointed
 mcp      shopee: files installed, deps installed
@@ -297,6 +301,13 @@ The MCP servers need Python 3.10+. Install it (on Windows, from python.org with 
 </details>
 
 <details>
+<summary><strong>A new skill did not install</strong></summary>
+
+`update` adds skills that are new in the latest commit only for installs that use every pack. A partial install stays as you chose it, so a new skill needs one explicit `node packages/cli install --skill <id> --harness <ids>`, or a full install first. Run `/gti skills update --check` to see what would be added, and `/gti skills update --no-install-new` to turn the behavior off for one run.
+
+</details>
+
+<details>
 <summary><strong>A server stopped working after the update</strong></summary>
 
 Restore the backup next to the agent config (`<file>.gti-backup-<time>`), or run the server by hand with the command in `mcps list` to see its error. Servers that log in, such as Shopee, may need the one-time login shown in the output.
@@ -320,6 +331,8 @@ node skills/gti/scripts/gti.mjs mcps install kabum
 - Config files with comments (JSONC) are not edited; the output says which entry to change.
 - Entries are matched by name (`kabum`, `kabum-mcp`) or by a path through the server's folder; an entry with another name pointing elsewhere is not found.
 - The first MCP update downloads Chromium builds for the browser-based servers and can take several minutes.
+- New skills arrive automatically only for installs that use every pack. A partial install stays exactly as chosen; add a new skill with `node packages/cli install --skill <id> --harness <ids>` or complete the install with every pack first.
+- A skill deleted by hand from a full install can be installed again by the next update unless `--no-install-new` is used.
 
 ## License
 

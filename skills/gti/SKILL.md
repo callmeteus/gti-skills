@@ -41,7 +41,7 @@ In this skill:
 
 ## What it manages
 
-- **Skills:** every gti-skills skill installed in any of the ten supported agents, at user or project level. Updated by the gti-skills CLI from the latest commit on GitHub `master`.
+- **Skills:** every gti-skills skill installed in any of the ten supported agents, at user or project level. Updated by the gti-skills CLI from the latest commit on GitHub `master`. `update` also installs skills that are new in that commit for installs that use every pack; a partial install stays as the user chose it.
 - **MCP servers:** the servers in the gti-skills repository (`mcps/*` and `packages/python/*-mcp`). Each one gets a managed copy in `~/.gti-skills/mcps/<name>/` with its own `.venv`, and agent configs point at that copy.
 - **Source:** the latest commit is downloaded to `~/.gti-skills/sources/<commit>/`, the same place the CLI uses. No clone of the repository is needed.
 
@@ -64,7 +64,7 @@ Map the user's request to one command. Arguments after `/gti` are the request; f
 | `/gti mcps`, `/gti mcps list`, "which MCPs do I have" | `mcps list` |
 | `/gti mcps install kabum shopee`, "add the KaBuM MCP to Cursor" | `mcps install kabum shopee [--agents cursor]` |
 
-Flags: `--dry-run` shows the plan without changing anything; `--only kabum,zoom` limits `mcps update`; `--agents opencode,claude` (or `all`) chooses where `mcps install` registers; `--skip-deps` skips the Python install. `skills update` passes other flags to the CLI, for example `--check` or `--force`.
+Flags: `--dry-run` shows the plan without changing anything; `--only kabum,zoom` limits `mcps update`; `--agents opencode,claude` (or `all`) chooses where `mcps install` registers; `--skip-deps` skips the Python install; `--no-install-new` stops `update` from adding skills that are missing. `skills update` passes other flags to the CLI, for example `--check` or `--force`.
 
 ## How to run it
 
@@ -72,7 +72,7 @@ Flags: `--dry-run` shows the plan without changing anything; `--only kabum,zoom`
 2. **Confirm first for `mcps install`** when the user did not name the agents: say which agents will get which servers (by default every supported agent whose config file exists), then run it.
 3. **Let long steps finish.** The first MCP update creates virtual environments and may download a Chromium build for Shopee, Mercado Livre, and Twitter. Run it with a timeout of at least ten minutes, in the background if the agent supports that.
 4. **Read the output and report** in a few lines:
-   - skills: up to date, or how many were updated, and the commit;
+   - skills: up to date, or how many were updated and how many new skills were installed, and the commit;
    - each MCP: installed or updated, and which agent entries now point at the managed copy (`repointed` means an entry moved from an older copy);
    - backups written, by path;
    - anything the user must do: restart the agents that are open, and run the one-time login the output shows for an MCP that needs it (Shopee, Twitter) if it has never been logged in on this machine.

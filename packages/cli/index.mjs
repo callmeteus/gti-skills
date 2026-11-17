@@ -21,7 +21,7 @@ Commands:
           [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
   update                       Update installed skills to the latest commit on GitHub master
           [--check] [--dry-run] [--force] [--skip-build]
-          [--harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>]]
+          [--install-new | --no-install-new] [--harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>]]
 `;
 
 const Commands = {

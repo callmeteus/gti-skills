@@ -4,7 +4,7 @@
  *
  * Commands:
  *   status                              What is installed and what is out of date
- *   update [--dry-run]                  skills update, then mcps update
+ *   update [--dry-run]                  skills update, then mcps update; also installs new skills
  *   skills update [--check] [...flags]  Runs the gti-skills CLI `update` from the latest commit
  *   mcps list                           MCP servers in gti-skills and where each is registered
  *   mcps update [--only a,b] [--dry-run] [--skip-deps]
@@ -68,9 +68,10 @@ async function resolveSource(flags, io) {
     }
 }
 
-function skillsUpdate(source, flags, io, run = spawnSync) {
+export function skillsUpdate(source, flags, io, run = spawnSync) {
     const args = [join(source.root, "packages", "cli"), "update"];
     if (flags.check || flags.dryRun) args.push(flags.check ? "--check" : "--dry-run");
+    if (!flags.passthrough.includes("--install-new") && !flags.passthrough.includes("--no-install-new")) args.push("--install-new");
     args.push(...flags.passthrough);
     const env = { ...process.env, GTI_SKILLS_NO_UPDATE_CHECK: "1" };
     if (flags.home) env.GTI_SKILLS_HOME = flags.home;

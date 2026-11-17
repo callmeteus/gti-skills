@@ -29,6 +29,20 @@ function collect() {
 }
 
 /**
+ * Writes a full-install record for one skill folder, as an install that selected every pack would.
+ *
+ * @param {string} project Project root
+ * @param {string} stateDir State folder
+ * @param {string} skill Skill id
+ */
+function seedFull(project, stateDir, skill = "better-tests") {
+    const destination = join(project, ".claude", "skills", skill);
+    mkdirSync(destination, { recursive: true });
+    writeFileSync(join(destination, "SKILL.md"), "old\n");
+    recordInstalls(stateDir, [{ destination, skill, harnesses: ["claude"], scope: "project", projectRoot: project, commit: "b".repeat(40), installedAt: "", full: true }]);
+}
+
+/**
  * Builds one tar header block.
  *
  * @param {string} name Entry name (at most 100 bytes)
@@ -78,14 +92,15 @@ function makeTarball(files) {
 }
 
 /**
- * Packs the CLI and one skill from this checkout, as a stand-in for the GitHub tarball.
+ * Packs the CLI and the requested skills from this checkout, as a stand-in for the GitHub tarball.
  *
+ * @param {string[]} [skillIds] Skill folders to include
  * @returns {Buffer} Gzipped tarball
  */
-function repoTarball() {
+function repoTarball(skillIds = ["better-tests"]) {
     const files = new Map();
 
-    for (const folder of ["packages/cli", "skills/better-tests"]) {
+    for (const folder of ["packages/cli", ...skillIds.map((id) => `skills/${id}`)]) {
         for (const [path, content] of readTree(join(RepoRoot, ...folder.split("/")), (relative) => relative === "tests")) {
             files.set(`${folder}/${path}`, content);
         }
@@ -192,6 +207,58 @@ describe("update", () => {
         assert.equal(await runUpdate(flags, io, { cwd: project, home, stateDir, fetch: fakeGitHub(repoTarball()).fetch }), 0, io.errors.join("\n"));
         assert.ok(existsSync(join(project, ".cursor", "skills", "better-tests", "SKILL.md")));
         assert.equal(readInstalls(stateDir)[0].commit, Latest);
+    });
+
+    it("installs skills that are new in the latest commit when --install-new is set", async () => {
+        const project = mkdtempSync(join(tmpdir(), "gti-install-"));
+        const home = mkdtempSync(join(tmpdir(), "gti-home-"));
+        const stateDir = mkdtempSync(join(tmpdir(), "gti-state-"));
+        seedFull(project, stateDir);
+
+        const github = fakeGitHub(repoTarball(["better-tests", "maestro"]));
+        const check = collect();
+        assert.equal(await runUpdate({ check: true, "install-new": true }, check, { cwd: project, home, stateDir, fetch: github.fetch }), 0);
+        assert.ok(check.lines.some((line) => line.startsWith("new      maestro")), check.lines.join("\n"));
+        assert.ok(check.lines.some((line) => line.includes("new skill install(s) would be added")));
+        assert.ok(!github.calls.some((url) => url.includes("/tarball/")), "--check downloads nothing");
+
+        const io = collect();
+        assert.equal(await runUpdate({ "install-new": true }, io, { cwd: project, home, stateDir, fetch: github.fetch }), 0, io.errors.join("\n"));
+        assert.ok(existsSync(join(project, ".claude", "skills", "maestro", "SKILL.md")));
+        assert.equal(readInstalls(stateDir).find((record) => record.skill === "maestro").commit, Latest);
+    });
+
+    it("installs a new pack when the recorded install was full", async () => {
+        const project = mkdtempSync(join(tmpdir(), "gti-install-"));
+        const home = mkdtempSync(join(tmpdir(), "gti-home-"));
+        const stateDir = mkdtempSync(join(tmpdir(), "gti-state-"));
+        seedFull(project, stateDir);
+
+        const io = collect();
+        assert.equal(await runUpdate({ "install-new": true }, io, { cwd: project, home, stateDir, fetch: fakeGitHub(repoTarball(["better-tests", "ux-psychology-review"])).fetch }), 0, io.errors.join("\n"));
+        assert.ok(existsSync(join(project, ".claude", "skills", "ux-psychology-review", "SKILL.md")));
+    });
+
+    it("leaves a partial install unchanged even with --install-new", async () => {
+        const project = mkdtempSync(join(tmpdir(), "gti-install-"));
+        const home = mkdtempSync(join(tmpdir(), "gti-home-"));
+        const stateDir = mkdtempSync(join(tmpdir(), "gti-state-"));
+        assert.equal(runInstall({ harness: "claude", skill: "better-tests" }, collect(), { cwd: project, home, stateDir }), 0);
+
+        const io = collect();
+        assert.equal(await runUpdate({ "install-new": true }, io, { cwd: project, home, stateDir, fetch: fakeGitHub(repoTarball(["better-tests", "maestro"])).fetch }), 0, io.errors.join("\n"));
+        assert.ok(!existsSync(join(project, ".claude", "skills", "maestro")));
+    });
+
+    it("leaves a full install alone without --install-new", async () => {
+        const project = mkdtempSync(join(tmpdir(), "gti-install-"));
+        const home = mkdtempSync(join(tmpdir(), "gti-home-"));
+        const stateDir = mkdtempSync(join(tmpdir(), "gti-state-"));
+        seedFull(project, stateDir);
+
+        const io = collect();
+        assert.equal(await runUpdate({}, io, { cwd: project, home, stateDir, fetch: fakeGitHub(repoTarball(["better-tests", "maestro"])).fetch }), 0, io.errors.join("\n"));
+        assert.ok(!existsSync(join(project, ".claude", "skills", "maestro")));
     });
 
     it("fails cleanly when GitHub cannot be reached", async () => {

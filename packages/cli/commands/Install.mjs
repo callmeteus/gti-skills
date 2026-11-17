@@ -1,6 +1,6 @@
-import { chmodSync } from "node:fs";
+import { chmodSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 import { recordInstalls, stateFolder } from "../core/Installs.mjs";
 import { loadPacks, selectSkills } from "../core/Packs.mjs";
@@ -26,6 +26,57 @@ function markExecutables(files, destination) {
             } catch {
                 // Windows file systems have no executable bit.
             }
+        }
+    }
+}
+
+/**
+ * Marks whether each install folder now holds at least one skill from every pack. `update` uses it
+ * to decide whether a new skill or pack should reach that folder.
+ *
+ * @param {Map<string, import("../core/Installs.mjs").InstallRecord>} records Installed records
+ * @param {import("../core/Skills.mjs").Skill[]} skills Every skill in the source
+ */
+function markFull(records, skills) {
+    const packIds = new Set(skills.flatMap((skill) => skill.packs));
+
+    if (packIds.size === 0) {
+        return;
+    }
+
+    const byFolder = new Map();
+
+    for (const record of records.values()) {
+        const folder = dirname(record.destination);
+        const list = byFolder.get(folder) ?? [];
+        list.push(record);
+        byFolder.set(folder, list);
+    }
+
+    for (const [folder, list] of byFolder) {
+        let entries = [];
+
+        try {
+            entries = readdirSync(folder, { withFileTypes: true });
+        } catch {
+            entries = [];
+        }
+
+        const ids = new Set(entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name));
+        const installedPacks = new Set();
+
+        for (const skill of skills) {
+            if (ids.has(skill.id)) {
+                for (const pack of skill.packs) {
+                    installedPacks.add(pack);
+                }
+            }
+        }
+
+        const full = [...packIds].every((id) => installedPacks.has(id));
+
+        for (const record of list) {
+            record.full = full;
         }
     }
 }
@@ -62,10 +113,11 @@ export function runInstall(flags, io, environment = {}) {
 
     const harnesses = loadHarnesses();
     const skills = discoverSkills();
+    const packs = loadPacks();
     let selectedSkills;
 
     try {
-        selectedSkills = selectSkills(skills, loadPacks(), flags);
+        selectedSkills = selectSkills(skills, packs, flags);
     } catch (error) {
         io.err(error.message);
 
@@ -139,6 +191,7 @@ export function runInstall(flags, io, environment = {}) {
     }
 
     if (!dryRun) {
+        markFull(records, skills);
         recordInstalls(stateFolder({ home, stateDir: environment.stateDir }), [...records.values()]);
     }
 
