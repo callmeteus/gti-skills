@@ -95,6 +95,7 @@ Skills are grouped into packs so users can install a whole area at once with `--
 | Id | Holds |
 |----|-------|
 | `coding` | Writing, testing, reviewing, and auditing code |
+| `infra` | Infrastructure as code, cloud accounts, and observability as code |
 | `design` | Interface design, design reviews, and UX |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media |
 | `social` | Social media research, monitoring, and content |
@@ -180,6 +181,7 @@ Current skills:
 | `improve-codebase-architecture` | Improve Codebase Architecture |
 | `security-audit` | Security Audit |
 | `untangle-codebase` | Untangle Codebase |
+| `infra-expert` | Infra Expert |
 | `gti` | GTI |
 | `maestro` | Maestro |
 | `gestures` | Gestures |

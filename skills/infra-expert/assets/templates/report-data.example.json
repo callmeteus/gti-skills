@@ -1,0 +1,115 @@
+{
+  "lang": "en",
+  "repo": "acme-infra",
+  "area": "terraform",
+  "date": "2026-01-15",
+  "scope": "Reviewed the Terraform under `infra/terraform` (24 folders), where most recent changes happen. The Grafana and Kubernetes folders were not reviewed.",
+  "scan": [
+    { "finding": "Resource blocks copied across services", "count": 9, "example": "`services/api/main.tf:40` and 5 more hosts" },
+    { "finding": "VPC ID typed in tfvars files", "count": 11, "example": "`services/api/terraform.tfvars`" },
+    { "finding": "Security groups mixing inline and separate rules", "count": 4, "example": "`network/groups.tf:118`" },
+    { "finding": "Roots that only call `modules/proxy`", "count": 5, "example": "`services/docs-site`" }
+  ],
+  "hotspots": {
+    "note": "Changes in the last 300 commits.",
+    "folders": [
+      { "path": "infra/terraform/services", "changes": 87 },
+      { "path": "infra/terraform/network", "changes": 31 },
+      { "path": "infra/terraform/modules", "changes": 12 }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "vm-host-base",
+      "title": "Create `modules/vm-host` and move the 6 hosts onto it",
+      "strength": "strong",
+      "effort": "medium",
+      "layer": "compute",
+      "risk": "state-move",
+      "files": [
+        "infra/terraform/services/api/main.tf",
+        "infra/terraform/services/worker/main.tf",
+        "infra/terraform/services/registry/main.tf",
+        "infra/terraform/services/ci/main.tf",
+        "infra/terraform/services/vault/main.tf",
+        "infra/terraform/services/docs/main.tf"
+      ],
+      "problem": "6 services repeat about 70 lines each: instance, Elastic IP, association, security group, and tags. The KMS key ARN is typed 7 times, and 2 hosts forgot `http_tokens = \"required\"`.",
+      "change": "Create a `vm-host` base that owns those resources with the shared defaults, and move each host onto it with `moved` blocks so nothing is recreated.",
+      "gains": [
+        "A new host is one 15-line module call instead of 70 lines in 3 files",
+        "The KMS key and metadata settings are set in 1 place instead of 6",
+        "The 2 hosts without required IMDSv2 tokens get it from the base default",
+        "Each plan shows only moves: 0 to add, 0 to change, 0 to destroy"
+      ],
+      "before": {
+        "mermaid": "flowchart LR\n  A[services/api] --> I1[aws_instance + eip + sg]\n  W[services/worker] --> I2[aws_instance + eip + sg]\n  R[services/registry] --> I3[aws_instance + eip + sg]\n  K[KMS ARN typed 7x]\n  I1 -.-> K\n  I2 -.-> K\n  I3 -.-> K\n  classDef problem stroke:#c62828,stroke-width:2px\n  class I1,I2,I3,K problem",
+        "caption": "Three of the six hosts shown; each copies the same blocks."
+      },
+      "after": {
+        "mermaid": "flowchart LR\n  A[services/api] --> B[modules/vm-host]\n  W[services/worker] --> B\n  R[services/registry] --> B\n  B --> K[data aws_kms_alias]\n  classDef merged stroke:#16794a,stroke-width:3px\n  class B merged",
+        "caption": "Each host calls the base with its size and name."
+      },
+      "verify": "The plan of each of the 6 services shows only moved resources.",
+      "warning": "The `worker` host uses `cpu_credits = \"standard\"` while the others use `unlimited`; decide in step 5 whether that is on purpose."
+    },
+    {
+      "id": "vpc-lookup",
+      "title": "Look up the VPC and subnets by tag instead of typing their IDs in 11 tfvars files",
+      "strength": "strong",
+      "effort": "small",
+      "layer": "network",
+      "risk": "code-only",
+      "files": [
+        "infra/terraform/services/*/terraform.tfvars",
+        "infra/terraform/modules/lookups/main.tf"
+      ],
+      "problem": "The VPC ID is typed in 11 files and the main subnet ID in 7. Recreating the VPC, or adding a second environment, means editing all of them.",
+      "change": "Add a `lookups` helper that finds the VPC and subnets by their `Name` tag and outputs the IDs; services read it instead of a variable.",
+      "gains": [
+        "The VPC ID lives in 0 files; the tag lives in 1 helper",
+        "A new service no longer copies network IDs into its tfvars",
+        "Plans show no changes, because the lookup returns the same IDs"
+      ],
+      "before": {
+        "mermaid": "flowchart LR\n  A[api tfvars] --> V[vpc-0123...]\n  W[worker tfvars] --> V\n  R[registry tfvars] --> V\n  classDef problem stroke:#c62828,stroke-width:2px\n  class A,W,R problem"
+      },
+      "after": {
+        "mermaid": "flowchart LR\n  A[services/api] --> L[modules/lookups]\n  W[services/worker] --> L\n  R[services/registry] --> L\n  L --> V[data aws_vpc by tag]\n  classDef merged stroke:#16794a,stroke-width:3px\n  class L merged"
+      }
+    },
+    {
+      "id": "proxy-publications",
+      "title": "Merge the 5 roots that each hold one `modules/proxy` call into one root with a `for_each` map",
+      "strength": "worth-exploring",
+      "effort": "small",
+      "layer": "network",
+      "risk": "state-move",
+      "files": [
+        "infra/terraform/services/docs-site",
+        "infra/terraform/services/admin",
+        "infra/terraform/services/status",
+        "infra/terraform/services/blog",
+        "infra/terraform/services/wiki"
+      ],
+      "problem": "5 roots exist only to call `modules/proxy` once. Each has its own `versions.tf`, backend, and CI entry: 5 folders and 5 plans for 5 map entries.",
+      "change": "Create one `services/publications` root with a map of publications, and move each one into it with `removed` blocks in the old roots and `import` blocks in the new one.",
+      "gains": [
+        "A new publication is one map entry instead of a new folder with 3 files",
+        "CI plans 1 root instead of 5",
+        "Removes 4 copies of the provider and backend blocks"
+      ],
+      "before": {
+        "mermaid": "flowchart TB\n  D[services/docs-site] --> P[modules/proxy]\n  A[services/admin] --> P\n  S[services/status] --> P\n  B[services/blog] --> P\n  classDef problem stroke:#c62828,stroke-width:2px\n  class D,A,S,B problem"
+      },
+      "after": {
+        "mermaid": "flowchart TB\n  U[services/publications\\nfor_each map] --> P[modules/proxy]\n  classDef merged stroke:#16794a,stroke-width:3px\n  class U merged"
+      },
+      "verify": "The old roots' plans show only removals from state, and the new root's plan shows only imports."
+    }
+  ],
+  "top": {
+    "id": "vpc-lookup",
+    "why": "It changes nothing running, takes an hour, and makes the `vm-host` base simpler, because the base can use the lookup from the start."
+  }
+}

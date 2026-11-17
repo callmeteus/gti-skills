@@ -6,6 +6,11 @@
             "description": "Writing, testing, reviewing, and auditing code"
         },
         {
+            "id": "infra",
+            "name": "Infrastructure",
+            "description": "Infrastructure as code, cloud accounts, and observability as code"
+        },
+        {
             "id": "design",
             "name": "Design",
             "description": "Interface design, design reviews, and UX"

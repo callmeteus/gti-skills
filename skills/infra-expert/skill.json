@@ -1,0 +1,8 @@
+{
+    "id": "infra-expert",
+    "displayName": "Infra Expert",
+    "packs": [
+        "infra",
+        "coding"
+    ]
+}

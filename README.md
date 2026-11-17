@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-16-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-17-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -68,6 +68,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Weight Space Programming** | coding, research | Reads, fixes, and writes neural network weights by reasoning about what each layer computes, with no training: infers a checkpoint's task, removes failure directions with minimal edits, and hand-builds small networks, under a forward-pass budget and held-out evaluation. | Python 3.9+, numpy; PyTorch optional | [README](skills/weight-space-programming/README.md) |
 | **Improve Codebase Architecture** | coding | Finds refactors that make a codebase easier to change and test, starting where git history shows the most change, and presents them in an HTML report with before and after diagrams written in everyday coding terms. Adapted from Matt Pocock's skill. | Git, Python 3.8+ | [README](skills/improve-codebase-architecture/README.md) |
 | **Untangle Codebase** | coding | Runs one long refactor of a whole codebase or area: lists every hidden link, needless link, surplus piece, and special case, redesigns from today's requirements, and fixes everything one verified commit at a time, with an import graph, co-change history, a code skeleton, and a special-case count to measure progress. Adapted from Caldo's skill. | Git, Python 3.8+, a test command | [README](skills/untangle-codebase/README.md) |
+| **Infra Expert** | infra, coding | Reviews infrastructure in version control (Terraform or OpenTofu, Grafana as code, Kubernetes, Compose, CI) and the AWS account behind it: sorts every piece into helpers, bases, services, temporary services, and layers, finds copies, hardcoded IDs, split ownership, and leftovers with read-only scans, reports three to six candidates with a risk class, and makes the chosen one in code with `moved`, `import`, and `removed` blocks. Areas: general, terraform, aws, grafana, other stacks. | Git, Python 3.8+; AWS CLI v2 for the aws area | [README](skills/infra-expert/README.md) |
 
 ### Packs
 
@@ -75,7 +76,8 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Maestro, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Maestro, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `infra` | Infrastructure as code, cloud accounts, and observability as code | Infra Expert |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
@@ -249,6 +251,7 @@ Notes:
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
 | Maestro | No | No | No | Optional: remote MCP servers such as OpenAgents; worker commands use the host's own tools |
 | Untangle Codebase | No | 3.8+ | No | No |
+| Infra Expert | No | 3.8+ | No | AWS APIs through the AWS CLI in the aws area, read-only; Mermaid from jsDelivr when viewing the report |
 
 | Platform | Status |
 |----------|--------|
@@ -377,6 +380,7 @@ gti-skills/
 │   ├── gestures/
 │   ├── gti/
 │   ├── improve-codebase-architecture/
+│   ├── infra-expert/
 │   ├── maestro/
 │   ├── security-audit/
 │   ├── untangle-codebase/
@@ -460,6 +464,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
 | [skills/maestro/README.md](skills/maestro/README.md) | Orchestrating tasks across cheap workers with review gates and reusable chats |
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
+| [skills/infra-expert/README.md](skills/infra-expert/README.md) | Reviewing and untangling infrastructure code and AWS accounts |
 
 ## About GTI
 
@@ -486,6 +491,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
 | Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project |
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
+| Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
