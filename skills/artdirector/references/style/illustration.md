@@ -5,7 +5,7 @@ Drawn objects and characters are where agent-made artwork looks cheapest. A wobb
 ## Choose the source, in this order
 
 1. **The user's own asset.** A mascot, character, logo, or product photo belongs to the brand. Ask for the file. Never redraw a brand mascot from memory or from a description.
-2. **A licensed vector or photo.** Search openly licensed sets that fit the theme: Fluent Emoji (MIT), Noto Emoji (Apache 2.0), OpenMoji (CC BY-SA 4.0, credit required), Twemoji graphics (CC BY 4.0, credit required), OpenClipArt and Wikimedia Commons public-domain files, Tabler or Lucide for icons, or a photo through [photo.md](photo.md). Download, inline, recolor to the palette, and record source and license in `.artdirector/assets.json`.
+2. **A licensed vector or photo.** Search openly licensed sets that fit the theme: Fluent Emoji (MIT), Noto Emoji (Apache 2.0), OpenMoji (CC BY-SA 4.0, credit required), Twemoji graphics (CC BY 4.0, credit required), OpenClipArt and Wikimedia Commons public-domain files, Tabler or Lucide for icons, or a photo through [photo.md](photo.md). Download, inline, recolor to the palette, and record source and license in `assets.json` inside `scope.stateDir`.
 3. **Type as the image.** A monumental word, a symbol glyph, or a big "?" often carries a teaser better than a drawing. See [typography.md](typography.md).
 4. **A geometric object you construct.** Only simple objects: buildings, boxes, tickets, cards, signs, phones, calendars, arrows, badges. Follow the construction rules below.
 

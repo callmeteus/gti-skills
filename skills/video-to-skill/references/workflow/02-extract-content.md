@@ -1,21 +1,21 @@
 # Step 2: Extract content
 
-Work in a temporary folder outside the skill, for example `./work`. All commands below run from the skill folder; replace `<skill-dir>` with its path.
+Work in `~/.gti/video-to-skill/<video-id>/work` (`$GTI_HOME` replaces `~/.gti`), outside the skill and never in the user's project. All commands below run from the skill folder; replace `<skill-dir>` with its path.
 
 ## 1. Metadata and chapters
 
 ```bash
-python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ./work --mode metadata
+python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ~/.gti/video-to-skill/<video-id>/work --mode metadata
 ```
 
-Writes `work/metadata.json` with title, channel, duration, and chapters. Chapters are free structure: use them to split the analysis.
+Writes `~/.gti/video-to-skill/<video-id>/work/metadata.json` with title, channel, duration, and chapters. Chapters are free structure: use them to split the analysis.
 
 ## 2. Transcript
 
 With captions (most YouTube videos):
 
 ```bash
-python3 <skill-dir>/scripts/transcript/get_transcript.py "<url>" --lang en --format json --out ./work/transcript.json
+python3 <skill-dir>/scripts/transcript/get_transcript.py "<url>" --lang en --format json --out ~/.gti/video-to-skill/<video-id>/work/transcript.json
 ```
 
 - `--list` shows the available caption tracks.
@@ -26,8 +26,8 @@ Without captions:
 
 ```bash
 python3 <skill-dir>/scripts/setup/check_dependencies.py --install --with-whisper
-python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ./work --mode audio
-python3 <skill-dir>/scripts/transcript/transcribe_audio.py ./work/audio.m4a --out ./work/transcript.json
+python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ~/.gti/video-to-skill/<video-id>/work --mode audio
+python3 <skill-dir>/scripts/transcript/transcribe_audio.py ~/.gti/video-to-skill/<video-id>/work/audio.m4a --out ~/.gti/video-to-skill/<video-id>/work/transcript.json
 ```
 
 Local files skip the download: pass the file to `transcribe_audio.py` directly.
@@ -43,7 +43,7 @@ X has no captions to fetch: `get_transcript.py` always exits with `2` for a post
 Download the video once (a local file needs no download):
 
 ```bash
-python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ./work --mode video --height 720
+python3 <skill-dir>/scripts/download/download_video.py "<url>" --out ~/.gti/video-to-skill/<video-id>/work --mode video --height 720
 ```
 
 Then extract frames. Pick the mode by video type:
@@ -56,10 +56,10 @@ Then extract frames. Pick the mode by video type:
 | Short clip under 3 minutes | `--mode interval --interval 5` |
 
 ```bash
-python3 <skill-dir>/scripts/frames/extract_frames.py ./work/video.mp4 --out ./work/frames --mode scene --max 40
+python3 <skill-dir>/scripts/frames/extract_frames.py ~/.gti/video-to-skill/<video-id>/work/video.mp4 --out ~/.gti/video-to-skill/<video-id>/work/frames --mode scene --max 40
 ```
 
-`work/frames/manifest.json` maps every frame to its time, so a frame can be matched to the transcript line spoken at that moment.
+`~/.gti/video-to-skill/<video-id>/work/frames/manifest.json` maps every frame to its time, so a frame can be matched to the transcript line spoken at that moment.
 
 ## 4. Read the frames
 

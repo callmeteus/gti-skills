@@ -330,6 +330,10 @@ In this skill:
 
 - ...
 
+## Output Location
+
+Everything this skill generates goes to `~/.gti/my-skill/<project>/` (`GTI_HOME` replaces `~/.gti`), never into the user's repository.
+
 ## When to use
 ...
 ```
@@ -350,6 +354,7 @@ Every skill in this repository must follow these rules. The full contract lives 
 |------|-------------|
 | **Language rule** | `SKILL.md` instructs the agent to respond in the user's language, regardless of the language of the skill or the analyzed content. Non-negotiable. |
 | **Autonomous Mode** | `SKILL.md` has a `## Autonomous Mode` section: what the skill does when the user says to work alone, and each place it would otherwise stop, ask, or open something. Checked by `node packages/cli validate`. |
+| **Output Location** | `SKILL.md` has a `## Output Location` section: everything the skill generates goes to `~/.gti/<skill-id>/` (`GTI_HOME` replaces `~/.gti`), never into the user's repository. Checked by `node packages/cli validate`. |
 | **English source** | Skill files, references, and READMEs are written in English. |
 | **Single purpose** | One skill, one job. Split broad skills instead of growing them. |
 | **Pack** | `skill.json` lists at least one pack from `packages/cli/registry/packs.json` in `packs`. |
@@ -420,6 +425,7 @@ Pull request checklist:
 - [ ] `SKILL.md` has `name` and `description` frontmatter, and `name` equals the folder name
 - [ ] `SKILL.md` includes the language Core Rule
 - [ ] `SKILL.md` includes the `## Autonomous Mode` section
+- [ ] `SKILL.md` includes the `## Output Location` section, and the skill writes nothing generated into the user's repository
 - [ ] All files are in English
 - [ ] `node packages/cli check` and `npm test` pass
 - [ ] README follows the [skill README template](AGENTS.md#skill-readme-template): same header, badges, and section order

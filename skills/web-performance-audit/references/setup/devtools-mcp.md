@@ -64,7 +64,7 @@ Almost every tool takes a `pageId`. Get it from `list_pages`, or from `new_page`
 When the MCP server cannot be installed, offer the Lighthouse CLI. It downloads a package, so ask first. It gives lab metrics and audits but no interactive insight drill-down.
 
 ```bash
-npx lighthouse https://example.com --only-categories=performance --output=json --output-path=./lighthouse.json --chrome-flags="--headless=new"
+npx lighthouse https://example.com --only-categories=performance --output=json --output-path=~/.gti/web-performance-audit/<project>/lighthouse.json --chrome-flags="--headless=new"
 ```
 
 Read `audits` in the JSON for the metrics (`largest-contentful-paint`, `cumulative-layout-shift`, `total-blocking-time`, `speed-index`, `first-contentful-paint`, `server-response-time`) and the opportunities with their savings. Say in the report that the fallback was used.

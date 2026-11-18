@@ -211,7 +211,7 @@ node skills/unslop-interface/scripts/lintapple/run.mjs http://localhost:3000 --p
 | `--config` | Project policy, else the default | Policy file adapted to the design system |
 | `--ready` | None | Selector that is visible when the page is ready |
 | `--interactions` | None | lintapple interaction plan for menus, dialogs, and other states |
-| `--out` | OS temp folder | Where to save the full JSON report |
+| `--out` | `~/.gti/lintapple/<project>/` | Where to save the full JSON report |
 | `--top` | `15` | Problem groups printed in the summary |
 | `--write-policy FILE` | - | Writes the default policy to adapt |
 | `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
@@ -316,7 +316,7 @@ cd packages/lintapple && npx playwright install chromium
 The default policy expects Apple system fonts and a fixed type scale. Write it out, set `fonts`, `fontSizes`, and `typeRules` to the project's design system, and pass it with `--config`:
 
 ```bash
-node skills/unslop-interface/scripts/lintapple/run.mjs --write-policy /tmp/ui-policy.json
+node skills/unslop-interface/scripts/lintapple/run.mjs --write-policy ~/.gti/lintapple/<project>/ui-policy.json
 ```
 
 </details>

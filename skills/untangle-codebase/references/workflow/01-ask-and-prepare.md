@@ -13,7 +13,6 @@ Ask everything in one message, then wait for the answer. Do not start mapping be
 
 2. **Scope.** The whole repository, or the area the user named. In a monorepo, name the packages you will touch.
 3. **Public surfaces.** Confirm which surfaces other code or people depend on and must not change shape without approval: published package exports, HTTP or RPC APIs, CLI flags and output, database schemas and migrations, file and wire formats, environment variables, configuration keys. Propose a list from what you see; the user corrects it. See `references/quality/guardrails.md`.
-4. **Decision log.** Whether `.untangle/` should be committed (useful for review and later runs) or added to `.gitignore`.
 
 If the user already answered any of these in the request, do not ask again.
 
@@ -27,9 +26,9 @@ If the user already answered any of these in the request, do not ask again.
 4. **Baseline measurements.** From the project root:
 
    ```bash
-   python3 <skill-dir>/scripts/measure/special_cases.py . --save .untangle/baseline.json
-   python3 <skill-dir>/scripts/map/deps.py . --json > .untangle/deps-before.json
+   python3 <skill-dir>/scripts/measure/special_cases.py . --save ~/.gti/untangle-codebase/<project>/baseline.json
+   python3 <skill-dir>/scripts/map/deps.py . --json > ~/.gti/untangle-codebase/<project>/deps-before.json
    ```
 
    Use `python` or `py -3` on Windows. Note the special-case total, cycle count, and volatile-import count in the log.
-5. **Start the log.** Copy `assets/templates/decision-log.md` to `.untangle/decision-log.md` and fill in the header: scope, chosen additions, public surfaces, base commit, baseline commands and results, baseline measurements.
+5. **Start the log.** Copy `assets/templates/decision-log.md` to `~/.gti/untangle-codebase/<project>/decision-log.md` and fill in the header: scope, chosen additions, public surfaces, base commit, baseline commands and results, baseline measurements.

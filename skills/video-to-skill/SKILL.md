@@ -31,6 +31,10 @@ In this skill:
 
 - The video is still required; without one, say so and stop. Infer the skill name, purpose, and triggers from the video's title, description, and content, target every agent, and state these choices at the top of the report.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/video-to-skill/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Downloads, transcripts, and frames go to `~/.gti/video-to-skill/<video-id>/work`, and the new skill to `~/.gti/video-to-skill/skills/<name>/` unless the user names a folder.
+
 ## When to use
 
 - The user shares a tutorial, demo, screencast, or talk and wants an agent skill built from it.

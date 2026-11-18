@@ -245,8 +245,8 @@ python3 scripts/edit/diff_weights.py model.safetensors edited.safetensors
 ### mlp.py
 
 ```bash
-python3 scripts/build/mlp.py init --sizes 600,32,32,6 --activations tanh,tanh,none --out policy.npz
-python3 scripts/build/mlp.py forward --weights policy.npz --inputs x.npy --out y.npy --ledger wsp-ledger.json
+python3 scripts/build/mlp.py init --sizes 600,32,32,6 --activations tanh,tanh,none --out ~/.gti/weight-space-programming/<project>/policy.npz
+python3 scripts/build/mlp.py forward --weights ~/.gti/weight-space-programming/<project>/policy.npz --inputs x.npy --out ~/.gti/weight-space-programming/<project>/y.npy --ledger ~/.gti/weight-space-programming/<project>/wsp-ledger.json
 ```
 
 | Command | Purpose | Key flags |
@@ -257,8 +257,8 @@ python3 scripts/build/mlp.py forward --weights policy.npz --inputs x.npy --out y
 ### ledger.py
 
 ```bash
-python3 scripts/budget/ledger.py --ledger wsp-ledger.json init --mode fix --budget 50 --goal "car reaches the goal"
-python3 scripts/budget/ledger.py --ledger wsp-ledger.json status
+python3 scripts/budget/ledger.py init --mode fix --budget 50 --goal "car reaches the goal"
+python3 scripts/budget/ledger.py status
 ```
 
 | Command | Purpose | Key flags |
@@ -269,7 +269,7 @@ python3 scripts/budget/ledger.py --ledger wsp-ledger.json status
 | `note` | Record an observation or hypothesis | `text` |
 | `status` | Print the budget and log | None |
 
-The global flag `--ledger` (default `wsp-ledger.json`) goes before the command.
+The global flag `--ledger` (default `~/.gti/weight-space-programming/<project>/wsp-ledger.json`) goes before the command.
 
 ### Reference files
 

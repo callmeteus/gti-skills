@@ -39,6 +39,10 @@ In this skill:
 
 - Write the contract from the request with conservative defaults (the smallest forward-pass budget that fits the task) and state them. Never use the held-out evaluation data before the final evaluation.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/weight-space-programming/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The ledger, built or edited checkpoints, evaluation outputs, and the report go to `~/.gti/weight-space-programming/<project>/`. The construction script is source code and stays where the user keeps their code.
+
 ## When to use
 
 - **Read:** the user hands over a checkpoint and asks what it does, what it was trained on, which heads or units do what, or which of two models has a behavior.
@@ -78,7 +82,7 @@ Every mode starts with the contract and ends with evaluation and a report. Read 
 Write down the architecture, I/O layout, goal, allowed tools, forbidden actions, forward-pass budget, practice data, and held-out evaluation, then create the ledger. If any of these is missing, ask. See [references/workflow/01-contract.md](references/workflow/01-contract.md).
 
 ```bash
-python3 <skill-dir>/scripts/budget/ledger.py --ledger wsp-ledger.json init --mode fix --budget 50 --goal "car reaches the goal"
+python3 <skill-dir>/scripts/budget/ledger.py init --mode fix --budget 50 --goal "car reaches the goal"
 ```
 
 ### Step 2: inventory the weights

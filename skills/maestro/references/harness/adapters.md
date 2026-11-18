@@ -87,7 +87,7 @@ The JSON result contains the agent id. Record it.
 Reuse:
 
 ```bash
-paseo send <agentId> --prompt-file .maestro/tasks/w2.1/review-prompt.md
+paseo send <agentId> --prompt-file ~/.gti/maestro/<project>/tasks/w2.1/review-prompt.md
 ```
 
 Discover ids with `paseo ls --json`. Use `--host` for a remote daemon, and `--workspace` or `--new-workspace worktree` for isolation.
@@ -269,7 +269,7 @@ command-code -p -r <worker-id> "<review or fix>"
 
 or `command-code -p --session <id> "<review>"`. `--list-models` lists models, `--max-turns` caps the run, `--permission-mode` and `--worktree` control the environment, and `--skill <path>` loads extra skills.
 
-If only the `agent` tool is available, use it and record `resumable: false`. Make the worker write its full output contract and diff to `.maestro/tasks/<id>/result.md` so a fresh reviewer can read it.
+If only the `agent` tool is available, use it and record `resumable: false`. Make the worker write its full output contract and diff to `~/.gti/maestro/<project>/tasks/<id>/result.md` so a fresh reviewer can read it.
 
 ## Pi
 
@@ -419,7 +419,7 @@ If the harness cannot select a model, record `default`. Do not pretend a tier wa
 - A quota or daily limit sets a longer cooldown, until the reset when the provider reports it.
 - A free tier is a separate model entry, not an unlimited version of the paid model.
 - Use `paseo usage ls --json` when the provider reports account quotas.
-- Record `health`, `cooldownUntil`, and `lastError` in `~/.maestro/providers.json`.
+- Record `health`, `cooldownUntil`, and `lastError` in `~/.gti/maestro/providers.json`.
 - Never turn a rate limit into a preference. It is health, not a user choice.
 
 ## Waiting and completion

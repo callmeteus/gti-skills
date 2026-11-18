@@ -34,6 +34,10 @@ In this skill:
 
 - Run every pass in order without pausing between passes. Take the before and after screenshots and measurements for the report only.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/unslop-interface/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The unslop report and lintapple and probe output go to `~/.gti/unslop-interface/<project>/` (lintapple's own reports default to `~/.gti/lintapple/<project>/`). The interface edits go into the repository.
+
 ## When to use
 
 - The user shares a screen built by an AI tool (or in a hurry) and says it looks generic, "AI generated", "vibecoded", cheap, or noisy.

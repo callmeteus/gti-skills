@@ -6,8 +6,8 @@ Preferences are the user's durable choices about which models to use and how to 
 
 | Scope | Path | Use |
 |---|---|---|
-| User | `~/.maestro/preferences.json` | Every project on this machine |
-| Project | `.maestro/preferences.json` | This project, overrides user |
+| User | `~/.gti/maestro/preferences.json` | Every project on this machine |
+| Project | `~/.gti/maestro/<project>/preferences.json` | This project, overrides user |
 
 If `MAESTRO_HOME` is set, use `$MAESTRO_HOME/preferences.json` for the user scope. Create the folder when writing.
 

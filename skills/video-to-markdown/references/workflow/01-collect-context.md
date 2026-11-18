@@ -17,7 +17,7 @@ Ask only what you cannot infer. One message, a short list, with defaults the use
 | Frames | On for slides, code, and UI; off for talking heads |
 | Focus topics | Whole video |
 | Segments to skip | None (offer to skip intros and sponsor reads) |
-| Output path | `./notes/<video-title-kebab>.md` |
+| Output path | `~/.gti/video-to-markdown/notes/<video-title-kebab>.md`; never the user's project unless they name a folder in it |
 | Language of the notes | The user's language |
 
 ## Choosing a format
@@ -35,7 +35,7 @@ Ask only what you cannot infer. One message, a short list, with defaults the use
 Quick check before I start:
 1. Format: study notes (default), tutorial, full transcript, or meeting notes?
 2. Include frames of slides, code, and UI? (yes)
-3. Save to ./notes/<title>.md?
+3. Save to ~/.gti/video-to-markdown/notes/<title>.md?
 ```
 
 Wait for the answer when the format is unclear. Proceed with defaults when the request already names a format.

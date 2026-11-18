@@ -19,8 +19,8 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { homedir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -74,12 +74,18 @@ export function resolveLintapple(project, root = packageRoot(), exists = existsS
     return { kind: "npx", command: "npx", args: ["--yes", `lintapple@${version}`], note: `lintapple@${version} from npm. ${hint}`.trim() };
 }
 
-/** Picks the policy file: --config, the project's ui-policy.json, or the default written to a temp file. */
-export function resolvePolicy(project, config, tempDir = tmpdir()) {
+/** Where generated files go: ~/.gti/lintapple/<project> (GTI_HOME replaces ~/.gti). Never the project itself. */
+export function gtiDir(project) {
+    const home = process.env.GTI_HOME?.trim() ? resolve(process.env.GTI_HOME.trim()) : join(homedir(), ".gti");
+    return join(home, "lintapple", basename(resolve(project)) || "project");
+}
+
+/** Picks the policy file: --config, the project's ui-policy.json, or the default written to the GTI home. */
+export function resolvePolicy(project, config, tempDir = gtiDir(project)) {
     if (config) return { file: resolve(config), source: "--config" };
     const own = join(project, "ui-policy.json");
     if (existsSync(own)) return { file: own, source: "project ui-policy.json" };
-    const dir = join(tempDir, "lintapple-gti");
+    const dir = tempDir;
     mkdirSync(dir, { recursive: true });
     const file = join(dir, "default-ui-policy.json");
     writeFileSync(file, `${JSON.stringify(DEFAULT_POLICY, null, 2)}\n`);
@@ -188,7 +194,7 @@ export function main(argv) {
         console.error(`lintapple returned output that is not JSON:\n${String(result.stdout).slice(0, 2000)}\n${stderr}`);
         return 2;
     }
-    const out = resolve(options.out ?? join(tmpdir(), "lintapple-gti", `report-${Date.now()}.json`));
+    const out = resolve(options.out ?? join(gtiDir(options.project ?? process.cwd()), `report-${Date.now()}.json`));
     mkdirSync(dirname(out), { recursive: true });
     writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
     console.log(summarize(report, options.top ?? 15));

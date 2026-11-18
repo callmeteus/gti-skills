@@ -24,7 +24,7 @@ Keep the JSON output for the report:
 python3 <skill-dir>/scripts/explore/hotspots.py . --json > hotspots.json
 ```
 
-Write it to the OS temp folder, not the repository.
+Write it to `~/.gti/improve-codebase-architecture/<project>/`, not the repository.
 
 ## Read the project docs
 

@@ -14,7 +14,7 @@ Infrastructure changes reach running systems. These rules hold in every mode, in
 ## Run only with the user's permission
 
 - `terraform plan` or `tofu plan`: it reads state and calls the cloud. Prefer the repository's CI plan job. When you run it locally, use the credentials the user names and never pass `-lock=false` unless the user asks.
-- `terraform show -json` and `state pull` to read state: the output contains secrets. Write it only to the OS temp folder and delete it afterwards.
+- `terraform show -json` and `state pull` to read state: the output contains secrets. Write it only to `~/.gti/infra-expert/<project>/` and delete it afterwards.
 - `aws_collect.py` against a live account, with the profile and regions the user confirmed.
 
 ## Safe without asking

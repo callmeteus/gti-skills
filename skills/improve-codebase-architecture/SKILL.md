@@ -42,6 +42,10 @@ In this skill:
 - Pick the candidate with the highest strength; break ties by the biggest gain for the least effort. Answer every round of step 4 with its recommended answer and record the answers in `GLOSSARY.md` and ADRs as usual.
 - Skip the plan confirmation and go on to step 6: implement, run the tests, and report. Keep public APIs and stored data formats unchanged; when a design would change them, choose the option that does not, and list the other as pending.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/improve-codebase-architecture/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The report data and the HTML report go to `~/.gti/improve-codebase-architecture/<project>/`. `GLOSSARY.md`, ADRs, and the agreed code changes are the user's project files and go into the repository.
+
 ## When to use
 
 - The user asks for an architecture review, refactoring ideas, or "where should we clean up first".
@@ -69,10 +73,10 @@ Follow the steps in order. Read a reference file only when its step starts.
 
 1. **Decide where to look.** Take the user's target, or find the hot spots with `scripts/explore/hotspots.py`. Read the glossary and ADRs for the area. See [references/workflow/01-scope.md](references/workflow/01-scope.md) and [references/concepts/project-docs.md](references/concepts/project-docs.md).
 2. **Explore and collect candidates.** Use a subagent with a fresh context when available. Record files, the problem and the gain with numbers, the dependency type, effort, and strength for three to six candidates. See [references/workflow/02-explore.md](references/workflow/02-explore.md) and [references/concepts/testing-by-dependency.md](references/concepts/testing-by-dependency.md).
-3. **Write the report.** Fill a JSON data file in the OS temp folder from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), and render it. Give the user the absolute path, then ask which candidate they want to explore. Do not design APIs yet. Add `--open` only when the user is following along; in Autonomous Mode render without it and keep going. See [references/workflow/03-report.md](references/workflow/03-report.md).
+3. **Write the report.** Fill a JSON data file in `~/.gti/improve-codebase-architecture/<project>/` from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), and render it. Give the user the absolute path, then ask which candidate they want to explore. Do not design APIs yet. Add `--open` only when the user is following along; in Autonomous Mode render without it and keep going. See [references/workflow/03-report.md](references/workflow/03-report.md).
 
    ```bash
-   python3 <skill-dir>/scripts/report/render_report.py <tmp>/architecture-review.json --strict --open
+   python3 <skill-dir>/scripts/report/render_report.py ~/.gti/improve-codebase-architecture/<project>/architecture-review.json --strict --open
    ```
 
 4. **Work through the chosen candidate.** Ask the open decisions in numbered rounds with a recommended answer each, look up facts yourself, and update `GLOSSARY.md` and ADRs as decisions are made. See [references/workflow/04-discuss.md](references/workflow/04-discuss.md).
@@ -86,7 +90,7 @@ Nothing in the repository changes during steps 1 to 3. Change code only after th
 | Script | Purpose |
 |--------|---------|
 | `scripts/explore/hotspots.py` | Folders and files changed most in recent commits, as text or JSON |
-| `scripts/report/render_report.py` | Validates the report data, warns about jargon, writes the HTML report to the OS temp folder |
+| `scripts/report/render_report.py` | Validates the report data, warns about jargon, writes the HTML report to `~/.gti/improve-codebase-architecture/<project>/` |
 
 Both take `--help` and use only the Python standard library.
 

@@ -42,6 +42,10 @@ In this skill:
 
 - Choose the tool with the first-decision rules (drawer library, the project's library, or `gesture.js`) and build. The real-phone test is pending for the user; say so.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/gestures/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Scratch demos go to `~/.gti/gestures/<project>/`. The gesture module and the components the user asked for go into their project.
+
 ## First decision: build it, or use something that exists?
 
 A drawer done right needs momentum dragging, an overlay that fades with drag progress, velocity-aware dismissal, focus trapping, and Escape to close. That is weeks of edge cases.

@@ -35,6 +35,10 @@ In this skill:
 - When the chrome-devtools MCP tools are missing, use the Lighthouse CLI fallback without asking first, and say which tool produced the numbers.
 - Audit only pages that open without a login; list pages that need one as pending. Never type credentials.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/web-performance-audit/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Traces, Lighthouse JSON, and the performance report go to `~/.gti/web-performance-audit/<project>/`.
+
 ## When to use
 
 - The user asks why a page is slow, or for a performance, page speed, or Lighthouse audit of a URL.

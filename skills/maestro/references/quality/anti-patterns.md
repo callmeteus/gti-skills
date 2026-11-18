@@ -184,7 +184,7 @@ The failure modes below are the ones Maestro must actively avoid. Each one names
 
 **Why it fails:** The tool call errors, or worse, a different tool with a similar name runs with the wrong arguments.
 
-**Fix:** Probe `tools/list`, map capabilities to the exact names the server reports, and record the mapping in `.maestro/orchestrators.json`.
+**Fix:** Probe `tools/list`, map capabilities to the exact names the server reports, and record the mapping in `~/.gti/maestro/<project>/orchestrators.json`.
 
 ## 24. Coordination mistaken for delegation
 

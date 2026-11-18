@@ -38,7 +38,7 @@ test("refuses a tools folder inside the project and accepts one beside it", (t) 
 });
 
 test("defaults to a folder in the home directory, overridable by GTI_TEST_TOOLS_DIR", () => {
-    assert.match(defaultToolsDir({}), /\.gti-skills[\\/]tools[\\/]node$/);
+    assert.match(defaultToolsDir({}), /\.gti[\\/]better-tests[\\/]tools[\\/]node$/);
     assert.equal(defaultToolsDir({ GTI_TEST_TOOLS_DIR: join(tmpdir(), "x") }), join(tmpdir(), "x"));
 });
 

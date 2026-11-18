@@ -233,13 +233,13 @@ python3 skills/video-to-markdown/scripts/setup/check_dependencies.py --install -
 Downloads metadata, audio, or video with `yt-dlp`. X post links (`x.com`, `twitter.com`, `fixupx.com`, `fxtwitter.com`) go through the FixupX API instead, and audio is extracted from the MP4 with ffmpeg.
 
 ```bash
-python3 skills/video-to-markdown/scripts/download/download_video.py "URL" --out ./work --mode metadata
+python3 skills/video-to-markdown/scripts/download/download_video.py "URL" --out ~/.gti/video-to-markdown/<video-id>/work --mode metadata
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `url` | Required | Video URL, YouTube video ID, or X post URL |
-| `--out`, `-o` | `./work` | Output folder |
+| `--out`, `-o` | `~/.gti/video/work` | Output folder (never the current project) |
 | `--mode`, `-m` | `metadata` | `metadata` (writes `metadata.json` with chapters), `video` (`video.mp4`), or `audio` (`audio.m4a`) |
 | `--height` | `720` | Maximum video height for `--mode video` |
 | `--index` | `1` | Which video of an X post with several videos |
@@ -251,7 +251,7 @@ Set `FIXUPX_API_BASE` to use another instance of the API (default `https://api.f
 Fetches captions, preferring manual captions over auto-generated ones. X posts have no captions to fetch, so an X link always exits with code `2`; transcribe its audio with `transcribe_audio.py`.
 
 ```bash
-python3 skills/video-to-markdown/scripts/transcript/get_transcript.py "URL" --lang en --format json --out ./work/transcript.json
+python3 skills/video-to-markdown/scripts/transcript/get_transcript.py "URL" --lang en --format json --out ~/.gti/video-to-markdown/<video-id>/work/transcript.json
 ```
 
 | Argument | Default | Description |
@@ -270,7 +270,7 @@ Exit code `2` means the video has no captions.
 Transcribes a local audio or video file with Whisper and writes the same JSON shape.
 
 ```bash
-python3 skills/video-to-markdown/scripts/transcript/transcribe_audio.py ./work/audio.m4a --out ./work/transcript.json
+python3 skills/video-to-markdown/scripts/transcript/transcribe_audio.py ~/.gti/video-to-markdown/<video-id>/work/audio.m4a --out ~/.gti/video-to-markdown/<video-id>/work/transcript.json
 ```
 
 | Argument | Default | Description |
@@ -285,13 +285,13 @@ python3 skills/video-to-markdown/scripts/transcript/transcribe_audio.py ./work/a
 Extracts timestamped frames and writes `manifest.json` next to them.
 
 ```bash
-python3 skills/video-to-markdown/scripts/frames/extract_frames.py ./work/video.mp4 --out ./work/frames --mode scene --max 30
+python3 skills/video-to-markdown/scripts/frames/extract_frames.py ~/.gti/video-to-markdown/<video-id>/work/video.mp4 --out ~/.gti/video-to-markdown/<video-id>/work/frames --mode scene --max 30
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `video` | Required | Local video file |
-| `--out`, `-o` | `./frames` | Output folder for `frame_0001.jpg`, `frame_0002.jpg`, and so on |
+| `--out`, `-o` | `~/.gti/video/frames` | Output folder for `frame_0001.jpg`, `frame_0002.jpg`, and so on |
 | `--mode` | `interval` | `interval` or `scene` (frames where the picture changes a lot) |
 | `--interval`, `-i` | `20` | Seconds between frames in interval mode |
 | `--scene-threshold` | `0.3` | Scene change sensitivity from 0 to 1; lower finds more |
@@ -304,7 +304,7 @@ python3 skills/video-to-markdown/scripts/frames/extract_frames.py ./work/video.m
 Builds the sectioned Markdown draft the agent then rewrites.
 
 ```bash
-python3 skills/video-to-markdown/scripts/render/assemble_draft.py --transcript ./work/transcript.json --video-id VIDEO_ID --frames ./work/frames/manifest.json --metadata ./work/metadata.json --out ./notes/draft.md
+python3 skills/video-to-markdown/scripts/render/assemble_draft.py --transcript ~/.gti/video-to-markdown/<video-id>/work/transcript.json --video-id VIDEO_ID --frames ~/.gti/video-to-markdown/<video-id>/work/frames/manifest.json --metadata ~/.gti/video-to-markdown/<video-id>/work/metadata.json --out ~/.gti/video-to-markdown/notes/draft.md/notes/draft.md
 ```
 
 | Argument | Default | Description |

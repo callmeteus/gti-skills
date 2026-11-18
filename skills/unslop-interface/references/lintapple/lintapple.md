@@ -22,7 +22,7 @@ node <skill-dir>/scripts/lintapple/run.mjs http://localhost:3000 --project .
 | `--config FILE` | A policy file to use instead |
 | `--ready SELECTOR` | Wait for this selector before checking a page that loads asynchronously |
 | `--interactions FILE` | A lintapple interaction plan, to check open menus, dialogs, and other states |
-| `--out FILE` | Where to save the full JSON report (default: the OS temp folder) |
+| `--out FILE` | Where to save the full JSON report (default: `~/.gti/lintapple/<project>/`) |
 | `--top N` | How many problem groups to print (default 15) |
 | `--write-policy FILE` | Write the default policy to FILE so you can adapt it |
 | `--where` | Show which lintapple will run |
@@ -87,10 +87,10 @@ Token definitions (`--primary: #2563eb;`) are allowed anywhere; comments, `url()
 The default policy expects Apple system fonts and a fixed type scale, so on most projects it reports every font as wrong. Before trusting font, size, gap, or inset findings:
 
 1. If the project has a `ui-policy.json`, use it (the script does this automatically).
-2. Otherwise write the default to a temp file and adapt it to the project's design system, never to the project folder unless the user wants lintapple adopted:
+2. Otherwise write the default into `~/.gti/lintapple/<project>/` and adapt it to the project's design system, never to the project folder unless the user wants lintapple adopted:
 
    ```bash
-   node <skill-dir>/scripts/lintapple/run.mjs --write-policy <tmp>/ui-policy.json
+   node <skill-dir>/scripts/lintapple/run.mjs --write-policy ~/.gti/lintapple/<project>/ui-policy.json
    ```
 
    - `fonts`: the font stacks the design system uses.
@@ -98,7 +98,7 @@ The default policy expects Apple system fonts and a fixed type scale, so on most
    - `minControlGap`, `minControlInset`, `minLayoutGap`: the spacing scale's smallest steps.
    - `viewports` and `colorSchemes`: the breakpoints and themes the product supports (add `"dark"` when it has a dark theme).
    - `bannedCopy`: phrases to flag; add the generic marketing phrases the review cares about.
-3. Pass it with `--config <tmp>/ui-policy.json`, and say in the review which values you chose and why.
+3. Pass it with `--config ~/.gti/lintapple/<project>/ui-policy.json`, and say in the review which values you chose and why.
 
 ## Read the findings
 

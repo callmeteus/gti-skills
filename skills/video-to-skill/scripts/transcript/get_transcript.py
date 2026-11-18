@@ -176,7 +176,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     text = render(result, output_format, video_id)
 
     if args.out:
-        Path(args.out).write_text(text, encoding="utf-8")
+        out_file = Path(args.out).expanduser()
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(text, encoding="utf-8")
         print_json({"file": args.out, "language": result["language"], "source": result["source"], "segments": len(result["timestamped"])})
     else:
         sys.stdout.write(text + ("" if text.endswith("\n") else "\n"))

@@ -133,7 +133,7 @@ A blocker in any gate is a FIX. A product decision in any gate is an ESCALATE.
 
 ## Review record
 
-Write `.maestro/tasks/<task-id>/review.md`:
+Write `~/.gti/maestro/<project>/tasks/<task-id>/review.md`:
 
 ```text
 TASK      w2.1 Add the CSV serializer and route

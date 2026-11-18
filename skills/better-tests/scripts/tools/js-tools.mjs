@@ -15,7 +15,7 @@
  *   workdir   --project DIR [--tools-dir DIR]
  *   property  --project DIR FILE [--tools-dir DIR]
  *
- * The tools folder defaults to ~/.gti-skills/tools/node, or GTI_TEST_TOOLS_DIR when set.
+ * The tools folder defaults to ~/.gti/better-tests/tools/node, or GTI_TEST_TOOLS_DIR when set.
  */
 
 import { spawnSync } from "node:child_process";
@@ -37,7 +37,7 @@ export const PACKAGES = {
 const RUNNERS = ["vitest", "jest", "mocha", "command"];
 
 export function defaultToolsDir(env = process.env) {
-    return resolve(env.GTI_TEST_TOOLS_DIR || join(homedir(), ".gti-skills", "tools", "node"));
+    return resolve(env.GTI_TEST_TOOLS_DIR || join(env.GTI_HOME || join(homedir(), ".gti"), "better-tests", "tools", "node"));
 }
 
 /** True when `child` is `parent` or inside it. */

@@ -5,7 +5,7 @@
 ```bash
 python3 <skill-dir>/scripts/scaffold/scaffold_skill.py deploy-to-vercel \
   --description "Deploys a Next.js app to Vercel from the CLI. Use when the user asks to deploy, redeploy, or promote a preview on Vercel." \
-  --out ./skills
+  --out ~/.gti/video-to-skill/skills
 ```
 
 This creates the standard layout and a `SKILL.md` from [the template](../../assets/templates/SKILL.template.md):
@@ -71,4 +71,4 @@ assets/
 
 ## Where it goes
 
-Write the skill to the location the user asked for. If they did not say, create it under `./skills/<name>/` and read [references/harnesses/install-locations.md](../harnesses/install-locations.md) to explain how to install it for their agent.
+Write the skill to the location the user asked for. If they did not say, create it under `~/.gti/video-to-skill/skills/<name>/`, never in the current project, and read [references/harnesses/install-locations.md](../harnesses/install-locations.md) to explain how to install it for their agent.

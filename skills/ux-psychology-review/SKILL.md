@@ -32,6 +32,10 @@ In this skill:
 
 - When the screen's goal is not obvious, infer it from the screen's primary action and state the assumption at the top of the report.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/ux-psychology-review/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The review report goes to `~/.gti/ux-psychology-review/<project>/`. Code edits the user asked for go into the repository.
+
 ## When to use
 
 - The user shares a screenshot, mockup, Figma export, or UI code of a form, onboarding step, signup page, upgrade prompt, paywall, pricing page, or checkout and asks for a review or improvements.

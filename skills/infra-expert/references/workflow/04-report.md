@@ -4,7 +4,7 @@ The report is one HTML page, rendered by a script from a JSON file, so every rev
 
 ## Write the data file
 
-Copy `<skill-dir>/assets/templates/report-data.example.json` to the OS temp folder and replace its content. Never write the data file or the report into the repository.
+Copy `<skill-dir>/assets/templates/report-data.example.json` to `~/.gti/infra-expert/<project>/` and replace its content. Never write the data file or the report into the repository.
 
 | Field | Contents |
 |-------|----------|
@@ -54,10 +54,10 @@ Each candidate has a before and an after diagram in Mermaid, five to eight boxes
 ## Render and open
 
 ```bash
-python3 <skill-dir>/scripts/report/render_report.py <tmp>/infra-review.json --strict --open
+python3 <skill-dir>/scripts/report/render_report.py ~/.gti/infra-expert/<project>/infra-review.json --strict --open
 ```
 
-- The script validates the data and prints the path of the HTML file it wrote in the OS temp folder.
+- The script validates the data and prints the path of the HTML file it wrote in `~/.gti/infra-expert/<project>/`.
 - `--strict` refuses to write the page when it finds vague claims and prints each with what to write instead. Fix the text and run again.
 - `--open` opens the page in the default browser. Also give the user the absolute path. In Autonomous Mode leave out `--open`.
 

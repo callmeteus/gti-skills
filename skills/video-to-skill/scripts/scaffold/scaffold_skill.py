@@ -2,7 +2,7 @@
 """Create a new skill folder with the standard subfolder layout.
 
 Usage:
-    python scaffold_skill.py deploy-to-vercel --description "Deploys ... Use when ..." --out ./skills
+    python scaffold_skill.py deploy-to-vercel --description "Deploys ... Use when ..." --out ~/.gti/video-to-skill/skills
 
 Creates:
     <out>/<name>/
@@ -16,11 +16,21 @@ Refuses to overwrite an existing folder.
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import re
 import sys
 from pathlib import Path
 from typing import List, Optional
+
+
+def gti_dir(skill, *parts):
+    """Folder for generated files: ~/.gti/<skill>/... (GTI_HOME replaces ~/.gti). Never the user's repository."""
+    base = Path(os.environ.get("GTI_HOME") or Path.home() / ".gti").expanduser()
+    folder = base.joinpath(skill, *parts)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "assets" / "templates" / "SKILL.template.md"
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -71,11 +81,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Create a skill folder with the standard layout")
     parser.add_argument("name", help="Skill name in kebab-case, for example deploy-to-vercel")
     parser.add_argument("--description", "-d", required=True, help="What the skill does and when to use it (max 1024 characters)")
-    parser.add_argument("--out", "-o", default=".", help="Directory that will contain the skill folder (default: current directory)")
+    parser.add_argument("--out", "-o", default=None, help="Directory that will contain the skill folder (default: ~/.gti/video-to-skill/skills)")
     args = parser.parse_args(argv)
 
     try:
-        target = scaffold(args.name, args.description, Path(args.out))
+        target = scaffold(args.name, args.description, Path(args.out).expanduser() if args.out else gti_dir("video-to-skill", "skills"))
     except (ValueError, FileExistsError) as error:
         sys.stderr.write("Error: %s\n" % error)
         return 1

@@ -4,7 +4,7 @@ The report is a single HTML page the user reads in a browser. It is rendered by 
 
 ## Write the data file
 
-Copy `<skill-dir>/assets/templates/report-data.example.json` to the OS temp folder and replace its content. Never write the data file or the report into the repository.
+Copy `<skill-dir>/assets/templates/report-data.example.json` to `~/.gti/improve-codebase-architecture/<project>/` and replace its content. Never write the data file or the report into the repository.
 
 | Field | Contents |
 |-------|----------|
@@ -62,10 +62,10 @@ Each candidate has a before and an after diagram in Mermaid. Keep them small: fi
 ## Render and open
 
 ```bash
-python3 <skill-dir>/scripts/report/render_report.py <tmp>/architecture-review.json --strict --open
+python3 <skill-dir>/scripts/report/render_report.py ~/.gti/improve-codebase-architecture/<project>/architecture-review.json --strict --open
 ```
 
-- The script validates the data and prints the path of the HTML file it wrote in the OS temp folder.
+- The script validates the data and prints the path of the HTML file it wrote in `~/.gti/improve-codebase-architecture/<project>/`.
 - `--strict` refuses to write the page when it finds design-book jargon and prints each word with its replacement. Fix the text and run again.
 - `--open` opens the page in the default browser. Also give the user the absolute path.
 - In Autonomous Mode (the user said "do it yourself" or "no need to ask me"), leave out `--open`: the page is still written, and its path goes in the final report.

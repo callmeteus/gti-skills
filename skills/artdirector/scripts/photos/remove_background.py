@@ -101,7 +101,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             sys.stderr.write("Error: could not install rembg.\n")
             return 1
 
-    written = cut(sources, args.model, Path(args.out) if args.out else None, not args.no_trim)
+    written = cut(sources, args.model, Path(args.out).expanduser() if args.out else None, not args.no_trim)
     sys.stdout.write(json.dumps(written, indent=2, ensure_ascii=False) + "\n")
 
     return 0

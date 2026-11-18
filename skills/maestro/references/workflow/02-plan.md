@@ -4,8 +4,8 @@ Maestro writes the plan. A plan is not the deliverable; it is the task contract 
 
 ## When to write a plan
 
-- **Simple run:** one task in `.maestro/run.json`. No `plan.md`.
-- **Complex run:** `.maestro/plan.md` with waves, tasks, dependencies, tiers, and review gates.
+- **Simple run:** one task in `~/.gti/maestro/<project>/run.json`. No `plan.md`.
+- **Complex run:** `~/.gti/maestro/<project>/plan.md` with waves, tasks, dependencies, tiers, and review gates.
 
 Write the plan before the first worker. If a scout is needed to understand the work, make the scout the first task and finish the plan after it reports.
 
@@ -155,4 +155,4 @@ Each route also gets a fallback. If the primary is cooling, the fallback is the 
 - If a new task is needed, add it to the current or next wave and say why.
 - If the goal changes, stop and treat it as a new run, or ask the user when the change is not implied by the request.
 
-After a context reset, re-read `.maestro/plan.md`, `run.json`, and the last decisions before continuing.
+After a context reset, re-read `~/.gti/maestro/<project>/plan.md`, `run.json`, and the last decisions before continuing.

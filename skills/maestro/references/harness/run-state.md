@@ -1,11 +1,11 @@
 # Run state
 
-`.maestro/` is the run's memory. It must be enough to continue after a context reset, a compaction, or a new agent session.
+`~/.gti/maestro/<project>/` is the run's memory. It sits outside the repository: Maestro writes nothing into the user's project except the changes the workers make. It must be enough to continue after a context reset, a compaction, or a new agent session.
 
 ## Layout
 
 ```text
-.maestro/
+~/.gti/maestro/<project>/
 ├── run.json
 ├── workers.jsonl
 ├── plan.md
@@ -28,13 +28,13 @@ These live outside the run report and are read at intake.
 
 | Scope | Path | Contents |
 |---|---|---|
-| User | `~/.maestro/preferences.json` | Durable roles, fallbacks, routes, avoid |
-| Project | `.maestro/preferences.json` | Project overrides |
-| User | `~/.maestro/providers.json` | Model catalog, limits, health, cooldowns |
-| Project | `.maestro/providers.json` | Project overrides and declared entries |
-| Project | `.maestro/orchestrators.json` | MCP servers found in this run, their role, tools, and status |
+| User | `~/.gti/maestro/preferences.json` | Durable roles, fallbacks, routes, avoid |
+| Project | `~/.gti/maestro/<project>/preferences.json` | Project overrides |
+| User | `~/.gti/maestro/providers.json` | Model catalog, limits, health, cooldowns |
+| Project | `~/.gti/maestro/<project>/providers.json` | Project overrides and declared entries |
+| Project | `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in this run, their role, tools, and status |
 
-`MAESTRO_HOME` replaces `~/.maestro` when set. Keep these files out of git. They contain no credentials, only provider and model IDs plus health.
+`MAESTRO_HOME` replaces `~/.gti/maestro` when set. They contain no credentials, only provider and model IDs plus health.
 
 ## orchestrators.json
 
@@ -167,9 +167,9 @@ The task folder is the audit trail for one task. Keep it even after PASS.
 
 After a context reset, a compaction, or a new session:
 
-1. Read `.maestro/run.json`.
-2. Read `~/.maestro/preferences.json`, `.maestro/preferences.json`, `~/.maestro/providers.json`, and `.maestro/orchestrators.json`. Drop models that are cooling or unavailable, and drop MCP servers marked `unavailable` or `auth-required`.
-3. Read `.maestro/workers.jsonl` and take the last record per task.
+1. Read `~/.gti/maestro/<project>/run.json`.
+2. Read `~/.gti/maestro/preferences.json`, `~/.gti/maestro/<project>/preferences.json`, `~/.gti/maestro/providers.json`, and `~/.gti/maestro/<project>/orchestrators.json`. Drop models that are cooling or unavailable, and drop MCP servers marked `unavailable` or `auth-required`.
+3. Read `~/.gti/maestro/<project>/workers.jsonl` and take the last record per task.
 4. Read the last ten lines of `decisions.jsonl`.
 5. Find the first task whose verdict is not `PASS`.
 6. If its chat is resumable and its model is healthy, send the review or fix prompt to that chat.
@@ -184,13 +184,7 @@ When the conversation is compacted, the ledger is the source of truth, not the c
 
 ## Git
 
-Keep `.maestro/` local by default:
-
-```bash
-git rev-parse --git-dir
-```
-
-Append `.maestro/` to `.git/info/exclude` if it is not there. Never edit the shared `.gitignore` for it.
+The run directory lives in the user's home, outside the repository, so it never shows up in git. `<project>` is the repository folder name; `$GTI_HOME` replaces `~/.gti`.
 
 If the user wants the plan or the report versioned, copy those files into the repository deliberately. Do not commit the whole run directory: it contains worker transcripts and possibly secrets.
 

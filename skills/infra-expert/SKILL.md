@@ -48,6 +48,10 @@ In this skill:
 - In step 6, implement only candidates whose risk is `code-only` or `state-move`. List `replace` and `live-change` candidates as pending, with the exact steps the user would run.
 - Never run `terraform apply`, `destroy`, `import`, `state` subcommands that write, `tofu` equivalents, or any AWS CLI call that is not describe, list, or get. These stay forbidden even in Autonomous Mode; see [references/quality/safety.md](references/quality/safety.md).
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/infra-expert/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Scanner output, the AWS snapshot, state exports, the report data, and the HTML report go to `~/.gti/infra-expert/<project>/`. ADRs, `GLOSSARY.md`, and the agreed IaC changes go into the repository.
+
 ## When to use
 
 - The user asks to review, organize, or clean up infrastructure code: Terraform or OpenTofu stacks, Grafana dashboards and alert rules, Kubernetes manifests, Compose files, CI pipelines.
@@ -86,12 +90,12 @@ Keep what the repository already does well. The model is a way to name problems,
 Follow the steps in order. Read a reference file only when its step starts. Nothing in the repository or the cloud account changes during steps 1 to 4.
 
 1. **Decide the area and scope.** Take the area from the request, detect the stacks in the repository, read the project rules and docs, and find the hot spots with `scripts/explore/hotspots.py`. See [references/workflow/01-scope.md](references/workflow/01-scope.md) and [references/concepts/project-docs.md](references/concepts/project-docs.md).
-2. **Scan.** Run the scanners for the area, all read-only, and write their output to the OS temp folder. Read every lead in the code before it becomes a finding. See [references/workflow/02-scan.md](references/workflow/02-scan.md).
+2. **Scan.** Run the scanners for the area, all read-only, and write their output to `~/.gti/infra-expert/<project>/`. Read every lead in the code before it becomes a finding. See [references/workflow/02-scan.md](references/workflow/02-scan.md).
 3. **Collect candidates.** Map the repository onto the layout model and pick three to six candidates with files, numbers, layer, risk, effort, and strength. Use a subagent with a fresh context when available. See [references/workflow/03-candidates.md](references/workflow/03-candidates.md).
-4. **Write the report.** Fill a JSON data file in the OS temp folder from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), render it, give the absolute path, and ask which candidate to explore. See [references/workflow/04-report.md](references/workflow/04-report.md).
+4. **Write the report.** Fill a JSON data file in `~/.gti/infra-expert/<project>/` from [assets/templates/report-data.example.json](assets/templates/report-data.example.json), check it with [references/quality/report-checklist.md](references/quality/report-checklist.md), render it, give the absolute path, and ask which candidate to explore. See [references/workflow/04-report.md](references/workflow/04-report.md).
 
    ```bash
-   python3 <skill-dir>/scripts/report/render_report.py <tmp>/infra-review.json --strict --open
+   python3 <skill-dir>/scripts/report/render_report.py ~/.gti/infra-expert/<project>/infra-review.json --strict --open
    ```
 
 5. **Work through the chosen candidate.** Ask the open decisions in numbered rounds, each with a recommended answer; look up facts yourself; record lasting decisions as ADRs. See [references/workflow/05-discuss.md](references/workflow/05-discuss.md).
@@ -108,7 +112,7 @@ Before step 6, and whenever a command could touch state or the cloud, read [refe
 | `scripts/scan/grafana_scan.py` | Grafana inventory: dashboards, alert rules, base files, near-copies, datasource references |
 | `scripts/aws/aws_collect.py` | Read-only snapshot of an AWS account through the AWS CLI; refuses any call that is not describe, list, or get |
 | `scripts/aws/aws_analyze.py` | Offline findings from a snapshot, optionally compared with Terraform state to find resources no code manages |
-| `scripts/report/render_report.py` | Validates the report data, warns about vague claims, writes the HTML report to the OS temp folder |
+| `scripts/report/render_report.py` | Validates the report data, warns about vague claims, writes the HTML report to `~/.gti/infra-expert/<project>/` |
 
 All take `--help` and use only the Python standard library. The scan scripts read only files git tracks or would track, so gitignored secrets are never opened.
 

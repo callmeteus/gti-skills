@@ -59,7 +59,7 @@ If two servers qualify, prefer the one with model selection and a resumable chat
 
 ## Adapter contract
 
-Record these fields for every server in `.maestro/orchestrators.json`:
+Record these fields for every server in `~/.gti/maestro/<project>/orchestrators.json`:
 
 | Field | Meaning |
 |---|---|
@@ -211,7 +211,7 @@ An orchestrator that spawns its own workers is still a worker from Maestro's poi
 
 ## Record and narrate
 
-Append the selected server, role, transport, and capability mapping to `.maestro/orchestrators.json`, and the choice to `decisions.jsonl`. Add an `orchestrator` field to every worker record.
+Append the selected server, role, transport, and capability mapping to `~/.gti/maestro/<project>/orchestrators.json`, and the choice to `decisions.jsonl`. Add an `orchestrator` field to every worker record.
 
 Say a non-obvious choice in one short line in the user's language, for example:
 

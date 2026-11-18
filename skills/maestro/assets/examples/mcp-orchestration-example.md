@@ -39,7 +39,7 @@ workspace_write_file({
 workspace_status({ status: "w2.1 delegated to Paseo; scouting the report route" })
 ```
 
-The workspace copy is for the team. The authoritative brief stays in `.maestro/tasks/w2.1/brief.md`, and the worker receives it in its own chat.
+The workspace copy is for the team. The authoritative brief stays in `~/.gti/maestro/<project>/tasks/w2.1/brief.md`, and the worker receives it in its own chat.
 
 ## Spawn
 
@@ -78,7 +78,7 @@ The worker record becomes:
 
 ## Review
 
-The self-review goes to the same chat. Maestro then reads the diff, runs the checks, and writes the verdict to `.maestro/tasks/w2.1/review.md`.
+The self-review goes to the same chat. Maestro then reads the diff, runs the checks, and writes the verdict to `~/.gti/maestro/<project>/tasks/w2.1/review.md`.
 
 ```text
 TASK      w2.1 Add the CSV serializer and route

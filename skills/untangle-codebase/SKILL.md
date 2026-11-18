@@ -41,9 +41,13 @@ When the user says to work on your own, for example "do it yourself", "faz você
 
 In this skill:
 
-- Step 1 asks nothing: do the Comments and Tests additions only when the request named them, protect the public surfaces you would have proposed, and keep `.untangle/` out of git with `.git/info/exclude`.
+- Step 1 asks nothing: do the Comments and Tests additions only when the request named them, protect the public surfaces you would have proposed.
 - If the working tree has uncommitted changes, keep working in the current checkout: create the `untangle/<date>` branch there (the changes come along untouched), never stash, discard, or commit them, and stage only the files each fix changed. When a fix must edit a file that already has the user's uncommitted changes, skip that fix and list it as pending.
 - Every "stop and ask" case in the guardrails becomes a pending item with the safe choice taken: keep the public surface unchanged, keep both diverging behaviors, and leave the scope where it was. Stop only when the time or token budget runs out, then run the behavior check and write the final report.
+
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/untangle-codebase/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The decision log, baseline, measurements, and final report live in `~/.gti/untangle-codebase/<project>/`. The refactor commits are the only thing that goes into the repository.
 
 ## Goal
 
@@ -92,7 +96,7 @@ Before step 4 and whenever a fix touches a public surface, read [references/qual
 
 ## Scripts
 
-All scripts are read-only, use only the Python standard library, and take the codebase root as the first argument. Use `python3` on macOS and Linux and `python` or `py -3` on Windows. Write their output under `.untangle/` in the project, never next to source files.
+All scripts are read-only, use only the Python standard library, and take the codebase root as the first argument. Use `python3` on macOS and Linux and `python` or `py -3` on Windows. Write their output under `~/.gti/untangle-codebase/<project>/` (`<project>` is the repository folder name; `$GTI_HOME` replaces `~/.gti`), never into the repository.
 
 | Script | Use |
 |--------|-----|
@@ -108,7 +112,7 @@ Every script result is a lead to read, not a verdict. An entry point that import
 - **Behavior stays the same.** Intended behavior at the end equals behavior at the start, apart from bugs the refactor fixed. Each such bug is written in the decision log with the test that now covers it.
 - **The test suite is the safety net.** Never commit a fix with a failing test that passed at baseline. If an area has no tests that would catch a regression, add a characterization test before moving its code.
 - **One fix, one commit.** Each commit implements one decision log entry and names it, so any fix can be reverted alone.
-- **The log is the memory.** Write decisions to `.untangle/decision-log.md` as you go. After a context reset or compaction, re-read it before doing anything else.
+- **The log is the memory.** Write decisions to `~/.gti/untangle-codebase/<project>/decision-log.md` as you go. After a context reset or compaction, re-read it before doing anything else.
 - **Fix causes, not instances.** Do not fix special cases one by one. Remove the ones the redesign makes unnecessary, and keep the ones the system still needs, with the reason in the log.
 - **Do not hunt bugs separately.** A structural fix may fix some along the way, which is fine.
 

@@ -234,12 +234,12 @@ python3 scripts/scan/grafana_scan.py . --threshold 0.7
 ### aws_collect.py
 
 ```bash
-python3 scripts/aws/aws_collect.py --profile prod-readonly --regions us-east-2 --out /tmp/aws-snapshot
+python3 scripts/aws/aws_collect.py --profile prod-readonly --regions us-east-2 --out ~/.gti/infra-expert/<project>/aws-snapshot
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
-| `--out` | New folder in the OS temp folder | Output folder |
+| `--out` | New folder in `~/.gti/infra-expert/aws/` | Output folder |
 | `--profile` | CLI default chain | AWS CLI profile |
 | `--regions` | Profile region | Comma-separated regions |
 | `--all-regions` | Off | Collect every region enabled in the account |
@@ -250,7 +250,7 @@ python3 scripts/aws/aws_collect.py --profile prod-readonly --regions us-east-2 -
 ### aws_analyze.py
 
 ```bash
-python3 scripts/aws/aws_analyze.py /tmp/aws-snapshot --tf-state /tmp/state-network.json
+python3 scripts/aws/aws_analyze.py ~/.gti/infra-expert/<project>/aws-snapshot --tf-state ~/.gti/infra-expert/<project>/state-network.json
 ```
 
 | Argument | Default | Description |
@@ -269,7 +269,7 @@ python3 scripts/report/render_report.py infra-review.json --strict --open
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `data` | - | Report data JSON file |
-| `--out` | OS temp folder, `infra-review-<timestamp>.html` | Output HTML path |
+| `--out` | `~/.gti/infra-expert/<project>/`, `infra-review-<timestamp>.html` | Output HTML path |
 | `--strict` | Off | Exit with code 3 instead of writing when vague claims are found |
 | `--open` | Off | Open the report in the default browser after writing |
 
@@ -326,13 +326,13 @@ Each candidate card in the report shows:
 | Where the code changes most | Hot spot table from git history, when provided |
 | Details | One card per candidate: problem, change, before and after diagrams, gains, files and resources, how to verify, warning |
 
-The report and the AWS snapshot are written to the OS temp folder; nothing is written to the repository until the user confirms a plan, and nothing is ever written to the account.
+The report and the AWS snapshot are written to `~/.gti/infra-expert/<project>/`; nothing is written to the repository until the user confirms a plan, and nothing is ever written to the account.
 
 ## Security
 
 - **Cloud access:** `aws_collect.py` checks every operation against a describe, list, or get pattern before calling the AWS CLI and exits on anything else. Use read-only credentials anyway.
-- **Snapshot contents:** the snapshot holds network layout, resource names, and tags, but no secrets. It stays in the OS temp folder.
-- **State files:** Terraform state contains secrets. The aws area reads state only with the user's permission, writes it only to the OS temp folder, and deletes it afterwards.
+- **Snapshot contents:** the snapshot holds network layout, resource names, and tags, but no secrets. It stays in `~/.gti/infra-expert/<project>/`.
+- **State files:** Terraform state contains secrets. The aws area reads state only with the user's permission, writes it only to `~/.gti/infra-expert/<project>/`, and deletes it afterwards.
 - **Secret files:** the scanners read only files git tracks or would track, so gitignored files such as `*.auto.tfvars` are skipped.
 - **Changes:** the skill never runs `apply`, `destroy`, or state commands that write; changes land in code for the user's pipeline.
 

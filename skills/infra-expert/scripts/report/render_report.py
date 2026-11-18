@@ -4,8 +4,8 @@ Input is a JSON file with the repository or account name, the area, the
 scope, optional scan totals and hotspots, the candidates, and the top
 recommendation; see assets/templates/report-data.example.json. The script
 checks the data, warns about vague claims that say nothing concrete (see
-references/concepts/plain-language.md), and writes the page to the OS temp
-folder unless --out is given. Page labels come in English ("lang": "en") and
+references/concepts/plain-language.md), and writes the page to
+~/.gti/<skill>/<project>/ (GTI_HOME replaces ~/.gti) unless --out is given. Page labels come in English ("lang": "en") and
 Portuguese ("lang": "pt"); any label can be overridden with a "labels" object.
 Diagrams use Mermaid from a CDN; without network access the diagram source
 stays readable as text.
@@ -14,12 +14,30 @@ stays readable as text.
 import argparse
 import html
 import json
+import os
 import re
 import subprocess
 import sys
-import tempfile
 from datetime import datetime
 from pathlib import Path
+
+
+def gti_dir(skill, *parts):
+    """Folder for generated files: ~/.gti/<skill>/... (GTI_HOME replaces ~/.gti). Never the user's repository."""
+    base = Path(os.environ.get("GTI_HOME") or Path.home() / ".gti").expanduser()
+    folder = base.joinpath(skill, *parts)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def project_name(start=None):
+    """Name of the project being worked on: the git root's folder name, or the current folder's."""
+    here = Path(start or Path.cwd()).resolve()
+    for folder in (here, *here.parents):
+        if (folder / ".git").exists():
+            return folder.name or "project"
+    return here.name or "project"
+
 
 MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs"
 
@@ -392,7 +410,7 @@ def render(data):
 
 def default_output():
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path(tempfile.gettempdir()) / f"infra-review-{stamp}.html"
+    return gti_dir("infra-expert", project_name()) / f"infra-review-{stamp}.html"
 
 
 def open_file(path):
@@ -407,7 +425,7 @@ def open_file(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("data", help="Report data JSON file")
-    parser.add_argument("--out", default=None, help="Output HTML path (default: OS temp folder, timestamped name)")
+    parser.add_argument("--out", default=None, help="Output HTML path (default: ~/.gti/<skill>/<project>/, timestamped name)")
     parser.add_argument("--strict", action="store_true", help="Exit with code 3 instead of writing when vague claims are found")
     parser.add_argument("--open", action="store_true", help="Open the report in the default browser after writing")
     args = parser.parse_args()
@@ -420,7 +438,7 @@ def main():
     if findings and args.strict:
         sys.exit(3)
 
-    out = Path(args.out) if args.out else default_output()
+    out = Path(args.out).expanduser() if args.out else default_output()
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(render(data), encoding="utf-8")
     print(out.resolve())

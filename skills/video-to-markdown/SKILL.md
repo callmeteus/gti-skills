@@ -32,6 +32,10 @@ In this skill:
 
 - Do not ask for the format: choose it from the request with the format table, or use study notes. Skip no segments unless the request asks.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/video-to-markdown/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Downloads, transcripts, and frames go to `~/.gti/video-to-markdown/<video-id>/work`, and the notes to `~/.gti/video-to-markdown/notes/` unless the user names a folder.
+
 ## When to use
 
 - The user wants notes, a summary, a tutorial, or documentation from a video or recording.
@@ -71,7 +75,7 @@ Follow these steps in order. Read each reference only when you reach that step.
 - Copy commands and code from frames, not from speech, and put them in fenced blocks with a language.
 - Always state the source video (title, channel, link) in the frontmatter.
 - Never present something as shown in the video when you only inferred it.
-- Keep extraction files (`work/`) out of the delivered folder unless the user asks for the frames, which then sit in a `frames/` folder next to the Markdown file.
+- Keep extraction files (`~/.gti/video-to-markdown/<video-id>/work`) out of the delivered folder unless the user asks for the frames, which then sit in a `frames/` folder next to the Markdown file.
 
 ## Resources
 

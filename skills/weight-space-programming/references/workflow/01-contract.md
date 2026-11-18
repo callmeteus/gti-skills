@@ -32,7 +32,7 @@ Agree on its unit before starting, because it sets how much you can observe. In 
 ## Create the ledger
 
 ```bash
-python3 <skill-dir>/scripts/budget/ledger.py --ledger wsp-ledger.json init --mode read --budget 0 --goal "identify the game each policy plays"
+python3 <skill-dir>/scripts/budget/ledger.py init --mode read --budget 0 --goal "identify the game each policy plays"
 ```
 
 On Windows use `python` or `py -3`. Record hypotheses with `ledger.py note`, forward passes with `ledger.py spend`, and edits with `ledger.py edit`. `scripts/build/mlp.py forward` spends a pass for you and refuses to run when the budget is used up.

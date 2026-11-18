@@ -2,8 +2,8 @@
 """Extract timestamped keyframes from a local video with ffmpeg.
 
 Usage:
-    python extract_frames.py video.mp4 --out ./frames
-    python extract_frames.py video.mp4 --out ./frames --mode scene --scene-threshold 0.3
+    python extract_frames.py video.mp4 --out ~/.gti/video-to-markdown/<video>/frames
+    python extract_frames.py video.mp4 --out ~/.gti/video-to-markdown/<video>/frames --mode scene --scene-threshold 0.3
     python extract_frames.py video.mp4 --interval 10 --start 60 --end 300 --max 20
 
 Modes:
@@ -24,6 +24,7 @@ from typing import Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from lib.common import fail, find_tool, format_timestamp, print_json, run_command  # noqa: E402
+from lib.gti_home import gti_dir  # noqa: E402
 
 PTS_TIME = re.compile(r"pts_time:([0-9.]+)")
 
@@ -97,7 +98,7 @@ def detect_scene_times(video: str, threshold: float, start: float, end: float) -
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Extract timestamped keyframes with ffmpeg")
     parser.add_argument("video", help="Path to a local video file")
-    parser.add_argument("--out", "-o", default="./frames", help="Output directory (default: ./frames)")
+    parser.add_argument("--out", "-o", default=None, help="Output directory (default: ~/.gti/video/frames; never the current project)")
     parser.add_argument("--mode", choices=("interval", "scene"), default="interval", help="Extraction mode (default: interval)")
     parser.add_argument("--interval", "-i", type=float, default=20.0, help="Seconds between frames in interval mode (default: 20)")
     parser.add_argument("--scene-threshold", type=float, default=0.3, help="Scene change sensitivity 0-1, lower finds more (default: 0.3)")
@@ -113,7 +114,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not find_tool("ffmpeg") or not find_tool("ffprobe"):
         fail("ffmpeg is not installed. Run scripts/setup/check_dependencies.py --install", 127)
 
-    out_dir = Path(args.out)
+    out_dir = Path(args.out).expanduser() if args.out else gti_dir("video", "frames")
     out_dir.mkdir(parents=True, exist_ok=True)
     duration = probe_duration(args.video)
     end = min(args.end, duration) if args.end else duration

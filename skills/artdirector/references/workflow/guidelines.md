@@ -6,8 +6,8 @@ The mood board belongs to one chat. Guidelines outlive chats:
 
 | Scope | Applies to | Stored in |
 | --- | --- | --- |
-| `workspace` (default) | Every piece made in this workspace: one brand, client, or project | `~/.artdirector/workspaces/<key>/guidelines.json` |
-| `user` | Everything the user makes, in any workspace | `~/.artdirector/guidelines.json` |
+| `workspace` (default) | Every piece made in this workspace: one brand, client, or project | `~/.gti/artdirector/workspaces/<key>/guidelines.json` |
+| `user` | Everything the user makes, in any workspace | `~/.gti/artdirector/guidelines.json` |
 
 `ARTDIRECTOR_GUIDELINES_HOME` moves the folder. Nothing is written into the user's repository.
 

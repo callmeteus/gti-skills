@@ -53,10 +53,10 @@ Record the primary candidate, one fallback, and the reason. The reason is mandat
 ## Spawn sequence
 
 1. Read [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md) and [../harness/adapters.md](../harness/adapters.md). Pick the spawner first, then the adapter that reaches it.
-2. Write the brief to `.maestro/tasks/<task-id>/brief.md`.
+2. Write the brief to `~/.gti/maestro/<project>/tasks/<task-id>/brief.md`.
 3. Route the task and record the primary, the fallback, and the reason.
 4. Create the worker chat on the primary through the chosen orchestrator. Capture the id and model.
-5. Append a record to `.maestro/workers.jsonl` with the orchestrator, provider, model, chat, and routing reason.
+5. Append a record to `~/.gti/maestro/<project>/workers.jsonl` with the orchestrator, provider, model, chat, and routing reason.
 6. Send the brief as the first prompt.
 7. Append an `audit.jsonl` record with the action, chat, model, provider, adapter, and orchestrator.
 8. Continue with the ledger or the next task; do not poll.
@@ -73,7 +73,7 @@ The `chat` field is mandatory. A worker without a recorded chat id cannot be rev
 
 A spawner MCP server is an adapter, not a replacement for the plan. Keep the task boundary and the review.
 
-- **Use the documented spawn and send tools.** Do not assume a name; take it from `tools/list` and record it in `.maestro/orchestrators.json`.
+- **Use the documented spawn and send tools.** Do not assume a name; take it from `tools/list` and record it in `~/.gti/maestro/<project>/orchestrators.json`.
 - **Send the same brief.** The MCP transport changes, the brief contract does not.
 - **Record the orchestration id.** It is the `chat` field. The review and every fix go back to that id.
 - **Stay inside the capability.** A coordination server can hold the brief, the status, and the shared files, but it cannot start a turn. Use it beside the spawner, not instead of it.

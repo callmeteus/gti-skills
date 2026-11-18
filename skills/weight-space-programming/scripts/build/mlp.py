@@ -68,6 +68,10 @@ def main():
     run.add_argument("--ledger", required=True, help="Ledger to spend one forward pass from")
     run.add_argument("--note", default="", help="Why this pass is spent")
     args = parser.parse_args()
+    # Paths may start with ~ (outputs live in ~/.gti/weight-space-programming/<project>/).
+    for name in ("out", "weights", "inputs", "ledger"):
+        if getattr(args, name, None):
+            setattr(args, name, str(Path(getattr(args, name)).expanduser()))
 
     if args.command == "init":
         sizes = [int(value) for value in args.sizes.split(",")]
@@ -80,6 +84,7 @@ def main():
     import ledger
     remaining = ledger.spend(args.ledger, 1, args.note or f"mlp forward on {args.inputs}")
     outputs = forward(weights_io.load(args.weights), np.load(args.inputs, allow_pickle=False))
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     np.save(args.out, outputs)
     print(f"outputs {list(outputs.shape)} saved to {args.out}; {remaining} forward passes left")
 

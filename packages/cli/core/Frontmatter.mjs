@@ -5,6 +5,7 @@ const NamePattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LanguageRule = /respond in the user'?s language/i;
 const MaxBodyLines = 500;
 const AutonomousRule = /^## Autonomous Mode[ \t]*\r?$/m;
+const OutputRule = /^## Output Location[ \t]*\r?$/m;
 
 /**
  * Splits SKILL.md text into its frontmatter block and body.
@@ -155,6 +156,10 @@ export function validateSkillFolder(skillDir, expectedName) {
 
     if (!AutonomousRule.test(body)) {
         errors.push("missing the Autonomous Mode section: what the skill does when the user says to work without asking");
+    }
+
+    if (!OutputRule.test(body) || !body.includes("~/.gti/")) {
+        errors.push("missing the Output Location section: generated files go to ~/.gti/<skill-id>/, never into the user's repository");
     }
 
     if (/[–—]/.test(text)) {

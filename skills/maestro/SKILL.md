@@ -36,7 +36,7 @@ Always respond in the user's language, regardless of the language used in this s
 
 When the user says to work on your own, for example "do it yourself", "faz você mesmo", "you don't need to ask me", "não precisa me chamar", or "just do it", or when the request runs unattended:
 
-- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and write the decision and the reason to `.maestro/decisions.jsonl`.
+- **Do not stop for input.** Skip questions, confirmations, and pauses that wait for the user. At each decision, take the option this skill recommends, or the safest default, and write the decision and the reason to `~/.gti/maestro/<project>/decisions.jsonl`.
 - **Do not open anything for the user.** No browser tabs, viewers, editors, or servers started for the user to look at. Still write every file the run produces and give the paths at the end.
 - **Never take a gated irreversible or outward action** unless the request already allows it: deleting the user's data, tests, or files; publishing, posting, pushing, or sending; paying; typing credentials; deploying. List each one as pending.
 - **Finish with one report:** the decisions you took and why, what the workers did, what is pending, and what you could not verify.
@@ -52,6 +52,10 @@ In this skill:
 - Review does not ask the user to judge. Maestro decides PASS, FIX, or REASSIGN. Only a product decision or a gated action becomes a pending item.
 - A stalled worker gets one status prompt in the same chat, then a reassignment. No polling loops and no unchanged retries.
 - When the budget runs out, stop spawning, finish the current review, and write the report with what is left.
+
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/maestro/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The run ledger lives in `~/.gti/maestro/<project>/`, and user preferences and the provider catalog in `~/.gti/maestro/`.
 
 ## What Maestro is
 
@@ -74,7 +78,7 @@ The request text selects the command. `/maestro` is the same as `maestro run`.
 |---|---|
 | `/maestro <task>` | Full run: classify, plan when complex, delegate, review, report |
 | `/maestro plan <task>` | Write or refresh the plan only, no workers |
-| `/maestro status` | Read `.maestro/run.json` and print the run header and wave table |
+| `/maestro status` | Read `~/.gti/maestro/<project>/run.json` and print the run header and wave table |
 | `/maestro resume` | Continue the first unfinished task in the recorded chats |
 | `/maestro review <task-id>` | Review one recorded task in its chat and update the verdict |
 | `/maestro report` | Write and print the final report from the ledger |
@@ -84,7 +88,7 @@ The request text selects the command. `/maestro` is the same as `maestro run`.
 
 ## Workflow
 
-Track these steps in `.maestro/run.json` under `checklist` and keep them current.
+Track these steps in `~/.gti/maestro/<project>/run.json` under `checklist` and keep them current.
 
 ```text
 Maestro run:
@@ -95,18 +99,18 @@ Maestro run:
 - [ ] 5. Finish: integrate, verify, report, keep the chats
 ```
 
-1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `.maestro/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
+1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `~/.gti/maestro/<project>/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
 2. **Plan.** Simple work gets one task; complex work gets waves, dependencies, model tiers, and a review gate per wave. Every task gets a routing target, an orchestrator, and a reason. Maestro writes the plan itself. See [references/workflow/02-plan.md](references/workflow/02-plan.md).
-3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `.maestro/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
+3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `~/.gti/maestro/<project>/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
 4. **Review.** Ask the same chat for evidence, verify it independently, then decide PASS, FIX, REASSIGN, or ESCALATE. Fix rounds go back to the same chat. See [references/workflow/04-review.md](references/workflow/04-review.md).
 5. **Finish.** Integrate parallel work with a worker, run an independent verifier for complex runs, write the report, and leave the chats open for follow-up. See [references/workflow/05-finish.md](references/workflow/05-finish.md).
 
 ## The run directory
 
-Everything lives in `.maestro/` at the project root. Keep it out of git by adding `.maestro/` to `.git/info/exclude`; never edit the shared `.gitignore` for it.
+Everything lives in `~/.gti/maestro/<project>/` (`<project>` is the repository folder name; `$GTI_HOME` replaces `~/.gti`), outside the repository. Never write run files into the user's project.
 
 ```text
-.maestro/
+~/.gti/maestro/<project>/
 ├── run.json          # goal, class, phase, budget, checklist, worker summary
 ├── workers.jsonl     # one record per worker: id, chat, model, adapter, verdict
 ├── plan.md           # complex runs only
@@ -163,14 +167,14 @@ OpenAgents Coder delegates through `openagents coder delegate --to <agent> --tas
 
 When the CLI is installed but the harness has no server configured, load it for the worker with the harness's session-scoped flag: Claude Code `--mcp-config`, Codex `-c mcp_servers.<name>...`, or OpenCode `OPENCODE_CONFIG`. If the harness has no session-scoped path, use the CLI adapter and do not edit the user's global config.
 
-Record every server in `.maestro/orchestrators.json`, select one spawner and one coordination server, and add an `orchestrator` field to every worker record. Prefer a session-scoped MCP config over editing a user-global one; in autonomous mode, a global registration is pending.
+Record every server in `~/.gti/maestro/<project>/orchestrators.json`, select one spawner and one coordination server, and add an `orchestrator` field to every worker record. Prefer a session-scoped MCP config over editing a user-global one; in autonomous mode, a global registration is pending.
 
 An orchestrator that spawns its own workers is still a worker to Maestro. Give it a bounded task, require per-task evidence, review in its thread, and never accept its PASS as the verdict. Keep nesting to two levels.
 
 
 ## Preferences and model routing
 
-Preferences live outside the run: `~/.maestro/preferences.json` for the machine and `.maestro/preferences.json` for the project. Project beats user, and an explicit request beats both. Maestro reads them at intake, writes them only when the user states a durable choice ("prefer X", "always use Y", "from now on"), and keeps model health separate in `~/.maestro/providers.json`.
+Preferences live outside the run: `~/.gti/maestro/preferences.json` for the machine and `~/.gti/maestro/<project>/preferences.json` for the project. Project beats user, and an explicit request beats both. Maestro reads them at intake, writes them only when the user states a durable choice ("prefer X", "always use Y", "from now on"), and keeps model health separate in `~/.gti/maestro/providers.json`.
 
 | Role | Use |
 |---|---|

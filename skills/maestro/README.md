@@ -39,7 +39,7 @@
 
 Most agent work mixes two jobs that want different models: deciding what to do, and doing it. Maestro separates them. It runs on the strongest model available, turns the request into a plan and a set of self-contained task briefs, and spawns cheaper worker agents to execute each step. The workers write the code and run the commands; Maestro reviews the evidence, decides the verdict, and sends fixes back to the chat that produced the work.
 
-The skill also remembers how the user likes to work. It stores an orchestrator preference, an executor preference, fallbacks, routes, and an avoid list in `~/.maestro/preferences.json`, with per-project overrides in `.maestro/preferences.json`. It discovers the providers and models the harness can actually run, keeps their context, quality, speed, cost, limits, and health in a catalog, and routes every task to a model that fits. When a provider hits a rate limit, Maestro cools it down and moves to the next candidate instead of retrying the same model. It works with any harness that can spawn subagents or run a resumable worker CLI, detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and any ACP provider, records every worker chat id, and reuses those chats for review and fix rounds. It also sweeps the orchestration MCP servers available to the harness, classifies each one by its tool schema, and uses a resumable spawner or an OpenAgents workspace when one is present. A run is simple (one worker, one review) or complex (waves of parallel tasks with a review gate after each wave). In both cases, Maestro never does the task itself.
+The skill also remembers how the user likes to work. It stores an orchestrator preference, an executor preference, fallbacks, routes, and an avoid list in `~/.gti/maestro/preferences.json`, with per-project overrides in `~/.gti/maestro/<project>/preferences.json`. It discovers the providers and models the harness can actually run, keeps their context, quality, speed, cost, limits, and health in a catalog, and routes every task to a model that fits. When a provider hits a rate limit, Maestro cools it down and moves to the next candidate instead of retrying the same model. It works with any harness that can spawn subagents or run a resumable worker CLI, detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and any ACP provider, records every worker chat id, and reuses those chats for review and fix rounds. It also sweeps the orchestration MCP servers available to the harness, classifies each one by its tool schema, and uses a resumable spawner or an OpenAgents workspace when one is present. A run is simple (one worker, one review) or complex (waves of parallel tasks with a review gate after each wave). In both cases, Maestro never does the task itself.
 
 ```text
   request
@@ -58,7 +58,7 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
   delegate: primary model -> rate limit? -> cooldown -> fallback model
      |
      v
-  .maestro/ run ledger: workers, chats, routes, attempts, decisions, audit, report
+  ~/.gti/maestro/<project>/ run ledger: workers, chats, routes, attempts, decisions, audit, report
 ```
 
 | This skill does | This skill does not |
@@ -257,7 +257,7 @@ pi --list-models
 command-code --list-models
 ```
 
-Cline, Cursor, and Claude Code may not enumerate models from the CLI in every version. Declare missing IDs in `~/.maestro/providers.json`, then reference them from `~/.maestro/preferences.json`; Maestro marks unknown capabilities as `unknown` instead of guessing.
+Cline, Cursor, and Claude Code may not enumerate models from the CLI in every version. Declare missing IDs in `~/.gti/maestro/providers.json`, then reference them from `~/.gti/maestro/preferences.json`; Maestro marks unknown capabilities as `unknown` instead of guessing.
 
 ## Quick Start
 
@@ -296,7 +296,7 @@ A simple run: one worker, one review round, and a report that lists the changed 
 /maestro plan migrate the settings page from REST to the new client, in waves
 ```
 
-Plan only. Maestro writes `.maestro/plan.md` with tasks, tiers, dependencies, and review gates, and spawns no workers.
+Plan only. Maestro writes `~/.gti/maestro/<project>/plan.md` with tasks, tiers, dependencies, and review gates, and spawns no workers.
 
 ```text
 /maestro fix the flaky auth tests. Use Paseo if available; otherwise Claude Code. Keep the chat ids.
@@ -308,7 +308,7 @@ Forces a preference in the adapter order and makes the chat ids explicit in the 
 /maestro status
 ```
 
-Reads `.maestro/run.json` and `workers.jsonl` and prints the current run header, wave table, and open verdicts.
+Reads `~/.gti/maestro/<project>/run.json` and `workers.jsonl` and prints the current run header, wave table, and open verdicts.
 
 ```text
 /maestro resume
@@ -321,7 +321,7 @@ Continues the first unfinished task in its recorded chat after an interruption.
 /maestro preferences set executor opencode/deepseek-v4.1-flash
 ```
 
-Persists the roles in `~/.maestro/preferences.json` so the next run starts with them.
+Persists the roles in `~/.gti/maestro/preferences.json` so the next run starts with them.
 
 ```text
 Prefiro o Opus 5.5 como orquestrador e o DeepSeek Flash como executor. Daqui pra frente, use o free para tarefas rápidas.
@@ -348,7 +348,7 @@ Shows context-first routing and a rate-limit fallback. The preference is not cha
      goal -> done criteria -> simple or complex -> risk -> budget -> harness
      MCP sweep -> spawner + coordination -> orchestrators.json
      preferences + provider catalog + router
-     create .maestro/run.json, workers.jsonl, decisions.jsonl, audit.jsonl
+     create ~/.gti/maestro/<project>/run.json, workers.jsonl, decisions.jsonl, audit.jsonl
           |
           v
   2 plan
@@ -404,7 +404,7 @@ Starts a full run. Maestro creates the ledger, prints the run header, and execut
 /maestro plan <task>
 ```
 
-Writes or refreshes `.maestro/plan.md` and `run.json` without spawning a worker. Use it when the user wants the task breakdown first.
+Writes or refreshes `~/.gti/maestro/<project>/plan.md` and `run.json` without spawning a worker. Use it when the user wants the task breakdown first.
 
 | Argument | Default | Description |
 |----------|---------|-------------|
@@ -472,7 +472,7 @@ Runs the self-review and Maestro's verification for one recorded task, then upda
 /maestro report
 ```
 
-Writes `.maestro/report.md` from the ledger and prints the short run interface. It does not change the run.
+Writes `~/.gti/maestro/<project>/report.md` from the ledger and prints the short run interface. It does not change the run.
 
 | Argument | Default | Description |
 |----------|---------|-------------|
@@ -484,7 +484,7 @@ Writes `.maestro/report.md` from the ledger and prints the short run interface. 
 /maestro preferences [show|set|avoid|forget] ...
 ```
 
-Reads or writes the durable model choices. User scope is `~/.maestro/preferences.json`; project scope is `.maestro/preferences.json`. Project wins, and an explicit request wins over both.
+Reads or writes the durable model choices. User scope is `~/.gti/maestro/preferences.json`; project scope is `~/.gti/maestro/<project>/preferences.json`. Project wins, and an explicit request wins over both.
 
 | Subcommand | Action |
 |------------|--------|
@@ -504,7 +504,7 @@ Add `--project` to write to the project scope. Maestro persists a preference onl
 /maestro providers [--refresh] [--json]
 ```
 
-Lists the providers and models this machine can run, with context, quality, speed, cost, limits, health, and cooldowns. Reads `~/.maestro/providers.json` and refreshes it with the harness's own discovery command.
+Lists the providers and models this machine can run, with context, quality, speed, cost, limits, health, and cooldowns. Reads `~/.gti/maestro/providers.json` and refreshes it with the harness's own discovery command.
 
 | Argument | Default | Description |
 |----------|---------|-------------|
@@ -518,7 +518,7 @@ Lists the providers and models this machine can run, with context, quality, spee
 /maestro orchestrators [--refresh] [--json]
 ```
 
-Lists the MCP servers found in this run, with their role, transport, exact tool mapping, auth state, and status. With `--refresh`, Maestro sweeps again and rewrites `.maestro/orchestrators.json`.
+Lists the MCP servers found in this run, with their role, transport, exact tool mapping, auth state, and status. With `--refresh`, Maestro sweeps again and rewrites `~/.gti/maestro/<project>/orchestrators.json`.
 
 | Argument | Default | Description |
 |----------|---------|-------------|
@@ -544,28 +544,28 @@ MCP ORCHESTRATORS  run-2026-11-14-001  updated 15:00
 
 | Path | Contents |
 |------|----------|
-| `~/.maestro/preferences.json` | User roles, fallbacks, routes, and avoid list |
-| `.maestro/preferences.json` | Project overrides |
-| `~/.maestro/providers.json` | User model catalog, limits, health, and cooldowns |
-| `.maestro/providers.json` | Project catalog overrides and user-declared models |
-| `.maestro/orchestrators.json` | MCP servers found in the run, their role, tools, and status |
+| `~/.gti/maestro/preferences.json` | User roles, fallbacks, routes, and avoid list |
+| `~/.gti/maestro/<project>/preferences.json` | Project overrides |
+| `~/.gti/maestro/providers.json` | User model catalog, limits, health, and cooldowns |
+| `~/.gti/maestro/<project>/providers.json` | Project catalog overrides and user-declared models |
+| `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in the run, their role, tools, and status |
 
-`MAESTRO_HOME` replaces `~/.maestro` when set. These files hold provider and model IDs plus health, never credentials.
+`MAESTRO_HOME` replaces `~/.gti/maestro` when set, and `GTI_HOME` replaces `~/.gti`. These files hold provider and model IDs plus health, never credentials.
 
 ### Run directory
 
 | Path | Contents |
 |------|----------|
-| `.maestro/run.json` | Goal, class, phase, done criteria, budget, harness, pending items |
-| `.maestro/workers.jsonl` | One record per worker: task, tier, model, adapter, orchestrator, chat id, status, verdict, rounds |
-| `.maestro/orchestrators.json` | MCP servers found in the run, their role, tool mapping, auth, and status |
-| `.maestro/plan.md` | Complex-run waves, tasks, dependencies, and gates |
-| `.maestro/decisions.jsonl` | Append-only decisions and reasons |
-| `.maestro/audit.jsonl` | Append-only spawn, review, fix, verify, and report actions |
-| `.maestro/tasks/<id>/brief.md` | The exact brief sent to the worker |
-| `.maestro/tasks/<id>/result.md` | The worker output contract and diff, kept when the chat is not resumable |
-| `.maestro/tasks/<id>/review.md` | Self-review, independent verification, verdict, and fix rounds |
-| `.maestro/report.md` | The final report |
+| `~/.gti/maestro/<project>/run.json` | Goal, class, phase, done criteria, budget, harness, pending items |
+| `~/.gti/maestro/<project>/workers.jsonl` | One record per worker: task, tier, model, adapter, orchestrator, chat id, status, verdict, rounds |
+| `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in the run, their role, tool mapping, auth, and status |
+| `~/.gti/maestro/<project>/plan.md` | Complex-run waves, tasks, dependencies, and gates |
+| `~/.gti/maestro/<project>/decisions.jsonl` | Append-only decisions and reasons |
+| `~/.gti/maestro/<project>/audit.jsonl` | Append-only spawn, review, fix, verify, and report actions |
+| `~/.gti/maestro/<project>/tasks/<id>/brief.md` | The exact brief sent to the worker |
+| `~/.gti/maestro/<project>/tasks/<id>/result.md` | The worker output contract and diff, kept when the chat is not resumable |
+| `~/.gti/maestro/<project>/tasks/<id>/review.md` | Self-review, independent verification, verdict, and fix rounds |
+| `~/.gti/maestro/<project>/report.md` | The final report |
 
 ## Output
 
@@ -583,7 +583,7 @@ chats   w1.1 agent_101, w1.2 agent_102, w2.1 agent_123, w2.2 agent_104, w3.1 age
 open    none
 ```
 
-The full report is written to `.maestro/report.md`:
+The full report is written to `~/.gti/maestro/<project>/report.md`:
 
 | Section | Contents |
 |---------|----------|
@@ -622,14 +622,14 @@ The host has no subagent tool that returns a resumable id, and no supported work
 <details>
 <summary><strong>The worker chat cannot be resumed</strong></summary>
 
-Some hosts return no id or cannot prompt an existing chat. Maestro records `resumable: false`, asks the worker for the full output contract and diff in `.maestro/tasks/<id>/result.md`, and uses a fresh reviewer for the next round. Reassign only when the written evidence is not enough.
+Some hosts return no id or cannot prompt an existing chat. Maestro records `resumable: false`, asks the worker for the full output contract and diff in `~/.gti/maestro/<project>/tasks/<id>/result.md`, and uses a fresh reviewer for the next round. Reassign only when the written evidence is not enough.
 
 </details>
 
 <details>
 <summary><strong>The run lost track after a context reset</strong></summary>
 
-Ask for `/maestro status`, or read `.maestro/run.json` and `.maestro/workers.jsonl`, then run `/maestro resume`. The ledger is the source of truth, not the chat history. Do not start a new run while the old one has an unfinished task.
+Ask for `/maestro status`, or read `~/.gti/maestro/<project>/run.json` and `~/.gti/maestro/<project>/workers.jsonl`, then run `/maestro resume`. The ledger is the source of truth, not the chat history. Do not start a new run while the old one has an unfinished task.
 
 </details>
 
@@ -657,14 +657,14 @@ The brief did not list the action as forbidden, or the worker ignored it. Maestr
 <details>
 <summary><strong>My preferred model is rate-limited</strong></summary>
 
-Maestro reads `Retry-After` or uses a default cooldown, marks the model `cooling` in `~/.maestro/providers.json`, and routes the task to the next candidate. It does not retry the same model before the cooldown, and it does not rewrite your preference. Run `/maestro providers` to see the cooldown and the fallback order.
+Maestro reads `Retry-After` or uses a default cooldown, marks the model `cooling` in `~/.gti/maestro/providers.json`, and routes the task to the next candidate. It does not retry the same model before the cooldown, and it does not rewrite your preference. Run `/maestro providers` to see the cooldown and the fallback order.
 
 </details>
 
 <details>
 <summary><strong>My preferred model is not found</strong></summary>
 
-The model ID may differ from the marketing name, or the provider may not expose it on this machine. Run `/maestro providers --refresh`, check the IDs with `opencode models`, `kilo models --verbose`, Paseo `list_models`, or `codex debug models`, then update the preference with the real ID. For Cline, Cursor, Claude Code, or Command Code, declare the ID in `~/.maestro/preferences.json` or `~/.maestro/providers.json`.
+The model ID may differ from the marketing name, or the provider may not expose it on this machine. Run `/maestro providers --refresh`, check the IDs with `opencode models`, `kilo models --verbose`, Paseo `list_models`, or `codex debug models`, then update the preference with the real ID. For Cline, Cursor, Claude Code, or Command Code, declare the ID in `~/.gti/maestro/preferences.json` or `~/.gti/maestro/providers.json`.
 
 </details>
 

@@ -240,13 +240,13 @@ python3 skills/video-to-skill/scripts/setup/check_dependencies.py --install --wi
 Downloads metadata, audio, or video with `yt-dlp`. X post links (`x.com`, `twitter.com`, `fixupx.com`, `fxtwitter.com`) go through the FixupX API instead, and audio is extracted from the MP4 with ffmpeg.
 
 ```bash
-python3 skills/video-to-skill/scripts/download/download_video.py "URL" --out ./work --mode metadata
+python3 skills/video-to-skill/scripts/download/download_video.py "URL" --out ~/.gti/video-to-skill/<video-id>/work --mode metadata
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `url` | Required | Video URL, YouTube video ID, or X post URL |
-| `--out`, `-o` | `./work` | Output folder |
+| `--out`, `-o` | `~/.gti/video/work` | Output folder (never the current project) |
 | `--mode`, `-m` | `metadata` | `metadata` (writes `metadata.json` with chapters), `video` (`video.mp4`), or `audio` (`audio.m4a`) |
 | `--height` | `720` | Maximum video height for `--mode video` |
 | `--index` | `1` | Which video of an X post with several videos |
@@ -258,7 +258,7 @@ Set `FIXUPX_API_BASE` to use another instance of the API (default `https://api.f
 Fetches captions, preferring manual captions over auto-generated ones. X posts have no captions to fetch, so an X link always exits with code `2`; transcribe its audio with `transcribe_audio.py`.
 
 ```bash
-python3 skills/video-to-skill/scripts/transcript/get_transcript.py "URL" --lang pt,en --format json --out ./work/transcript.json
+python3 skills/video-to-skill/scripts/transcript/get_transcript.py "URL" --lang pt,en --format json --out ~/.gti/video-to-skill/<video-id>/work/transcript.json
 ```
 
 | Argument | Default | Description |
@@ -277,7 +277,7 @@ Exit code `2` means the video has no captions.
 Transcribes a local audio or video file with Whisper and writes the same JSON shape.
 
 ```bash
-python3 skills/video-to-skill/scripts/transcript/transcribe_audio.py ./work/audio.m4a --out ./work/transcript.json
+python3 skills/video-to-skill/scripts/transcript/transcribe_audio.py ~/.gti/video-to-skill/<video-id>/work/audio.m4a --out ~/.gti/video-to-skill/<video-id>/work/transcript.json
 ```
 
 | Argument | Default | Description |
@@ -292,13 +292,13 @@ python3 skills/video-to-skill/scripts/transcript/transcribe_audio.py ./work/audi
 Extracts timestamped frames and writes `manifest.json` next to them.
 
 ```bash
-python3 skills/video-to-skill/scripts/frames/extract_frames.py ./work/video.mp4 --out ./work/frames --mode scene --max 40
+python3 skills/video-to-skill/scripts/frames/extract_frames.py ~/.gti/video-to-skill/<video-id>/work/video.mp4 --out ~/.gti/video-to-skill/<video-id>/work/frames --mode scene --max 40
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `video` | Required | Local video file |
-| `--out`, `-o` | `./frames` | Output folder for `frame_0001.jpg`, `frame_0002.jpg`, and so on |
+| `--out`, `-o` | `~/.gti/video/frames` | Output folder for `frame_0001.jpg`, `frame_0002.jpg`, and so on |
 | `--mode` | `interval` | `interval` or `scene` (frames where the picture changes a lot) |
 | `--interval`, `-i` | `20` | Seconds between frames in interval mode |
 | `--scene-threshold` | `0.3` | Scene change sensitivity from 0 to 1; lower finds more |
@@ -311,21 +311,21 @@ python3 skills/video-to-skill/scripts/frames/extract_frames.py ./work/video.mp4 
 Creates the new skill folder from `assets/templates/SKILL.template.md`.
 
 ```bash
-python3 skills/video-to-skill/scripts/scaffold/scaffold_skill.py deploy-to-vercel -d "Deploys apps. Use when the user wants to deploy." -o ./skills
+python3 skills/video-to-skill/scripts/scaffold/scaffold_skill.py deploy-to-vercel -d "Deploys apps. Use when the user wants to deploy." -o ~/.gti/video-to-skill/skills
 ```
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `name` | Required | Skill name in kebab-case |
 | `--description`, `-d` | Required | What the skill does and when to use it |
-| `--out`, `-o` | `.` | Folder that will contain the skill |
+| `--out`, `-o` | `~/.gti/video-to-skill/skills` | Folder that will contain the skill |
 
 ### validate_skill.py
 
 Checks a skill folder and exits `1` when there are errors.
 
 ```bash
-python3 skills/video-to-skill/scripts/validate/validate_skill.py ./skills/deploy-to-vercel
+python3 skills/video-to-skill/scripts/validate/validate_skill.py ~/.gti/video-to-skill/skills/deploy-to-vercel
 ```
 
 | Argument | Default | Description |

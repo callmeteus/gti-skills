@@ -10,7 +10,7 @@ The aim is a working network whose every nonzero weight has a stated purpose. Yo
 4. **Create the zero network.**
 
    ```bash
-   python3 <skill-dir>/scripts/build/mlp.py init --sizes 600,32,32,6 --activations tanh,tanh,none --out policy.npz
+   python3 <skill-dir>/scripts/build/mlp.py init --sizes 600,32,32,6 --activations tanh,tanh,none --out ~/.gti/weight-space-programming/<project>/policy.npz
    ```
 
 5. **Set weights block by block** in a construction script (keep it in the project; it is the source code of the network). Use the patterns in [../techniques/construction-patterns.md](../techniques/construction-patterns.md): detectors, AND and OR gates, comparisons, copies through a layer, and propagation over a grid.

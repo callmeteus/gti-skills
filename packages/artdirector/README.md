@@ -64,11 +64,12 @@ npm run dev -- help
 |----------|---------|---------|
 | `ARTDIRECTOR_PORT` | `4730` | Preferred studio port |
 | `ARTDIRECTOR_JSON` | unset | Set to `1` to make every command print JSON |
-| `ARTDIRECTOR_STORAGE` | unset | Set to `repository` to keep projects in the repository instead of a temporary folder |
+| `GTI_HOME` | `~/.gti` | Root of everything GTI skills generate; ArtDirector uses `<GTI_HOME>/artdirector` |
+| `ARTDIRECTOR_STORAGE` | unset | Set to `repository` to make every project permanent (kept per workspace in `<GTI_HOME>/artdirector/projects`, never in the repository) |
 | `ARTDIRECTOR_BIN` | unset | Path of a built CLI the skill wrapper should run |
 | `ARTDIRECTOR_HOME` | unset | Package folder the skill wrapper should use |
-| `ARTDIRECTOR_STATE_HOME` | `<temp>/artdirector` | Folder that holds temporary sessions |
-| `ARTDIRECTOR_GUIDELINES_HOME` | `~/.artdirector` | Folder that holds the user and workspace guidelines |
+| `ARTDIRECTOR_STATE_HOME` | `~/.gti/artdirector/sessions` | Folder that holds chat sessions |
+| `ARTDIRECTOR_GUIDELINES_HOME` | `~/.gti/artdirector` | Folder that holds the user and workspace guidelines |
 
 ## Testing
 

@@ -4,7 +4,7 @@ In JavaScript and TypeScript projects, Stryker (mutation testing) and fast-check
 
 ## The tools folder
 
-- **Default:** `~/.gti-skills/tools/node`. Set `GTI_TEST_TOOLS_DIR` or pass `--tools-dir` to use another folder.
+- **Default:** `~/.gti/better-tests/tools/node`. Set `GTI_TEST_TOOLS_DIR` or pass `--tools-dir` to use another folder.
 - **Must be outside the project.** The script refuses a folder inside the project it is working on.
 - **Shared.** One install serves every project. Each project gets its own work folder at `<tools-dir>/work/<project-name>-<hash>/` for its Stryker config, reports, sandbox, and property files.
 - **Contents:** `@stryker-mutator/core`, the Vitest, Jest, and Mocha runner plugins (major 9), `fast-check` (major 4), and `tsx` (major 4) to run TypeScript property files.
@@ -34,7 +34,7 @@ node <skill-dir>/scripts/tools/js-tools.mjs stryker --project . --mutate "src/or
 | `--runner` | Detected from `package.json` | `vitest`, `jest`, `mocha`, or `command` |
 | `--test-command` | `npm test` | Test command for the `command` runner |
 | `--concurrency` | Stryker default | Number of parallel test runner processes |
-| `--tools-dir` | `~/.gti-skills/tools/node` | Tools folder |
+| `--tools-dir` | `~/.gti/better-tests/tools/node` | Tools folder |
 
 How it stays out of the project:
 

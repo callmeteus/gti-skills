@@ -3,7 +3,7 @@
 ## Validate
 
 ```bash
-python3 <skill-dir>/scripts/validate/validate_skill.py ./skills/deploy-to-vercel
+python3 <skill-dir>/scripts/validate/validate_skill.py ~/.gti/video-to-skill/skills/deploy-to-vercel
 ```
 
 The validator prints JSON and exits `1` on errors. Fix every error and rerun until `"ok": true`. It checks:
@@ -27,7 +27,7 @@ Check the output against [the anti-patterns](../quality/anti-patterns.md).
 
 ## Clean up
 
-Delete the `work/` folder with the video, audio, transcript, and frames unless the user wants to keep it.
+Delete the `~/.gti/video-to-skill/<video-id>/work` folder with the video, audio, transcript, and frames unless the user wants to keep it.
 
 ## Deliver
 

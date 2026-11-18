@@ -11,22 +11,22 @@ A read-only audit of a live AWS account, followed by a plan to untangle it throu
 ## Collect and analyze
 
 ```bash
-python3 <skill-dir>/scripts/aws/aws_collect.py --profile <profile> --regions <r1,r2> --out <tmp>/aws-snapshot
-python3 <skill-dir>/scripts/aws/aws_analyze.py <tmp>/aws-snapshot
+python3 <skill-dir>/scripts/aws/aws_collect.py --profile <profile> --regions <r1,r2> --out ~/.gti/infra-expert/<project>/aws-snapshot
+python3 <skill-dir>/scripts/aws/aws_analyze.py ~/.gti/infra-expert/<project>/aws-snapshot
 ```
 
-The snapshot holds network layout, names, and tags. Keep it in the OS temp folder and tell the user where it is; offer to delete it at the end.
+The snapshot holds network layout, names, and tags. Keep it in `~/.gti/infra-expert/<project>/` and tell the user where it is; offer to delete it at the end.
 
 ### Comparing with Terraform state
 
 To find resources no code manages, pass every state of every stack that manages the account:
 
 ```bash
-terraform -chdir=<root> show -json > <tmp>/state-<root>.json
-python3 <skill-dir>/scripts/aws/aws_analyze.py <tmp>/aws-snapshot --tf-state <tmp>/state-a.json --tf-state <tmp>/state-b.json
+terraform -chdir=<root> show -json > ~/.gti/infra-expert/<project>/state-<root>.json
+python3 <skill-dir>/scripts/aws/aws_analyze.py ~/.gti/infra-expert/<project>/aws-snapshot --tf-state ~/.gti/infra-expert/<project>/state-a.json --tf-state ~/.gti/infra-expert/<project>/state-b.json
 ```
 
-State files contain secrets in plain text. Read them only with the user's permission, write them only to the OS temp folder, never print their content, and delete them when the analysis is done. `terraform show -json` needs an initialized root with backend access; it does not lock or change state.
+State files contain secrets in plain text. Read them only with the user's permission, write them only to `~/.gti/infra-expert/<project>/`, never print their content, and delete them when the analysis is done. `terraform show -json` needs an initialized root with backend access; it does not lock or change state.
 
 ## What the findings mean
 

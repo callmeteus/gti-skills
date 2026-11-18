@@ -40,7 +40,7 @@ Read the files listed in [../concepts/project-docs.md](../concepts/project-docs.
 
 ```bash
 python3 <skill-dir>/scripts/explore/hotspots.py . --commits 300
-python3 <skill-dir>/scripts/explore/hotspots.py . --json > <tmp>/hotspots.json
+python3 <skill-dir>/scripts/explore/hotspots.py . --json > ~/.gti/infra-expert/<project>/hotspots.json
 ```
 
 On Windows use `python` or `py -3`. Infrastructure repositories churn in docs and inventories as much as in code; look at the code folders in the list, and treat a hand-written inventory near the top as a lead for step 3.

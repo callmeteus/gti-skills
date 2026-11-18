@@ -9,7 +9,7 @@ One clean cold-load trace under conditions close to a mid-range phone, so the nu
 1. **Open the page.** `new_page(url: "<target-url>")`, or reuse a page from `list_pages` and `navigate_page` to the URL. Confirm the page loaded the expected content (title, main heading) before tracing; a trace of an error page or a consent wall is useless.
 2. **Emulate a phone.** In one call: a mobile viewport, CPU throttling 4x, and `networkConditions: "Slow 4G"`. Note the settings for the report. Run a second, unthrottled desktop trace only when the user cares about desktop.
 3. **Record.** `performance_start_trace(pageId, reload: true, autoStop: true, ignoreCache: true)`. The trace reloads the page and stops on its own after the load.
-4. **Read the response.** It lists the metrics and the "Available insight sets" with their ids. Keep the insight set id for Phase 2. Save the raw trace with `filePath` when the user may want to open it in the DevTools Performance panel.
+4. **Read the response.** It lists the metrics and the "Available insight sets" with their ids. Keep the insight set id for Phase 2. Save the raw trace with `filePath` set to `~/.gti/web-performance-audit/<project>/trace.json` (never the project folder) when the user may want to open it in the DevTools Performance panel.
 5. **Repeat when close to a threshold.** Lab runs vary. When a metric is within about 10 percent of a threshold, record two more traces and report the median.
 
 ## Login and consent

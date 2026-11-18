@@ -1,9 +1,7 @@
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
-import { homedir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
-import { ArtErrors, Ids, JsonFile } from "../core";
+import { ArtErrors, GtiHome, Ids, JsonFile } from "../core";
 
 /**
  * A rule says what to do or what to avoid.
@@ -103,8 +101,7 @@ export class Guidelines {
     static for(workspace: string): Guidelines {
         const home = Guidelines.home();
         const absolute = resolve(workspace);
-        const digest = createHash("sha256").update(process.platform === "win32" ? absolute.toLowerCase() : absolute).digest("hex").slice(0, 10);
-        const key = `${Ids.slug(basename(absolute)).slice(0, 40) || "workspace"}-${digest}`;
+        const key = GtiHome.workspaceKey(absolute);
         return new Guidelines(join(home, "guidelines.json"), join(home, "workspaces", key, "guidelines.json"), absolute);
     }
 
@@ -113,7 +110,7 @@ export class Guidelines {
      */
     static home(): string {
         const override = process.env.ARTDIRECTOR_GUIDELINES_HOME?.trim();
-        return override ? resolve(override) : join(homedir(), ".artdirector");
+        return override ? resolve(override) : GtiHome.artdirector();
     }
 
     /**

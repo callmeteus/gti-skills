@@ -1,5 +1,6 @@
 import {
     ArtErrors,
+    GtiHome,
     Paths,
     StorageScope,
     type BrandContext,
@@ -47,9 +48,10 @@ export interface ContextResolution {
 /**
  * Chooses between an isolated temp request and a permanent repository project.
  *
- * Defaults to temporary, per-chat storage. Repository state is used only when
- * the user passed `--permanent`, the session was started in repository mode,
- * or no temporary session exists but a repository project does.
+ * Defaults to per-chat storage under `~/.gti/artdirector/sessions`. The permanent
+ * project (per workspace, under `~/.gti/artdirector/projects`) is used only when
+ * the user passed `--permanent`, the session was started in permanent mode,
+ * or no chat session exists but the workspace has a permanent project.
  */
 export namespace ContextResolver {
     /**
@@ -272,12 +274,12 @@ export namespace ContextResolver {
         workspace: string,
         required: boolean
     ): ContextResolution | null {
-        const root = Paths.findProjectRoot(workspace);
+        const root = GtiHome.projectRoot(workspace);
 
-        if (!root) {
+        if (!Paths.hasProject(root)) {
             if (required) {
                 throw ArtErrors.project(
-                    "No permanent ArtDirector project found. Run `artdirector init --permanent` to store state in this repository."
+                    "No permanent ArtDirector project found. Run `artdirector init --permanent` to keep this workspace's project in ~/.gti/artdirector/projects."
                 );
             }
 
@@ -300,8 +302,7 @@ export namespace ContextResolver {
      * @returns Resolution
      */
     function initRepository(identity: SessionIdentity, options: CreateOptions): ContextResolution {
-        const existing = Paths.findProjectRoot(options.workspace);
-        const root = existing ?? options.workspace;
+        const root = GtiHome.projectRoot(options.workspace);
         const ctx = Paths.hasProject(root)
             ? ProjectContext.openAt(root, options.workspace)
             : ProjectContext.create({

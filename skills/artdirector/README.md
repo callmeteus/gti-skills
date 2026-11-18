@@ -102,7 +102,7 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Render check:** each variant is audited and rendered once before hand-over, and construction defects are fixed in one pass
 - **Deterministic audit:** size, overflow, fonts, assets, text at or past the edge, story chrome, and blurred text
 - **Multi-format export:** PNG, JPEG, SVG, PDF, and HTML
-- **Session isolation:** each chat gets its own temporary project unless you ask for permanent repository state
+- **Session isolation:** each chat gets its own project under `~/.gti/artdirector/`; nothing is written into your repository
 - **Agent-native CLI:** every command accepts `--json`
 
 ## Requirements
@@ -185,7 +185,7 @@ The studio asks only for missing essentials.
 | Brand | No | Name, colors, fonts, logo |
 | Visual direction | No | Chosen from rendered previews in the studio |
 | Audience and tone | No | "Young professionals, playful" |
-| Permanent state | No | "Keep the project in this repository" |
+| Permanent state | No | "Keep this project for later chats" |
 
 ### Examples
 
@@ -230,7 +230,7 @@ init ──> brief ──> shape ──> generate ──> render check ──> s
 1. Describe the artwork in natural language (the agent loads this skill).
 2. Studio asks only for missing essentials.
 3. Choose a **rendered** visual direction (not a paragraph of adjectives).
-4. Agent writes HTML/CSS/SVG variants into `.artdirector/variants/`, audits and renders each one once, and fixes construction defects.
+4. Agent writes HTML/CSS/SVG variants into the request's `variants/` folder under `~/.gti/artdirector/`, audits and renders each one once, and fixes construction defects.
 5. Gallery compares real artboards, one group per art requested in the chat.
 6. Preview: click elements, write comments, and copy the prompt into the chat.
 7. Agent edits the file and runs the render check once; click Reload in Preview.
@@ -301,7 +301,7 @@ Refinement commands return guidance, quality rules, and techniques that the agen
 Run with `python3` on macOS and Linux, or `python` on Windows.
 
 ```bash
-python3 skills/artdirector/scripts/photos/find_photos.py "red sneakers" --license cc0 --limit 12 --download ./photos
+python3 skills/artdirector/scripts/photos/find_photos.py "red sneakers" --license cc0 --limit 12 --download ~/.gti/artdirector/photos
 ```
 
 | Argument | Default | Description |
@@ -316,7 +316,7 @@ python3 skills/artdirector/scripts/photos/find_photos.py "red sneakers" --licens
 Prints the candidates as JSON (title, creator, license, source page, image URL, size) from [Openverse](https://openverse.org/). Exit code `2` means nothing matched.
 
 ```bash
-python3 skills/artdirector/scripts/photos/remove_background.py ./photos/01-red-sneakers.jpg --install
+python3 skills/artdirector/scripts/photos/remove_background.py ~/.gti/artdirector/photos/01-red-sneakers.jpg --install
 ```
 
 | Argument | Default | Description |
@@ -347,13 +347,15 @@ Writes `<name>-cutout.png` and prints the files as JSON. The first run downloads
 | SVG | `svg` | Playwright, only for compositions with an SVG root |
 | HTML | `html` | Source artwork |
 
-Art Director isolates project state per chat. The CLI reads agent session variables such as `OPENCODE_SESSION_ID` and `PASEO_AGENT_ID` and keeps each chat's project in its own folder under the OS temp directory.
+Art Director isolates project state per chat. The CLI reads agent session variables such as `OPENCODE_SESSION_ID` and `PASEO_AGENT_ID` and keeps each chat's project in its own folder under `~/.gti/artdirector/` (`$GTI_HOME/artdirector/` when `GTI_HOME` is set). Nothing is written into your repository.
 
 | Mode | How to get it | Where state lives |
 |------|---------------|-------------------|
-| Temporary (default) | `init --name "<name>"` | Per-chat folder under the OS temp directory |
+| Per chat (default) | `init --name "<name>"` | `~/.gti/artdirector/sessions/<chat>/requests/<request>/` |
 | Fresh context in the same chat | `init --new --name "<name>"` | New request folder in the same chat; earlier arts stay in the studio history |
-| Permanent | `init --permanent --name "<name>"` | `.artdirector/` in the current repository |
+| Permanent | `init --permanent --name "<name>"` | `~/.gti/artdirector/projects/<workspace>-<hash>/` |
+
+Inside each request or permanent project:
 
 ```text
 .artdirector/
@@ -369,12 +371,12 @@ Art Director isolates project state per chat. The CLI reads agent session variab
 └── token                        # Studio access token (gitignored)
 ```
 
-A temporary chat keeps one folder per art under `requests/<request-id>/`, plus the chat-wide `session.json` index, `token`, `studio.json`, and `moodboard/` beside them.
+A chat keeps one folder per art under `requests/<request-id>/`, plus the chat-wide `session.json` index, `token`, `studio.json`, and `moodboard/` beside them.
 
-Guidelines outlive chats and live outside both folders, in `~/.artdirector/` (moved with `ARTDIRECTOR_GUIDELINES_HOME`):
+Guidelines outlive chats and live at the top of `~/.gti/artdirector/` (moved with `ARTDIRECTOR_GUIDELINES_HOME`):
 
 ```text
-~/.artdirector/
+~/.gti/artdirector/
 ├── guidelines.json                    # Rules for all of the user's work
 └── workspaces/<name>-<hash>/
     └── guidelines.json                # Rules for one workspace

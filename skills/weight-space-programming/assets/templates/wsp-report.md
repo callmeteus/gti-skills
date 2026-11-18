@@ -42,7 +42,7 @@
 
 ## Files
 
-- **Ledger:** wsp-ledger.json
+- **Ledger:** ~/.gti/weight-space-programming/<project>/wsp-ledger.json
 - **Kept checkpoint:** <path>
 - **Edit or construction script:** <path>
 

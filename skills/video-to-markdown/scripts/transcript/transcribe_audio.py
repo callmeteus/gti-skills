@@ -84,7 +84,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         fail("Whisper is not installed. Run scripts/setup/check_dependencies.py --install --with-whisper", 127)
 
     if args.out:
-        Path(args.out).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        out_file = Path(args.out).expanduser()
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
         print_json({"file": args.out, "language": result["language"], "segments": len(result["timestamped"])})
     else:
         print_json(result)

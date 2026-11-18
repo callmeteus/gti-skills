@@ -42,6 +42,10 @@ In this skill:
 - When the mode is unclear, pick the narrower one (guidance, then diff review, then full audit) and say so. A full audit uses the `quick` profile unless the request names another.
 - Never post review comments or contact anything outside the source and the sandbox; put the comments in the report. Fix findings only when the request asked for fixes.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/security-audit/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Each full audit writes to `~/.gti/security-audit/<repo-name>/run-<N>/`.
+
 ## Operating modes
 
 This skill is guidance by default. Loading it does not authorize the complete audit workflow or file creation.
@@ -91,7 +95,7 @@ In full audit mode, resolve these values before reconnaissance:
 - **Skill directory:** the absolute directory containing this `SKILL.md`, written `<skill-dir>` below.
 - **Target:** the absolute repository root under review.
 - **Repo name:** a stable repository identifier from the directory or local Git remote.
-- **Output directory:** a new writable directory outside the target, defaulting to `~/security-audit-skill/<repo-name>/run-<N>`, where `<N>` is the next unused integer. Use a directory inside the target only when the user explicitly selects it and the parent verifies that version control ignores the whole directory. Otherwise stop and request an external path.
+- **Output directory:** a new writable directory outside the target, defaulting to `~/.gti/security-audit/<repo-name>/run-<N>` (`$GTI_HOME` replaces `~/.gti`), where `<N>` is the next unused integer. Never write it inside the target repository; when the user names a folder inside it, explain that the audit output stays in `~/.gti/security-audit/` and ask for a folder outside the repository instead.
 - **Source ref:** the reviewed commit and whether the worktree is dirty. Do not treat unreviewed generated or modified files as another revision.
 
 Every bundled script is zero-dependency Node.js and runs the same way on macOS, Linux, and Windows: `node <skill-dir>/scripts/...`.

@@ -14,4 +14,4 @@ Pass your own values with a JSON file; keys are token names and image paths may 
 
 The JSON result lists every token the template reads under `tokens`, with its default. Layers use `data-layer` so ClickClick-style modifications remain possible.
 
-Assets: Bunny Fonts, the effects toolkit, user files, and public-domain or CC0 photos and SVGs with a row in `.artdirector/assets.json` (`origin`, `license`, `attribution`).
+Assets: Bunny Fonts, the effects toolkit, user files, and public-domain or CC0 photos and SVGs with a row in `assets.json` inside `scope.stateDir` (`origin`, `license`, `attribution`).

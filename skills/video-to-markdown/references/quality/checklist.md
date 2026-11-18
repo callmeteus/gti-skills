@@ -26,5 +26,5 @@ Run through this before delivering.
 
 ## Delivery
 
-- [ ] The `work/` folder is deleted (or the user asked to keep it).
+- [ ] The `~/.gti/video-to-markdown/<video-id>/work` folder is deleted (or the user asked to keep it), and nothing was written into the user's project.
 - [ ] The reply is in the user's language and gives the file path, the format, and anything you could not verify.

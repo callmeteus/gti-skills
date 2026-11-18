@@ -41,7 +41,7 @@ The run is not done until the verifier's evidence passes or the failing item is 
 
 ## MCP orchestrators at the end
 
-Update `.maestro/orchestrators.json` with the final status of every server used: `ready` on success, `auth-required` on a login that never completed, `error` with the last error, and `unavailable` when the server disappeared. Keep the capability mapping, because the next run does not have to rediscover it.
+Update `~/.gti/maestro/<project>/orchestrators.json` with the final status of every server used: `ready` on success, `auth-required` on a login that never completed, `error` with the last error, and `unavailable` when the server disappeared. Keep the capability mapping, because the next run does not have to rediscover it.
 
 - Close tunnels a worker opened, with `tunnel_close`, and stop anything the workspace started.
 - Do not delete workspace files or routines. They are the shared evidence; deleting them is irreversible and needs permission.
@@ -52,7 +52,7 @@ Update `.maestro/orchestrators.json` with the final status of every server used:
 
 At the end, update what the next run needs:
 
-- Write health and cooldowns to `~/.maestro/providers.json`. Do not write preferences from failures.
+- Write health and cooldowns to `~/.gti/maestro/providers.json`. Do not write preferences from failures.
 - Record success and failure counts per model when the harness reports them.
 - Persist a preference only if the user stated a durable choice during the run ("from now on", "always"). Write to the user scope unless the user said project.
 - Report every preference change with the old value and the new value.
@@ -63,7 +63,7 @@ Update what was observed; leave the rest as `unknown`.
 
 ## Report
 
-Write `.maestro/report.md` with [../../assets/templates/final-report.md](../../assets/templates/final-report.md). Include the routing table, every attempt, and every preference change, then print the short interface:
+Write `~/.gti/maestro/<project>/report.md` with [../../assets/templates/final-report.md](../../assets/templates/final-report.md). Include the routing table, every attempt, and every preference change, then print the short interface:
 
 ```text
 MAESTRO  run-2026-11-14-001  done
@@ -97,7 +97,7 @@ If the user asks to clean up, archive only the chats whose tasks passed and whos
 
 - Stop any dev server, watcher, or background process a worker started. Use the harness's cancel or stop tool; do not leave a port occupied.
 - Remove temporary worktrees only when their work is merged and the user allows it.
-- Keep `.maestro/` local. If the user wants the plan or report versioned, copy those two files into the repository deliberately; do not commit the whole run directory.
+- Keep `~/.gti/maestro/<project>/` local. If the user wants the plan or report versioned, copy those two files into the repository deliberately; do not commit the whole run directory.
 - Leave the working tree in the state the user asked for: a branch, an uncommitted diff, or a clean tree.
 
 ## Pending and not verified

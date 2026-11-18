@@ -73,7 +73,7 @@ Better Tests gives an agent eight rules and a workflow in three modes: write tes
 - **Proof of value:** every new test is seen failing, and mutation testing finds assertions that are missing.
 - **Safe pruning:** replacement tests first, seeded bugs to compare, deletion only with approval, before and after numbers.
 - **Anti-pattern checklist:** used to review new tests and classify existing ones.
-- **Mandatory Stryker and fast-check, outside the project:** in JavaScript and TypeScript projects, `js-tools.mjs` installs both into `~/.gti-skills/tools/node` and runs them against the project from there, so the project gains no dependency, config, report, or temp folder.
+- **Mandatory Stryker and fast-check, outside the project:** in JavaScript and TypeScript projects, `js-tools.mjs` installs both into `~/.gti/better-tests/tools/node` and runs them against the project from there, so the project gains no dependency, config, report, or temp folder.
 - **Language agnostic:** tool tables for JavaScript, TypeScript, Python, Java, Go, Rust, C#, and PHP.
 
 ## Requirements
@@ -86,7 +86,7 @@ Better Tests gives an agent eight rules and a workflow in three modes: write tes
 | Playwright | Any recent | User-flow tests and the Playwright MCP server | No |
 | Mutation or property-based tool for other languages | Per language | Verify step, for example PIT, mutmut, Hypothesis, Stryker.NET | No |
 
-In JavaScript and TypeScript projects the agent installs the JS tools without asking, into `~/.gti-skills/tools/node` (or `GTI_TEST_TOOLS_DIR`), never into the project. Tools for other languages are used only when the project has them or the user approves installing them.
+In JavaScript and TypeScript projects the agent installs the JS tools without asking, into `~/.gti/better-tests/tools/node` (or `GTI_TEST_TOOLS_DIR`), never into the project. Tools for other languages are used only when the project has them or the user approves installing them.
 
 To install the JS tools ahead of time:
 
@@ -224,7 +224,7 @@ node skills/better-tests/scripts/tools/js-tools.mjs property --project . <workDi
 | `--concurrency` | Stryker default | Parallel test runner processes |
 | `workdir` | - | Prints the project's work folder and the relative import prefix to the project |
 | `property` | - | Runs a property file from the work folder with `tsx` |
-| `--tools-dir` | `~/.gti-skills/tools/node`, or `GTI_TEST_TOOLS_DIR` | Tools folder; refused when inside the project |
+| `--tools-dir` | `~/.gti/better-tests/tools/node`, or `GTI_TEST_TOOLS_DIR` | Tools folder; refused when inside the project |
 
 ### Repository commands
 

@@ -9,14 +9,14 @@ Most professional social pieces are photo-led. A real photo, well treated, beats
 
    ```bash
    python3 <skill-dir>/scripts/photos/find_photos.py "smiling woman guitar" --license cc0 --limit 12
-   python3 <skill-dir>/scripts/photos/find_photos.py "smiling woman guitar" --license cc0 --limit 12 --download ./photos
+   python3 <skill-dir>/scripts/photos/find_photos.py "smiling woman guitar" --license cc0 --limit 12 --download <scope.root>/downloads/photos
    ```
 
-   The first command prints candidates as JSON. The second also downloads them and writes `credits.json` with creator, source, and license. Open the thumbnails, pick, and record every photo you use in `.artdirector/assets.json`.
+   The first command prints candidates as JSON. The second also downloads them and writes `credits.json` with creator, source, and license. Open the thumbnails, pick, and record every photo you use in `assets.json` inside `scope.stateDir`. `scope.root` comes from the `init` or `status` JSON and sits under `~/.gti/artdirector/`, so nothing lands in the user's project.
 3. **Remove the background** when the composition needs a cutout. This runs a local segmentation model, not a generative one:
 
    ```bash
-   python3 <skill-dir>/scripts/photos/remove_background.py ./photos/portrait.jpg --install
+   python3 <skill-dir>/scripts/photos/remove_background.py <scope.root>/downloads/photos/portrait.jpg --install
    ```
 
    It writes `portrait-cutout.png` next to the source, trimmed to the subject. The first run downloads the model (about 170 MB); tell the user before running it. `--model birefnet-portrait` gives cleaner hair edges and downloads about 1 GB.

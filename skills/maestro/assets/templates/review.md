@@ -73,7 +73,7 @@ Use only when the risk is high or the facts are disputed.
 ```text
 You are an independent reviewer. You did not write this change.
 Task and done criteria: <paste>.
-Diff and evidence: <paste or point to .maestro/tasks/<id>/>.
+Diff and evidence: <paste or point to ~/.gti/maestro/<project>/tasks/<id>/>.
 Find what is wrong: correctness, missing cases, weakened tests, unnecessary complexity, scope creep, safety. Do not fix anything.
 End with PASS, FIX with findings, or ESCALATE with the decision needed.
 ```

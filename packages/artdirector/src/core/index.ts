@@ -34,3 +34,4 @@ export { Ids } from "./Ids";
 export { JsonFile } from "./Json";
 export { Paths } from "./Paths";
 export { Auth } from "./Auth";
+export { GtiHome } from "./GtiHome";

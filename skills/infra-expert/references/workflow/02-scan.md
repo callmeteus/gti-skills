@@ -1,6 +1,6 @@
 # Step 2: scan
 
-Run the scanners for the area. They are read-only, use only the Python standard library, and print text by default or JSON with `--json`. Write JSON output to the OS temp folder, never into the repository.
+Run the scanners for the area. They are read-only, use only the Python standard library, and print text by default or JSON with `--json`. Write JSON output to `~/.gti/infra-expert/<project>/`, never into the repository.
 
 | Area | Commands |
 |------|----------|
@@ -13,7 +13,7 @@ Run the scanners for the area. They are read-only, use only the Python standard 
 ## Terraform
 
 ```bash
-python3 <skill-dir>/scripts/scan/terraform_scan.py <repo> --json > <tmp>/terraform-scan.json
+python3 <skill-dir>/scripts/scan/terraform_scan.py <repo> --json > ~/.gti/infra-expert/<project>/terraform-scan.json
 python3 <skill-dir>/scripts/scan/terraform_scan.py <repo>
 ```
 
@@ -29,7 +29,7 @@ terraform -chdir=<root> init -backend=false -input=false && terraform -chdir=<ro
 ## Grafana
 
 ```bash
-python3 <skill-dir>/scripts/scan/grafana_scan.py <repo> --json > <tmp>/grafana-scan.json
+python3 <skill-dir>/scripts/scan/grafana_scan.py <repo> --json > ~/.gti/infra-expert/<project>/grafana-scan.json
 ```
 
 Pass `--extends-key` when the repository's inheritance key is not `$extends`. Lower `--threshold` (default 0.7) to find drifted copies, raise it to see only near-identical ones.
@@ -37,9 +37,9 @@ Pass `--extends-key` when the repository's inheritance key is not `$extends`. Lo
 ## AWS
 
 ```bash
-python3 <skill-dir>/scripts/aws/aws_collect.py --profile <profile> --regions <r1,r2> --out <tmp>/aws-snapshot
-python3 <skill-dir>/scripts/aws/aws_analyze.py <tmp>/aws-snapshot
-python3 <skill-dir>/scripts/aws/aws_analyze.py <tmp>/aws-snapshot --tf-state <tmp>/state-a.json --tf-state <tmp>/state-b.json
+python3 <skill-dir>/scripts/aws/aws_collect.py --profile <profile> --regions <r1,r2> --out ~/.gti/infra-expert/<project>/aws-snapshot
+python3 <skill-dir>/scripts/aws/aws_analyze.py ~/.gti/infra-expert/<project>/aws-snapshot
+python3 <skill-dir>/scripts/aws/aws_analyze.py ~/.gti/infra-expert/<project>/aws-snapshot --tf-state ~/.gti/infra-expert/<project>/state-a.json --tf-state ~/.gti/infra-expert/<project>/state-b.json
 ```
 
 The collector refuses any operation that is not describe, list, or get. Failed calls (usually missing permissions) are listed in `manifest.json`; say which checks they leave out. The `--tf-state` comparison is only meaningful with the states of every stack that manages the account; with fewer, "not managed" means "not in these states". How to get the states safely is in [../areas/aws.md](../areas/aws.md).

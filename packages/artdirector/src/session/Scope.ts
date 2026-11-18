@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { Ids, JsonFile } from "../core";
+import { GtiHome, Ids, JsonFile } from "../core";
 
 /**
  * Stable chat or terminal identity used to isolate temporary project state.
@@ -58,16 +57,17 @@ const SessionVariables = [
 const RecordFile = "session.json";
 
 /**
- * Resolves the temporary session directory and its request index.
+ * Resolves the chat session directory and its request index.
  *
- * Temporary state lives under `%TEMP%/artdirector` by default and can be
- * redirected with `ARTDIRECTOR_STATE_HOME`.
+ * Session state lives under `~/.gti/artdirector/sessions` (or `GTI_HOME`) by
+ * default and can be redirected with `ARTDIRECTOR_STATE_HOME`. Nothing is
+ * written into the user's repository.
  */
 export namespace Scope {
     /**
-     * Root directory for temporary ArtDirector sessions.
+     * Root directory for ArtDirector chat sessions.
      *
-     * @returns Absolute temporary home
+     * @returns Absolute sessions home
      */
     export function home(): string {
         const override = process.env.ARTDIRECTOR_STATE_HOME?.trim();
@@ -76,7 +76,7 @@ export namespace Scope {
             return resolve(override);
         }
 
-        return join(tmpdir(), "artdirector");
+        return join(GtiHome.artdirector(), "sessions");
     }
 
     /**

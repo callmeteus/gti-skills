@@ -42,7 +42,7 @@ def load(path):
 
 
 def save(path, tensors):
-    path = Path(path)
+    path = Path(path).expanduser()
     path.parent.mkdir(parents=True, exist_ok=True)
     suffix = path.suffix.lower()
     if suffix == ".npz":

@@ -39,6 +39,10 @@ In this skill:
 
 - `mcps install` registers in every supported agent whose config file exists, without confirming first. Every other command already runs directly.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/gti/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The gti-skills install state and MCP servers stay in `~/.gti-skills/`; nothing goes into the user's repository.
+
 ## What it manages
 
 - **Skills:** every gti-skills skill installed in any of the ten supported agents, at user or project level. Updated by the gti-skills CLI from the latest commit on GitHub `master`. `update` also installs skills that are new in that commit for installs that use every pack; a partial install stays as the user chose it.

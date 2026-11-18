@@ -4,11 +4,11 @@ The draft gives you the structure and the raw material. You write the final text
 
 ```bash
 python3 <skill-dir>/scripts/render/assemble_draft.py \
-  --transcript ./work/transcript.json \
+  --transcript ~/.gti/video-to-markdown/<video-id>/work/transcript.json \
   --video-id VIDEO_ID \
-  --frames ./work/frames/manifest.json \
-  --metadata ./work/metadata.json \
-  --out ./notes/draft.md
+  --frames ~/.gti/video-to-markdown/<video-id>/work/frames/manifest.json \
+  --metadata ~/.gti/video-to-markdown/<video-id>/work/metadata.json \
+  --out ~/.gti/video-to-markdown/notes/draft.md
 ```
 
 For an X post or a local file, leave out `--video-id`. The source link comes from `metadata.json` or from `--source-url`.

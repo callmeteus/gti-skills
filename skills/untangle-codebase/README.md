@@ -174,7 +174,7 @@ Uses only the scripts from step 2 and reports the numbers, without changing code
           branch untangle/<date> ── baseline tests ── special_cases.py --save ── deps.py
                                                 │
   Step 2  map: skeleton, imports, co-change, special-case list, sub-agent summaries
-          list every problem with file:line and kind ──> .untangle/decision-log.md
+          list every problem with file:line and kind ──> ~/.gti/untangle-codebase/<project>/decision-log.md
                                                 │
   Step 3  group by requirement ── one fix behind several problems ── order, risk, size
           public surface or product decision? ──> ask the user
@@ -183,7 +183,7 @@ Uses only the scripts from step 2 and reports the numbers, without changing code
                                                 │
   Step 5  fresh sub-agents ── special_cases.py --compare ── issues left? ──yes──> step 2
                                                 │ no
-          behavior check ── .untangle/report.md ── summary in chat
+          behavior check ── ~/.gti/untangle-codebase/<project>/report.md ── summary in chat
 ```
 
 ## Reference
@@ -193,7 +193,7 @@ All scripts are read-only and take the codebase root as the first argument (defa
 ### skeleton.py
 
 ```bash
-python3 skills/untangle-codebase/scripts/map/skeleton.py . > .untangle/skeleton.txt
+python3 skills/untangle-codebase/scripts/map/skeleton.py . > ~/.gti/untangle-codebase/<project>/skeleton.txt
 ```
 
 | Argument | Default | Description |
@@ -248,8 +248,8 @@ python3 skills/untangle-codebase/scripts/map/cochange.py . --cross-folder-only
 ### special_cases.py
 
 ```bash
-python3 skills/untangle-codebase/scripts/measure/special_cases.py . --save .untangle/baseline.json
-python3 skills/untangle-codebase/scripts/measure/special_cases.py . --compare .untangle/baseline.json
+python3 skills/untangle-codebase/scripts/measure/special_cases.py . --save ~/.gti/untangle-codebase/<project>/baseline.json
+python3 skills/untangle-codebase/scripts/measure/special_cases.py . --compare ~/.gti/untangle-codebase/<project>/baseline.json
 ```
 
 | Argument | Default | Description |
@@ -267,10 +267,10 @@ python3 skills/untangle-codebase/scripts/measure/special_cases.py . --compare .u
 
 ## Output
 
-The run writes everything to `.untangle/` in the project and commits the code changes to the `untangle/<date>` branch:
+The run writes its notes and measurements to `~/.gti/untangle-codebase/<project>/`, outside the repository, and commits the code changes to the `untangle/<date>` branch:
 
 ```text
-.untangle/
+~/.gti/untangle-codebase/<project>/
 ├── decision-log.md     # problems, fixes, kept cases, open questions, progress
 ├── baseline.json       # special-case counts at the start
 ├── deps-before.json    # import graph at the start
@@ -338,7 +338,7 @@ It counts textual signs, not real special cases. Read the list with `--list --ca
 <details>
 <summary><strong>The run lost track after a long session</strong></summary>
 
-Ask the agent to read `.untangle/decision-log.md` and `git log --oneline` on the untangle branch, then continue from the first unfinished step.
+Ask the agent to read `~/.gti/untangle-codebase/<project>/decision-log.md` and `git log --oneline` on the untangle branch, then continue from the first unfinished step.
 
 </details>
 

@@ -24,6 +24,15 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
+
+def gti_dir(skill, *parts):
+    """Folder for generated files: ~/.gti/<skill>/... (GTI_HOME replaces ~/.gti). Never the user's repository."""
+    base = Path(os.environ.get("GTI_HOME") or Path.home() / ".gti").expanduser()
+    folder = base.joinpath(skill, *parts)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
 READ_ONLY = re.compile(r"^(describe|list|get)-[a-z0-9-]+$")
 
 REGIONAL = [
@@ -108,7 +117,7 @@ def collect_bucket(aws, out, bucket):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--out", default=None, help="Output folder (default: a new folder in the OS temp folder)")
+    parser.add_argument("--out", default=None, help="Output folder (default: a new folder in ~/.gti/infra-expert/aws)")
     parser.add_argument("--profile", default=None, help="AWS CLI profile (default: the CLI default chain)")
     parser.add_argument("--regions", default=None, help="Comma-separated regions (default: the profile region)")
     parser.add_argument("--all-regions", action="store_true", help="Collect every region enabled in the account")
@@ -117,7 +126,7 @@ def main():
     parser.add_argument("--aws", default="aws", help="AWS CLI binary (default: aws on PATH)")
     args = parser.parse_args()
 
-    out = Path(args.out) if args.out else Path(tempfile.mkdtemp(prefix="infra-expert-aws-"))
+    out = Path(args.out).expanduser() if args.out else Path(tempfile.mkdtemp(prefix="snapshot-", dir=gti_dir("infra-expert", "aws")))
     aws = Aws(args.aws, args.profile)
 
     identity = aws.call("sts", "get-caller-identity")

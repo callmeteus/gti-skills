@@ -6,8 +6,8 @@ The catalog is a cache of the providers and models this machine can run, with th
 
 | Scope | Path | Use |
 |---|---|---|
-| User | `~/.maestro/providers.json` | Models and limits that apply to this machine |
-| Project | `.maestro/providers.json` | Project-specific overrides and user-declared entries |
+| User | `~/.gti/maestro/providers.json` | Models and limits that apply to this machine |
+| Project | `~/.gti/maestro/<project>/providers.json` | Project-specific overrides and user-declared entries |
 
 If `MAESTRO_HOME` is set, use `$MAESTRO_HOME/providers.json` for the user scope.
 

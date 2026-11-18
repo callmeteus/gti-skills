@@ -202,7 +202,7 @@ python3 scripts/report/render_report.py architecture-review.json --strict --open
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `data` | - | Report data JSON file |
-| `--out` | OS temp folder, `architecture-review-<timestamp>.html` | Output HTML path |
+| `--out` | `~/.gti/improve-codebase-architecture/<project>/`, `architecture-review-<timestamp>.html` | Output HTML path |
 | `--strict` | Off | Exit with code 3 instead of writing when jargon is found |
 | `--open` | Off | Open the report in the default browser after writing |
 
@@ -254,7 +254,7 @@ Each candidate card in the report shows:
 | Where the code changes most | Hot spot table from git history, when provided |
 | Details | One card per candidate: problem, change, before and after diagrams, gains, files, testing approach, ADR warning |
 
-The report is written to the OS temp folder; nothing is written to the repository until the user confirms a plan.
+The report is written to `~/.gti/improve-codebase-architecture/<project>/`; nothing is written to the repository until the user confirms a plan.
 
 ## Development
 

@@ -17,7 +17,7 @@ Add every issue worth fixing to the log, go back to step 2 for it, and repeat. *
 After each round:
 
 ```bash
-python3 <skill-dir>/scripts/measure/special_cases.py . --compare .untangle/baseline.json
+python3 <skill-dir>/scripts/measure/special_cases.py . --compare ~/.gti/untangle-codebase/<project>/baseline.json
 python3 <skill-dir>/scripts/map/deps.py . --depth 2
 ```
 
@@ -42,7 +42,7 @@ You are done when all of these hold:
 
 ## Final report
 
-Write `.untangle/report.md` from `assets/templates/final-report.md` and summarize it to the user in chat:
+Write `~/.gti/untangle-codebase/<project>/report.md` from `assets/templates/final-report.md` and summarize it to the user in chat:
 
 - scope, base commit, branch, and number of fix commits;
 - before and after: special-case counts by category, cycles, volatile imports, and test results;

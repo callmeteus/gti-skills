@@ -73,7 +73,7 @@ The orchestrator-class model is used for a read-only scout because it is the onl
 User: "from now on, use the free model as executor."
 
 ```text
-Write  ~/.maestro/preferences.json
+Write  ~/.gti/maestro/preferences.json
        roles.executor = opencode/deepseek-v4.1-flash-free
 Note   "from now on, use the free model as executor"
 Report "Executor preference updated. Next runs start on the free model."

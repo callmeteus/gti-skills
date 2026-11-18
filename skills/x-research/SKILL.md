@@ -33,6 +33,10 @@ In this skill:
 
 - Never use the write actions (post, reply, like, retweet) unless the request named them. On `LOGIN_REQUIRED`, continue with the web search fallback and report it, instead of asking the user to log in.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/x-research/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Saved research notes or exports go to `~/.gti/x-research/<topic>/`.
+
 ## Available MCP Tools
 
 All tools are provided by the `twitter` MCP server. If no `twitter_*` tools are available, tell the user the MCP server is not configured (setup: `packages/python/twitter-mcp/README.md` in the gti-skills repository) and use the web search fallback described in [When a Tool Fails](#when-a-tool-fails).

@@ -7,9 +7,9 @@ Do not change anything yet.
 Get the whole codebase into view before judging any part of it:
 
 ```bash
-python3 <skill-dir>/scripts/map/skeleton.py . > .untangle/skeleton.txt
+python3 <skill-dir>/scripts/map/skeleton.py . > ~/.gti/untangle-codebase/<project>/skeleton.txt
 python3 <skill-dir>/scripts/map/deps.py . --depth 2
-python3 <skill-dir>/scripts/map/deps.py . --depth 0 --json > .untangle/deps-files.json
+python3 <skill-dir>/scripts/map/deps.py . --depth 0 --json > ~/.gti/untangle-codebase/<project>/deps-files.json
 python3 <skill-dir>/scripts/map/cochange.py . --cross-folder-only
 python3 <skill-dir>/scripts/measure/special_cases.py . --list
 ```
@@ -68,6 +68,6 @@ Also write down every special case: code that exists for one situation instead o
 
 ## Write it down
 
-Add every problem to the "Problems" section of `.untangle/decision-log.md`, one line each, starting with `file:line`, as in `assets/examples/decision-log-example.md`. Describe what is wrong, not the fix. Tag each line with its kind: `[hidden]`, `[needless]`, `[surplus]`, or `[special]`.
+Add every problem to the "Problems" section of `~/.gti/untangle-codebase/<project>/decision-log.md`, one line each, starting with `file:line`, as in `assets/examples/decision-log-example.md`. Describe what is wrong, not the fix. Tag each line with its kind: `[hidden]`, `[needless]`, `[surplus]`, or `[special]`.
 
 The list is complete when every part of the scope has been read or summarized and every script lead has been either listed or dismissed. Write dismissed leads briefly under "Leads dismissed" so later rounds do not re-check them.

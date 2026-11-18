@@ -39,6 +39,10 @@ In this skill:
 - **Exception: test deletion keeps its approval step.** In Mode C, write the replacement tests on your own, then ask the user to approve the deletions exactly as in normal mode (Mode C step 3). Delete nothing before that answer.
 - When Docker is missing, use the in-memory fallback and list what it cannot check. Skip optional tools that are not installed (Playwright, mutation tools for other languages) and name them; Stryker and fast-check still install into the tools folder as usual.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/better-tests/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The test report, mutation reports, and the JS tools (`~/.gti/better-tests/tools/node`) live under `~/.gti/better-tests/`. Only the tests themselves go into the repository.
+
 ## When to use
 
 - The user asks to write or add tests for a feature, endpoint, component, or module.
@@ -56,7 +60,7 @@ Measure tests by the bugs they catch, not by how many exist or by line coverage.
 
 - The code under test and its test runner. Discover the stack before writing anything.
 - Docker (or a compatible runtime) when integration tests use Testcontainers. If it is missing, say so and ask before falling back to in-memory fakes.
-- **JavaScript and TypeScript projects: Stryker and fast-check are mandatory.** Install them before the verify step, without asking, but never into the project: no dependency, lockfile, config, or report may appear in it. Use the bundled script, which installs them into a shared tools folder (default `~/.gti-skills/tools/node`) and runs them from there. Tell the user the folder path. See [references/tools/js-tools.md](references/tools/js-tools.md).
+- **JavaScript and TypeScript projects: Stryker and fast-check are mandatory.** Install them before the verify step, without asking, but never into the project: no dependency, lockfile, config, or report may appear in it. Use the bundled script, which installs them into a shared tools folder (default `~/.gti/better-tests/tools/node`) and runs them from there. Tell the user the folder path. See [references/tools/js-tools.md](references/tools/js-tools.md).
 
   ```bash
   node <skill-dir>/scripts/tools/js-tools.mjs install

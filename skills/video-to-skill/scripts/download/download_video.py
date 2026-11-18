@@ -6,10 +6,10 @@ FixupX / FxTwitter API, which returns direct MP4 links; audio is then
 extracted with ffmpeg.
 
 Usage:
-    python download_video.py URL --out ./work --mode metadata
-    python download_video.py URL --out ./work --mode video --height 720
-    python download_video.py URL --out ./work --mode audio
-    python download_video.py https://x.com/user/status/ID --out ./work --mode video --index 2
+    python download_video.py URL --out ~/.gti/video-to-markdown/<video>/work --mode metadata
+    python download_video.py URL --out ~/.gti/video-to-markdown/<video>/work --mode video --height 720
+    python download_video.py URL --out ~/.gti/video-to-markdown/<video>/work --mode audio
+    python download_video.py https://x.com/user/status/ID --out ~/.gti/video-to-markdown/<video>/work --mode video --index 2
 
 Prints a JSON object with the produced file paths.
 """
@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from lib import fixupx  # noqa: E402
 from lib.common import fail, find_tool, parse_video_id, print_json, run_command  # noqa: E402
+from lib.gti_home import gti_dir  # noqa: E402
 
 MODES = ("metadata", "video", "audio")
 
@@ -132,12 +133,12 @@ def download_x_post(status_id: str, out_dir: Path, mode: str, height: int, index
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="Download video, audio, or metadata with yt-dlp, or from X through the FixupX API")
     parser.add_argument("url", help="Video URL, YouTube video ID, or X (Twitter) post URL")
-    parser.add_argument("--out", "-o", default="./work", help="Output directory (default: ./work)")
+    parser.add_argument("--out", "-o", default=None, help="Output directory (default: ~/.gti/video/work; never the current project)")
     parser.add_argument("--mode", "-m", choices=MODES, default="metadata", help="What to download (default: metadata)")
     parser.add_argument("--height", type=int, default=720, help="Maximum video height for --mode video (default: 720)")
     parser.add_argument("--index", type=int, default=1, help="Which video of an X post with several videos, starting at 1 (default: 1)")
     args = parser.parse_args(argv)
-    out_dir = Path(args.out)
+    out_dir = Path(args.out).expanduser() if args.out else gti_dir("video", "work")
     status_id = fixupx.parse_status_id(args.url)
 
     if status_id:

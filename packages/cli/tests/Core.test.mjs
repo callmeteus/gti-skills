@@ -26,6 +26,10 @@ Always respond in the user's language, regardless of the language used in this s
 ## Autonomous Mode
 
 When the user says to work on your own, take the recommended option at every decision and do not stop to ask.
+
+## Output Location
+
+Generated files go to \`~/.gti/demo/<project>/\`, never into the user's repository.
 `;
 
 /**
@@ -75,6 +79,8 @@ describe("frontmatter", () => {
 
         const noAutonomous = validateSkillFolder(makeSkill(GoodSkill.replace("## Autonomous Mode", "## Other")), "demo");
         assert.ok(noAutonomous.errors.some((error) => error.includes("Autonomous Mode")));
+        const noOutput = validateSkillFolder(makeSkill(GoodSkill.replace("## Output Location", "## Other")), "demo");
+        assert.ok(noOutput.errors.some((error) => error.includes("Output Location")));
 
         const longDescription = validateSkillFolder(makeSkill(GoodSkill.replace("Does a demo.", "x".repeat(1100))), "demo");
         assert.ok(longDescription.errors.some((error) => error.includes("1024")));

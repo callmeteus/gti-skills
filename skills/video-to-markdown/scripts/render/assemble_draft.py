@@ -158,7 +158,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     draft = render_markdown(sections, args.video_id, metadata, args.frames_dir, args.source_url)
 
     if args.out:
-        Path(args.out).write_text(draft, encoding="utf-8")
+        out_file = Path(args.out).expanduser()
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(draft, encoding="utf-8")
         sys.stdout.write(json.dumps({"file": args.out, "sections": len(sections)}) + "\n")
     else:
         sys.stdout.write(draft)

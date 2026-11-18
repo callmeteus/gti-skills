@@ -121,9 +121,10 @@ describe("session isolation", () => {
         expect(reopened.requestId).toBe(next.requestId);
     });
 
-    it("writes into the repository only with permanent opt-in", () => {
+    it("keeps a permanent project in the GTI home, never in the repository", () => {
         const repo = temp("repo-");
         process.env.ARTDIRECTOR_STATE_HOME = temp("home-");
+        process.env.GTI_HOME = temp("gti-");
         const permanent = ContextResolver.init({
             workspace: repo,
             session: "chat-a",
@@ -132,7 +133,9 @@ describe("session isolation", () => {
         });
 
         expect(permanent.storage).toBe(StorageScope.REPOSITORY);
-        expect(existsSync(join(repo, ".artdirector", "project.json"))).toBe(true);
+        expect(existsSync(join(repo, ".artdirector"))).toBe(false);
+        expect(permanent.ctx.root.startsWith(join(process.env.GTI_HOME ?? "", "artdirector", "projects"))).toBe(true);
+        expect(existsSync(join(permanent.ctx.root, ".artdirector", "project.json"))).toBe(true);
         expect(permanent.ctx.project().storage).toBe(StorageScope.REPOSITORY);
 
         const reopened = ContextResolver.open({
@@ -141,7 +144,8 @@ describe("session isolation", () => {
         });
 
         expect(reopened.storage).toBe(StorageScope.REPOSITORY);
-        expect(reopened.ctx.root).toBe(repo);
+        expect(reopened.ctx.root).toBe(permanent.ctx.root);
+        delete process.env.GTI_HOME;
     });
 
     it("uses a workspace fallback when the agent exposes no chat id", () => {

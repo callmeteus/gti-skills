@@ -37,6 +37,10 @@ In this skill:
 - Do not ask about photos: use the open-license photo search, or build a typographic or vector composition when it finds nothing suitable.
 - Save the guidelines you learn from feedback without asking, as in normal mode, and list them in the hand over.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/artdirector/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Sessions, permanent projects, guidelines, downloads, and exports live under `~/.gti/artdirector/` (the CLI handles this; read the paths from its JSON).
+
 ## Overview
 
 One skill, one CLI, one local studio. Do not load Impeccable, Claude HT Skills, Frontend Design, or ClickClick as competing skills. Their capabilities are already integrated here.
@@ -86,16 +90,16 @@ The skill works the same in every coding agent. If you need install paths, how t
 
 ## Session storage
 
-ArtDirector isolates state by chat. The CLI reads `OPENCODE_SESSION_ID`, `PASEO_AGENT_ID`, and similar agent session variables automatically, then keeps each chat's project in its own temporary folder under the OS temp directory.
+ArtDirector isolates state by chat. The CLI reads `OPENCODE_SESSION_ID`, `PASEO_AGENT_ID`, and similar agent session variables automatically, then keeps each chat's project in its own folder under `~/.gti/artdirector/` (or `$GTI_HOME/artdirector/`). Nothing ArtDirector generates goes into the user's repository.
 
-- **Default:** a new request is temporary. Nothing is written into the user's repository. The `init`/`status` JSON includes `scope.workspace`, `scope.root`, `scope.stateDir`, `scope.variantsDir`, and `scope.exportsDir`.
+- **Default:** a new request lives in the chat's session folder, `~/.gti/artdirector/sessions/`. Nothing is written into the user's repository. The `init`/`status` JSON includes `scope.workspace`, `scope.root`, `scope.stateDir`, `scope.variantsDir`, and `scope.exportsDir`.
 - **New artwork request in the same chat:** start a fresh isolated context with `init --new --name "<name>" --json`. Do not reuse the previous request's brand, brief, or variants for an unrelated piece. The earlier arts stay in the studio history; `history --json` lists them. The mood board is the one thing every art in the chat shares.
-- **Permanent repository state:** only when the user asks to keep the project in the repository, for example to commit it to Git, run `init --permanent --name "<name>" --json`. This writes `.artdirector/` in the repository. Every later command in that chat keeps using it.
+- **Permanent project:** when the user wants the project to outlive the chat, run `init --permanent --name "<name>" --json`. It is kept per workspace in `~/.gti/artdirector/projects/<workspace>-<hash>/`, never in the repository, and every later command in that chat keeps using it.
 - **Explicit chat id:** pass `--session <id>` when the agent does not expose a session variable. Never invent the same id for two chats.
-- **Guidelines outlive chats:** dos and don'ts are stored per workspace and per user under `~/.artdirector`, not in the chat's temp folder, so every later chat in the workspace reads them. See [references/workflow/guidelines.md](references/workflow/guidelines.md).
-- **Exports:** `export` writes to the session temp folder by default. Pass `--out <path inside the workspace>` when the user wants the final file delivered into the repository.
+- **Guidelines outlive chats:** dos and don'ts are stored per workspace and per user under `~/.gti/artdirector`, outside the chat's session folder, so every later chat in the workspace reads them. See [references/workflow/guidelines.md](references/workflow/guidelines.md).
+- **Exports:** `export` writes to the request's `exports/` folder under `~/.gti/artdirector/`. Pass `--out <path>` only when the user names a place for the final file, such as a folder in their repository.
 
-Always read paths from the JSON instead of assuming `.artdirector/` exists in the working directory. Write agent-authored HTML to the absolute `scope.variantsDir` path, then register it with:
+Always read paths from the JSON; there is no `.artdirector/` in the working directory. Write agent-authored HTML to the absolute `scope.variantsDir` path, then register it with:
 
 ```powershell
 & "<skill-dir>\scripts\artdirector.cmd" variants add --id "<id>" --file "<absolute html path>" --json
@@ -113,7 +117,7 @@ Always read paths from the JSON instead of assuming `.artdirector/` exists in th
 
 Follow the user's intent. Do not run a long questionnaire when the brief already implies defaults. Do not read ArtDirector package source (`src/`, `Routes.ts`, `Audit.ts`) to discover how to work - use this skill and the CLI wrapper.
 
-1. **init** once when `status` returns `PROJECT`. The CLI reuses the chat's active request; for a new unrelated piece in the same chat use `init --new`. Skip exploring the whole repo. Use `init --permanent` only when the user asks to keep state in the repository.
+1. **init** once when `status` returns `PROJECT`. The CLI reuses the chat's active request; for a new unrelated piece in the same chat use `init --new`. Skip exploring the whole repo. Use `init --permanent` only when the user wants the project to outlive the chat.
 2. **brief** only for missing essentials (goal, format, audience). If the user already said "story teaser for X", that is enough. Read the user's dos and don'ts with `guidelines --json`: a don't is a hard constraint for every variant, and a do is the default. Follow [references/workflow/guidelines.md](references/workflow/guidelines.md). Then read the mood board with `moodboard --json` and use what is on it as references. When the user sends reference images, colors, or words in the chat, add them with `moodboard add` first. Follow [references/workflow/moodboard.md](references/workflow/moodboard.md).
 3. **generate** - write **2 to 4 complete HTML variants** on disk in one pass (different directions, or the same art at the sizes they asked for). Vary the backgrounds deliberately: do not ship only dark pieces - include at least one lighter or contrasting treatment unless the brief clearly calls for darkness. Original work: write each piece to an absolute path inside the `scope.variantsDir` returned by `init`, then register it with `variants add --id "<id>" --file "<absolute html path>"`. Never invent a repository `.artdirector/variants/<id>/artwork.html` path. Templates: `generate --template <id> --json` with `formatIds` when they want several sizes of the same piece.
 4. **Render check, once.** For each variant run `audit --id <id> --json` and `export --id <id> --format png --json`, then look at the PNG. Fix construction defects and broken don'ts only: text touching or crossing the edge, copy in the story chrome, an empty band where the art ends early, a floating or crooked object, blurred type, collisions, missing glyphs, broken assets. One fix pass, no taste edits. Follow [references/output/render-check.md](references/output/render-check.md).
@@ -163,8 +167,8 @@ Photos: ask the user first; otherwise search openly licensed photos with `script
 - **Story (1080×1920):** the board is a phone screen. Fill the height with stacked, huge type (headline 180px or larger). Safe chrome: keep critical copy out of the top 210px and bottom 250px. Never letterbox a square poster in the middle, and never end the art above a flat strip. See [references/design/formats.md](references/design/formats.md).
 - **Edges:** text either clears the side by 56px or more, or bleeds clearly past it and carries `data-bleed`. Never 0 to 40px from the edge. Size display lines to the padded column, not to the board.
 - **Drawn objects and characters:** never draw people, animals, or mascots by hand; ask for the brand's file or use a licensed vector. Build simple objects on one grid with identical gaps and no per-part rotation. Never hide text with blur. See [references/style/illustration.md](references/style/illustration.md).
-- Bunny Fonts for open-source families. Lucide SVGs for icons. Record third-party assets in `.artdirector/assets.json`.
-- **Search the web for public-domain elements, especially SVGs**, when the composition needs icons, illustrations, maps, diagrams, or decorative marks beyond the bundled Lucide subset. Choose assets that **make sense for the proposed theme and the brand** (subject, industry, audience, tone) - do not grab generic clip art just because it is free. Prefer sources with a clear CC0 / public-domain license (Wikimedia Commons, OpenClipArt, Feather, Tabler, Heroicons, etc.). Download the file into the project, inline the SVG so its strokes and fills can be themed, and record it in `.artdirector/assets.json` with source and license. Never hotlink a remote asset, and never use copyrighted or unclearly licensed imagery.
+- Bunny Fonts for open-source families. Lucide SVGs for icons. Record third-party assets in `assets.json` inside `scope.stateDir`.
+- **Search the web for public-domain elements, especially SVGs**, when the composition needs icons, illustrations, maps, diagrams, or decorative marks beyond the bundled Lucide subset. Choose assets that **make sense for the proposed theme and the brand** (subject, industry, audience, tone) - do not grab generic clip art just because it is free. Prefer sources with a clear CC0 / public-domain license (Wikimedia Commons, OpenClipArt, Feather, Tabler, Heroicons, etc.). Download the file into `downloads/` under `scope.root` (never into the user's project), inline the SVG so its strokes and fills can be themed, and record it in `assets.json` inside `scope.stateDir` with source and license. Never hotlink a remote asset, and never use copyrighted or unclearly licensed imagery.
 - Mark selectable regions with `data-ad-select` or ClickClick `data-layer`.
 - Backgrounds are a design choice: the AI may use solid color, gradients, patterns, or public-domain SVG/image backgrounds when they serve the piece and the brand - or keep the background empty when restraint is stronger. Do not default to empty backgrounds; choose deliberately based on the theme, the brand, and the format.
 - Do not default every variant to a dark background. Deliver a range of treatments (light, dark, and contrasting) so the user can choose.

@@ -10,9 +10,28 @@ Commands:
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+def gti_dir(skill, *parts):
+    """Folder for generated files: ~/.gti/<skill>/... (GTI_HOME replaces ~/.gti). Never the user's repository."""
+    base = Path(os.environ.get("GTI_HOME") or Path.home() / ".gti").expanduser()
+    folder = base.joinpath(skill, *parts)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def project_name(start=None):
+    """Name of the project being worked on: the git root's folder name, or the current folder's."""
+    here = Path(start or Path.cwd()).resolve()
+    for folder in (here, *here.parents):
+        if (folder / ".git").exists():
+            return folder.name or "project"
+    return here.name or "project"
+
 
 OVER_BUDGET = 2
 
@@ -47,7 +66,7 @@ def spend(path, count, note):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--ledger", default="wsp-ledger.json", help="Ledger file (default wsp-ledger.json)")
+    parser.add_argument("--ledger", default=None, help="Ledger file (default ~/.gti/weight-space-programming/<project>/wsp-ledger.json)")
     commands = parser.add_subparsers(dest="command", required=True)
 
     init = commands.add_parser("init", help="Create a new ledger")
@@ -76,6 +95,9 @@ def main():
 
     commands.add_parser("status", help="Print the budget and log")
     args = parser.parse_args()
+    if not args.ledger:
+        args.ledger = str(gti_dir("weight-space-programming", project_name()) / "wsp-ledger.json")
+    args.ledger = os.path.expanduser(args.ledger)
 
     if args.command == "init":
         if Path(args.ledger).exists() and not args.force:

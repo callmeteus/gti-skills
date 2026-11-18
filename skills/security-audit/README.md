@@ -151,7 +151,7 @@ The agent resolves the source ref and output directory, inventories the stack, m
 |-------|:--------:|---------|-------------|
 | Target | Yes | Current repository | Repository root to review |
 | Mode | No | Inferred from the request | Guidance, diff review, or full audit; the agent asks when unclear |
-| Output directory | No | `~/security-audit-skill/<repo-name>/run-<N>` | Full audit only; must be outside the target unless version control ignores it |
+| Output directory | No | `~/.gti/security-audit/<repo-name>/run-<N>` | Full audit only; never inside the target repository |
 | Profile | No | `standard` | `quick`, `standard`, or `deep` |
 | Scope | No | Whole repository | Paths, one subsystem, one companion domain, or two source refs |
 | Budget | No | None | Maximum agent invocations for the run |
@@ -269,7 +269,7 @@ Severity maps to GitHub `security-severity` as critical 9.5, high 8.0, medium 5.
 A full audit writes this layout:
 
 ```text
-~/security-audit-skill/<repo-name>/run-<N>/
+~/.gti/security-audit/<repo-name>/run-<N>/
 ├── run-metadata.json        # profile, scope, budget, source ref, run_status
 ├── architecture.md          # principals, boundaries, surfaces, companion selection
 ├── coverage-ledger.json     # one unit per surface x boundary x subsystem x class

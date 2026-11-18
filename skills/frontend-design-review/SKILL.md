@@ -36,6 +36,10 @@ In this skill:
 - When the request mixes review and fix, run the review, then fix the blocking and major issues without asking.
 - In create mode, commit to the direction you would recommend and state it in the report. Write the review report as a file and do not open it.
 
+## Output Location
+
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/frontend-design-review/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The review report and lintapple and probe output go to `~/.gti/frontend-design-review/<project>/` (lintapple's own reports default to `~/.gti/lintapple/<project>/`). Code built in create mode goes into the repository.
+
 ## When to use
 
 - The user asks to review a UI, a frontend pull request, or a feature against the design system, Figma, or general design quality.

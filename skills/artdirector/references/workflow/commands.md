@@ -6,7 +6,7 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 
 | Command | Agent does | CLI / server |
 |---|---|---|
-| `init` | Confirm name/brand | Writes a temporary session request, or `.artdirector/` with `--permanent` |
+| `init` | Confirm name/brand | Writes a session request under `~/.gti/artdirector/sessions/`, or a permanent project under `~/.gti/artdirector/projects/` with `--permanent` |
 | `brief` | Fill only gaps | `brief --goal --audience --category --format` |
 | `shape` | Offer 3 rendered directions | `shape --direction` |
 | `craft` | Write one complete HTML piece, then stop | `variants add --id --file` |
@@ -26,10 +26,12 @@ These names overlap Impeccable on purpose. Meanings here are graphic design, not
 
 ## Session storage
 
-State is isolated per chat and, inside a chat, per request. Default storage is temporary and lives outside the user's repository.
+State is isolated per chat and, inside a chat, per request. Everything lives under `~/.gti/artdirector/` (`$GTI_HOME/artdirector/` when `GTI_HOME` is set), never in the user's repository. `ARTDIRECTOR_STATE_HOME` moves the sessions folder.
 
 ```text
-<temp>/artdirector/
+~/.gti/artdirector/
++-- guidelines.json, workspaces/<key>/guidelines.json
++-- projects/<workspace>-<hash>/.artdirector/   permanent projects
 +-- sessions/<session-key>/
     +-- session.json        request index and the active request
     +-- token, studio.json  one studio for the whole chat
@@ -39,7 +41,7 @@ State is isolated per chat and, inside a chat, per request. Default storage is t
         +-- exports/        default export output
 ```
 
-Guidelines are the exception: they outlive chats, so they live in `~/.artdirector/` (`guidelines.json` for the user, `workspaces/<key>/guidelines.json` per workspace). Set `ARTDIRECTOR_GUIDELINES_HOME` to move them.
+Guidelines outlive chats, so they sit at the top of `~/.gti/artdirector/` (`guidelines.json` for the user, `workspaces/<key>/guidelines.json` per workspace). Set `ARTDIRECTOR_GUIDELINES_HOME` to move them.
 
 Each request is one art. The studio shows every request of the chat as its own group in Gallery, newest first, and follows the active request.
 
@@ -49,8 +51,8 @@ Each request is one art. The studio shows every request of the chat as its own g
 | `--request <id>` | Target a specific request inside the session |
 | `--new` | On `init`, start a fresh request even if the chat already has an active one |
 | `--lang <en\|pt\|es>` | Studio interface language, taken from the language of the user's prompt. Stored on the project; every command accepts it |
-| `--permanent` | Store under `<workspace>/.artdirector` and keep using it for later commands in the chat |
-| `--out <path>` | On `export`, resolve relative to the workspace instead of the temp exports folder |
+| `--permanent` | Keep the project per workspace in `~/.gti/artdirector/projects/` and keep using it for later commands in the chat |
+| `--out <path>` | On `export`, write where the user asked (relative paths resolve against the workspace) instead of the request's `exports/` folder |
 
 Resolution order for `open`:
 
@@ -58,7 +60,7 @@ Resolution order for `open`:
 2. Explicit `--permanent`
 3. The session's permanent preference
 4. The session's active request
-5. Repository discovery (`.artdirector/` in the workspace)
+5. The workspace's permanent project in `~/.gti/artdirector/projects/`
 6. `PROJECT` error
 
 Read `workspace`, `root`, `stateDir`, `variantsDir`, and `exportsDir` from `scope` in any `--json` output instead of assuming a path.
@@ -75,4 +77,4 @@ Write the file anywhere inside the absolute `scope.variantsDir`, then register i
 
 ## Studio reuse
 
-`studio` reuses the healthy lock at `studio.json` in the chat's session folder (or `.artdirector/studio.json` for a permanent project), so every request in a chat shares one studio. If that port is taken by another process, it tries the next free port (20 attempts), then lets the OS assign one. Two chats started at the same time get separate studios and separate ports.
+`studio` reuses the healthy lock at `studio.json` in the chat's session folder (or the permanent project's `.artdirector/studio.json` under `~/.gti/artdirector/projects/`), so every request in a chat shares one studio. If that port is taken by another process, it tries the next free port (20 attempts), then lets the OS assign one. Two chats started at the same time get separate studios and separate ports.

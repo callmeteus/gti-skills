@@ -2,7 +2,7 @@
 
 The mood board holds references for every art requested in the same chat: images, colors, notes, and pinned variants. The user adds to it in the studio's **Mood board** view (upload, drop, or paste images; add colors and notes) and pins variants from the Gallery. You add to it with the CLI.
 
-It lives beside the chat's requests, so `init --new` keeps it. A permanent repository project keeps it in `.artdirector/moodboard/`.
+It lives beside the chat's requests, so `init --new` keeps it. A permanent project keeps it in its `.artdirector/moodboard/` under `~/.gti/artdirector/projects/`.
 
 ## Read it before each new art
 

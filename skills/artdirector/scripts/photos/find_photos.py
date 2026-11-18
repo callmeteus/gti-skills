@@ -156,7 +156,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     results = parse_results(data)
 
     if args.download:
-        results = download(results, Path(args.download))
+        results = download(results, Path(args.download).expanduser())
 
     sys.stdout.write(json.dumps(results, indent=2, ensure_ascii=False) + "\n")
 
