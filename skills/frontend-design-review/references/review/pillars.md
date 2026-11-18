@@ -30,7 +30,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - **Aesthetic direction:** distinctive typography, a cohesive palette, intentional motion. Generic AI aesthetics come from the Unslop Interface inventory.
 - **Accessibility:** grade it with the table below.
 
-**Red flags:** generic AI aesthetics, hardcoded values, an implementation that does not match Figma, broken reflow at 320px width or 400% zoom, missing focus indicators.
+**Red flags:** generic AI aesthetics, edges that miss each other by a few pixels, blocks off the column lanes, wrapped rows that end short, accent borders that curve around rounded corners or repeat inside each other, hardcoded values, an implementation that does not match Figma, broken reflow at 320px width or 400% zoom, missing focus indicators.
 
 ### Accessibility grade
 

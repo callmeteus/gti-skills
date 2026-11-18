@@ -10,6 +10,9 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Uneven rhythm in a list: some rows far apart, others tight | Source | 01 |
 | Content in neighboring panels starting at different left edges | Source | 01 |
 | Content inset from the panel edge that differs between sections | Source | 04 |
+| Stacked blocks whose edges miss each other by a few pixels (a map 2px in from the search field above it) | Common | 01 |
+| A block off the page's column lanes, leaving a dead band beside it (a header card that misses the column below) | Common | 01 |
+| A wrapping chip or filter row whose first line ends short of the full-width blocks around it | Common | 01 |
 
 ## Shape
 
@@ -17,6 +20,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 |------|---------|------|
 | Pill-shaped search fields, nav items, and badges next to rounded rectangle cards | Source | 02 |
 | Many unrelated radius values on one screen | Source | 02 |
+| One-side accent border on a rounded card, curving around the corners into a crescent | Common | 02 |
+| Accent border inside a card that already has one, stacking two curved strokes | Common | 02 |
 | Fully rounded bars in charts used as decoration | Source | 06 |
 
 ## Color and effects
@@ -31,6 +36,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Every badge in a saturated accent color | Source | 03 |
 | One bar in a chart highlighted for no stated reason | Source | 06 |
 | Rainbow accents with no meaning | Common | 03 |
+| Raw hex, `rgb()`, or Tailwind palette classes (`bg-red-500`) in components instead of semantic tokens | Common | 03 |
+| A semantic color used for something else (danger red as a category, success green as decoration) | Common | 03 |
 
 ## Icons and decoration
 

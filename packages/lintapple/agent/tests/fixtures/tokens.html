@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tokens fixture</title>
+<style>
+  :root {
+    --surface: #ffffff;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --danger: #dc2626;
+    --success: #16a34a;
+  }
+  body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: var(--surface); color: var(--text); }
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .note { color: var(--muted); }
+  .button { background: var(--primary); color: var(--surface); padding: 8px 12px; border-radius: 6px; display: inline-block; }
+  .soft { background: color-mix(in srgb, var(--danger) 100%, transparent); color: var(--surface); padding: 8px; }
+  .raw { background: #7c3aed; color: #ffffff; padding: 8px; }
+  .raw-text { color: #f97316; }
+</style>
+</head>
+<body>
+  <div class="card"><p class="note">Muted note</p><span class="button">Save</span></div>
+  <div class="card soft">Danger through a token</div>
+  <div class="card raw" id="raw">Raw violet background</div>
+  <p class="raw-text" id="raw-text">Raw orange text</p>
+</body>
+</html>

@@ -17,9 +17,14 @@ A neutral base where color only appears when it means something: a status, a tre
 4. Build a neutral ramp of about five steps (page, panel, raised surface, border, muted text) plus the primary text color. Reuse the project's gray scale if it has one.
 5. Keep semantic colors only: success, warning, danger, and category colors that a legend explains. Pick one brand accent at most, and use it sparingly.
 6. Check text contrast on the new surfaces; muted text must still be readable.
+7. Enforce semantic tokens. Every color in a component comes from a token named for what it means: `primary`, `secondary`, `info`, `warning`, `danger`, `success`, `muted`, plus `surface`, `text`, and `border` for the neutral ramp. Reuse the names the project already has (`destructive` for danger, `foreground` for text); add a missing role to the token file, never inline. No hex, `rgb()`, `hsl()`, or `oklch()` value, no Tailwind palette class (`bg-red-500`, `text-white`), and no arbitrary value (`bg-[#7c3aed]`) stays in a component.
+8. Use each token for its meaning only. `danger` is for destructive actions and errors, not for a category or a highlight; `success` is for completed or positive states; `info` and `warning` are for messages of that kind; `primary` marks the one main action per view. A color used only because it looks nice has no meaning: make it neutral.
+9. Measure it. Run `node <skill-dir>/scripts/lintapple/tokens.mjs <source folder>` for colors in code outside tokens and missing roles, and, when the app runs, `node <skill-dir>/scripts/lintapple/probe.mjs <url>` for rendered colors that match no token (`off-token-color`).
 
 ## Check
 
 - No gradient remains except where it encodes data.
 - Every colored element can answer "what does this color mean?".
 - The screen still reads correctly in grayscale.
+- The token scan reports no color outside tokens and no missing semantic role, and the probe reports no `off-token-color`, or each one left is explained.
+- Every use of `danger`, `warning`, `success`, `info`, and `primary` matches what the token means.

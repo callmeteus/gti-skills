@@ -18,8 +18,11 @@ The clip marks the corners of the search field, the active nav item, and the sta
 3. Replace pill shapes on inputs, nav items, and rectangular badges with the control radius.
 4. When an element sits inside another with padding, make the inner radius smaller than the outer one so the corners look parallel. A common rule is inner radius = outer radius minus the padding. This rule is general guidance, not shown in the source.
 5. Store the values as tokens (for example `--radius-control`, `--radius-card`).
+6. Straighten accent borders. A one-side colored border (`border-left: 4px solid`) on a box with rounded corners bends around those corners into a crescent. Square the corners on the accent side, draw the accent as an inset bar inside the padding (a pseudo-element or an inset `box-shadow`), or remove it.
+7. Keep accents to one level. A group with an accent border whose items also have accent borders stacks two curved strokes. Keep the accent on the outer group, or on the items, never both, and separate the items with spacing or a plain border.
 
 ## Check
 
 - No more than three radius values remain.
 - Inputs and nav items no longer look like pills.
+- No one-side accent border curves around a rounded corner, and no accent sits inside another.

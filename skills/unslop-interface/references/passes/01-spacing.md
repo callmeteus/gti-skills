@@ -26,9 +26,16 @@ In the "before" state the nav list also has an irregular rhythm (larger gaps aro
 3. Snap each value to the scale. Smaller gaps inside a group, larger gaps between groups.
 4. Give every row in a list the same height.
 5. Pick one content inset per panel and apply it to the heading, cards, and card content so their left edges line up.
+6. Put every block on the page's column lanes. Find the columns the main layout uses (for example a map column and a list column), and make blocks above and below them start and end on those edges. A side card in the header that sits a few dozen pixels off the column below leaves a dead band of space next to it; move it onto the column or span the column it is in.
+7. Fix near misses. Two blocks in one column whose left or right edges differ by a few pixels (a map 2px in from the search field, a title 12px in from the cards) read as a mistake, never as a choice. Put them on one edge, or make the offset a clear step on the spacing scale.
+8. Fix wrapped rows. A row of chips, tags, or filters that wraps leaves its first line ending short of the full-width blocks around it. Keep it on one line with horizontal scroll, move the less used items behind a More control, or lay the items on an even grid.
+9. When the app runs, measure instead of guessing: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `near-miss-edge`, `off-lane`, and `ragged-wrap` with positions, and needs no markers.
 
 ## Check
 
 - No spacing value outside the scale remains in the component.
 - A vertical line drawn at the content edge touches the heading, every card, and the card text.
 - Lists have an even rhythm.
+- Every block above and below the main columns starts and ends on a column edge; no block leaves a dead band next to it.
+- No two stacked blocks differ by a few pixels at an edge, and no wrapped row ends short beside full-width blocks.
+- The probe reports no `near-miss-edge`, `off-lane`, or `ragged-wrap` finding, or each one left is explained.

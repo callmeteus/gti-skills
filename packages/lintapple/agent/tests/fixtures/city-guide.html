@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>City guide fixture</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #fff8f0; }
+  .page { width: 1160px; margin: 0 auto; padding-top: 40px; }
+  .hero { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hero-text { width: 700px; }
+  .eyebrow { font-size: 12px; margin: 0; }
+  h1 { margin: 8px 0; font-size: 32px; }
+  .price { width: 400px; margin-top: 4px; background: #fff; border: 1px solid #eee; border-radius: 16px; padding: 16px; box-sizing: border-box; }
+  .search { margin-top: 24px; background: #fff; border: 1px solid #ddd; border-radius: 8px; height: 48px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 8px 12px; width: 150px; box-sizing: border-box; }
+  .grid { display: grid; grid-template-columns: 700px 1fr; gap: 26px; margin-top: 24px; }
+  .map { margin-left: 2px; height: 300px; background: #ccc; border-radius: 12px; }
+  .card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .group { margin-top: 24px; background: #fff; border-left: 4px solid #2a9; border-radius: 16px; padding: 16px; }
+  .item { border: 1px solid #eee; border-left: 3px solid #2a9; border-radius: 10px; padding: 12px; margin-top: 8px; }
+  .clean { margin-top: 24px; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hero">
+    <div class="hero-text">
+      <p class="eyebrow">City guide</p>
+      <h1>Your trip starts here</h1>
+      <p>The hotel is the center of the event.</p>
+    </div>
+    <div class="price">Price indicator</div>
+  </div>
+  <div class="search">Search</div>
+  <div class="chips" id="chips">
+    <div class="chip">One</div><div class="chip">Two</div><div class="chip">Three</div><div class="chip">Four</div>
+    <div class="chip">Five</div><div class="chip">Six</div><div class="chip">Seven</div><div class="chip">Eight</div>
+  </div>
+  <div class="grid">
+    <div class="map" id="map">Map</div>
+    <div>
+      <div class="card">First place</div>
+      <div class="card">Second place</div>
+    </div>
+  </div>
+  <div class="group" id="group">
+    <strong>Transport</strong>
+    <div class="item" id="item">Bus station</div>
+  </div>
+  <div class="clean" id="clean">A plain card with one border all around.</div>
+</div>
+</body>
+</html>

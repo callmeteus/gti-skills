@@ -11,9 +11,10 @@ Use this file in Mode 1 step 2, and in Mode 2 whenever the product already has a
 ## During review
 
 1. Compare the implementation with the Figma design, frame by frame.
-2. Verify that tokens are used, not hardcoded values. Search the diff for raw hex colors, pixel values, font sizes, radii, and shadows that have a token.
-3. Check every variant and state the component defines: default, hover, focus, active, disabled, loading, empty, error, and selected where they apply.
-4. Flag every deviation from Figma or the system. A deviation needs design approval; record it as a finding, even when it looks better.
+2. Verify that tokens are used, not hardcoded values. Run `node <skill-dir>/scripts/lintapple/tokens.mjs <source folder>` for colors: every hex, `rgb()`, Tailwind palette class, and arbitrary color it lists is a finding, and so is a semantic role (primary, secondary, info, warning, danger, success, muted, surface, text, border) with no token. Search the diff by hand for pixel values, font sizes, radii, and shadows that have a token.
+3. Verify that each semantic token is used for its meaning: `danger` only for destructive actions and errors, `success` for positive states, `info` and `warning` for messages of that kind, `primary` for the main action. A semantic color used as decoration or a category is a finding.
+4. Check every variant and state the component defines: default, hover, focus, active, disabled, loading, empty, error, and selected where they apply.
+5. Flag every deviation from Figma or the system. A deviation needs design approval; record it as a finding, even when it looks better.
 
 ## When the component does not exist
 
@@ -31,6 +32,8 @@ When you cannot open Figma or the component library, say so in the report. Revie
 |---------|------------------|
 | A state the user can reach is missing (no error, no loading, no disabled) | Major |
 | Hardcoded value where a token exists | Minor, Major when it breaks theming or dark mode |
+| Semantic color used for another meaning (danger as a category) | Major |
+| Semantic role with no token, colors chosen inline | Major |
 | Custom component that duplicates an existing one | Major |
 | Visual deviation from Figma with no approval | Minor, Major when it changes hierarchy or meaning |
 | Undocumented exception | Minor |

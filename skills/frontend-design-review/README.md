@@ -230,6 +230,41 @@ node skills/frontend-design-review/scripts/lintapple/run.mjs http://localhost:30
 | `--write-policy FILE` | - | Writes the default policy to adapt |
 | `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
 
+### scripts/lintapple/probe.mjs
+
+Measures layout problems that need no `data-ui-*` markers, and colors that match no token. Shared with Unslop Interface and synced from `packages/lintapple/agent`.
+
+```bash
+node skills/frontend-design-review/scripts/lintapple/probe.mjs http://localhost:3000 --project <app folder>
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
+| `--project` | Current folder | Folder whose `node_modules/playwright` is used before the gti-skills copy |
+| `--viewport WxH` | `1440x900` | Viewport to probe; repeat for several |
+| `--ready` | None | Selector to wait for before measuring |
+| `--ignore` | Maps, SVG, `[role=application]` | Extra selector to skip |
+| `--near` | `12` | Largest edge offset reported as a near miss, in pixels |
+| `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
+| `--json` | Off | Print every finding as JSON |
+
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `curved-accent`, `nested-accent`, `off-token-color`.
+
+### scripts/lintapple/tokens.mjs
+
+Scans source code for colors that do not come from a token, and lists the semantic roles (primary, secondary, info, warning, danger, success, muted, surface, text, border) with no token.
+
+```bash
+node skills/frontend-design-review/scripts/lintapple/tokens.mjs src
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `[DIR]` | Current folder | Source folder to scan |
+| `--allow TEXT` | Tailwind config, `token`, `theme` | Also skip files whose path contains TEXT |
+| `--json` | Off | Print the full report as JSON |
+
 ### Repository commands
 
 Validate the skill and regenerate its agent guides after editing it:

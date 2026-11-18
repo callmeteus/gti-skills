@@ -5,7 +5,8 @@ Run this before approving a review or delivering a build. Every unchecked box is
 ## Design system compliance
 
 - [ ] Components come from the design system, or the exception is documented in code
-- [ ] Spacing, color, type, radius, and shadow use tokens, not hardcoded values
+- [ ] Spacing, color, type, radius, and shadow use tokens, not hardcoded values (the token scan reports no color outside tokens)
+- [ ] Semantic tokens exist for primary, secondary, info, warning, danger, success, and muted, and each is used only for its meaning
 - [ ] The implementation matches the Figma frames, or each deviation is listed for design approval
 - [ ] Every variant and reachable state exists: hover, focus, active, disabled, loading, empty, error
 
@@ -30,6 +31,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 
 - [ ] Accessibility grade is C or better, with the WCAG 2.1 criterion named for each failure
 - [ ] Focus indicators are visible on every interactive element
+- [ ] Blocks share column edges, no near-miss edges or ragged wrapped rows, no curved or nested accent borders (the probe reports none, or each is explained)
 - [ ] The layout reflows at 320px width without horizontal scroll
 - [ ] Text contrast meets 4.5:1 (3:1 for large text and UI parts)
 

@@ -31,6 +31,48 @@ The script prints a summary (problems by rule, then the top groups with selector
 
 It uses, in order, the project's own `lintapple`, the copy installed with gti-skills, or `npx lintapple@<version>` from npm. It needs Node.js 22 or later and Chromium for Playwright; if Chromium is missing, the script prints the one command that installs it. Nothing is written into the project.
 
+## Probe unmarked layouts
+
+lintapple measures alignment, layout gaps, and nested radii only on elements with `data-ui-*` markers, and a generated interface has none. Run the probe on every page as well. It needs no markers and no policy:
+
+```bash
+node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
+```
+
+| Rule | What it measures |
+|------|------------------|
+| `near-miss-edge` | Two blocks stacked in one column, or side by side in one row, whose left, right, or top edges are 2 to 12px apart. Text blocks are measured at the first glyph, not the box |
+| `off-lane` | A wide surface whose left or right edge sits 13 to 64px from a column edge that other blocks in the same container share. It leaves dead space next to it, as a header card that does not line up with the column below |
+| `ragged-wrap` | A wrapping flex row (chips, tags, filters) whose first line ends short of the container edge |
+| `curved-accent` | A one-side accent border (for example `border-left: 4px`) on a box with rounded corners on that side. The stroke bends around the corners into a crescent |
+| `nested-accent` | An accent border inside a box that already has one |
+| `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |
+
+| Option | Use |
+|--------|-----|
+| `--viewport WxH` | Repeat to probe several sizes (default `1440x900`) |
+| `--ready SELECTOR` | Wait for this selector before measuring |
+| `--ignore SELECTOR` | Skip a region; maps, charts in SVG, and `[role=application]` are skipped already |
+| `--near PX`, `--lane PX` | Change the 12px near-miss and 64px lane distances |
+| `--json` | Print every finding as JSON |
+
+Each finding lists the elements with their position, the measured value, and a fix. The probe measures geometry; it does not know intent. Treat a finding as a defect unless the offset is a deliberate step on the spacing scale or the design system defines it, and say which. Exit codes: `0` no findings, `1` findings, `2` the probe did not finish.
+
+## Scan the source for colors outside tokens
+
+The probe sees rendered values; the scan reads the code. It finds every color that does not come from a token: hex and `rgb()`, `hsl()`, `oklch()` literals, Tailwind palette classes (`bg-red-500`, `text-white`), and arbitrary values (`bg-[#7c3aed]`). It also lists the color tokens the project defines and the semantic roles that have none.
+
+```bash
+node <skill-dir>/scripts/lintapple/tokens.mjs src
+```
+
+| Option | Use |
+|--------|-----|
+| `--allow TEXT` | Also skip files whose path contains TEXT, for a token file with another name. The Tailwind config and files with `token` or `theme` in the path are skipped already |
+| `--json` | Print the full report as JSON |
+
+Token definitions (`--primary: #2563eb;`) are allowed anywhere; comments, `url()`, tests, stories, and build output are skipped. The roles checked are primary, secondary, info, warning, danger, success, muted, surface, text, and border, under their common names (`destructive` and `error` count as danger, `foreground` as text, `background` and `card` as surface). Exit codes: `0` clean, `1` colors outside tokens or missing roles.
+
 ## Adapt the policy first
 
 The default policy expects Apple system fonts and a fixed type scale, so on most projects it reports every font as wrong. Before trusting font, size, gap, or inset findings:
@@ -54,7 +96,7 @@ The default policy expects Apple system fonts and a fixed type scale, so on most
 - **Confirmed failures** are measurements: treat them as facts about the page, then decide severity with the skill's own rules.
 - **Unresolved checks** (they also exit `1`) need a human look; report them as "to verify", not as failures.
 - **Coverage notes** matter: child frames are not checked, and some control content (native selects, CSS images, pseudo-elements) is listed as unmeasured. Unmeasured is not a pass.
-- **Layout checks need markers.** Gaps inside stacks and button groups, alignment, nested radius, and tabular numbers are measured only on elements marked with `data-ui-stack`, `data-ui-actions`, `data-ui-container`, `data-ui-align`, `data-ui-radius`, `data-ui-number`, or matched by policy selectors. An unmarked page passing those rules proves nothing about them.
+- **Layout checks need markers.** Gaps inside stacks and button groups, alignment, nested radius, and tabular numbers are measured only on elements marked with `data-ui-stack`, `data-ui-actions`, `data-ui-container`, `data-ui-align`, `data-ui-radius`, `data-ui-number`, or matched by policy selectors. An unmarked page passing those rules proves nothing about them; the probe above covers alignment and accents without markers.
 - **Not everything is measurable.** Visual hierarchy, taste, copy quality beyond banned phrases, and whether the design fits the product still need the skill's review.
 
 ## Rules by area

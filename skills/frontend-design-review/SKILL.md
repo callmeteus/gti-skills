@@ -64,7 +64,7 @@ When the request mixes both ("review this and then fix it"), run Mode 1 first, t
 ## Mode 1: Design review
 
 1. **Identify the user task and the scope.** Name the task the UI serves ("export last month's invoices") and the scope: one component, a feature, or a whole flow. Read the review type modifier that fits (PR, Creative, Design, Accessibility) in [references/review/type-modifiers.md](references/review/type-modifiers.md).
-2. **Measure the rendered UI** when the app runs (a dev server or preview URL). Adapt the lintapple policy to the design system's fonts, type scale, spacing steps, breakpoints, and themes, then run `node <skill-dir>/scripts/lintapple/run.mjs <url> --config <policy>`. Each confirmed finding is evidence for a finding in the review, with its selector, measured value, and expected value; unresolved checks are "to verify". Severity still comes from the pillars file: accessibility and contrast failures feed the accessibility grade. See [references/lintapple/lintapple.md](references/lintapple/lintapple.md).
+2. **Measure the rendered UI** when the app runs (a dev server or preview URL). Adapt the lintapple policy to the design system's fonts, type scale, spacing steps, breakpoints, and themes, then run `node <skill-dir>/scripts/lintapple/run.mjs <url> --config <policy>` and `node <skill-dir>/scripts/lintapple/probe.mjs <url>`, which measures edge alignment, column lanes, wrapped rows, and accent borders without markers. Each confirmed finding is evidence for a finding in the review, with its selector, measured value, and expected value; unresolved checks are "to verify". Severity still comes from the pillars file: accessibility and contrast failures feed the accessibility grade. See [references/lintapple/lintapple.md](references/lintapple/lintapple.md).
 3. **Check the design system.** Find the matching components and patterns, compare against Figma, and verify tokens, variants, and states. See [references/review/design-system.md](references/review/design-system.md).
 4. **Inventory generic AI aesthetics with Unslop Interface.** Run its inventory step only (the slop tells list) and record each tell as a finding. Do not run its passes in a review unless the user asked for fixes.
 5. **Evaluate the three pillars.** Frictionless insight to action, Quality is craft (including the accessibility grade), and Trustworthy building. See [references/review/pillars.md](references/review/pillars.md).
@@ -133,6 +133,8 @@ the grain as intentional. Reviews the build against the pillars and reports.
 | `assets/templates/` | The review report structure |
 | `references/lintapple/` | Running lintapple, adapting its policy, and reading its findings (shared with Unslop Interface) |
 | `scripts/lintapple/run.mjs` | Runs lintapple against a URL and prints a summary (shared with Unslop Interface) |
+| `scripts/lintapple/probe.mjs` | Measures edge alignment, column lanes, wrapped rows, accent borders, and colors that match no token, without markers (shared with Unslop Interface) |
+| `scripts/lintapple/tokens.mjs` | Scans source code for colors outside tokens and missing semantic roles (shared with Unslop Interface) |
 
 ## Running in your agent
 
