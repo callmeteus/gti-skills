@@ -11,6 +11,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - **Creation in a modal:** creating an item (a team, a project, a key) starts from one primary button, usually in the page header, and opens a modal with the form. The page itself shows the list, or its empty state. A create form that is always open on the page competes with the content.
 - **Permissions:** an action only some roles may take (for example, only admins create teams) is hidden from users who cannot take it, or disabled with the reason when knowing it exists helps them. The server enforces the same rule; hiding the button is not the check.
 - **Lists show, items act once:** a list or grid item shows the facts to compare and one action. Its form opens in a modal or the detail page. Advanced options fold into that form, and actions that apply to one state appear only in that state.
+- **Say it once:** each heading, subtitle, and tag adds something new. A section heading does not repeat the page title, and a condition such as who can take part is stated in one place.
 - **No narration:** copy says what the user gains, not how the interface works. Text that explains each control, the feature's internals, or what the feature is not belongs in the docs or a tooltip.
 
 ## 1. Frictionless insight to action
@@ -21,7 +22,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - Is the primary action obvious, and is there only one?
 - After each step, does the screen say what happens next?
 
-**Red flags:** excessive clicks, several competing primary buttons, create forms always open on list pages, a form inside every list item, a filled primary on every card, actions shown in states where they cannot apply, actions shown to users who are not allowed to take them, helper text that narrates the interface, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
+**Red flags:** excessive clicks, several competing primary buttons, create forms always open on list pages, a form inside every list item, a filled primary on every card, actions shown in states where they cannot apply, actions shown to users who are not allowed to take them, helper text that narrates the interface, headings, subtitles, or tags that repeat the heading above them, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
 
 ## 2. Quality is craft
 
@@ -31,7 +32,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - **Aesthetic direction:** distinctive typography, a cohesive palette, intentional motion. Generic AI aesthetics come from the Unslop Interface inventory.
 - **Accessibility:** grade it with the table below.
 
-**Red flags:** generic AI aesthetics, instances of one component with different sizes or parts at different heights, edges that miss each other by a few pixels, blocks off the column lanes, wrapped rows that end short, accent borders that curve around rounded corners or repeat inside each other, hardcoded values, an implementation that does not match Figma, broken reflow at 320px width or 400% zoom, missing focus indicators.
+**Red flags:** generic AI aesthetics, instances of one component with different sizes or parts at different heights, edges that miss each other by a few pixels, large blocks with different space above and below, blocks off the column lanes, wrapped rows that end short, accent borders that curve around rounded corners or repeat inside each other, hardcoded values, an implementation that does not match Figma, broken reflow at 320px width or 400% zoom, missing focus indicators.
 
 ### Accessibility grade
 

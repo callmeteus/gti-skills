@@ -26,6 +26,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Creating an item opens a modal from one primary button; no create form sits open on the page
 - [ ] Actions limited to some roles are hidden or disabled for the others, and the server enforces the rule
 - [ ] No text narrates the interface; copy says what the user gains
+- [ ] No heading, subtitle, or tag repeats the heading above it (no `repeated-heading`)
 - [ ] List items show facts and one action; no form inside list items, and the probe reports no `repeated-form` or `competing-primaries`
 - [ ] Actions appear only in the state where they apply
 
@@ -34,6 +35,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Accessibility grade is C or better, with the WCAG 2.1 criterion named for each failure
 - [ ] Focus indicators are visible on every interactive element
 - [ ] Instances of one component share size and inner rows (no `uneven-siblings` or `misaligned-parts`)
+- [ ] Large blocks (maps, charts, big panels) have the same space above and below on desktop and phone (no `uneven-gap`)
 - [ ] Blocks share column edges, no near-miss edges or ragged wrapped rows, no curved or nested accent borders (the probe reports none, or each is explained)
 - [ ] The layout reflows at 320px width without horizontal scroll
 - [ ] Text contrast meets 4.5:1 (3:1 for large text and UI parts)

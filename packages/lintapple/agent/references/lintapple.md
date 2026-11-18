@@ -46,15 +46,17 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `ragged-wrap` | A wrapping flex row (chips, tags, filters) whose first line ends short of the container edge |
 | `curved-accent` | A one-side accent border (for example `border-left: 4px`) on a box with rounded corners on that side. The stroke bends around the corners into a crescent |
 | `nested-accent` | An accent border inside a box that already has one |
+| `uneven-gap` | A large block (map, chart, image, big panel) with different space above and below it, as 56px between the intro and a map but 12px between the map and the search field. Maps and other ignored widgets count as blocks |
 | `uneven-siblings` | Two or more instances of one component (same tag and classes) in one row with different widths or heights |
 | `misaligned-parts` | Matching parts of instances in one row at different heights, as a price that sits lower in one card because the tag row above it wrapped. The finding names the earlier part whose height differs, which is usually the cause |
 | `repeated-form` | Form fields inside every item of one list or grid |
 | `competing-primaries` | More than two filled, saturated buttons in the first viewport |
+| `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), or short text under a heading that only repeats its words (an "Attendees only" tag). Card titles in a grid of items are not compared with the page heading |
 | `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |
 
 | Option | Use |
 |--------|-----|
-| `--viewport WxH` | Repeat to probe several sizes (default `1440x900`) |
+| `--viewport WxH` | Repeat to probe several sizes (default `1440x900` and `390x844`) |
 | `--ready SELECTOR` | Wait for this selector before measuring |
 | `--ignore SELECTOR` | Skip a region; maps, charts in SVG, and `[role=application]` are skipped already |
 | `--near PX`, `--lane PX` | Change the 12px near-miss and 64px lane distances |

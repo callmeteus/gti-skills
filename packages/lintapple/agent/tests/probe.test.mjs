@@ -94,6 +94,28 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.ok(!findings.some((finding) => finding.rule === "off-lane"));
     });
 
+    it("finds headings and short text that repeat the heading above them", async () => {
+        const findings = (await probeFixture("headings.html")).filter((finding) => finding.rule === "repeated-heading");
+        const actual = findings.map((finding) => finding.actual).join(" | ");
+        assert.equal(findings.length, 3, actual);
+        assert.match(actual, /restates the heading above it \(shared: leilao\)/);
+        assert.match(actual, /"So participantes"|"Só participantes"/);
+        assert.match(actual, /two headings read "Regras"/);
+        assert.doesNotMatch(actual, /caneca|poster|pôster/);
+    });
+
+    it("leaves a page title, its card titles, and distinct headings alone", async () => {
+        const findings = await probeFixture("headings-clean.html");
+        assert.ok(!findings.some((finding) => finding.rule === "repeated-heading"), JSON.stringify(findings.filter((finding) => finding.rule === "repeated-heading")));
+    });
+
+    it("finds a large block with different space above and below it", async () => {
+        const findings = (await probeFixture("map-gap.html")).filter((finding) => finding.rule === "uneven-gap");
+        assert.equal(findings.length, 1, JSON.stringify(findings));
+        assert.match(findings[0].actual, /^56px above the block and 12px below it$/);
+        assert.match(findings[0].items[1].selector, /section#broken > div\.map-card/);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

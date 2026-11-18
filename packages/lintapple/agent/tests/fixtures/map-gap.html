@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Map gap fixture</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #fff8f0; }
+  main { max-width: 600px; margin: 0 auto; padding: 24px; }
+  h1, p { margin: 0; }
+  .intro p { margin-bottom: 56px; }
+  .map-card { height: 320px; border-radius: 16px; overflow: hidden; background: #ddd; }
+  .leaflet-container { height: 100%; background: #cfe3cf; }
+  .search { height: 48px; margin-top: 12px; border: 1px solid #ddd; border-radius: 12px; background: #fff; }
+  .clean { display: flex; flex-direction: column; gap: 24px; margin-top: 48px; }
+  .clean .map-card, .clean .leaflet-container { height: 280px; }
+  .clean .search { margin-top: 0; }
+</style>
+</head>
+<body>
+  <main>
+    <section id="broken">
+      <div class="intro"><h1>Seu rolê começa aqui</h1><p>O hotel é o ponto central do Furzuê.</p></div>
+      <div class="map-card"><div class="leaflet-container">Map</div></div>
+      <div class="search">Buscar</div>
+    </section>
+    <section class="clean" id="clean">
+      <p>Pontos perto do hotel.</p>
+      <div class="map-card"><div class="leaflet-container">Map</div></div>
+      <div class="search">Buscar</div>
+    </section>
+  </main>
+</body>
+</html>

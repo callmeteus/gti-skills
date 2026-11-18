@@ -228,14 +228,14 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 |----------|---------|-------------|
 | `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
 | `--project` | Current folder | Folder whose `node_modules/playwright` is used before the gti-skills copy |
-| `--viewport WxH` | `1440x900` | Viewport to probe; repeat for several |
+| `--viewport WxH` | `1440x900` and `390x844` | Viewport to probe; repeat for several |
 | `--ready` | None | Selector to wait for before measuring |
 | `--ignore` | Maps, SVG, `[role=application]` | Extra selector to skip |
 | `--near` | `12` | Largest edge offset reported as a near miss, in pixels |
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-heading`, `off-token-color`.
 
 ### scripts/lintapple/tokens.mjs
 

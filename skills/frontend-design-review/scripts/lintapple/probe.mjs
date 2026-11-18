@@ -5,7 +5,9 @@
  * one-side accent borders that curve around rounded corners or repeat inside each other,
  * rendered colors that match none of the page's color tokens (CSS custom properties),
  * instances of one component side by side whose size or inner parts do not match,
- * forms repeated inside every item of a list, and too many filled buttons competing on one view.
+ * forms repeated inside every item of a list, too many filled buttons competing on one view,
+ * headings or short text that repeat the heading above them, and large blocks with
+ * different space above and below.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -31,7 +33,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 
 export const DEFAULTS = {
-    viewports: [{ width: 1440, height: 900 }],
+    viewports: [{ width: 1440, height: 900 }, { width: 390, height: 844 }],
     near: 12,
     lane: 64,
     ignore: [".leaflet-container", ".maplibregl-map", ".mapboxgl-map", ".gm-style", "[role=application]", "svg *"],
@@ -316,6 +318,102 @@ export function measurePage(options) {
             }
         }
     }
+
+    // Uneven space around a large block: a map, chart, image, or large panel must have the same
+    // space above and below it. Neighbors are the nearest boxes above and below in its column.
+    // Ignored widgets (maps) count as blocks themselves, though nothing inside them is measured.
+    const large = (rect) => rect.height >= 160 && rect.width >= Math.min(0.5 * innerWidth, 320);
+    const largeBlocks = boxes.filter((box) => box.surface && !box.floating && box.style.position !== "sticky" && large(box.rect));
+    if (ignore) {
+        for (const el of document.querySelectorAll(ignore)) {
+            if (el.parentElement && el.parentElement.closest(ignore)) continue;
+            const rect = el.getBoundingClientRect();
+            if (shown(el) && large(rect)) largeBlocks.push({ el, rect });
+        }
+    }
+    const flow = boxes.filter((box) => !box.floating && box.style.position !== "sticky");
+    const gapped = new Set();
+    for (const block of largeBlocks) {
+        // Wrappers that hug the same block are measured once, from the outermost.
+        if (largeBlocks.some((other) => other !== block && other.el.contains(block.el) && ["top", "bottom", "left", "right"].every((side) => Math.abs(other.rect[side] - block.rect[side]) <= 4))) continue;
+        let above = null;
+        let below = null;
+        for (const box of flow) {
+            if (nested(box, block) || !overlapX(box, block)) continue;
+            if (box.rect.bottom <= block.rect.top + 1 && (!above || box.rect.bottom > above.rect.bottom)) above = box;
+            if (box.rect.top >= block.rect.bottom - 1 && (!below || box.rect.top < below.rect.top)) below = box;
+        }
+        if (!above || !below) continue;
+        const top = block.rect.top - above.rect.bottom;
+        const bottom = below.rect.top - block.rect.bottom;
+        if (Math.max(top, bottom) > 200) continue;
+        const small = Math.max(Math.min(top, bottom), 1);
+        if (Math.abs(top - bottom) < 8 || Math.max(top, bottom) / small < 1.5) continue;
+        const key = `${round(block.rect.top)}:${round(block.rect.bottom)}`;
+        if (gapped.has(key)) continue;
+        gapped.add(key);
+        add("uneven-gap", [above, block, below], `${round(top)}px above the block and ${round(bottom)}px below it`, "the same space above and below a large block", "Give the block one spacing token on both sides: set the gap on the parent (flex or grid `gap`) instead of a margin on one neighbor, and remove trailing margins on the text above it (the last paragraph's `margin-bottom`).");
+    }
+
+    // Headings that repeat each other: two headings with the same text, a heading that restates
+    // the heading before it ("Auctions" over "Auction for attendees"), and short text right under
+    // a heading that only repeats its words (an "Attendees only" tag under "...for attendees").
+    // Words match on a shared start, so plural and accented forms count as the same word.
+    const plain = (text) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+    const filler = new Set(["para", "pelo", "pela", "como", "mais", "sobre", "todos", "todas", "cada", "seus", "suas", "voce", "esta", "este", "essa", "esse", "isso", "aqui", "entre", "your", "with", "from", "this", "that", "only", "more", "about", "into", "each", "what", "here", "their", "have", "desde"]);
+    const words = (text) => (plain(text).match(/[a-z0-9]+/g) ?? []).filter((word) => word.length >= 4 && !filler.has(word));
+    const sameWord = (a, b) => {
+        let length = 0;
+        while (length < a.length && length < b.length && a[length] === b[length]) length++;
+        return length >= Math.max(4, Math.ceil(0.6 * Math.min(a.length, b.length)));
+    };
+    const sharedWords = (a, b) => a.filter((word) => b.some((other) => sameWord(word, other)));
+    const ownText = (el) => [...el.childNodes].filter((node) => node.nodeType === 3).map((node) => node.textContent).join(" ").replace(/\s+/g, " ").trim();
+    const headingSelector = "h1, h2, h3, h4, h5, h6, [role=heading]";
+    const headings = [...document.querySelectorAll(headingSelector)].filter((el) => shown(el) && !(ignore && el.closest(ignore)) && el.innerText.trim());
+    const asBox = (el) => ({ el, rect: el.getBoundingClientRect() });
+    // A heading inside one item of a grid of items (a card title) names that item; it does not restate the page.
+    const inItem = (el, outside) => {
+        for (let node = el; node && node.parentElement && !node.contains(outside); node = node.parentElement) {
+            const parent = node.parentElement;
+            const sig = signature(node);
+            const twins = [...parent.children].filter((child) => child !== node && signature(child) === sig && shown(child));
+            if (twins.length && node.getBoundingClientRect().width < 0.6 * parent.getBoundingClientRect().width) return true;
+        }
+        return false;
+    };
+    const seenText = new Map();
+    headings.forEach((heading, index) => {
+        const text = plain(heading.innerText.trim().replace(/\s+/g, " "));
+        if (/^h[1-3]$/i.test(heading.tagName) && !inItem(heading, document.body)) {
+            const earlier = seenText.get(text);
+            if (earlier) add("repeated-heading", [asBox(earlier), asBox(heading)], `two headings read "${heading.innerText.trim().slice(0, 48)}"`, "each heading names a different part of the page", "Keep one of the two. When both parts are needed, name each one for what it holds.");
+            else seenText.set(text, heading);
+        }
+        const next = headings[index + 1];
+        if (next && plain(next.innerText.trim().replace(/\s+/g, " ")) !== text && !inItem(next, heading)) {
+            const shared = sharedWords(words(next.innerText), words(heading.innerText));
+            if (shared.length) add("repeated-heading", [asBox(heading), asBox(next)], `the heading restates the heading above it (shared: ${shared.join(", ")})`, "a heading that adds new information, or no second heading", "Drop the second heading, or keep only the words that are new (\"For attendees\" under \"Auctions\"). Put a condition such as who can take part in one place only.");
+        }
+        // Short text under the heading, before the next heading, that only repeats the heading's words.
+        const headingWords = words(heading.innerText);
+        if (!headingWords.length) return;
+        let checked = 0;
+        for (const box of boxes) {
+            if (checked >= 8) break;
+            if (!(heading.compareDocumentPosition(box.el) & Node.DOCUMENT_POSITION_FOLLOWING) || heading.contains(box.el)) continue;
+            if (next && !(next.compareDocumentPosition(box.el) & Node.DOCUMENT_POSITION_PRECEDING)) break;
+            if (box.el.closest(`${headingSelector}, a, button, label, input, select, textarea, [role=button]`)) continue;
+            const line = ownText(box.el);
+            if (!line) continue;
+            checked++;
+            const own = words(line);
+            if (!own.length || line.length > 80) continue;
+            if (own.every((word) => headingWords.some((other) => sameWord(word, other)))) {
+                add("repeated-heading", [asBox(heading), box], `"${line.slice(0, 48)}" under the heading only repeats its words`, "text under a heading that adds new information", "Remove the repeated text, or replace it with a fact the heading does not state. Say each condition once.");
+            }
+        }
+    });
 
     // Filled buttons competing on one view: buttons and button-like links with a saturated
     // background, visible in the first viewport. More than two reads as no primary at all.
