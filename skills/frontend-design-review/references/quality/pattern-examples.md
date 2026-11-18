@@ -30,6 +30,12 @@ No evidence, no severity, no fix, and no criterion.
 
 **Good:** the title "Teams", one short line only if the page needs it ("Share resources across your team."), the list of teams or its empty state, and a "Create team" button in the header that opens a modal with the name field. Only admins see the button, and the API rejects the request from anyone else.
 
+## List items and their actions
+
+**Bad:** an auction grid where every card holds a bid field, a large filled "Place bid" button, an auto-bid field, an outlined "Turn on auto-bid" button, and a "Cancel auto-bid" link that shows even when auto-bid is off. Bid limits are one sentence, and the price sits lower in the cards whose tag row wrapped.
+
+**Good:** each card shows the title, tags on one line, current bid, and leader on shared rows (CSS subgrid), and one "Place a bid" button. The button opens a modal with the bid field, the limits as label and value pairs, a "Bid automatically up to" toggle, and the one filled confirm button. "Cancel auto-bid" appears on a card only while its auto-bid is on.
+
 ## Design system exceptions
 
 **Bad:** a new `FancyDropdown` component that copies the system `Select` and changes its radius and shadow.

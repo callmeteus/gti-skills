@@ -2,9 +2,9 @@
 name: unslop-interface
 description: >-
   Removes the "AI slop" look from vibecoded interfaces (dashboards, admin
-  panels, SaaS screens, landing sections) in six ordered passes: spacing,
-  corner radius, color, icons and alignment, typography and copy, and data
-  display. Edits the UI code (HTML, CSS, Tailwind, React, Vue, Svelte) or
+  panels, SaaS screens, landing sections) in seven ordered passes: spacing,
+  corner radius, color, icons and alignment, typography and copy, data
+  display, and actions and structure. Edits the UI code (HTML, CSS, Tailwind, React, Vue, Svelte) or
   describes exact changes for a screenshot. Use when the user says unslop,
   de-slop, "looks AI generated", "looks vibecoded", "too much gradient",
   "make it look professional", or asks for design polish of a generated UI.
@@ -54,30 +54,32 @@ No tools need to be installed for a screenshot. When the app runs, take a screen
 Work through the passes in this order. Each pass fixes the ground the next one stands on: spacing before shape, shape before color, color before details. Read a pass file only when you reach it, and skip a pass when the screen has none of its tells.
 
 1. **Inventory the slop.** List every tell you see with [references/quality/slop-tells.md](references/quality/slop-tells.md). Note the tokens the code already has (spacing scale, radius, colors, font). When the app runs, also take a measured baseline: adapt the lintapple policy to those tokens and run `node <skill-dir>/scripts/lintapple/run.mjs <url> --config <policy>` and `node <skill-dir>/scripts/lintapple/probe.mjs <url>`, and run `node <skill-dir>/scripts/lintapple/tokens.mjs <source folder>` on the code; add each confirmed finding to the inventory under the pass that fixes it (table below). Do not change layout, navigation items, or data yet.
-2. **Spacing pass.** Replace arbitrary gaps with one scale, line up content edges across panels, put every block on the page's column lanes, and fix wrapped rows that end short. See [references/passes/01-spacing.md](references/passes/01-spacing.md).
+2. **Spacing pass.** Replace arbitrary gaps with one scale, line up content edges across panels, put every block on the page's column lanes, fix wrapped rows that end short, and give instances of one component the same size and the same inner rows. See [references/passes/01-spacing.md](references/passes/01-spacing.md).
 3. **Corner radius pass.** Reduce radii to a small set, stop using pills for inputs and nav items, and straighten accent borders that curve around rounded corners. See [references/passes/02-radius.md](references/passes/02-radius.md).
 4. **Color pass.** Remove decorative gradients, glow, and tinted glass; move to a neutral base, keep color for meaning, and make every color come from a semantic token (primary, secondary, info, warning, danger, success, muted). See [references/passes/03-color.md](references/passes/03-color.md).
 5. **Icons and alignment pass.** Replace emoji with one line icon set, align the icon column, and turn decorative category icons into data such as color dots. See [references/passes/04-icons.md](references/passes/04-icons.md).
 6. **Typography and copy pass.** Calm the type, drop all-caps labels and exclamation marks, give numbers context, set tabular figures on numbers that change, replace filler headers with information, drop taglines that only restate the page title, and cut text that narrates the interface. See [references/passes/05-typography-and-copy.md](references/passes/05-typography-and-copy.md).
 7. **Data display pass.** Make charts carry real information: axes, units, a legend that matches the rest of the screen, and one focus. See [references/passes/06-data-display.md](references/passes/06-data-display.md).
-8. **Verify and report.** Re-check the inventory: every tell is fixed or listed as intentionally kept. Run lintapple and the probe again with the same policy and report the before and after counts by rule; a finding that appeared during the passes is a regression to fix. Name each fix with its precise term from [references/quality/vocabulary.md](references/quality/vocabulary.md). Report with [assets/templates/unslop-report.md](assets/templates/unslop-report.md). When you edited code, list the files changed and the tokens you introduced.
+8. **Actions and structure pass.** Keep one filled primary per view, take forms out of list items into a modal or the detail page, fold advanced options into the main form, and show state actions only in their state. Every action stays reachable. See [references/passes/07-actions-and-structure.md](references/passes/07-actions-and-structure.md).
+9. **Verify and report.** Re-check the inventory: every tell is fixed or listed as intentionally kept. Run lintapple and the probe again with the same policy and report the before and after counts by rule; a finding that appeared during the passes is a regression to fix. Name each fix with its precise term from [references/quality/vocabulary.md](references/quality/vocabulary.md). Report with [assets/templates/unslop-report.md](assets/templates/unslop-report.md). When you edited code, list the files changed and the tokens you introduced.
 
 ### Which pass fixes a lintapple finding
 
 | lintapple rules | Pass |
 |-----------------|------|
-| `control-gap`, `layout-gap`, `control-inset`, `content-inset`, `layout-alignment`, and the probe's `near-miss-edge`, `off-lane`, `ragged-wrap` | Spacing |
+| `control-gap`, `layout-gap`, `control-inset`, `content-inset`, `layout-alignment`, and the probe's `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-siblings`, `misaligned-parts` | Spacing |
 | `nested-radius`, and the probe's `curved-accent`, `nested-accent` | Corner radius |
 | `text-contrast`, `root-background`, the probe's `off-token-color`, and every `tokens.mjs` finding | Color |
 | `icon-size`, `icon-button-tooltip` | Icons and alignment |
 | `font-family`, `font-size`, `font-loading`, `tabular-numbers`, `numeric-alignment`, `copy` | Typography and copy |
+| The probe's `repeated-form`, `competing-primaries` | Actions and structure |
 | `horizontal-overflow`, `viewport-bounds`, `content-clipping`, `content-overflow`, `control-size`, `target-size`, and the accessibility rules | Not a slop pass: report them as bugs, and fix them only when they are in the area you are already editing |
 
 ## Rules
 
 - Change one pass at a time and keep the screen working after each pass. Never rewrite the whole component in one step.
 - Prefer tokens (CSS variables, Tailwind theme values) over one-off values. If the project has a design system, use it and do not add a parallel one.
-- Keep the information. Unslopping removes decoration, not features: every number, item, and action on the screen stays unless the user agrees to remove it.
+- Keep the information. Unslopping removes decoration, not features: every number, item, and action on the screen stays unless the user agrees to remove it. The actions and structure pass may move an action into a modal, menu, or detail page, but it stays reachable.
 - Do not swap one trend for another. Neutral and quiet is the target; do not add new glassmorphism, neon, or gradient effects.
 - When a value comes from the source example (16px inset, 10px icon gap), treat it as a starting point and fit it to the project's scale.
 

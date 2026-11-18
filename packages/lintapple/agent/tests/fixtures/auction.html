@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Auction fixture</title>
+<style>
+  body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fff8f0; }
+  .grid { display: grid; grid-template-columns: 360px 360px; gap: 24px; margin-bottom: 32px; }
+  .lot { display: flex; flex-direction: column; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
+  .lot h3 { margin: 0 0 4px; }
+  .lot p { margin: 0 0 8px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { background: #f3f3f3; border-radius: 6px; padding: 4px 8px; }
+  .bid { margin-top: 12px; }
+  .note { margin-top: auto; background: #f6f6f6; border-radius: 8px; padding: 12px; }
+  .fixed .lot { display: grid; grid-row: span 5; grid-template-rows: subgrid; }
+  .fixed { grid-template-rows: repeat(5, auto); }
+  .fixed .tags { flex-wrap: nowrap; overflow: hidden; }
+</style>
+</head>
+<body>
+  <div class="grid" id="broken">
+    <div class="lot">
+      <h3>VIP experience</h3>
+      <p>Sample item for attendees.</p>
+      <div class="tags"><span class="tag">In person</span><span class="tag">Online or local</span><span class="tag">Attendees only</span></div>
+      <div class="bid">Current bid: 0.00</div>
+      <div class="note">Attendees with a ticket only.</div>
+    </div>
+    <div class="lot">
+      <h3>Exclusive fursuit</h3>
+      <p>Another item.</p>
+      <div class="tags"><span class="tag">Hybrid</span><span class="tag">Online</span></div>
+      <div class="bid">Current bid: 0.00</div>
+      <div class="note">Attendees with a ticket only.</div>
+    </div>
+  </div>
+  <div class="grid fixed" id="fixed">
+    <div class="lot">
+      <h3>VIP experience</h3>
+      <p>Sample item for attendees.</p>
+      <div class="tags"><span class="tag">In person</span><span class="tag">Online</span></div>
+      <div class="bid">Current bid: 0.00</div>
+      <div class="note">Attendees with a ticket only.</div>
+    </div>
+    <div class="lot">
+      <h3>Exclusive fursuit</h3>
+      <p>Another item.</p>
+      <div class="tags"><span class="tag">Hybrid</span><span class="tag">Online</span></div>
+      <div class="bid">Current bid: 0.00</div>
+      <div class="note">Attendees with a ticket only.</div>
+    </div>
+  </div>
+</body>
+</html>

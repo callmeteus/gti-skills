@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bidding fixture</title>
+<style>
+  body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fff8f0; }
+  .grid { display: grid; grid-template-columns: 360px 360px; gap: 24px; align-items: stretch; margin-bottom: 32px; }
+  .lot { display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
+  .lot h3, .lot p { margin: 0; }
+  .lot input { height: 40px; border: 1px solid #ccc; border-radius: 8px; }
+  .bid { height: 48px; border: 0; border-radius: 8px; background: #ff9124; color: #fff; font-weight: 600; }
+  .auto { height: 48px; border: 1px solid #ff9124; border-radius: 8px; background: #fff; color: #ff9124; }
+  .calm .open { height: 40px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; }
+</style>
+</head>
+<body>
+  <div class="grid" id="confusing">
+    <div class="lot">
+      <h3>Numbered badge</h3>
+      <p>Current bid: 0.00</p>
+      <label>Your bid <input></label>
+      <button class="bid">Bid</button>
+      <label>Auto-bid up to <input></label>
+      <button class="auto">Turn on auto-bid</button>
+    </div>
+    <div class="lot">
+      <h3>Welcome kit</h3>
+      <p>Current bid: 0.00</p>
+      <label>Your bid <input></label>
+      <button class="bid">Bid</button>
+      <label>Auto-bid up to <input></label>
+      <button class="auto">Turn on auto-bid</button>
+    </div>
+    <div class="lot">
+      <h3>Poster</h3>
+      <p>Current bid: 0.00</p>
+      <label>Your bid <input></label>
+      <button class="bid">Bid</button>
+      <label>Auto-bid up to <input></label>
+      <button class="auto">Turn on auto-bid</button>
+    </div>
+  </div>
+  <div class="grid calm" id="calm">
+    <div class="lot"><h3>Numbered badge</h3><p>Current bid: 0.00</p><button class="open">Place a bid</button></div>
+    <div class="lot"><h3>Welcome kit</h3><p>Current bid: 0.00</p><button class="open">Place a bid</button></div>
+  </div>
+</body>
+</html>

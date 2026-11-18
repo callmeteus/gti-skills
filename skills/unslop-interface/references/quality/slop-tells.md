@@ -13,6 +13,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Stacked blocks whose edges miss each other by a few pixels (a map 2px in from the search field above it) | Common | 01 |
 | A block off the page's column lanes, leaving a dead band beside it (a header card that misses the column below) | Common | 01 |
 | A wrapping chip or filter row whose first line ends short of the full-width blocks around it | Common | 01 |
+| Cards of one component whose parts drift: the price sits lower in one card because its tag row wrapped | Common | 01 |
+| Instances of one component in a row with different widths or heights | Common | 01 |
 
 ## Shape
 
@@ -78,3 +80,13 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Chart whose colors do not relate to anything else on the screen | Source | 06 |
 | Clip-art illustration (emoji credit card) in a stat card | Source | 06 |
 | Scrolling table whose header row scrolls out of view | Source (Kowalski clip) | 06 |
+
+## Actions and structure
+
+| Tell | Seen in | Pass |
+|------|---------|------|
+| A full form (fields and buttons) inside every card of a list | Common | 07 |
+| A large filled primary button on every card, many primaries on one screen | Common | 07 |
+| A second form for an advanced option (auto-bid next to bid) instead of a toggle inside the first | Common | 07 |
+| Actions shown in states where they cannot apply ("Cancel auto-bid" with no auto-bid on) | Common | 07 |
+| Limits and values buried in a sentence ("Minimum bid: R$ 50,00 Maximum: R$ 1.000,00.") | Common | 07 |

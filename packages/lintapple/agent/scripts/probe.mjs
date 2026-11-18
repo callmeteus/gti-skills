@@ -3,7 +3,9 @@
  * Measures layout problems that need no data-ui-* markers: edges that almost line up,
  * blocks off the page's column lanes, wrapped rows that end short of their container,
  * one-side accent borders that curve around rounded corners or repeat inside each other,
- * and rendered colors that match none of the page's color tokens (CSS custom properties).
+ * rendered colors that match none of the page's color tokens (CSS custom properties),
+ * instances of one component side by side whose size or inner parts do not match,
+ * forms repeated inside every item of a list, and too many filled buttons competing on one view.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -168,7 +170,7 @@ export function measurePage(options) {
         const parent = el.parentElement && getComputedStyle(el.parentElement);
         return Boolean(parent && parent.display.includes("flex") && parent.flexWrap.startsWith("wrap"));
     };
-    const blocks = boxes.filter((box) => !box.floating && box.surface && box.rect.width >= 120 && !wrapItem(box.el));
+    const blocks = boxes.filter((box) => !box.floating && box.surface && box.rect.width >= 120 && !box.style.display.startsWith("inline") && !wrapItem(box.el));
     const contexts = new Map();
     for (const box of blocks) {
         const key = container(box.el);
@@ -230,6 +232,107 @@ export function measurePage(options) {
     for (const box of accents) {
         const parent = accents.find((other) => other !== box && other.el.contains(box.el));
         if (parent) add("nested-accent", [parent, box], "an accent border inside a box that already has one", "one accent level", "Keep the accent on one level only, usually the outer group, and show the inner items with spacing or a plain border.");
+    }
+
+    // Instances of one component side by side: siblings with the same tag and classes, in one
+    // row, must have the same size, and their matching parts must sit at the same height.
+    const stateClass = /(^|-)(active|selected|open|current|disabled|checked|expanded)$|^(is|has)-/;
+    const signature = (el) => `${el.tagName}.${[...el.classList].filter((name) => !/^(css|sc|jsx|svelte|astro)-/.test(name) && !stateClass.test(name)).sort().join(".")}`;
+    const shown = (el) => {
+        const rect = el.getBoundingClientRect();
+        const style = getComputedStyle(el);
+        return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+    };
+    const parts = (root) => {
+        const map = new Map();
+        const order = [];
+        const walk = (el, path) => {
+            const counts = new Map();
+            for (const child of el.children) {
+                if (!shown(child)) continue;
+                const sig = signature(child);
+                const index = counts.get(sig) ?? 0;
+                counts.set(sig, index + 1);
+                const key = `${path}/${sig}[${index}]`;
+                const rect = child.getBoundingClientRect();
+                map.set(key, { el: child, top: rect.top - root.getBoundingClientRect().top, height: rect.height });
+                order.push(key);
+                walk(child, key);
+            }
+        };
+        walk(root, "");
+        return { map, order };
+    };
+    const visited = new Set();
+    for (const parent of document.querySelectorAll("body, body *")) {
+        if (ignore && (parent.matches(ignore) || parent.closest(ignore))) continue;
+        const groups = new Map();
+        for (const child of parent.children) {
+            if (!shown(child)) continue;
+            const style = getComputedStyle(child);
+            if (style.position === "absolute" || style.position === "fixed") continue;
+            const rect = child.getBoundingClientRect();
+            if (rect.width < 120 || rect.height < 60 || !child.children.length) continue;
+            const sig = signature(child);
+            groups.set(sig, [...(groups.get(sig) ?? []), { el: child, rect }]);
+        }
+        for (const members of groups.values()) {
+            if (members.length < 2) continue;
+            const withFields = members.filter((member) => [...member.el.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select")].some(shown));
+            if (withFields.length >= 2 && !visited.has(withFields[0].el.parentElement)) {
+                visited.add(withFields[0].el.parentElement);
+                const fields = withFields[0].el.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea, select").length;
+                add("repeated-form", withFields.slice(0, 3).map((member) => ({ el: member.el, rect: member.rect })), `${withFields.length} items of one list each carry a form (${fields} field(s) in the first)`, "list items that show a summary and one action", "Show the facts to compare and one action per item. Open the form in a modal, sheet, or the item's detail page, for the item the user picked. Put advanced options (auto-bid, recurring, schedule) inside that form behind a toggle, not as a second form.");
+            }
+            const rows = [];
+            for (const member of members) {
+                const row = rows.find((items) => Math.min(items[0].rect.bottom, member.rect.bottom) - Math.max(items[0].rect.top, member.rect.top) > 0);
+                if (row) row.push(member);
+                else rows.push([member]);
+            }
+            for (const row of rows.filter((items) => items.length >= 2)) {
+                if (visited.has(row[0].el)) continue;
+                visited.add(row[0].el);
+                const asBoxes = row.map((member) => ({ el: member.el, rect: member.rect }));
+                const widths = row.map((member) => member.rect.width);
+                const heights = row.map((member) => member.rect.height);
+                const spread = (values) => Math.max(...values) - Math.min(...values);
+                if (spread(widths) > 2 || spread(heights) > 2) {
+                    const what = [spread(widths) > 2 ? `widths ${widths.map(round).join(", ")}` : "", spread(heights) > 2 ? `heights ${heights.map(round).join(", ")}` : ""].filter(Boolean).join("; ");
+                    add("uneven-siblings", asBoxes.slice(0, 3), `${row.length} instances of one component in a row with ${what}`, "the same width and height for every instance in the row", "Give the instances equal tracks: a grid with equal columns and `align-items: stretch`, or the same fixed size. Let content fit inside the instance instead of resizing it.");
+                }
+                const first = parts(row[0].el);
+                for (const other of row.slice(1)) {
+                    const second = parts(other.el);
+                    const key = first.order.find((name) => second.map.has(name) && Math.abs(first.map.get(name).top - second.map.get(name).top) > 2);
+                    if (!key) continue;
+                    const a = first.map.get(key);
+                    const b = second.map.get(key);
+                    const before = first.order.slice(0, first.order.indexOf(key)).reverse().find((name) => second.map.has(name) && Math.abs(first.map.get(name).height - second.map.get(name).height) > 2);
+                    const cause = before ? `; the part before it, ${describe(first.map.get(before).el)}, is ${round(first.map.get(before).height)}px tall in one and ${round(second.map.get(before).height)}px in the other` : "";
+                    add("misaligned-parts", [{ el: a.el, rect: a.el.getBoundingClientRect() }, { el: b.el, rect: b.el.getBoundingClientRect() }], `the same part sits ${round(a.top)}px from the top in one instance and ${round(b.top)}px in the other${cause}`, "matching parts of instances in a row at the same height", "Line the parts up across the row: use CSS subgrid (`grid-template-rows: subgrid` on each instance, spanning the parent's rows), give variable parts a fixed or minimum height, keep chip and tag rows to one line (`flex-wrap: nowrap` with a +N overflow), and push the footer down with `margin-top: auto`.");
+                    break;
+                }
+            }
+        }
+    }
+
+    // Filled buttons competing on one view: buttons and button-like links with a saturated
+    // background, visible in the first viewport. More than two reads as no primary at all.
+    const saturated = (color) => {
+        const match = color && color.match(/rgba?\(([^)]+)\)/);
+        if (!match) return false;
+        const [r, g, b, a = 1] = match[1].split(/[ ,/]+/).filter(Boolean).map(Number);
+        if (a < 0.5) return false;
+        const max = Math.max(r, g, b) / 255;
+        const min = Math.min(r, g, b) / 255;
+        const light = (max + min) / 2;
+        const sat = max === min ? 0 : (max - min) / (1 - Math.abs(2 * light - 1));
+        return sat >= 0.35 && light > 0.15 && light < 0.85;
+    };
+    const filled = boxes.filter((box) => box.el.matches("button, [role=button], a, input[type=submit], input[type=button]") && saturated(box.style.backgroundColor) && box.rect.top < innerHeight && box.rect.bottom > 0);
+    if (filled.length > 2) {
+        add("competing-primaries", filled.slice(0, 4), `${filled.length} filled, saturated buttons in the first viewport`, "one primary action per view, two at most", "Keep one filled primary for the main task of the view. Make repeated item actions secondary (outline or plain), and move the rest into the item's detail, a modal, or an overflow menu.");
     }
 
     // Colors that match no token: every color custom property the page defines is resolved to

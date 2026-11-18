@@ -66,6 +66,34 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.match(result.notes.join(" "), /No color tokens/);
     });
 
+    const probeFixture = async (name) => {
+        const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        await page.goto(pathToFileURL(join(here, "fixtures", name)).href);
+        const result = await page.evaluate(measurePage, { near: DEFAULTS.near, lane: DEFAULTS.lane, ignore: DEFAULTS.ignore });
+        await page.close();
+        return result.findings;
+    };
+
+    it("finds parts of side by side instances at different heights, and names the cause", async () => {
+        const findings = await probeFixture("auction.html");
+        const parts = findings.filter((finding) => finding.rule === "misaligned-parts");
+        assert.equal(parts.length, 1);
+        assert.match(parts[0].items[0].selector, /div#broken > div\.lot > div\.bid/);
+        assert.match(parts[0].actual, /div\.tags/);
+        assert.doesNotMatch(findings.flatMap(ids).join(" "), /div#fixed/);
+    });
+
+    it("finds forms repeated in list items and competing filled buttons", async () => {
+        const findings = await probeFixture("bidding.html");
+        const forms = findings.filter((finding) => finding.rule === "repeated-form");
+        const primaries = findings.filter((finding) => finding.rule === "competing-primaries");
+        assert.equal(forms.length, 1);
+        assert.match(forms[0].actual, /^3 items/);
+        assert.equal(primaries.length, 1);
+        assert.doesNotMatch(findings.flatMap(ids).join(" "), /div#calm/);
+        assert.ok(!findings.some((finding) => finding.rule === "off-lane"));
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });
