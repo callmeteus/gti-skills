@@ -200,6 +200,15 @@ export function measurePage(options) {
         for (const box of wide) {
             const value = round(box.rect[edge]);
             if (counts.get(value) > 1) continue;
+            // A full-bleed band (a card header, a footer strip) touches its container's inner
+            // edge on purpose; it is not off the content lanes inside that container.
+            const holder = container(box.el);
+            if (holder) {
+                const outer = holder.getBoundingClientRect();
+                const border = parseFloat(getComputedStyle(holder)[edge === "left" ? "borderLeftWidth" : "borderRightWidth"]) || 0;
+                const inner = edge === "left" ? outer.left + border : outer.right - border;
+                if (Math.abs(box.rect[edge] - inner) <= 2) continue;
+            }
             const close = lanes.filter((lane) => Math.abs(lane - value) > options.near && Math.abs(lane - value) <= options.lane);
             if (!close.length) continue;
             const lane = close.sort((x, y) => Math.abs(x - value) - Math.abs(y - value))[0];
@@ -494,37 +503,44 @@ export function measurePage(options) {
         add("underlined-control", shortLinks.slice(0, 3), `${shortLinks.length} short underlined links outside running text (tags, metadata, labels)`, "metadata as plain text, links only where they lead somewhere new", "Show tags and metadata as plain text or quiet chips. Make a tag a link only when it opens something useful (a filtered list), and then style it as a chip, not as underlined text.");
     }
 
-    // Filters that outweigh the list: more filter options than items to filter.
-    const filterOptions = [...document.querySelectorAll("[class*=filter] a, [class*=filter] button, [class*=filter] input:not([type=hidden]), [class*=filter] option, [class*=filtro] a, [class*=filtro] button, [aria-label*=ilt] a, [aria-label*=ilt] button")].filter(shown);
-    // The whole filter control: the outermost filter container around the first option, so
-    // every group of options (Modalidade, Pagamento, ...) counts as part of it.
+    // Filters that outweigh the list: more chip or link options than items to filter. A compact
+    // row of selects is allowed on a short list, so select options do not count here.
     const filterSelector = "[class*=filter], [class*=filtro], [aria-label*=ilt]";
-    let filterArea = filterOptions.length ? filterOptions[0].closest(filterSelector) : null;
+    const scoped = (selector) => filterSelector.split(", ").map((area) => `${area} ${selector}`).join(", ");
+    const chipOptions = [...document.querySelectorAll(scoped("a, button:not([type=submit]):not([type=reset]), input[type=radio], input[type=checkbox]"))].filter(shown);
+    const filterSelects = [...document.querySelectorAll(scoped("select"))].filter(shown);
+    const selectOptions = filterSelects.flatMap((select) => [...select.options]);
+    const filterOptions = [...chipOptions, ...selectOptions];
+    // The whole filter control: the outermost filter container around the first control, so
+    // every group of options (Modalidade, Pagamento, ...) counts as part of it.
+    const firstControl = chipOptions[0] ?? filterSelects[0];
+    let filterArea = firstControl ? firstControl.closest(filterSelector) : null;
     while (filterArea && filterArea.parentElement && filterArea.parentElement.closest(filterSelector)) filterArea = filterArea.parentElement.closest(filterSelector);
     const largestList = Math.max(0, ...[...itemCounts.entries()].filter(([sig]) => !filterArea || ![...filterArea.querySelectorAll("*")].some((el) => signature(el) === sig)).map(([, count]) => count));
-    if (filterOptions.length >= 4 && largestList && filterOptions.length >= largestList) {
-        add("filters-outweigh-items", filterOptions.slice(0, 3).map(asBox), `${filterOptions.length} filter options for ${largestList} item(s)`, "filters only when the list is too long to scan", "Remove the filters while the list fits on a screen or two; show the items. When a list grows, start with one control (search or one segmented filter) and add others only for facets users actually narrow by.");
+    if (chipOptions.length >= 4 && largestList && chipOptions.length >= largestList) {
+        add("filters-outweigh-items", chipOptions.slice(0, 3).map(asBox), `${chipOptions.length} filter chips or links for ${largestList} item(s)`, "one compact row of selects, one per facet", "Replace the chips and links with one compact row of selects, one per facet, each starting at \"All\", plus an apply button if needed. Do not box the row or give each facet its own card.");
     }
 
     // Duplicate filters: the same idea offered twice ("Online" under one group and "Pagamento
     // online" under another), or a filter for a split the page already makes with its section
     // headings ("Só participantes" over a section "Leilão exclusivo para participantes").
-    const optionText = (el) => (el.innerText || el.value || el.textContent || "").trim();
+    const optionText = (el) => (el.tagName === "OPTION" ? el.text : el.innerText || el.value || el.textContent || "").trim();
+    const shownBox = (el) => asBox(el.tagName === "OPTION" ? el.closest("select") : el);
     const filterChoices = filterOptions.filter((el) => words(optionText(el)).length);
     const doubled = [];
     for (let i = 0; i < filterChoices.length; i++) {
         for (let j = i + 1; j < filterChoices.length; j++) {
-            if (filterChoices[i].parentElement === filterChoices[j].parentElement) continue;
+            if (filterChoices[i].parentElement === filterChoices[j].parentElement || filterChoices[i].closest("select") && filterChoices[i].closest("select") === filterChoices[j].closest("select")) continue;
             if (sharedWords(words(optionText(filterChoices[i])), words(optionText(filterChoices[j]))).length) doubled.push([filterChoices[i], filterChoices[j]]);
         }
     }
     if (doubled.length) {
-        add("duplicate-filter", doubled.slice(0, 2).flatMap(([a, b]) => [asBox(a), asBox(b)]), `${doubled.length} pair(s) of filter options in different groups say the same thing: ${doubled.slice(0, 3).map(([a, b]) => `"${optionText(a)}" and "${optionText(b)}"`).join(", ")}`, "each idea offered once, in one group", "Merge the groups into one facet, or drop the option that repeats another. Each filter must split the list along one idea only.");
+        add("duplicate-filter", doubled.slice(0, 2).flatMap(([a, b]) => [shownBox(a), shownBox(b)]), `${doubled.length} pair(s) of filter options in different groups say the same thing: ${doubled.slice(0, 3).map(([a, b]) => `"${optionText(a)}" and "${optionText(b)}"`).join(", ")}`, "each idea offered once, in one group", "Merge the groups into one facet, or drop the option that repeats another. Each filter must split the list along one idea only.");
     }
     const sectionHeadings = headings.filter((heading) => (!filterArea || !filterArea.contains(heading)) && /^h[2-3]$/i.test(heading.tagName) && !inItem(heading, document.body));
     const splitBySections = filterChoices.filter((el) => sectionHeadings.some((heading) => sharedWords(words(optionText(el)), words(heading.innerText)).length));
     if (sectionHeadings.length >= 2 && splitBySections.length) {
-        add("duplicate-filter", splitBySections.slice(0, 3).map(asBox), `${splitBySections.length} filter option(s) repeat a split the section headings already make: ${splitBySections.slice(0, 3).map((el) => `"${optionText(el)}"`).join(", ")}`, "a filter only for what the page does not already separate", "Remove the filter; the sections already separate those items. Keep a filter only when it narrows inside a section.");
+        add("duplicate-filter", splitBySections.slice(0, 3).map(shownBox), `${splitBySections.length} filter option(s) repeat a split the section headings already make: ${splitBySections.slice(0, 3).map((el) => `"${optionText(el)}"`).join(", ")}`, "a filter only for what the page does not already separate", "Remove the filter; the sections already separate those items. Keep a filter only when it narrows inside a section.");
     }
 
     // Filter links inside list items: tags in every card that link to the filter bar's options.

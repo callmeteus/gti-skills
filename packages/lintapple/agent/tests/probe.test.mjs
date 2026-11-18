@@ -124,7 +124,7 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.match(rules("repeated-item-text")[0].actual, /"this auction is for attendees/);
         assert.doesNotMatch(rules("repeated-item-text")[0].actual, /current bid/);
         assert.deepEqual(rules("underlined-control").map((finding) => finding.actual.split(" ").slice(1, 3).join(" ")), ["chip(s) or", "short underlined"]);
-        assert.match(rules("filters-outweigh-items")[0]?.actual ?? "", /^5 filter options for 2 item\(s\)$/);
+        assert.match(rules("filters-outweigh-items")[0]?.actual ?? "", /^5 filter chips or links for 2 item\(s\)$/);
     });
 
     it("leaves a list with one notice, plain metadata, and no filters alone", async () => {
@@ -142,6 +142,21 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         const links = findings.filter((finding) => finding.rule === "filter-link-in-item");
         assert.equal(links.length, 1, JSON.stringify(links));
         assert.match(links[0].actual, /^2 link/);
+    });
+
+    it("allows a compact row of select filters on a short list, but still finds duplicates in it", async () => {
+        const findings = await probeFixture("filters-selects.html");
+        assert.ok(!findings.some((finding) => finding.rule === "filters-outweigh-items"));
+        const duplicates = findings.filter((finding) => finding.rule === "duplicate-filter").map((finding) => finding.actual);
+        assert.equal(duplicates.length, 2, duplicates.join(" | "));
+        assert.match(duplicates[0], /"Online" and "Pagamento online"/);
+        assert.match(duplicates[1], /"Só participantes"/);
+        assert.match(findings.find((finding) => finding.rule === "duplicate-filter").items[0].selector, /select/);
+    });
+
+    it("leaves a full-bleed band inside a card off the lane check", async () => {
+        const findings = await probeFixture("card-band.html");
+        assert.deepEqual(findings.filter((finding) => finding.rule === "off-lane"), []);
     });
 
     it("closes the browser", async () => {
