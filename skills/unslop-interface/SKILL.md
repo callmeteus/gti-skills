@@ -60,7 +60,7 @@ Work through the passes in this order. Each pass fixes the ground the next one s
 5. **Icons and alignment pass.** Replace emoji with one line icon set, align the icon column, and turn decorative category icons into data such as color dots. See [references/passes/04-icons.md](references/passes/04-icons.md).
 6. **Typography and copy pass.** Calm the type, drop all-caps labels and exclamation marks, give numbers context, set tabular figures on numbers that change, replace filler headers with information, drop taglines that only restate the page title, say each thing once (no second heading or tag that repeats the heading), and cut text that narrates the interface. See [references/passes/05-typography-and-copy.md](references/passes/05-typography-and-copy.md).
 7. **Data display pass.** Make charts carry real information: axes, units, a legend that matches the rest of the screen, and one focus. See [references/passes/06-data-display.md](references/passes/06-data-display.md).
-8. **Actions and structure pass.** Keep one filled primary per view, take forms out of list items into a modal or the detail page, fold advanced options into the main form, and show state actions only in their state. Every action stays reachable. See [references/passes/07-actions-and-structure.md](references/passes/07-actions-and-structure.md).
+8. **Actions and structure pass.** Keep one filled primary per view, take forms out of list items into a modal or the detail page, fold advanced options into the main form, show state actions only in their state, say facts and notices shared by every item once above the list, and drop filters the list does not need. Every action stays reachable. See [references/passes/07-actions-and-structure.md](references/passes/07-actions-and-structure.md).
 9. **Verify and report.** Re-check the inventory: every tell is fixed or listed as intentionally kept. Run lintapple and the probe again with the same policy and report the before and after counts by rule; a finding that appeared during the passes is a regression to fix. Name each fix with its precise term from [references/quality/vocabulary.md](references/quality/vocabulary.md). Report with [assets/templates/unslop-report.md](assets/templates/unslop-report.md). When you edited code, list the files changed and the tokens you introduced.
 
 ### Which pass fixes a lintapple finding
@@ -72,7 +72,8 @@ Work through the passes in this order. Each pass fixes the ground the next one s
 | `text-contrast`, `root-background`, the probe's `off-token-color`, and every `tokens.mjs` finding | Color |
 | `icon-size`, `icon-button-tooltip` | Icons and alignment |
 | `font-family`, `font-size`, `font-loading`, `tabular-numbers`, `numeric-alignment`, `copy`, and the probe's `repeated-heading` | Typography and copy |
-| The probe's `repeated-form`, `competing-primaries` | Actions and structure |
+| The probe's `repeated-form`, `competing-primaries`, `repeated-item-text`, `filters-outweigh-items` | Actions and structure |
+| The probe's `underlined-control` | Typography and copy |
 | `horizontal-overflow`, `viewport-bounds`, `content-clipping`, `content-overflow`, `control-size`, `target-size`, and the accessibility rules | Not a slop pass: report them as bugs, and fix them only when they are in the area you are already editing |
 
 ## Rules

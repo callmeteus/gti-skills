@@ -21,6 +21,7 @@ Charts and illustrations that carry information and tie into the rest of the scr
 6. Replace clip art and emoji illustrations with nothing, or with an illustration in the screen's own palette and style.
 7. Use the project's charting library. Do not add one without asking.
 8. In a table that scrolls inside its container, make the header row sticky (`position: sticky; top: 0` with a background) so the column names stay visible. The Emil Kowalski clip shows an invoice table (Invoice, Customer, Amount) whose header scrolls away without it.
+9. Do not show an empty value as a number. An auction with no bids shows its starting bid (`Starting bid R$ 50,00`) or `No bids yet`, not `Current bid R$ 0,00` above `No bids yet`. A zero is data only when zero is a real measured value.
 
 ## Check
 
@@ -28,3 +29,4 @@ Charts and illustrations that carry information and tie into the rest of the scr
 - Every color in a chart maps to a key the user can see.
 - No illustration uses emoji or a style that clashes with the palette.
 - Every scrolling table keeps its header row in view.
+- No empty value is shown as a zero (`R$ 0,00` for an item with no bids).

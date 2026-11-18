@@ -249,7 +249,7 @@ node skills/frontend-design-review/scripts/lintapple/probe.mjs http://localhost:
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-heading`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `repeated-heading`, `off-token-color`.
 
 ### scripts/lintapple/tokens.mjs
 

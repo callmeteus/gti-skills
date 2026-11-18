@@ -116,6 +116,23 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.match(findings[0].items[1].selector, /section#broken > div\.map-card/);
     });
 
+    it("finds list text repeated in every item, underlined chips and metadata, and filters that outweigh the list", async () => {
+        const findings = await probeFixture("list-noise.html");
+        const rules = (rule) => findings.filter((finding) => finding.rule === rule);
+        assert.equal(rules("repeated-item-text").length, 1);
+        assert.match(rules("repeated-item-text")[0].actual, /"attendees only"/);
+        assert.match(rules("repeated-item-text")[0].actual, /"this auction is for attendees/);
+        assert.doesNotMatch(rules("repeated-item-text")[0].actual, /current bid/);
+        assert.deepEqual(rules("underlined-control").map((finding) => finding.actual.split(" ").slice(1, 3).join(" ")), ["chip(s) or", "short underlined"]);
+        assert.match(rules("filters-outweigh-items")[0]?.actual ?? "", /^5 filter options for 2 item\(s\)$/);
+    });
+
+    it("leaves a list with one notice, plain metadata, and no filters alone", async () => {
+        const findings = await probeFixture("list-calm.html");
+        const noisy = findings.filter((finding) => ["repeated-item-text", "underlined-control", "filters-outweigh-items"].includes(finding.rule));
+        assert.deepEqual(noisy, []);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

@@ -135,19 +135,31 @@ export function measurePage(options) {
 
     // Edges that almost line up: two boxes, neither inside the other, stacked in one column
     // (left or right edges) or side by side in one row (top edges), a few pixels apart.
-    const anchored = boxes.filter((box) => !box.floating && (box.surface || box.text) && box.rect.width >= 16);
+    // Only boxes in one page region (header, nav, main, footer, aside) and close to each other
+    // are compared: a header link and a footer logo never share a column. Items of a wrapping
+    // row sit where their content puts them, so they are left to the ragged-wrap check.
+    const regionOf = (el) => el.closest("header, footer, nav, aside, main, dialog, [role=banner], [role=contentinfo], [role=navigation], [role=dialog]");
+    const inWrap = (el) => {
+        const parent = el.parentElement && getComputedStyle(el.parentElement);
+        return Boolean(parent && parent.display.includes("flex") && parent.flexWrap.startsWith("wrap"));
+    };
+    const anchored = boxes.filter((box) => !box.floating && (box.surface || box.text) && box.rect.width >= 16 && !inWrap(box.el)).map((box) => ({ ...box, region: regionOf(box.el) }));
     const seen = new Set();
     for (let i = 0; i < anchored.length; i++) {
         for (let j = i + 1; j < anchored.length; j++) {
             const a = anchored[i];
             const b = anchored[j];
-            if (nested(a, b)) continue;
+            if (nested(a, b) || a.region !== b.region) continue;
             const checks = [];
             if (!overlapY(a, b)) {
+                const gap = Math.max(a.rect.top, b.rect.top) - Math.min(a.rect.bottom, b.rect.bottom);
+                if (gap > 400) continue;
                 checks.push(["left", textLeft(a), textLeft(b)]);
                 if (a.surface && b.surface) checks.push(["right", a.rect.right, b.rect.right]);
             } else if (!overlapX(a, b) && a.surface && b.surface) {
-                checks.push(["top", a.rect.top, b.rect.top]);
+                // Boxes centered on one line are aligned even when their tops differ.
+                const centers = Math.abs((a.rect.top + a.rect.bottom) / 2 - (b.rect.top + b.rect.bottom) / 2);
+                if (centers > 2) checks.push(["top", a.rect.top, b.rect.top]);
             }
             for (const [edge, first, second] of checks) {
                 const distance = Math.abs(first - second);
@@ -296,7 +308,8 @@ export function measurePage(options) {
                 if (visited.has(row[0].el)) continue;
                 visited.add(row[0].el);
                 const asBoxes = row.map((member) => ({ el: member.el, rect: member.rect }));
-                const widths = row.map((member) => member.rect.width);
+                // Items of a wrapping flex row take the width of their content; only heights must match.
+                const widths = inWrap(row[0].el) ? [row[0].rect.width] : row.map((member) => member.rect.width);
                 const heights = row.map((member) => member.rect.height);
                 const spread = (values) => Math.max(...values) - Math.min(...values);
                 if (spread(widths) > 2 || spread(heights) > 2) {
@@ -344,6 +357,11 @@ export function measurePage(options) {
             if (box.rect.top >= block.rect.bottom - 1 && (!below || box.rect.top < below.rect.top)) below = box;
         }
         if (!above || !below) continue;
+        // Page padding between regions (the hero, the footer) is not the block's own spacing.
+        if (regionOf(above.el) !== regionOf(block.el) || regionOf(below.el) !== regionOf(block.el)) continue;
+        // The last item of one section and the first of the next are spaced by the sections, not the block.
+        const sectionOf = (el) => el.parentElement && el.parentElement.closest("section, article, main, aside, form, dialog");
+        if (sectionOf(above.el) !== sectionOf(block.el) && !above.el.contains(block.el) || sectionOf(below.el) !== sectionOf(block.el)) continue;
         const top = block.rect.top - above.rect.bottom;
         const bottom = below.rect.top - block.rect.bottom;
         if (Math.max(top, bottom) > 200) continue;
@@ -414,6 +432,73 @@ export function measurePage(options) {
             }
         }
     });
+
+    // Text repeated in every item of a list: a notice of 30 characters or more that each item
+    // carries ("This auction is for attendees only..."), or a fact that every item repeats from
+    // the heading area of the list ("Attendees only" on the section and on every card).
+    // Button labels ("Place a bid") are the one action each item keeps, so they do not count.
+    const lowerText = (el) => (el.closest("button, label, [role=button]") ? "" : ownText(el).toLowerCase());
+    const textsIn = (root) => new Set([root, ...root.querySelectorAll("*")].filter(shown).map(lowerText).filter(Boolean));
+    const listsDone = new Set();
+    const itemCounts = new Map();
+    for (const parent of document.querySelectorAll("body *")) {
+        if (listsDone.has(parent) || (ignore && parent.closest(ignore))) continue;
+        const groups = new Map();
+        for (const child of parent.children) {
+            if (!shown(child) || !child.children.length) continue;
+            const rect = child.getBoundingClientRect();
+            if (rect.width < 120 || rect.height < 60) continue;
+            const sig = signature(child);
+            groups.set(sig, [...(groups.get(sig) ?? []), child]);
+        }
+        for (const members of groups.values()) {
+            if (members.length < 2) continue;
+            listsDone.add(parent);
+            // Items of one component split across several lists (one grid per section) add up.
+            const sig = signature(members[0]);
+            itemCounts.set(sig, (itemCounts.get(sig) ?? 0) + members.length);
+            const sets = members.map((member) => textsIn(member));
+            // The list's heading area: the siblings before the list (its title, intro, and tags).
+            const outside = new Set();
+            // It stops at an earlier list, whose items are another list's business.
+            const isList = (node) => {
+                const sigs = [...node.children].filter((child) => child.children.length).map(signature);
+                return sigs.length >= 2 && new Set(sigs).size < sigs.length;
+            };
+            for (let node = parent.previousElementSibling; node && !isList(node); node = node.previousElementSibling) for (const text of textsIn(node)) outside.add(text);
+            const repeated = [...sets[0]].filter((text) => sets.every((set) => set.has(text)) && (text.length >= 30 || (outside.has(text) && words(text).length)));
+            if (!repeated.length) continue;
+            add("repeated-item-text", members.slice(0, 3).map(asBox), `${members.length} items each repeat: ${repeated.slice(0, 3).map((text) => `"${text.slice(0, 40)}"`).join(", ")}`, "facts and notices shared by every item stated once, for the whole list", "Say it once above the list: one notice for the section (who can bid, how to sign in) and the shared facts in the section's header. Keep in each item only what differs between items.");
+        }
+    }
+
+    // Underlined controls: chips, tags, and buttons (a border or a fill) whose text is also
+    // underlined, and pages where most short labels are underlined links. Underline marks a
+    // link inside running text; a control already looks clickable from its shape.
+    const underlined = (el) => {
+        for (let node = el; node && node !== document.body; node = node.parentElement) {
+            if (getComputedStyle(node).textDecorationLine.includes("underline")) return true;
+            if (node.matches("a, button, [role=button]")) break;
+        }
+        return false;
+    };
+    const shaped = boxes.filter((box) => box.el.matches("a, button, [role=button]") && box.surface && box.rect.height <= 56 && underlined(box.el));
+    if (shaped.length) {
+        add("underlined-control", shaped.slice(0, 3), `${shaped.length} chip(s) or button(s) with a border or fill also underline their text`, "controls that read as controls from their shape, with no underline", "Remove the underline from chips, tags, and buttons (`text-decoration: none`). Keep underlines for links inside running text.");
+    }
+    const prose = (el) => el.closest("p, li") && (el.closest("p, li").innerText || "").length > (el.innerText || "").length + 20;
+    const shortLinks = boxes.filter((box) => box.el.matches("a") && !box.surface && underlined(box.el) && !prose(box.el) && (box.el.innerText || "").trim().length <= 24 && !box.el.closest("header, footer, nav:not(main nav), [role=navigation]"));
+    if (shortLinks.length >= 8) {
+        add("underlined-control", shortLinks.slice(0, 3), `${shortLinks.length} short underlined links outside running text (tags, metadata, labels)`, "metadata as plain text, links only where they lead somewhere new", "Show tags and metadata as plain text or quiet chips. Make a tag a link only when it opens something useful (a filtered list), and then style it as a chip, not as underlined text.");
+    }
+
+    // Filters that outweigh the list: more filter options than items to filter.
+    const filterOptions = [...document.querySelectorAll("[class*=filter] a, [class*=filter] button, [class*=filter] input:not([type=hidden]), [class*=filter] option, [class*=filtro] a, [class*=filtro] button, [aria-label*=ilt] a, [aria-label*=ilt] button")].filter(shown);
+    const filterArea = filterOptions.length ? filterOptions[0].closest("[class*=filter], [class*=filtro], [aria-label*=ilt]") : null;
+    const largestList = Math.max(0, ...[...itemCounts.entries()].filter(([sig]) => !filterArea || ![...filterArea.querySelectorAll("*")].some((el) => signature(el) === sig)).map(([, count]) => count));
+    if (filterOptions.length >= 4 && largestList && filterOptions.length >= largestList) {
+        add("filters-outweigh-items", filterOptions.slice(0, 3).map(asBox), `${filterOptions.length} filter options for ${largestList} item(s)`, "filters only when the list is too long to scan", "Remove the filters while the list fits on a screen or two; show the items. When a list grows, start with one control (search or one segmented filter) and add others only for facets users actually narrow by.");
+    }
 
     // Filled buttons competing on one view: buttons and button-like links with a saturated
     // background, visible in the first viewport. More than two reads as no primary at all.
@@ -579,7 +664,14 @@ export async function main(argv) {
     try {
         for (const viewport of options.viewports) {
             const page = await browser.newPage({ viewport });
-            await page.goto(options.url, { waitUntil: "load" });
+            const response = await page.goto(options.url, { waitUntil: "load" });
+            const status = response?.status() ?? 0;
+            if (status >= 400) {
+                // An error page is not the interface; measuring it would report the error page's layout.
+                console.error(`The page answered HTTP ${status}. It shows an error page, not the interface, so it was not measured. Fix the error or probe a working URL.`);
+                await page.close();
+                return 2;
+            }
             if (options.ready) await page.waitForSelector(options.ready);
             await page.evaluate(() => document.fonts?.ready);
             results.push(await page.evaluate(measurePage, { near: options.near, lane: options.lane, ignore: options.ignore }));

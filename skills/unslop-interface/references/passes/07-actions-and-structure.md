@@ -15,6 +15,8 @@ These come from an auction page built by an agent, not from the source clip.
 | "Cancel auto-bid" | Shown on every card, with or without an active auto-bid | Shown only on a card whose auto-bid is active, next to the auto-bid status |
 | Bid limits | One sentence: "Minimum bid: R$ 50,00 Maximum: R$ 1.000,00." | Label and value pairs in the modal, next to the field they constrain |
 | Filled buttons | One large filled primary per card, three or more on one screen | None in the list; the filled primary is the confirm button inside the modal |
+| Access notice | "This auction is for attendees with a confirmed ticket. Get a ticket" in a gray box inside every card | One notice under the section heading, with one "Get a ticket" link |
+| Filters | A boxed panel of 11 underlined filter chips in four groups above 4 items | No filters; the two sections already split the items |
 
 ## Steps
 
@@ -24,7 +26,9 @@ These come from an auction page built by an agent, not from the source clip.
 4. Show state actions only in their state. "Cancel auto-bid" appears only while auto-bid is on, "Retry" only after a failure, "Undo" only after the action. Do not show a disabled control for a state the user is not in unless it explains how to reach that state.
 5. Show facts as data. Limits, prices, dates, and counts are label and value pairs, aligned like a small table, not sentences with values buried inside.
 6. Keep each action next to what it acts on. A field's limits sit by the field; an item's action sits in the item, at the same place in every item.
-7. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list) and `competing-primaries` (more than two filled, saturated buttons in the first viewport).
+7. Say shared facts once, above the list. When every item carries the same notice ("This auction is for attendees with a confirmed ticket. Get a ticket") or repeats a fact the section heading already gives ("Attendees only", "Online or local"), state it once for the section: one notice with its one link, and the shared facts in the section header. Each item keeps only what differs: its title, its own facts, its value, and its action.
+8. Add filters only when the list needs them. A list that fits on a screen or two needs no filters: show the items. Never put more filter options on the page than there are items. When a list grows, start with one control (search, or one segmented filter on the facet users narrow by most) and add more only when people use them. Facets that split the page into sections (attendees only, open to all) are already filters; do not repeat them as chips.
+9. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list), `competing-primaries` (more than two filled, saturated buttons in the first viewport), `repeated-item-text` (text every item repeats), and `filters-outweigh-items` (more filter options than items).
 
 ## Check
 
@@ -33,3 +37,5 @@ These come from an auction page built by an agent, not from the source clip.
 - Every action that was on the screen before is still reachable, now from the place it belongs.
 - No action is shown in a state where it cannot apply.
 - Limits and values read as label and value pairs.
+- No notice or fact repeats in every item; the probe reports no `repeated-item-text`.
+- No filter panel on a list that fits on a screen or two; the probe reports no `filters-outweigh-items`.

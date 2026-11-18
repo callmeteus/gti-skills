@@ -51,6 +51,9 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `misaligned-parts` | Matching parts of instances in one row at different heights, as a price that sits lower in one card because the tag row above it wrapped. The finding names the earlier part whose height differs, which is usually the cause |
 | `repeated-form` | Form fields inside every item of one list or grid |
 | `competing-primaries` | More than two filled, saturated buttons in the first viewport |
+| `repeated-item-text` | Text every item of a list repeats: a notice of 30 characters or more ("This auction is for attendees only"), or a fact the list's heading area already states ("Attendees only" on the section and on every card). Button labels do not count |
+| `underlined-control` | Chips, tags, or buttons (a border or fill) that also underline their text, or eight or more short underlined links outside running text, header, and footer (metadata shown as links) |
+| `filters-outweigh-items` | More filter options than items to filter, as 11 filter chips over 4 auction items |
 | `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), or short text under a heading that only repeats its words (an "Attendees only" tag). Card titles in a grid of items are not compared with the page heading |
 | `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |
 
@@ -62,7 +65,7 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `--near PX`, `--lane PX` | Change the 12px near-miss and 64px lane distances |
 | `--json` | Print every finding as JSON |
 
-Each finding lists the elements with their position, the measured value, and a fix. The probe measures geometry; it does not know intent. Treat a finding as a defect unless the offset is a deliberate step on the spacing scale or the design system defines it, and say which. Exit codes: `0` no findings, `1` findings, `2` the probe did not finish.
+Each finding lists the elements with their position, the measured value, and a fix. The probe measures geometry; it does not know intent. Treat a finding as a defect unless the offset is a deliberate step on the spacing scale or the design system defines it, and say which. The edge checks compare only boxes in one page region (header, nav, main, footer, aside) and within 400px of each other, and they skip items of wrapping rows, so a header link and a footer logo never count as a near miss. Exit codes: `0` no findings, `1` findings, `2` the probe did not finish. A page that answers HTTP 400 or higher is not measured and exits `2`: an error page is not the interface, so fix the error first.
 
 ## Scan the source for colors outside tokens
 

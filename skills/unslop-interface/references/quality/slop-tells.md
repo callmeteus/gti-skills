@@ -13,6 +13,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Stacked blocks whose edges miss each other by a few pixels (a map 2px in from the search field above it) | Common | 01 |
 | A block off the page's column lanes, leaving a dead band beside it (a header card that misses the column below) | Common | 01 |
 | A wrapping chip or filter row whose first line ends short of the full-width blocks around it | Common | 01 |
+| A tall page band that holds only the title, then a wide empty gap | Common | 01 |
 | A map or large panel with a wide gap above and a tight gap below (a paragraph margin added to the parent gap) | Common | 01 |
 | Cards of one component whose parts drift: the price sits lower in one card because its tag row wrapped | Common | 01 |
 | Instances of one component in a row with different widths or heights | Common | 01 |
@@ -71,6 +72,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Paragraphs with heading-tight line height (around 1.2) | Source (Kowalski clip) | 05 |
 | Decorative ligatures in body or UI text | Source (Kowalski clip) | 05 |
 | A tagline under every page title, restating it ("Settings" / "Manage your account settings") | Common | 05 |
+| Chips, tags, and metadata shown as underlined links | Common | 05 |
 | A section heading that repeats the page title ("Auctions" over "Auction for attendees"), and tags that repeat the heading again ("Attendees only") | Common | 05 |
 | Helper text that narrates the interface: what each control does, how the feature works inside, what it is not | Common | 05 |
 
@@ -92,3 +94,6 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | A second form for an advanced option (auto-bid next to bid) instead of a toggle inside the first | Common | 07 |
 | Actions shown in states where they cannot apply ("Cancel auto-bid" with no auto-bid on) | Common | 07 |
 | Limits and values buried in a sentence ("Minimum bid: R$ 50,00 Maximum: R$ 1.000,00.") | Common | 07 |
+| The same notice in every card ("This auction is for attendees only... Get a ticket") instead of once above the list | Common | 07 |
+| Every card repeating the facts its section heading already shows ("Attendees only", "Online or local") | Common | 07 |
+| A boxed filter panel with more options than the list has items | Common | 07 |
