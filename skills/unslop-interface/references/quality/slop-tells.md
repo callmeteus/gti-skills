@@ -97,3 +97,6 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | The same notice in every card ("This auction is for attendees only... Get a ticket") instead of once above the list | Common | 07 |
 | Every card repeating the facts its section heading already shows ("Attendees only", "Online or local") | Common | 07 |
 | A boxed filter panel with more options than the list has items | Common | 07 |
+| The same filter in two groups ("Online" and "Pagamento online"), or a filter that repeats the page's sections | Common | 07 |
+| Tags in every card that link to the filter options | Common | 07 |
+| A filter panel restyled (new grid, bigger chips) instead of removed | Common | 07 |

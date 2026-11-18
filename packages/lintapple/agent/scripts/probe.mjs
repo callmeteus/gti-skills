@@ -441,6 +441,7 @@ export function measurePage(options) {
     const textsIn = (root) => new Set([root, ...root.querySelectorAll("*")].filter(shown).map(lowerText).filter(Boolean));
     const listsDone = new Set();
     const itemCounts = new Map();
+    const itemEls = [];
     for (const parent of document.querySelectorAll("body *")) {
         if (listsDone.has(parent) || (ignore && parent.closest(ignore))) continue;
         const groups = new Map();
@@ -457,6 +458,7 @@ export function measurePage(options) {
             // Items of one component split across several lists (one grid per section) add up.
             const sig = signature(members[0]);
             itemCounts.set(sig, (itemCounts.get(sig) ?? 0) + members.length);
+            itemEls.push(...members);
             const sets = members.map((member) => textsIn(member));
             // The list's heading area: the siblings before the list (its title, intro, and tags).
             const outside = new Set();
@@ -494,10 +496,48 @@ export function measurePage(options) {
 
     // Filters that outweigh the list: more filter options than items to filter.
     const filterOptions = [...document.querySelectorAll("[class*=filter] a, [class*=filter] button, [class*=filter] input:not([type=hidden]), [class*=filter] option, [class*=filtro] a, [class*=filtro] button, [aria-label*=ilt] a, [aria-label*=ilt] button")].filter(shown);
-    const filterArea = filterOptions.length ? filterOptions[0].closest("[class*=filter], [class*=filtro], [aria-label*=ilt]") : null;
+    // The whole filter control: the outermost filter container around the first option, so
+    // every group of options (Modalidade, Pagamento, ...) counts as part of it.
+    const filterSelector = "[class*=filter], [class*=filtro], [aria-label*=ilt]";
+    let filterArea = filterOptions.length ? filterOptions[0].closest(filterSelector) : null;
+    while (filterArea && filterArea.parentElement && filterArea.parentElement.closest(filterSelector)) filterArea = filterArea.parentElement.closest(filterSelector);
     const largestList = Math.max(0, ...[...itemCounts.entries()].filter(([sig]) => !filterArea || ![...filterArea.querySelectorAll("*")].some((el) => signature(el) === sig)).map(([, count]) => count));
     if (filterOptions.length >= 4 && largestList && filterOptions.length >= largestList) {
         add("filters-outweigh-items", filterOptions.slice(0, 3).map(asBox), `${filterOptions.length} filter options for ${largestList} item(s)`, "filters only when the list is too long to scan", "Remove the filters while the list fits on a screen or two; show the items. When a list grows, start with one control (search or one segmented filter) and add others only for facets users actually narrow by.");
+    }
+
+    // Duplicate filters: the same idea offered twice ("Online" under one group and "Pagamento
+    // online" under another), or a filter for a split the page already makes with its section
+    // headings ("Só participantes" over a section "Leilão exclusivo para participantes").
+    const optionText = (el) => (el.innerText || el.value || el.textContent || "").trim();
+    const filterChoices = filterOptions.filter((el) => words(optionText(el)).length);
+    const doubled = [];
+    for (let i = 0; i < filterChoices.length; i++) {
+        for (let j = i + 1; j < filterChoices.length; j++) {
+            if (filterChoices[i].parentElement === filterChoices[j].parentElement) continue;
+            if (sharedWords(words(optionText(filterChoices[i])), words(optionText(filterChoices[j]))).length) doubled.push([filterChoices[i], filterChoices[j]]);
+        }
+    }
+    if (doubled.length) {
+        add("duplicate-filter", doubled.slice(0, 2).flatMap(([a, b]) => [asBox(a), asBox(b)]), `${doubled.length} pair(s) of filter options in different groups say the same thing: ${doubled.slice(0, 3).map(([a, b]) => `"${optionText(a)}" and "${optionText(b)}"`).join(", ")}`, "each idea offered once, in one group", "Merge the groups into one facet, or drop the option that repeats another. Each filter must split the list along one idea only.");
+    }
+    const sectionHeadings = headings.filter((heading) => (!filterArea || !filterArea.contains(heading)) && /^h[2-3]$/i.test(heading.tagName) && !inItem(heading, document.body));
+    const splitBySections = filterChoices.filter((el) => sectionHeadings.some((heading) => sharedWords(words(optionText(el)), words(heading.innerText)).length));
+    if (sectionHeadings.length >= 2 && splitBySections.length) {
+        add("duplicate-filter", splitBySections.slice(0, 3).map(asBox), `${splitBySections.length} filter option(s) repeat a split the section headings already make: ${splitBySections.slice(0, 3).map((el) => `"${optionText(el)}"`).join(", ")}`, "a filter only for what the page does not already separate", "Remove the filter; the sections already separate those items. Keep a filter only when it narrows inside a section.");
+    }
+
+    // Filter links inside list items: tags in every card that link to the filter bar's options.
+    // They repeat the filter bar inside each item and read as metadata, not navigation.
+    if (filterOptions.length) {
+        const hrefKey = (el) => (el.getAttribute("href") || "").replace(/^https?:[/][/][^/]+/, "");
+        const filterHrefs = new Set(filterOptions.map(hrefKey).filter((href) => href && href !== "#"));
+        const filterTexts = new Set(filterOptions.map((el) => optionText(el).toLowerCase()));
+        const leafItems = itemEls.filter((item) => !itemEls.some((other) => other !== item && item.contains(other)));
+        const inItems = [...new Set(leafItems.flatMap((item) => [...item.querySelectorAll("a")]))].filter((link) => shown(link) && !(filterArea && filterArea.contains(link)) && (filterHrefs.has(hrefKey(link)) || filterTexts.has(optionText(link).toLowerCase())));
+        if (inItems.length) {
+            add("filter-link-in-item", inItems.slice(0, 3).map(asBox), `${inItems.length} link(s) inside list items repeat the filter options (${[...new Set(inItems.map(optionText))].slice(0, 4).join(", ")})`, "item facts as plain text; filtering only in the filter control", "Show the item's facts as plain text or quiet chips without links. Filtering belongs to the one filter control above the list, not to every item.");
+        }
     }
 
     // Filled buttons competing on one view: buttons and button-like links with a saturated

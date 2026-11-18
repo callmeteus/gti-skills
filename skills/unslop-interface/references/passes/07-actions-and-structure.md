@@ -16,7 +16,8 @@ These come from an auction page built by an agent, not from the source clip.
 | Bid limits | One sentence: "Minimum bid: R$ 50,00 Maximum: R$ 1.000,00." | Label and value pairs in the modal, next to the field they constrain |
 | Filled buttons | One large filled primary per card, three or more on one screen | None in the list; the filled primary is the confirm button inside the modal |
 | Access notice | "This auction is for attendees with a confirmed ticket. Get a ticket" in a gray box inside every card | One notice under the section heading, with one "Get a ticket" link |
-| Filters | A boxed panel of 11 underlined filter chips in four groups above 4 items | No filters; the two sections already split the items |
+| Filters | A boxed panel of 11 underlined filter chips in four groups above 4 items, with "Online" in two groups and "Só participantes" repeating the sections | No filters; the two sections already split the items |
+| Tags in each card | "Presencial", "Online ou local", "Só participantes" as underlined links to the filters | The facts that differ, as plain text; the shared ones once in the section header |
 
 ## Steps
 
@@ -27,8 +28,10 @@ These come from an auction page built by an agent, not from the source clip.
 5. Show facts as data. Limits, prices, dates, and counts are label and value pairs, aligned like a small table, not sentences with values buried inside.
 6. Keep each action next to what it acts on. A field's limits sit by the field; an item's action sits in the item, at the same place in every item.
 7. Say shared facts once, above the list. When every item carries the same notice ("This auction is for attendees with a confirmed ticket. Get a ticket") or repeats a fact the section heading already gives ("Attendees only", "Online or local"), state it once for the section: one notice with its one link, and the shared facts in the section header. Each item keeps only what differs: its title, its own facts, its value, and its action.
-8. Add filters only when the list needs them. A list that fits on a screen or two needs no filters: show the items. Never put more filter options on the page than there are items. When a list grows, start with one control (search, or one segmented filter on the facet users narrow by most) and add more only when people use them. Facets that split the page into sections (attendees only, open to all) are already filters; do not repeat them as chips.
-9. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list), `competing-primaries` (more than two filled, saturated buttons in the first viewport), `repeated-item-text` (text every item repeats), and `filters-outweigh-items` (more filter options than items).
+8. Remove filters the list does not need. A list that fits on a screen or two needs no filters: delete the filter panel and show the items. Do not redesign a panel that should not exist; restyling it (new grid, bigger chips, a box around it) keeps the problem. When the list is long enough to filter, keep one control, a search field or one segmented filter on the facet users narrow by most, and add another only when people use it.
+9. Remove duplicate filters. Each filter splits the list along one idea, once. Two groups that both talk about the same thing ("Online" under Modalidade, "Pagamento online" and "Online ou local" under Pagamento) become one facet or lose the repeated option. A filter for a split the page already makes with its sections (a "Só participantes" chip above a section "Leilão exclusivo para participantes") is removed: the sections already filter.
+10. Take filter links out of list items. Tags inside each card that link to the filter options ("Presencial", "Online ou local" as links) repeat the filter bar in every item. Show the item's facts as plain text or a quiet chip with no link and no underline; filtering belongs to the one control above the list.
+11. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list), `competing-primaries` (more than two filled, saturated buttons in the first viewport), `repeated-item-text` (text every item repeats), `filters-outweigh-items` (more filter options than items), `duplicate-filter` (the same idea in two filter groups, or a filter that repeats the sections), and `filter-link-in-item` (links in items that repeat the filter options). These findings are fixed, not explained.
 
 ## Check
 
@@ -39,3 +42,4 @@ These come from an auction page built by an agent, not from the source clip.
 - Limits and values read as label and value pairs.
 - No notice or fact repeats in every item; the probe reports no `repeated-item-text`.
 - No filter panel on a list that fits on a screen or two; the probe reports no `filters-outweigh-items`.
+- No filter repeats another filter or the sections, and no item carries filter links; the probe reports no `duplicate-filter` or `filter-link-in-item`.

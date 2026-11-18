@@ -53,6 +53,8 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `competing-primaries` | More than two filled, saturated buttons in the first viewport |
 | `repeated-item-text` | Text every item of a list repeats: a notice of 30 characters or more ("This auction is for attendees only"), or a fact the list's heading area already states ("Attendees only" on the section and on every card). Button labels do not count |
 | `underlined-control` | Chips, tags, or buttons (a border or fill) that also underline their text, or eight or more short underlined links outside running text, header, and footer (metadata shown as links) |
+| `duplicate-filter` | Filter options in different groups that share a key word ("Online" and "Pagamento online"), or a filter option that repeats a split two or more section headings already make |
+| `filter-link-in-item` | Links inside list items that repeat the filter options, by link target or by label |
 | `filters-outweigh-items` | More filter options than items to filter, as 11 filter chips over 4 auction items |
 | `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), or short text under a heading that only repeats its words (an "Attendees only" tag). Card titles in a grid of items are not compared with the page heading |
 | `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |

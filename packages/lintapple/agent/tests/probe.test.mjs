@@ -133,6 +133,17 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.deepEqual(noisy, []);
     });
 
+    it("finds duplicate filters, filters that repeat the sections, and filter links inside items", async () => {
+        const findings = await probeFixture("filters-dup.html");
+        const duplicates = findings.filter((finding) => finding.rule === "duplicate-filter").map((finding) => finding.actual);
+        assert.equal(duplicates.length, 2, duplicates.join(" | "));
+        assert.match(duplicates[0], /"Online" and "Pagamento online"/);
+        assert.match(duplicates[1], /"Só participantes"/);
+        const links = findings.filter((finding) => finding.rule === "filter-link-in-item");
+        assert.equal(links.length, 1, JSON.stringify(links));
+        assert.match(links[0].actual, /^2 link/);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

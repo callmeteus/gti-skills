@@ -23,7 +23,7 @@ Use this file in Mode 1 steps 4 and 5. Evaluate every pillar, even when one has 
 - Is the primary action obvious, and is there only one?
 - After each step, does the screen say what happens next?
 
-**Red flags:** excessive clicks, several competing primary buttons, create forms always open on list pages, a form inside every list item, the same notice or facts repeated in every list item, a filter panel on a list that fits on one screen, a filled primary on every card, actions shown in states where they cannot apply, actions shown to users who are not allowed to take them, helper text that narrates the interface, headings, subtitles, or tags that repeat the heading above them, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
+**Red flags:** excessive clicks, several competing primary buttons, create forms always open on list pages, a form inside every list item, the same notice or facts repeated in every list item, a filter panel on a list that fits on one screen, the same filter in two groups or a filter that repeats the sections, filter links inside list items, a filled primary on every card, actions shown in states where they cannot apply, actions shown to users who are not allowed to take them, helper text that narrates the interface, headings, subtitles, or tags that repeat the heading above them, actions buried in menus or below the fold, dead ends with no next step, no way back or out.
 
 ## 2. Quality is craft
 

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Duplicate filters fixture</title>
+<style>
+  body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #fff8f0; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px; }
+  .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; border: 1px solid #ddd; border-radius: 12px; }
+  .group a { display: inline-block; margin: 4px; padding: 4px 10px; border: 1px solid #ccc; border-radius: 8px; color: #222; text-decoration: none; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0 32px; }
+  .item { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
+  .item a { color: #333; margin-right: 8px; }
+</style>
+</head>
+<body>
+  <main>
+    <nav class="filters" aria-label="Filtros">
+      <div class="group"><a href="?modo=online">Online</a><a href="?modo=presencial">Presencial</a></div>
+      <div class="group"><a href="?pag=online">Pagamento online</a><a href="?pag=local">Pagamento local</a></div>
+      <div class="group"><a href="?pub=todos">Todos</a><a href="?pub=participantes">Só participantes</a></div>
+    </nav>
+    <section>
+      <h2>Leilão exclusivo para participantes</h2>
+      <div class="grid">
+        <article class="item"><h3>Experiência VIP</h3><p><a href="?modo=presencial">Presencial</a></p></article>
+        <article class="item"><h3>Fursuit</h3><p><a href="?modo=online">Online</a></p></article>
+      </div>
+    </section>
+    <section>
+      <h2>Aberto a todos</h2>
+      <div class="grid">
+        <article class="item"><h3>Crachá</h3><p>Online</p></article>
+        <article class="item"><h3>Kit</h3><p>Presencial</p></article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

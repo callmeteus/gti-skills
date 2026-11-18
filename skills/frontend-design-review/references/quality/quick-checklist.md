@@ -29,7 +29,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] No heading, subtitle, or tag repeats the heading above it (no `repeated-heading`)
 - [ ] List items show facts and one action; no form inside list items, and the probe reports no `repeated-form` or `competing-primaries`
 - [ ] Actions appear only in the state where they apply
-- [ ] Notices and facts shared by every item appear once above the list; no filters on a short list (no `repeated-item-text` or `filters-outweigh-items`)
+- [ ] Notices and facts shared by every item appear once above the list; no filters on a short list, no duplicate filters, and no filter links inside items (no `repeated-item-text`, `filters-outweigh-items`, `duplicate-filter`, or `filter-link-in-item`)
 - [ ] Only links inside running text are underlined (no `underlined-control`)
 
 ## Quality craft
