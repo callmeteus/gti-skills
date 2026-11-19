@@ -2,6 +2,12 @@
 
 Operate mode starts with the first command that touches infrastructure: an SSH session, a cloud CLI, a deploy, a dashboard API call, a secret store write, a local model server, or a network device. It ends when the requested change is applied and verified, or when a real blocker is reported. The safety rules of this skill still apply and are stricter than any project file.
 
+## Start a run folder for local files
+
+At the start of a task that will write local files, create one run folder and use it for every local file of the task: scripts sent to hosts, parameter files, long command output, fleet JSON, and rendered configs. Run `python3 <skill-dir>/scripts/knowledge/knowledge.py tmp --name <short-task-slug>` once, from the repository you work in, and keep the absolute path it prints as `RUN` for the whole task. The folder lives under `.gti` at the nearest git root, in a folder named `tmp` with one run subfolder named `<timestamp>-<slug>`, and git ignores it through a `tmp/` line in `.gti/.gitignore`.
+
+Never write these files to the system temporary folder, to the user's private folders, or elsewhere in the repository. The repository root `.gitignore` is never changed. Use `knowledge.py tmp --list` to see the run folders with their size and date, newest first. When the task is verified, delete the run folder's non-database files with the other backups and keep database dumps until the user confirms, as `04-change.md` says.
+
 ## Before the first remote command
 
 - Locate the project knowledge folder before any remote command. Run `python3 <skill-dir>/scripts/knowledge/knowledge.py find` from the project. The folder lives at the nearest git root, so when a workspace holds several repositories the folder of the repository you are working in wins; the search never continues to a parent of that root. If it prints a path, read `README.md`, `access.md`, `mcp.md`, and `learnings.md` from that folder, plus `hosts.md` and `cli.md` when a host or a fallback command is involved. Treat them as project instructions that override a guess from this skill.

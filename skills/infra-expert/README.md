@@ -72,7 +72,7 @@ This skill applies automatically to any infrastructure work through three modes.
 - **Zero downtime:** every operate change to a running service is planned as rolling or zero-downtime; when no such path exists the agent stops, says what would go down and the options, and asks the user.
 - **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and discovers the provisioning path, closest example, naming, and tags into `conventions.md` so create and deploy requests follow the project's own way. Creates the folder from a template only when asked.
 - **Access ladder:** project MCP tools first, then the project CLI, then a vendor CLI with a documented profile, then raw SSH or HTTP only when the project documents it; every drop is recorded as an MCP gap.
-- **Operate checklist:** 30 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and investigation narrated as a record.
+- **Operate checklist:** 31 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and scratch files outside the run folder.
 - **CVE lookup and report:** fetches OSV and CISA KEV facts online or from a saved file, validates findings, sorts CVEs worst first, groups large identical service sets, and renders a Markdown report.
 - **CVE automatic mode:** an explicit opt-in or a scheduled run that asks nothing, queries only inventory components and new IDs, lists upgrades and unread services as pending, and never patches.
 - **Areas:** `general` by default, or `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`, `other`, and `cve`, each with its own checks.
@@ -312,6 +312,8 @@ The data format is documented in `references/workflow/04-report.md`, with a full
 ```bash
 python3 scripts/knowledge/knowledge.py find
 python3 scripts/knowledge/knowledge.py init --root <repo>
+python3 scripts/knowledge/knowledge.py tmp --name "fix disk space"
+python3 scripts/knowledge/knowledge.py tmp --list
 python3 scripts/knowledge/knowledge.py learn --area access --what "A read opened a new connection" --rule "Use the read-only tool with its own grep parameter" --source "incident review"
 ```
 
@@ -319,11 +321,14 @@ python3 scripts/knowledge/knowledge.py learn --area access --what "A read opened
 |---------|---------|-----------|
 | `find` | Print the knowledge folder at the nearest git root, or nothing when absent | `--start` (default `.`) |
 | `init` | Copy the project template into `<root>/.gti/infra-expert/` | `--root` (default nearest git root), `--force` |
+| `tmp` | Create one per-run scratch folder under `<root>/.gti/tmp/` and print its path, or list existing run folders with `--list` | `--name` (short task slug, default `run`), `--start` (default `.`), `--list` |
 | `learn` | Append a dated learning to `learnings.md` | `--area`, `--what`, `--rule` (all required), `--source`, `--dir` |
 | `gap` | Append a dated MCP gap to `mcp-gaps.md` | `--need`, `--command`, `--proposal` (all required), `--dir` |
 | `check` | Check that every template file exists and entries follow the format | `--dir` |
 
 `--dir` on `learn`, `gap`, and `check` selects the knowledge folder instead of finding it at the nearest git root from the current folder. The script refuses a value that looks like a secret.
+
+`tmp` resolves the nearest git root the same way as `find`, or uses `--start` when outside a repository. The folder is named `<YYYYMMDD-HHMMSS>-<slug>`, where `--name` is lowercased, non-alphanumeric runs become one hyphen, and the slug is capped at 40 characters; without `--name` the slug is `run`. A collision adds `-2`, `-3`, and so on. Before creating the folder, `tmp` writes a `tmp/` line to `<root>/.gti/.gitignore` once and never touches the repository root `.gitignore`. `--list` prints each run folder with its total size and modification date, newest first.
 
 ### cve_lookup.py
 
@@ -379,7 +384,7 @@ python3 scripts/cve/cve_report.py cve-findings.json --out ~/.gti/infra-expert/<p
 | `references/concepts/plain-language.md` | Counting, naming, and the vague claims to avoid | Review steps 4 to 6 |
 | `references/concepts/project-docs.md` | Project rules, inventories, ADRs, glossary | Review steps 1 and 5 |
 | `references/quality/safety.md` | Commands that never run, need permission, or are safe; operate rules | Every mode |
-| `references/quality/operate-checklist.md` | 30 recurring failure patterns | Operate mode |
+| `references/quality/operate-checklist.md` | 31 recurring failure patterns | Operate mode |
 | `references/quality/report-checklist.md` | Checks before rendering | Review step 4 |
 | `assets/templates/project-knowledge/README.md` | Template of the project's committed knowledge folder | Operate and CVE |
 | `assets/templates/project-knowledge/conventions.md` | Template for the project's provisioning path, closest examples, naming, tags, and inventories | Operate step 1 |
@@ -473,6 +478,8 @@ The project commits `.gti/infra-expert/` itself at the nearest git root, so it i
 | `records.md` | Where records go, which cases get one, and the inventory to sweep |
 
 All other generated files, including review reports, AWS snapshots, CVE reports, and `cve/state.json`, go to `~/.gti/infra-expert/<project>/`. Nothing is written to the repository until the user asks for that change, and CVE mode never changes a running system.
+
+Operate mode also writes local working files to `.gti/tmp/<run>/` at the nearest git root, one folder per task created by `knowledge.py tmp`. The folder holds scripts sent to hosts, parameter files, long command output, fleet JSON, and rendered configs, and is ignored by git through a `tmp/` line in `.gti/.gitignore`. Non-database files are deleted when the task is verified; database dumps stay until the user confirms. The repository root `.gitignore` is never changed.
 
 ## Security
 

@@ -1,6 +1,6 @@
 # Operate mode: access
 
-Access is a cost: every new connection costs time, and every script that runs in the wrong place costs trust. Reuse one connection per target, keep scripts in files, and batch across a fleet.
+Access is a cost: every new connection costs time, and every script that runs in the wrong place costs trust. Reuse one connection per target, keep scripts in files, and batch across a fleet. In the examples below, `RUN` is the absolute path printed by `knowledge.py tmp` at the start of the task; see `01-orient.md`.
 
 ## Reuse one connection
 
@@ -20,7 +20,7 @@ Example: pass `grep=error` to the log tool; do not fetch the whole log and pipe 
 set -o pipefail
 ```
 
-- Fix a script that fails in the local file and send the corrected file again, by stdin or by `scp` followed by a run command. Do not base64-encode the script into a heredoc inside the write command and resend the whole encoded string on each attempt, because the command becomes unreadable and every retry repeats the same quoting risk. Example: `scp fix.sh <host>:/tmp/fix.sh` then `ssh <host> 'bash /tmp/fix.sh'`.
+- Fix a script that fails in the local file and send the corrected file again, by stdin or by `scp` followed by a run command. Do not base64-encode the script into a heredoc inside the write command and resend the whole encoded string on each attempt, because the command becomes unreadable and every retry repeats the same quoting risk. Example: `scp "$RUN/fix.sh" <host>:fix.sh` then `ssh <host> 'bash ~/fix.sh'`.
 - Generate parameter files with a JSON serializer and pass them by `file://` or stdin. Do not build JSON by string concatenation in a shell variable, because escaping changes between the test and the real call.
 - Load secret values from an env file with `set -a; . <file>; set +a`, with unquoted values in the file. Do not pass a value on a command line, because it ends up in shell history and transcripts.
 
@@ -42,7 +42,7 @@ Example:
 ```bash
 inventory-hosts | while read -r host; do
   ssh "$host" 'bash -s' < preflight.sh
-done > /tmp/inventory.json
+done > "$RUN/inventory.json"
 ```
 
 The file contains one JSON object per host. If one host returns nothing, debug that host alone instead of rerunning the whole loop.

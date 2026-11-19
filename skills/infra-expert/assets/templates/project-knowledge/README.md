@@ -14,3 +14,5 @@ This folder is the project's own instructions for any agent doing infrastructure
 | `records.md` | You need to find or write a security record, inventory, or runbook |
 
 When you confirm a fact that is missing or wrong here, correct the file in the same change. Never write a password, token, or key into any file in this folder; refer to it by its variable name or path.
+
+Local scratch files of a task live in `.gti/tmp/<run>/` at the same git root, one folder per run created by `knowledge.py tmp`. The `.gti/.gitignore` file ignores `tmp/`, so these folders are never committed. They hold scripts sent to hosts, parameter files, long output, fleet JSON, and rendered configs. Their non-database files are removed when the task is verified; database dumps stay until the user confirms.

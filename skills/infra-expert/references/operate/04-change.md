@@ -2,6 +2,34 @@
 
 Change the source of truth, apply in small reversible steps, and finish the reversible part of the request.
 
+## Request scope
+
+The verb of the request sets the end state. Decide it before the first change and carry the request through to that end state.
+
+- A bring-up verb means the task is done only when the change runs in its target and is verified. Bring up, deploy, apply, publish, roll out, upgrade, put live, and "create the machine or service" all mean this. Do the code change, the commit and push the project's commit policy allows, the apply through the project's pipeline (dispatching it when the pipeline applies only on dispatch), wait for the run, check the result, update the inventories, and send the project's announcements. Do not stop after the commit or after a plan.
+
+  Example: "Bring up the service on a new host": wrote the leaf, committed and pushed it, dispatched the pipeline because it applies only on dispatch, waited for the run to finish, checked the health endpoint, updated the host inventory, and announced the confirmed result.
+
+- A documentation or code-only verb stops before the apply. Document, write, draft, prepare, plan, "create the code, the files, or the stack", and anything with "only" mean this. Say what is left to bring it up.
+
+  Example: "Only create the stack files": wrote and validated the files and committed them, and listed the pipeline dispatch, the run check, and the health verification as the steps left to bring it up.
+
+- When the verb does not settle it, ask once, inside the confirmation the project already requires (for example the commit question), with the two choices "commit and apply" and "commit only". Do not add a separate question for the apply.
+
+  Example: "Set up the new environment": the commit question offered "commit and apply" and "commit only", and no second question about the apply was added.
+
+- A bring-up request is the user's permission for the apply through the project's pipeline. Project gates still apply once, such as a commit confirmation, a maintenance notice, or a downtime question. Do not ask a second time for the apply itself.
+
+  Example: The commit confirmation was answered once, the maintenance start notice went out before the pipeline was dispatched, the maintenance end notice went out only after the run succeeded and the service was verified, and no further ask for the apply was made.
+
+- An input that has a later path never blocks the apply. An optional variable with an empty default or a step that adds it after boot is applied without it and listed as pending with how to add it. Only an input without which the apply fails or produces a broken service blocks, and then name exactly which one and why.
+
+  Example: "The token variable has an empty default and a later step fills it in after boot, so the apply went ahead and the token is listed as pending with the step that adds it."
+
+- Follow the pipeline run to its end, report its result, and verify the service. The zero-downtime and backup rules still apply.
+
+  Example: "The pipeline run ended in success; I reported its result, confirmed the health checks stayed green during and after the run, and removed the non-database backup."
+
 ## Reconciler-owned targets
 
 - Change anything a reconciler owns only through its source: a Terraform pipeline, a GitOps controller, a compose file in git, or a config generator. Do not patch the live target to test and commit later, because the reconciler will revert it and what you tested will not be what ships.
@@ -45,6 +73,10 @@ Example: "Dry run: 2 creates, 1 update, 0 deletes. Backup written to `.tmp` and 
 - In Autonomous Mode, delete the non-database backups after verification and keep the database backups. List the kept database backups as pending for the user's decision. Do not delete a database backup, because the user has not confirmed it.
 
   Example: "Removed the config backup after health checks passed; kept the database dump and listed it as pending for the user."
+
+- Keep local copies taken during the task in the run folder (`$RUN`), the folder printed by `knowledge.py tmp` at the start of the task; see `01-orient.md`. A config rendered locally or a dump written to disk belongs there, not in the system temporary folder, in the user's private folders, or elsewhere in the repository. When the task is verified, delete the run folder's non-database files together with the other non-database backups and say which ones you deleted. Keep database dumps in the run folder until the user confirms they can be deleted, and list each one with its path, size, and date as pending. Do not leave non-database scratch files behind, because they can hold stale secrets or config, and do not delete a database dump without confirmation, because it may be the only recovery point.
+
+  Example: "Health stayed green; removed the rendered config and the command output from the run folder, and kept the database dump there as pending."
 
 ## Named methods and deploy outputs
 

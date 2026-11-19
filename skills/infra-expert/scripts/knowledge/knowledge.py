@@ -51,6 +51,48 @@ def knowledge_folder(start):
     return candidate if candidate.is_dir() else None
 
 
+def slugify(name):
+    """Lowercase a name, turn non-alphanumeric runs into one hyphen, and cap it at 40 characters."""
+    slug = re.sub(r"[^a-z0-9]+", "-", (name or "run").lower()).strip("-")
+    return slug[:40].rstrip("-") or "run"
+
+
+def folder_size(path):
+    """Return the total size in bytes of the files under a folder."""
+    total = 0
+    for child in path.rglob("*"):
+        if child.is_file():
+            try:
+                total += child.stat().st_size
+            except OSError:
+                pass
+    return total
+
+
+def human_size(num):
+    """Format a byte count as a short human readable string."""
+    value = float(num)
+    for unit in ("B", "KiB", "MiB", "GiB"):
+        if value < 1024 or unit == "GiB":
+            if unit == "B":
+                return str(int(value)) + " B"
+            return "{:.1f} {}".format(value, unit)
+        value /= 1024
+
+
+def ensure_tmp_ignored(root):
+    """Create <root>/.gti/.gitignore with one tmp/ line; never touch the root .gitignore."""
+    gti = root / ".gti"
+    gti.mkdir(parents=True, exist_ok=True)
+    path = gti / ".gitignore"
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if any(line.strip() == "tmp/" for line in text.splitlines()):
+        return
+    if text and not text.endswith("\n"):
+        text += "\n"
+    path.write_text(text + "tmp/\n", encoding="utf-8")
+
+
 def is_secret_token(word):
     """Return True for a single word that looks like a credential."""
     core = word.strip("'\"(),;")
@@ -158,6 +200,41 @@ def cmd_init(args):
     return 0
 
 
+def cmd_tmp_list(base):
+    """Print the run folders with size and modification date, newest first."""
+    if not base.is_dir():
+        return 0
+    rows = []
+    for folder in base.iterdir():
+        if folder.is_dir():
+            stamp = datetime.datetime.fromtimestamp(folder.stat().st_mtime)
+            rows.append((folder.name, human_size(folder_size(folder)),
+                         stamp.strftime("%Y-%m-%d %H:%M:%S")))
+    for name, size, date in sorted(rows, key=lambda row: row[0], reverse=True):
+        print(name + "  " + size + "  " + date)
+    return 0
+
+
+def cmd_tmp(args):
+    """Create a per-run scratch folder under <root>/.gti/tmp/ or list existing ones."""
+    start = Path(args.start).resolve()
+    root = nearest_git_root(start) or start
+    base = root / ".gti" / "tmp"
+    if args.list:
+        return cmd_tmp_list(base)
+    ensure_tmp_ignored(root)
+    base.mkdir(parents=True, exist_ok=True)
+    name = datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + slugify(args.name)
+    candidate = base / name
+    suffix = 2
+    while candidate.exists():
+        candidate = base / (name + "-" + str(suffix))
+        suffix += 1
+    candidate.mkdir()
+    print(candidate)
+    return 0
+
+
 def cmd_learn(args):
     """Append a dated learning entry to learnings.md."""
     source = args.source or "unspecified"
@@ -258,6 +335,14 @@ def main():
                              help="Repository root (default: nearest git root of cwd, else cwd)")
     init_parser.add_argument("--force", action="store_true", help="Overwrite existing files")
     init_parser.set_defaults(func=cmd_init)
+
+    tmp_parser = commands.add_parser("tmp", help="Create or list per-run scratch folders under .gti/tmp/")
+    tmp_parser.add_argument("--name", default=None,
+                            help="Short task slug for the folder name (default: run)")
+    tmp_parser.add_argument("--start", default=".", help="Folder to start from (default: current folder)")
+    tmp_parser.add_argument("--list", action="store_true",
+                            help="List existing run folders with size and date, newest first")
+    tmp_parser.set_defaults(func=cmd_tmp)
 
     learn_parser = commands.add_parser("learn", help="Append a dated learning entry")
     learn_parser.add_argument("--area", required=True, help="Area, for example access or diagnose")

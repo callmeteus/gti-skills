@@ -50,7 +50,7 @@ In this skill:
 - Operate mode, zero downtime: never run a step that causes downtime; list it as pending with the options (accept a window, add a second instance, defer) and ask only outside Autonomous Mode; see [references/operate/04-change.md](references/operate/04-change.md).
 - CVE mode: follow [references/areas/cve.md](references/areas/cve.md). In its automatic mode, asked for explicitly or run on a schedule, ask nothing, query only inventory components and CVEs since the last run, read through the access ladder, classify, write the report and allowed records, and list every upgrade and not-checked service as pending. Never upgrade, restart, push, or post.
 - Never run `terraform apply`, `destroy`, `import`, `state` subcommands that write, `tofu` equivalents, or any AWS CLI call that is not describe, list, or get in Review and CVE modes. These stay forbidden even in Autonomous Mode; see [references/quality/safety.md](references/quality/safety.md).
-- Operate mode in Autonomous Mode: a state change runs only when the request asked for it, and only through the documented path. Anything else, including a method the user named that has no documented path, is listed as pending; see [references/operate/04-change.md](references/operate/04-change.md).
+- Operate mode in Autonomous Mode: a state change runs only when the request asked for it, and only through the documented path. A bring-up, deploy, or apply request counts as allowing the commit, push, and pipeline apply it needs, with project gates such as a commit confirmation still applying once; a documentation or code-only request never applies. Anything else, including a method the user named that has no documented path, is listed as pending; see [references/operate/04-change.md](references/operate/04-change.md).
 - Operate mode, backups: delete non-database backups after the change is verified, keep database backups, and list them as pending for the user's decision; see [references/operate/04-change.md](references/operate/04-change.md).
 
 ## Output Location
@@ -58,6 +58,8 @@ In this skill:
 Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/infra-expert/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Scanner output, the AWS snapshot, state exports, the report data, the HTML report, and the CVE report and state go to `~/.gti/infra-expert/<project>/`. ADRs, `GLOSSARY.md`, and the agreed IaC changes go into the repository.
 
 The one repository location this skill uses is `.gti/infra-expert/`, the project knowledge folder. It lives at the nearest git root of the repository you work in, never at a parent folder of a workspace that holds several repositories. The project commits and shares it like `GLOSSARY.md` or ADRs; it holds access paths, MCP and CLI notes, host aliases, learnings, MCP gaps, and record pointers, never secret values. The skill reads it before the first remote command and writes there only when the folder already exists or the user asked to create it. Create it with `python3 <skill-dir>/scripts/knowledge/knowledge.py init`.
+
+Local working files of operate mode go to `<nearest git root>/.gti/tmp/<run>/`, one new folder per task, created with `python3 <skill-dir>/scripts/knowledge/knowledge.py tmp --name <short-task-slug>`. The folder is ignored by git through a `tmp/` line in `.gti/.gitignore` at the same root; the repository root `.gitignore` is never changed. Scripts sent to hosts, parameter files, long command output, fleet JSON, and rendered configs live there, never in the system temporary folder, in the user's private folders, or elsewhere in the repository. Delete the run folder's non-database files when the task is verified, and keep database dumps until the user confirms. Reports and run state of review and CVE modes stay in `~/.gti/infra-expert/<project>/` as described above. Create one run folder at the start of a task with local files and reuse it for the whole task.
 
 ## Modes
 
@@ -77,6 +79,7 @@ Automatic guardrails during any infrastructure work: remote hosts, cloud CLIs, d
 2. **Access.** Reuse one connection, keep scripts in files with a hostname guard, batch across the fleet. [references/operate/02-access.md](references/operate/02-access.md)
 3. **Diagnose.** Measure the symptom again, keep stderr and exit codes, wait on conditions, use real identifiers and backends. [references/operate/03-diagnose.md](references/operate/03-diagnose.md)
 4. **Change.** Change the source of truth, use reversible apply steps, back up state the source cannot rebuild and delete backups after verification, plan rolling or zero-downtime changes and stop to ask when downtime is unavoidable, keep requirements, announce only confirmed results, finish the reversible part. [references/operate/04-change.md](references/operate/04-change.md)
+   - A bring-up request carries through to a verified apply through the project's pipeline; a documentation or code-only request stops before the apply. See the Request scope section of the reference.
 5. **Records.** A field table with one "Checked on" date, grouped lists, and a Not checked section. [references/operate/05-records.md](references/operate/05-records.md)
 6. **Learn.** Append learnings and MCP gaps, correct the folder, never write a secret. [references/operate/06-learn.md](references/operate/06-learn.md)
 
@@ -154,7 +157,7 @@ Before step 6, and whenever a command could touch state or the cloud, read [refe
 | `scripts/aws/aws_collect.py` | Read-only snapshot of an AWS account through the AWS CLI; refuses any call that is not describe, list, or get |
 | `scripts/aws/aws_analyze.py` | Offline findings from a snapshot, optionally compared with Terraform state to find resources no code manages |
 | `scripts/report/render_report.py` | Validates the report data, warns about vague claims, writes the HTML report to `~/.gti/infra-expert/<project>/` |
-| `scripts/knowledge/knowledge.py` | Locate or create the project knowledge folder, append learnings and MCP gaps, check the folder |
+| `scripts/knowledge/knowledge.py` | Locate or create the project knowledge folder, append learnings and MCP gaps, check the folder, and create or list per-run scratch folders under `.gti/tmp/` |
 | `scripts/cve/cve_lookup.py` | CVE facts from OSV and the CISA KEV feed, online or from a saved JSON file |
 | `scripts/cve/cve_report.py` | Validate CVE findings and render the Markdown report, or check only |
 

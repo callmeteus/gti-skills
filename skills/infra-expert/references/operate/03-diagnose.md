@@ -1,6 +1,6 @@
 # Operate mode: diagnose
 
-Diagnosis ends with the symptom measured again, not with a plausible explanation. Keep the evidence visible and the failing request reproducible.
+Diagnosis ends with the symptom measured again, not with a plausible explanation. Keep the evidence visible and the failing request reproducible. In the examples below, `RUN` is the absolute path printed by `knowledge.py tmp` at the start of the task; see `01-orient.md`.
 
 ## Facts and timeline
 
@@ -13,10 +13,10 @@ Example: "The 5xx was reported after the 14:00 deploy. I dropped the dataset hyp
 ## Do not hide the error
 
 - Keep stderr on every diagnostic command. Use `set -o pipefail` when piping and print `exit=$?`. Do not use `2>/dev/null` or `|| true` on the command under investigation, because the error is the evidence you need.
-- Send long output to a file and read the part you need: `command > /tmp/out.log 2>&1; echo exit=$?; tail -50 /tmp/out.log`. Do not pipe to `head` or `tail` as the only output, because the pipe replaces the exit code and can hold the pipe open.
+- Send long output to a file and read the part you need: `command > "$RUN/out.log" 2>&1; echo exit=$?; tail -50 "$RUN/out.log"`. Do not pipe to `head` or `tail` as the only output, because the pipe replaces the exit code and can hold the pipe open.
 - Keep `2>/dev/null` only in existence checks where the error is the answer (`test -f`, `command -v`). Do not make it a habit, because it turns permission errors into "not found".
 
-Example: `vendor-cli status > /tmp/status.log 2>&1; echo exit=$?; tail -50 /tmp/status.log`.
+Example: `vendor-cli status > "$RUN/status.log" 2>&1; echo exit=$?; tail -50 "$RUN/status.log"`.
 
 ## Waiting and retries
 

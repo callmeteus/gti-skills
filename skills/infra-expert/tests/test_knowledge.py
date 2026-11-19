@@ -1,3 +1,4 @@
+import datetime
 import subprocess
 import sys
 import tempfile
@@ -223,6 +224,123 @@ class SecretRefusalTest(unittest.TestCase):
                      "--what", "A provider key was pasted in chat",
                      "--rule", "Store it at <secret-store-path>/example-provider and refer to EXAMPLE_KEY")
         self.assertEqual(result.returncode, 0, result.stderr)
+
+
+class TmpTest(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True, capture_output=True)
+        (self.root / ".gti" / "infra-expert").mkdir(parents=True)
+
+    def tmp(self, *args, cwd=None):
+        return subprocess.run([sys.executable, str(SCRIPT), "tmp", *map(str, args)],
+                              cwd=str(cwd or self.root), capture_output=True,
+                              text=True, encoding="utf-8")
+
+    def test_creates_folder_under_the_nearest_git_root(self):
+        result = self.tmp("--name", "fix disk")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folder = Path(result.stdout.strip())
+        self.assertTrue(folder.is_dir())
+        self.assertEqual(folder.parent, self.root / ".gti" / "tmp")
+        self.assertRegex(folder.name, r"^\d{8}-\d{6}-fix-disk$")
+
+    def test_creates_folder_from_a_subdirectory(self):
+        nested = self.root / "one" / "two"
+        nested.mkdir(parents=True)
+        result = self.tmp("--name", "fix disk", cwd=nested)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(result.stdout.strip()).parent, self.root / ".gti" / "tmp")
+
+    def test_creates_folder_in_a_nested_repository(self):
+        inner = self.root / "inner"
+        subprocess.run(["git", "init", "-q", str(inner)], check=True, capture_output=True)
+        (inner / ".gti" / "infra-expert").mkdir(parents=True)
+        sub = inner / "work"
+        sub.mkdir()
+        result = self.tmp("--name", "fix disk", cwd=sub)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(result.stdout.strip()).parent, inner / ".gti" / "tmp")
+        self.assertFalse((self.root / ".gti" / "tmp").exists())
+
+    def test_outside_a_repository_uses_the_start_directory(self):
+        outside = Path(tempfile.mkdtemp())
+        result = self.tmp("--name", "fix disk", "--start", outside)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(Path(result.stdout.strip()).parent, outside / ".gti" / "tmp")
+
+    def test_default_slug_is_run(self):
+        result = self.tmp()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertRegex(Path(result.stdout.strip()).name, r"^\d{8}-\d{6}-run$")
+
+    def test_slug_is_lowercased_and_non_alphanumeric_runs_collapse(self):
+        result = self.tmp("--name", "  Fix::Disk Space!!  ")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertRegex(Path(result.stdout.strip()).name, r"^\d{8}-\d{6}-fix-disk-space$")
+
+    def test_slug_is_capped_at_forty_characters(self):
+        result = self.tmp("--name", "a" * 60)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(Path(result.stdout.strip()).name.endswith("-" + "a" * 40))
+
+    def test_collision_adds_numeric_suffix(self):
+        base = self.root / ".gti" / "tmp"
+        now = datetime.datetime.now()
+        for offset in range(-1, 3):
+            stamp = (now + datetime.timedelta(seconds=offset)).strftime("%Y%m%d-%H%M%S")
+            for suffix in ("", "-2"):
+                (base / (stamp + "-fix-disk" + suffix)).mkdir(parents=True, exist_ok=True)
+        result = self.tmp("--name", "fix disk")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        name = Path(result.stdout.strip()).name
+        self.assertTrue(name.endswith("-fix-disk-3"), name)
+        self.assertTrue((base / name).is_dir())
+
+    def test_gitignore_gets_tmp_once_and_root_gitignore_is_untouched(self):
+        root_ignore = self.root / ".gitignore"
+        root_ignore.write_text("*.log\n", encoding="utf-8")
+        self.assertEqual(self.tmp("--name", "first").returncode, 0)
+        self.assertEqual(self.tmp("--name", "second").returncode, 0)
+        gti_ignore = self.root / ".gti" / ".gitignore"
+        self.assertTrue(gti_ignore.is_file())
+        self.assertEqual(gti_ignore.read_text(encoding="utf-8").splitlines().count("tmp/"), 1)
+        self.assertEqual(root_ignore.read_text(encoding="utf-8"), "*.log\n")
+
+    def test_existing_gti_gitignore_is_appended_not_replaced(self):
+        ignore = self.root / ".gti" / ".gitignore"
+        ignore.write_text("local-only.txt\n", encoding="utf-8")
+        result = self.tmp()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        text = ignore.read_text(encoding="utf-8")
+        self.assertIn("local-only.txt", text)
+        self.assertEqual(text.splitlines().count("tmp/"), 1)
+
+    def test_git_status_does_not_show_the_tmp_folder(self):
+        self.assertEqual(self.tmp("--name", "scratch").returncode, 0)
+        result = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"],
+                                cwd=str(self.root), capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn(".gti/tmp", result.stdout)
+
+    def test_list_shows_size_and_date_newest_first(self):
+        base = self.root / ".gti" / "tmp"
+        base.mkdir(parents=True, exist_ok=True)
+        old = base / "20200101-000000-old"
+        new = base / "20990101-000000-new"
+        old.mkdir()
+        new.mkdir()
+        (old / "data.bin").write_bytes(b"x" * 10)
+        (new / "data.bin").write_bytes(b"y" * 20)
+        result = self.tmp("--list")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = result.stdout
+        self.assertIn("new", out)
+        self.assertIn("old", out)
+        self.assertLess(out.index("new"), out.index("old"))
+        self.assertRegex(out, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}")
+        self.assertIn("10 B", out)
+        self.assertIn("20 B", out)
 
 
 if __name__ == "__main__":
