@@ -70,9 +70,9 @@ This skill applies automatically to any infrastructure work through three modes.
 
 - **Three modes:** operate (automatic guardrails during any infrastructure work), review (the six-step review and HTML report), and CVE (assess a vulnerability or sweep the inventory).
 - **Zero downtime:** every operate change to a running service is planned as rolling or zero-downtime; when no such path exists the agent stops, says what would go down and the options, and asks the user.
-- **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and creates it from a template only when asked.
+- **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and discovers the provisioning path, closest example, naming, and tags into `conventions.md` so create and deploy requests follow the project's own way. Creates the folder from a template only when asked.
 - **Access ladder:** project MCP tools first, then the project CLI, then a vendor CLI with a documented profile, then raw SSH or HTTP only when the project documents it; every drop is recorded as an MCP gap.
-- **Operate checklist:** 28 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and investigation narrated as a record.
+- **Operate checklist:** 30 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and investigation narrated as a record.
 - **CVE lookup and report:** fetches OSV and CISA KEV facts online or from a saved file, validates findings, sorts CVEs worst first, groups large identical service sets, and renders a Markdown report.
 - **CVE automatic mode:** an explicit opt-in or a scheduled run that asks nothing, queries only inventory components and new IDs, lists upgrades and unread services as pending, and never patches.
 - **Areas:** `general` by default, or `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`, `other`, and `cve`, each with its own checks.
@@ -379,9 +379,10 @@ python3 scripts/cve/cve_report.py cve-findings.json --out ~/.gti/infra-expert/<p
 | `references/concepts/plain-language.md` | Counting, naming, and the vague claims to avoid | Review steps 4 to 6 |
 | `references/concepts/project-docs.md` | Project rules, inventories, ADRs, glossary | Review steps 1 and 5 |
 | `references/quality/safety.md` | Commands that never run, need permission, or are safe; operate rules | Every mode |
-| `references/quality/operate-checklist.md` | 28 recurring failure patterns | Operate mode |
+| `references/quality/operate-checklist.md` | 30 recurring failure patterns | Operate mode |
 | `references/quality/report-checklist.md` | Checks before rendering | Review step 4 |
 | `assets/templates/project-knowledge/README.md` | Template of the project's committed knowledge folder | Operate and CVE |
+| `assets/templates/project-knowledge/conventions.md` | Template for the project's provisioning path, closest examples, naming, tags, and inventories | Operate step 1 |
 | `assets/templates/cve-findings.example.json` | Findings JSON shape for `cve_report.py` | CVE step 7 |
 | `assets/templates/cve-record.md` | Fixed per-CVE record shape | CVE step 7 |
 | `assets/templates/cve-report.md` | Markdown report template | CVE step 7 |
@@ -462,6 +463,7 @@ The project commits `.gti/infra-expert/` itself at the nearest git root, so it i
 | File | Contents |
 |------|----------|
 | `README.md` | Index of the folder and the rule to read before the first remote command |
+| `conventions.md` | Provisioning path, closest examples, naming, tags, network defaults, inventories, and the source for each fact |
 | `access.md` | Access paths, profiles, secret-store references, and session reuse notes |
 | `mcp.md` | Which project MCP tool to call and whether it reuses a connection |
 | `cli.md` | The documented CLI fallback commands |

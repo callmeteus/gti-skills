@@ -9,6 +9,7 @@ Infrastructure changes reach running systems. These rules hold in every mode, in
 - Make any allowed change only through the project's documented path: the pipeline or source of truth, an MCP write tool that opens a confirmation, or the project CLI named in its knowledge folder. Do not invent a shortcut when the documented path is unavailable; report the error instead.
 - Follow the project's own rules for the change, such as sending a maintenance or status announcement only after the command on the target succeeded and naming the target in the message.
 - Never widen access, never print a secret, and store a secret only in the secret store the project names in `.gti/infra-expert/access.md`, never in a host file or the repository. Never delete or restart anything beyond what the request allows.
+- Before changing state the source of truth cannot rebuild, take and check a backup and name where you put it; never delete a database backup without the user's confirmation, but list each one with path, size, and date and ask. Do not skip the backup because the change looks small, because there is no source to restore it from; see `../operate/04-change.md`.
 - When a project rule is stricter than this file, the project rule wins and you say so.
 
 ## Review and CVE modes

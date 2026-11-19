@@ -77,7 +77,7 @@ A CVE's overall status is the worst of its services, in this order: `affected`, 
 ### 8. Never patch
 
 - Do not upgrade packages or images, change configs, restart services, push code, or post a result.
-- Put each upgrade step, with the exact version and the host or service, in `left_to_do` in the findings JSON as an object with a `text` and a `rollout` field. The `rollout` value is `rolling`, `blue-green`, `reload`, or `no-restart` when the upgrade keeps the service up, and `needs-downtime` when no such path exists; write "needs downtime: ask the user" into the `text` of those items. The user runs each step as a separate maintenance task.
+- Put each upgrade step, with the exact version and the host or service, in `left_to_do` in the findings JSON as an object with a `text` and a `rollout` field. The `rollout` value is `rolling`, `blue-green`, `reload`, or `no-restart` when the upgrade keeps the service up, and `needs-downtime` when no such path exists; write "needs downtime: ask the user" into the `text` of those items. Name the backup step in each item's `text`: for example, take a database dump before a database server upgrade, back up a config file before changing it, or tag the running image before replacing it. The user runs each step as a separate maintenance task.
 - The report always ends with "Nothing was upgraded or restarted."
 
 ## Automatic mode

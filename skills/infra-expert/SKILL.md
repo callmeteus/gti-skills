@@ -46,10 +46,12 @@ In this skill:
 - Review, steps 2 to 5: render the report without `--open` and take the candidate with the highest strength; break ties by the lowest risk, then the biggest gain for the least effort. Answer every round of step 5 with its recommended answer.
 - Review, step 6: implement only candidates whose risk is `code-only` or `state-move`. List `replace` and `live-change` candidates as pending, with the exact steps the user would run.
 - Operate mode: ask nothing. Take the safest documented access path, project MCP first then project CLI, and record every CLI fallback as an MCP gap. Name the exact target before acting, record decisions in the project knowledge folder, and state or apply changes only when the request allows them.
+- Operate mode, conventions: discover and apply the project's provisioning path, naming, and tags from `conventions.md` and the repository without asking; ask only for values the repository cannot answer that change the result; see [references/operate/01-orient.md](references/operate/01-orient.md).
 - Operate mode, zero downtime: never run a step that causes downtime; list it as pending with the options (accept a window, add a second instance, defer) and ask only outside Autonomous Mode; see [references/operate/04-change.md](references/operate/04-change.md).
 - CVE mode: follow [references/areas/cve.md](references/areas/cve.md). In its automatic mode, asked for explicitly or run on a schedule, ask nothing, query only inventory components and CVEs since the last run, read through the access ladder, classify, write the report and allowed records, and list every upgrade and not-checked service as pending. Never upgrade, restart, push, or post.
 - Never run `terraform apply`, `destroy`, `import`, `state` subcommands that write, `tofu` equivalents, or any AWS CLI call that is not describe, list, or get in Review and CVE modes. These stay forbidden even in Autonomous Mode; see [references/quality/safety.md](references/quality/safety.md).
 - Operate mode in Autonomous Mode: a state change runs only when the request asked for it, and only through the documented path. Anything else, including a method the user named that has no documented path, is listed as pending; see [references/operate/04-change.md](references/operate/04-change.md).
+- Operate mode, backups: delete non-database backups after the change is verified, keep database backups, and list them as pending for the user's decision; see [references/operate/04-change.md](references/operate/04-change.md).
 
 ## Output Location
 
@@ -71,10 +73,10 @@ Pick a mode from the request. Operate and CVE have their own references; Review 
 
 Automatic guardrails during any infrastructure work: remote hosts, cloud CLIs, deploys, Terraform, secret stores, observability, model servers, and network devices. Follow the steps in order, reading each file when its step starts:
 
-1. **Orient.** Locate and read the project knowledge folder, name the exact target, climb the access ladder, run one preflight, check feasibility. [references/operate/01-orient.md](references/operate/01-orient.md)
+1. **Orient.** Locate and read the project knowledge folder, discover the project's conventions into `conventions.md`, name the exact target, climb the access ladder, run one preflight, check feasibility. [references/operate/01-orient.md](references/operate/01-orient.md)
 2. **Access.** Reuse one connection, keep scripts in files with a hostname guard, batch across the fleet. [references/operate/02-access.md](references/operate/02-access.md)
 3. **Diagnose.** Measure the symptom again, keep stderr and exit codes, wait on conditions, use real identifiers and backends. [references/operate/03-diagnose.md](references/operate/03-diagnose.md)
-4. **Change.** Change the source of truth, use reversible apply steps, plan rolling or zero-downtime changes and stop to ask when downtime is unavoidable, keep requirements, announce only confirmed results, finish the reversible part. [references/operate/04-change.md](references/operate/04-change.md)
+4. **Change.** Change the source of truth, use reversible apply steps, back up state the source cannot rebuild and delete backups after verification, plan rolling or zero-downtime changes and stop to ask when downtime is unavoidable, keep requirements, announce only confirmed results, finish the reversible part. [references/operate/04-change.md](references/operate/04-change.md)
 5. **Records.** A field table with one "Checked on" date, grouped lists, and a Not checked section. [references/operate/05-records.md](references/operate/05-records.md)
 6. **Learn.** Append learnings and MCP gaps, correct the folder, never write a secret. [references/operate/06-learn.md](references/operate/06-learn.md)
 

@@ -10,6 +10,19 @@ Operate mode starts with the first command that touches infrastructure: an SSH s
 
 Example: "I will check free disk space on `app-host-02` in account `prod`, region `eu-west-1`." Not: "I will check the server."
 
+## Discover the conventions
+
+After loading the knowledge folder and before the access ladder, work out how this project builds infrastructure so a create, bring up, or deploy request follows the project's own way instead of a guess. Read `conventions.md` from the knowledge folder first. When it is missing, or when it does not cover the task, discover the conventions from the repository and record them in `conventions.md` with the source file for each fact. Treat the recorded conventions as project instructions that override a guess from this skill. When the knowledge folder is absent, follow the rule above: offer to create it and keep the conventions you discover in the task context until it exists.
+
+- **Provisioning path.** Find how the project provisions infrastructure. Look for infrastructure as code: Terraform or OpenTofu roots and modules, Pulumi programs, CDK apps, Helm charts, Compose files, and Ansible playbooks. Find the pipeline that applies it in CI workflows and project rules, and read the README of the infrastructure folder. The project's provisioning path is the default method for any request that says create, bring up, or deploy, even when the user does not name a tool. Creating resources by hand in a console or with a vendor CLI is never the default.
+- **Closest existing example.** Find the existing stack most like the request and copy its shape. For a service on its own machine, copy the stack closest in shape that is already applied and stable (present in the default branch for some time, not created or rewritten in the last few days, and not marked for removal); a stack another chat created minutes ago and is about to delete is not the reference. When the only close example is very recent, say so and ask whether it is the reference. Copy its module calls, variables files, user data, network attachments, outputs, and secrets wiring instead of writing a new structure.
+- **Naming.** Derive the naming pattern from the existing code and, read-only, from live resources of the same kind. Never invent a new pattern. When a live read is needed, use the access ladder below and keep the read read-only. Apply the derived pattern to the new resource and say which example it came from.
+- **Tags and labels.** Find where the shared tag or label set is defined, for example a tags module, provider default tags, or a locals block, and which keys each kind of resource adds. Apply the full set that the kind of resource expects, not a subset.
+- **Network and access defaults, and inventories.** Find the network and access defaults the closest example uses, such as the network, subnets, security groups, and keys. List the inventories and catalogs that must change in the same change, so the new resource is visible to the rest of the project.
+- **Open questions.** Ask only for what the repository cannot answer and that changes the result, for example the machine size when no similar stack exists. Otherwise take the value from the closest example and say so in the reply.
+
+Example: "No tool was named, so I found that the project provisions with Terraform through its pipeline. I am copying the stable single-service VM stack that has been in the default branch for some time, its naming, and its full tag set, and I will update the host inventory in the same change." Not: "Which tool should I use, and what naming and tags do you want?"
+
 ## The access ladder
 
 Start at rung 1 and move down only when the current rung cannot do the job. Record every drop as an MCP gap with `knowledge.py gap` (see `06-learn.md`).

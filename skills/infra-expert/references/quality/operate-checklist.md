@@ -32,3 +32,5 @@ One row per recurring failure pattern. Read the reference file before acting on 
 | 26 | Re-encoding and resending a failed script | Fix the local file and resend it by stdin or `scp`; never base64 the script into each command | `../operate/02-access.md` |
 | 27 | Reading whole env or secret files | Read only key names with `grep -oE '^[A-Z0-9_]+='` and put generated secrets in the store named in `access.md` | `../operate/06-learn.md` |
 | 28 | Change causes downtime | Plan rolling or zero-downtime first; if none exists, stop, say what goes down and the options, and ask | `../operate/04-change.md` |
+| 29 | Change without a backup, or backups left behind | Back up state the source cannot rebuild, check the backup, delete non-database backups after verification, and keep database backups until the user confirms | `../operate/04-change.md` |
+| 30 | Had to be told the method, naming, or tags | Discover the provisioning path, closest example, naming, and full tag set into `conventions.md`; use the project's path by default and ask only what the repository cannot answer | `../operate/01-orient.md`, `../operate/04-change.md`, `../operate/06-learn.md` |

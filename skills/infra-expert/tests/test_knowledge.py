@@ -7,7 +7,7 @@ from pathlib import Path
 SKILL = Path(__file__).resolve().parents[1]
 SCRIPT = SKILL / "scripts" / "knowledge" / "knowledge.py"
 TEMPLATE = SKILL / "assets" / "templates" / "project-knowledge"
-FILES = ["README.md", "access.md", "mcp.md", "cli.md", "hosts.md", "learnings.md", "mcp-gaps.md", "records.md"]
+FILES = ["README.md", "conventions.md", "access.md", "mcp.md", "cli.md", "hosts.md", "learnings.md", "mcp-gaps.md", "records.md"]
 
 
 def run(*args):
@@ -175,6 +175,13 @@ class CheckTest(unittest.TestCase):
         result = run("check", "--dir", folder)
         self.assertEqual(result.returncode, 1)
         self.assertIn("hosts.md", result.stderr)
+
+    def test_check_fails_when_conventions_md_is_missing(self):
+        folder = initialized()
+        (folder / "conventions.md").unlink()
+        result = run("check", "--dir", folder)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("conventions.md", result.stderr)
 
     def test_check_fails_on_a_malformed_entry(self):
         folder = initialized()

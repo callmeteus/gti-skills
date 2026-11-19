@@ -32,6 +32,12 @@ python3 <skill-dir>/scripts/knowledge/knowledge.py gap \
 - Update `access.md`, `hosts.md`, `mcp.md`, and `cli.md` when you confirm a fact that is missing or wrong there: a working alias, a tool that reuses its connection, a profile, a flag. Do not leave a known-wrong path in place, because the next agent will follow it.
 - Record the correction as a learning too when it caused a failure or a wrong target.
 
+## Conventions
+
+- Update `conventions.md` when a task confirms or corrects a convention: the provisioning path, the closest example, a naming pattern, a tag or label set, network and access defaults, or an inventory to update. Write the source file for each fact beside it, so the next agent can check the fact. Do not leave a corrected convention in place, because the next create or deploy will follow it.
+
+  Example: "After adding a service, record the module and variables files copied and the file that defines the tag set beside each row in `conventions.md`."
+
 ## Secrets
 
 - Never write a secret value into any file in the folder. Write only the variable name or the secret-store path. Do not use a value in an example command, because examples get copied.

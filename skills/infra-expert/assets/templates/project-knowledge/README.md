@@ -4,6 +4,7 @@ This folder is the project's own instructions for any agent doing infrastructure
 
 | File | Read it when |
 |------|--------------|
+| `conventions.md` | You are about to create, bring up, or deploy anything, or you need the project's provisioning path, naming, tags, network defaults, or closest example |
 | `access.md` | You need an access path, a profile, a secret location, or session reuse notes |
 | `mcp.md` | You need to know which project MCP tool to call and whether it reuses a connection |
 | `cli.md` | The MCP cannot do the job and you need the documented fallback command |

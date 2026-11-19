@@ -16,13 +16,46 @@ Example: render the config locally, commit it, and let the pipeline deploy it; d
 
 Example: "Dry run: 2 creates, 1 update, 0 deletes. Backup written to `.tmp` and renamed after the PUT succeeded."
 
+## Backups
+
+- Before changing state the source of truth cannot rebuild, take a backup and name where you put it. This covers a config file edited on a host, a database, a volume, a local SQLite file, a secret, a dashboard or alert in a live tool, a DNS record, and the image a service runs. Tag the image the service runs now as a rollback image before you replace it. Do not change such state without a backup, because there is no source to restore it from.
+
+  Example: "Backed up `/etc/service/config.yml` to `/var/backups/config-2026-11-19T10-30-00Z.yml` and tagged the running image `app:rollback-2026-11-19` before pulling the new one."
+
+- Check a backup before you rely on it: confirm its size and checksum, list the files in an archive, or list the tables in a database dump. Do not count a backup you never checked, because you may find out only when you need to restore it.
+
+  Example: "The dump is 42 MB, its SHA-256 matches the value recorded at creation, and the table list in the dump shows all 18 expected tables."
+
+- Name each backup with a timestamp, keep it outside the repository, keep the permissions of the original, and never print its content. A copy of a secrets file stays readable only by its owner; do not print a dump or a secret value into the transcript.
+
+  Example: "The secrets file copy is `secrets.env.2026-11-19T10-30-00Z` under `/var/backups/` and keeps mode 600, and no content was printed."
+
+- After the change is verified, with health checks during and after the change and with the symptom the user reported gone, delete the backups of non-database state and the rollback image tag, and say which ones you deleted. Do not leave non-database backups behind, because they can hold stale secrets or config.
+
+  Example: "Health stayed green and the reported error no longer appears; removed the config backup and the `app:rollback-2026-11-19` tag."
+
+- Keep database backups until the user confirms they can be deleted. List each one with its path, size, and date in the final message and ask. Do not remove a dump, a snapshot, or a copy of database files on your own, because it may be the only recovery point.
+
+  Example: "Kept `/var/backups/db-2026-11-19T10-30-00Z.sql` (42 MB, 2026-11-19). Can I delete it now?"
+
+- If the change failed or you rolled it back, keep every backup and say so. Do not delete backups while the state is uncertain, because you may still need them.
+
+  Example: "The apply failed and I rolled back; both the config backup and the database dump are kept for recovery."
+
+- In Autonomous Mode, delete the non-database backups after verification and keep the database backups. List the kept database backups as pending for the user's decision. Do not delete a database backup, because the user has not confirmed it.
+
+  Example: "Removed the config backup after health checks passed; kept the database dump and listed it as pending for the user."
+
 ## Named methods and deploy outputs
 
 - Treat a method the user names ("via Terraform", "through the pipeline") as a requirement. When that path does not exist for the target, stop and say so, and propose creating it, for example a new stack or leaf that wraps the service's own deploy script. Do not switch to a manual path to satisfy the request, because the result would not be maintained by the method the user chose.
+- When the user names no method, use the project's provisioning path from `conventions.md` as the method. A create, bring up, or deploy request inherits that path by default. Do not create resources by hand in a console or with a vendor CLI when a provisioning path exists.
 - In Autonomous Mode, write the proposal and list the manual deploy as pending. Do not run the manual deploy, because the request did not waive the named method.
 - After a deploy script runs, change its output only by changing the script or its source and running it again. Do not patch files on the host by hand, because the next deploy will revert the patch and the repository will not show what changed.
 
 Example: "There is no Terraform stack for this service. I propose a leaf stack that calls its deploy script; the manual deploy is pending." If the reverse-proxy config is wrong after the deploy, edit the generator in the repository and rerun it, not the host file.
+
+Example: "No method was named, so I used the provisioning path in `conventions.md` and copied the stable single-service stack that has been in the default branch for some time."
 
 ## Environments and fleets
 
