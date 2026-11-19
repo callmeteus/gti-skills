@@ -1,0 +1,20 @@
+{
+  "title": "Deploy flow",
+  "direction": "TB",
+  "nodes": [
+    {"id": "commit", "label": "Commit", "kind": "start"},
+    {"id": "build", "label": "Build", "kind": "step"},
+    {"id": "test", "label": "Tests pass?", "kind": "decision"},
+    {"id": "deploy", "label": "Deploy", "kind": "step"},
+    {"id": "stop", "label": "Stop", "kind": "end"}
+  ],
+  "edges": [
+    {"from": "commit", "to": "build"},
+    {"from": "build", "to": "test"},
+    {"from": "test", "to": "deploy", "label": "yes"},
+    {"from": "test", "to": "stop", "label": "no"}
+  ],
+  "lanes": [
+    {"name": "Pipeline", "nodes": ["commit", "build", "test", "deploy", "stop"]}
+  ]
+}

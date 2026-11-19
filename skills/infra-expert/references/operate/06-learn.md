@@ -40,10 +40,12 @@ python3 <skill-dir>/scripts/knowledge/knowledge.py gap \
 
 ## Secrets
 
-- Never write a secret value into any file in the folder. Write only the variable name or the secret-store path. Do not use a value in an example command, because examples get copied.
-- If the user pastes a secret, store it where `access.md` says secrets go, then tell the user once that the value now also sits in the chat transcript. Do not echo the value back in a reply or inside a URL.
+The full rules for finding the canonical manager, storing values, host identity, migration, and rotation are in [07-secrets.md](07-secrets.md). Follow them before any secret work; this section keeps the rules for writing this folder.
+
+- Never write a secret value into any file in the folder. Write only the variable name or the canonical manager's path. Do not use a value in an example command, because examples get copied.
+- If the user pastes a secret, store the value in the canonical manager named in `conventions.md`, then tell the user once that the value now also sits in the chat transcript. Do not echo the value back in a reply or inside a URL.
 - Read only key names from env and secret files, for example `grep -oE '^[A-Z0-9_]+=' <file>`, never the whole file, even when a read-only tool allows it. Do not fetch the values after you have listed the names, because the values land in the chat transcript and in stored copies.
-- A secret the agent generates goes into the secret store that `access.md` names, and the host gets it from there. Do not append a generated password, signing secret, or pepper only to a host `.env` file, because the store stays incomplete and the value is lost when the host is replaced.
+- A secret the agent generates goes into the canonical manager named in `conventions.md`, and the host gets it from there. Do not append a generated password, signing secret, or pepper only to a host `.env` file, because the manager stays incomplete and the value is lost when the host is replaced.
 - The script refuses a line that looks like a secret (an assignment such as `password=`, a key prefix, or a long token-like string). Do not work around the refusal by splitting the value, because the point is to keep it out of the file.
 
 Example: write "set `EXAMPLE_PROVIDER_KEY` from `<secret-store-path>/example-provider`" instead of writing the key itself.

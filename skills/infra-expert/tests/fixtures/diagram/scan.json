@@ -1,0 +1,53 @@
+{
+  "root": "/example/repo",
+  "git_tracked_only": true,
+  "files": 5,
+  "folders": [
+    {
+      "path": "bootstrap",
+      "role": "root",
+      "kind": null,
+      "callers": [],
+      "resources": {"foundation": 2},
+      "modules": []
+    },
+    {
+      "path": "network",
+      "role": "module",
+      "kind": "shared-base",
+      "callers": ["services/api", "services/web"],
+      "resources": {"network": 3},
+      "modules": []
+    },
+    {
+      "path": "modules/tags",
+      "role": "module",
+      "kind": "helper",
+      "callers": ["services/api"],
+      "resources": {},
+      "modules": []
+    },
+    {
+      "path": "services/api",
+      "role": "root",
+      "kind": null,
+      "callers": [],
+      "resources": {"compute": 1},
+      "modules": [
+        {"name": "net", "source": "../../network"},
+        {"name": "tags", "source": "../../modules/tags"}
+      ]
+    },
+    {
+      "path": "services/web",
+      "role": "root",
+      "kind": null,
+      "callers": [],
+      "resources": {"compute": 1},
+      "modules": [
+        {"name": "net", "source": "../../network"}
+      ]
+    }
+  ],
+  "findings": {}
+}

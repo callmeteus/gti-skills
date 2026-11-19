@@ -1,6 +1,6 @@
 # Operate mode: change
 
-Change the source of truth, apply in small reversible steps, and finish the reversible part of the request.
+Change the source of truth, apply in small reversible steps, and finish the reversible part of the request. When a change spans more than one target, needs an approval or a downtime decision, or comes from a CVE triage, write a change plan in `.gti/infra-expert/plans/` with `scripts/plan/plan.py` and apply only approved steps; see [../areas/plans.md](../areas/plans.md).
 
 ## Request scope
 

@@ -1,4 +1,5 @@
 import copy
+import importlib.util
 import json
 import os
 import subprocess
@@ -11,6 +12,11 @@ SKILL = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL / "scripts" / "cve"
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "cve"
 EXAMPLE = SKILL / "assets" / "templates" / "cve-findings.example.json"
+PLAN_SCRIPT = SKILL / "scripts" / "plan" / "plan.py"
+sys.dont_write_bytecode = True
+PLAN_SPEC = importlib.util.spec_from_file_location("infra_expert_plan", PLAN_SCRIPT)
+plan = importlib.util.module_from_spec(PLAN_SPEC)
+PLAN_SPEC.loader.exec_module(plan)
 
 
 def run(script, *args, home=None, env=None):
@@ -201,6 +207,54 @@ class CveReportTest(unittest.TestCase):
         out = Path(result.stdout.strip())
         self.assertTrue(str(out).startswith(str(self.home)))
         self.assertTrue(out.exists())
+
+    def test_plan_dir_creates_linked_fix_plan(self):
+        report = self.home / "report.md"
+        plans = self.home / "plans"
+        result = run("cve_report.py", self.write(self.data), "--out", report,
+                     "--plan-dir", plans, home=self.home)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.strip().splitlines()
+        self.assertEqual(len(lines), 2)
+        plan_path = Path(lines[1].strip())
+        self.assertEqual(plan_path.parent, plans.resolve())
+        self.assertTrue(plan_path.exists())
+
+        text = plan_path.read_text(encoding="utf-8")
+        data, _ = plan.parse_front_matter(text)
+        self.assertEqual(plan.validate(data, text), [])
+        self.assertEqual(data["source"]["cve"], "CVE-2026-12345")
+        self.assertEqual(data["source"]["report"], str(report.resolve()))
+        self.assertEqual(data["status"], "draft")
+        self.assertTrue(any(step["id"] == "s0" for step in data["steps"]))
+        downtime_step = next(step for step in data["steps"] if step["rollout"] == "needs-downtime")
+        self.assertTrue(downtime_step["requires_approval"])
+        self.assertEqual(data["downtime"]["kind"], "needs-decision")
+        report_text = report.read_text(encoding="utf-8")
+        self.assertIn("Fix plan: `" + str(plan_path.resolve()) + "`", report_text)
+        self.assertTrue(report_text.rstrip().endswith("Nothing was upgraded or restarted."))
+
+    def test_plan_dir_without_findings_creates_nothing(self):
+        data = copy.deepcopy(self.data)
+        for cve in data["cves"]:
+            for service in cve["services"]:
+                service["status"] = "fixed"
+        data["left_to_do"] = []
+        plans = self.home / "plans"
+        result = run("cve_report.py", self.write(data), "--out", self.home / "report.md",
+                     "--plan-dir", plans, home=self.home)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len(result.stdout.strip().splitlines()), 1)
+        self.assertFalse(plans.exists())
+        self.assertNotIn("Fix plan:", (self.home / "report.md").read_text(encoding="utf-8"))
+
+    def test_check_does_not_create_a_plan(self):
+        plans = self.home / "plans"
+        result = run("cve_report.py", self.write(self.data), "--check",
+                     "--plan-dir", plans, home=self.home)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "")
+        self.assertFalse(plans.exists())
 
 
 if __name__ == "__main__":

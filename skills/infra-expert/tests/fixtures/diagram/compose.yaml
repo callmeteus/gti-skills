@@ -1,0 +1,35 @@
+services:
+  web:
+    image: nginx
+    ports:
+      - "8080:80"
+    networks:
+      - front
+    volumes:
+      - site:/usr/share/nginx/html
+    depends_on:
+      - api
+  api:
+    image: example/api
+    ports:
+      - "127.0.0.1:9000:9000"
+    networks:
+      - front
+      - back
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres
+    networks:
+      - back
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+networks:
+  front: {}
+  back: {}
+
+volumes:
+  site: {}
+  dbdata: {}

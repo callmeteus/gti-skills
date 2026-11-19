@@ -74,11 +74,17 @@ A CVE's overall status is the worst of its services, in this order: `affected`, 
   python3 <skill-dir>/scripts/cve/cve_report.py <findings.json> --out <path>
   ```
 
+  Add `--plan-dir <dir>` to write the fix plan next to this report run when a service is affected or possible. The script prints the plan path on a second line and links it from the report's "Left to do". The report still ends with "Nothing was upgraded or restarted."
+
 ### 8. Never patch
 
 - Do not upgrade packages or images, change configs, restart services, push code, or post a result.
 - Put each upgrade step, with the exact version and the host or service, in `left_to_do` in the findings JSON as an object with a `text` and a `rollout` field. The `rollout` value is `rolling`, `blue-green`, `reload`, or `no-restart` when the upgrade keeps the service up, and `needs-downtime` when no such path exists; write "needs downtime: ask the user" into the `text` of those items. Name the backup step in each item's `text`: for example, take a database dump before a database server upgrade, back up a config file before changing it, or tag the running image before replacing it. The user runs each step as a separate maintenance task.
 - The report always ends with "Nothing was upgraded or restarted."
+
+### Fix plan from CVE mode
+
+When a CVE has `affected` or `possible` services, `cve_report.py --plan-dir` writes one fix plan with one step per `left_to_do` item. The method comes from the project's provisioning path in `conventions.md`, the rollout comes from the item, and a separate backup step is added when a database is involved. The plan's `source` carries the CVE id and the report path, and the report's "Left to do" links the plan. Nothing in the plan is applied: the plan is a draft with status `draft`, and a step that needs downtime has `requires_approval: true`. Use [plans.md](plans.md) to fill, approve, and apply it. See [scripts/plan/plan.py](../../scripts/plan/plan.py) for the front matter schema and the commands.
 
 ## Automatic mode
 

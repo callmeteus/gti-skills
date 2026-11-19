@@ -26,6 +26,7 @@ After loading the knowledge folder and before the access ladder, work out how th
 - **Tags and labels.** Find where the shared tag or label set is defined, for example a tags module, provider default tags, or a locals block, and which keys each kind of resource adds. Apply the full set that the kind of resource expects, not a subset.
 - **Network and access defaults, and inventories.** Find the network and access defaults the closest example uses, such as the network, subnets, security groups, and keys. List the inventories and catalogs that must change in the same change, so the new resource is visible to the rest of the project.
 - **Open questions.** Ask only for what the repository cannot answer and that changes the result, for example the machine size when no similar stack exists. Otherwise take the value from the closest example and say so in the reply.
+- **Secrets.** Find the project's canonical secret manager and path convention before any secret is generated, written, read, or moved, and record them in `conventions.md` under Secrets; see [07-secrets.md](07-secrets.md).
 
 Example: "No tool was named, so I found that the project provisions with Terraform through its pipeline. I am copying the stable single-service VM stack that has been in the default branch for some time, its naming, and its full tag set, and I will update the host inventory in the same change." Not: "Which tool should I use, and what naming and tags do you want?"
 

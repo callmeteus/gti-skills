@@ -1,0 +1,51 @@
+# Example input for: python3 <skill-dir>/scripts/diagram/diagram.py flow FILE
+# Write a small file like this one for a request flow, a deploy flow, or an
+# incident timeline. Nodes need an id; labels, kinds, and lanes are optional.
+# Kinds: step, decision, start, end, store. Edges may carry a label.
+
+title: Request flow
+direction: LR
+
+nodes:
+  - id: client
+    label: Client
+    kind: start
+  - id: gateway
+    label: Gateway
+    kind: step
+  - id: valid
+    label: Valid request?
+    kind: decision
+  - id: api
+    label: API
+    kind: step
+  - id: db
+    label: Database
+    kind: store
+  - id: done
+    label: Done
+    kind: end
+
+edges:
+  - from: client
+    to: gateway
+    label: HTTPS
+  - from: gateway
+    to: valid
+  - from: valid
+    to: api
+    label: yes
+  - from: valid
+    to: done
+    label: no
+  - from: api
+    to: db
+    label: query
+  - from: db
+    to: done
+
+lanes:
+  - name: Edge
+    nodes: [client, gateway]
+  - name: Application
+    nodes: [valid, api, db]

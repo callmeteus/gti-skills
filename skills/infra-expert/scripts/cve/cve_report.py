@@ -6,11 +6,15 @@ needs-downtime are listed under their own heading for the user to decide. The
 script checks it, sorts CVEs by their overall status (worst first), groups more
 than five services that share version, condition, and status into one row, and
 writes the report to ~/.gti/infra-expert/<project>/cve/ (GTI_HOME replaces
-~/.gti) unless --out is given. With --check it only validates. Standard library
-only, Python 3.8+. Use python3 on macOS and Linux and python or py -3 on Windows.
+~/.gti) unless --out is given. With --check it only validates. With --plan-dir
+it also writes a fix plan in that folder when a service is affected or possible;
+the plan has one step per left_to_do item and is linked from Left to do. Standard
+library only, Python 3.8+. Use python3 on macOS and Linux and python or py -3 on
+Windows.
 """
 
 import argparse
+import importlib.util
 import json
 import os
 import sys
@@ -22,6 +26,7 @@ RANK = {"affected": 0, "possible": 1, "no-fix": 2, "not-checked": 3, "not-applic
 ROLLOUTS = ("rolling", "blue-green", "reload", "no-restart", "needs-downtime")
 GROUP_LIMIT = 5
 TEMPLATE = Path(__file__).resolve().parents[2] / "assets" / "templates" / "cve-report.md"
+PLAN_SCRIPT = Path(__file__).resolve().parents[1] / "plan" / "plan.py"
 
 
 def gti_dir(skill, *parts):
@@ -251,7 +256,7 @@ def downtime_lines(items):
                      if item.get("rollout") == "needs-downtime")
 
 
-def render(data):
+def render(data, plan_link=""):
     cves = ordered_cves(data)
     components = ", ".join(sorted({cell(cve["component"]) for cve in cves}))
     tokens = {
@@ -268,6 +273,7 @@ def render(data):
         "not_applicable": not_applicable_lines(cves),
         "not_checked": not_checked_lines(data, cves),
         "left_to_do": left_to_do_lines(data.get("left_to_do") or []),
+        "plan_link": cell(plan_link),
         "downtime_decisions": downtime_lines(data.get("left_to_do") or []),
     }
     text = TEMPLATE.read_text(encoding="utf-8")
@@ -282,11 +288,196 @@ def default_output(data):
     return gti_dir("infra-expert", project, "cve") / f"cve-report-{stamp}.md"
 
 
+def load_plan_module():
+    """Load plan.py from this skill so a fix plan uses the same schema and renderer."""
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        spec = importlib.util.spec_from_file_location("infra_expert_plan", PLAN_SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
+def method_from_conventions():
+    """Method from the project's provisioning path; pipeline when none is documented."""
+    here = Path.cwd().resolve()
+    root = None
+    for folder in (here, *here.parents):
+        if (folder / ".git").exists():
+            root = folder
+            break
+    if root is None:
+        return "pipeline"
+    path = root / ".gti" / "infra-expert" / "conventions.md"
+    if not path.is_file():
+        return "pipeline"
+    try:
+        text = path.read_text(encoding="utf-8").lower()
+    except OSError:
+        return "pipeline"
+    if "pipeline" in text or "ci workflow" in text or "continuous integration" in text:
+        return "pipeline"
+    if "command line" in text or "cli" in text:
+        return "cli"
+    return "pipeline"
+
+
+def affected_services(data):
+    """Pairs of CVE and service for services that need a fix."""
+    pairs = []
+    for cve in data.get("cves") or []:
+        for service in cve.get("services") or []:
+            if service.get("status") in ("affected", "possible"):
+                pairs.append((cve, service))
+    return pairs
+
+
+def database_involved(data):
+    """True when an upgrade in the report touches a database or a dump."""
+    words = []
+    for cve in data.get("cves") or []:
+        words.append(str(cve.get("component") or ""))
+        for service in cve.get("services") or []:
+            words.append(str(service.get("name") or ""))
+            words.append(str(service.get("host") or ""))
+    for item in data.get("left_to_do") or []:
+        words.append(str(item.get("text") or ""))
+    blob = " ".join(words).lower()
+    return any(token in blob for token in ("database", "postgres", "mysql", "db-", "dump"))
+
+
+def short_title(text):
+    """One short line for a step title, cut at a word boundary."""
+    value = " ".join(str(text).split())
+    if value.lower().startswith("needs downtime:"):
+        value = value.split(":", 1)[1].strip()
+    if len(value) <= 64:
+        return value
+    return value[:64].rsplit(" ", 1)[0].rstrip(",;:") + "..."
+
+
+def backup_for(rollout):
+    """Backup line for an upgrade step, named so the agent knows what to protect."""
+    if rollout in ("rolling", "blue-green"):
+        return "Tag the running image before it is replaced."
+    if rollout in ("reload", "no-restart"):
+        return "Back up the config file before changing it."
+    return "Take a database dump before the upgrade when a database is involved."
+
+
+def fix_plan_data(data, report_path, plan_module):
+    """Build the front matter of a fix plan from CVE findings."""
+    pairs = affected_services(data)
+    ids = []
+    for cve, _ in pairs:
+        if cve.get("id") not in ids:
+            ids.append(cve.get("id"))
+    targets = ", ".join(sorted({service.get("name") or "" for _, service in pairs if service.get("name")}))
+    targets = targets or "the affected hosts"
+    method = method_from_conventions()
+    todos = data.get("left_to_do") or []
+    needs_downtime = any(item.get("rollout") == "needs-downtime" for item in todos)
+    steps = []
+    backup_step = database_involved(data)
+    if backup_step:
+        db_targets = ", ".join(sorted({
+            service.get("host") or service.get("name") or ""
+            for _, service in pairs
+            if any(token in (str(service.get("name") or "") + " " + str(service.get("host") or "")).lower()
+                   for token in ("database", "postgres", "mysql", "db-"))
+        })) or "the database hosts"
+        steps.append({
+            "id": "s0",
+            "title": "Take and check a database backup",
+            "target": db_targets,
+            "method": "cli",
+            "change": "Dump each affected database to a timestamped file outside the repository and record its size and checksum.",
+            "rollout": "no-restart",
+            "backup": "none; this step creates the backup",
+            "verify": "The dump exists with its recorded size, checksum, and expected table list.",
+            "rollback": "none; no live state changed",
+            "depends_on": [],
+            "requires_approval": False,
+            "status": "pending",
+            "log": [],
+        })
+    for index, item in enumerate(todos, 1):
+        text = str(item.get("text") or "Upgrade step")
+        rollout = item.get("rollout")
+        if rollout not in plan_module.ROLLOUTS:
+            rollout = "no-restart"
+        steps.append({
+            "id": "s" + str(index),
+            "title": short_title(text),
+            "target": targets,
+            "method": method,
+            "change": text,
+            "rollout": rollout,
+            "backup": backup_for(rollout),
+            "verify": "The service answers its health check during and after the change and reports the fixed version.",
+            "rollback": "Restore the previous version through the same path and verify health before continuing.",
+            "depends_on": ["s0"] if backup_step else [],
+            "requires_approval": rollout == "needs-downtime",
+            "status": "pending",
+            "log": [],
+        })
+    title = "Fix " + ", ".join(ids) if ids else "Fix the reported finding"
+    return {
+        "id": "",
+        "title": title,
+        "goal": "Upgrade the affected components to their fixed versions and keep each service up where a zero-downtime path exists.",
+        "requested_by": "CVE triage",
+        "created": datetime.now().date().isoformat(),
+        "status": "draft",
+        "scope": sorted({service.get("name") or "" for _, service in pairs if service.get("name")}),
+        "risk": "high" if needs_downtime else "medium",
+        "downtime": {
+            "kind": "needs-decision" if needs_downtime else "none",
+            "reason": ("At least one upgrade has no zero-downtime path."
+                       if needs_downtime else "Every upgrade uses a scripted zero-downtime rollout."),
+        },
+        "approvals": [],
+        "source": {
+            "cve": ids[0] if ids else "",
+            "cves": ids,
+            "report": str(Path(report_path).resolve()),
+        },
+        "open_questions": (["Choose a downtime window, add a second instance first, or defer for the steps that need downtime."]
+                           if needs_downtime else []),
+        "steps": steps,
+    }
+
+
+def make_fix_plan(data, report_path, plan_dir):
+    """Write a fix plan next to the report run when a service needs a fix."""
+    if not affected_services(data):
+        return None
+    plan = load_plan_module()
+    payload = fix_plan_data(data, report_path, plan)
+    stamp = datetime.now().strftime("%Y%m%d")
+    name = stamp + "-fix-" + plan.slugify(payload["source"]["cve"] or "finding")
+    folder = Path(plan_dir).expanduser()
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / (name + ".md")
+    suffix = 2
+    while path.exists():
+        path = folder / (name + "-" + str(suffix) + ".md")
+        suffix += 1
+    payload["id"] = path.stem
+    path.write_text(plan.compose(payload), encoding="utf-8")
+    return path
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("findings", help="Findings JSON file")
     parser.add_argument("--out", metavar="PATH", default=None,
                         help="Output Markdown path (default: ~/.gti/infra-expert/<project>/cve/, timestamped name)")
+    parser.add_argument("--plan-dir", metavar="DIR", default=None,
+                        help="Also write a fix plan in DIR when a service is affected or possible")
     parser.add_argument("--check", action="store_true", help="Validate only; do not write a report")
     args = parser.parse_args()
 
@@ -305,9 +496,13 @@ def main():
         return
 
     out = Path(args.out).expanduser() if args.out else default_output(data)
+    plan_path = make_fix_plan(data, out, args.plan_dir) if args.plan_dir else None
+    plan_link = "Fix plan: `" + str(plan_path.resolve()) + "`" if plan_path else ""
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render(data), encoding="utf-8")
+    out.write_text(render(data, plan_link=plan_link), encoding="utf-8")
     print(out.resolve())
+    if plan_path:
+        print(plan_path.resolve())
 
 
 if __name__ == "__main__":

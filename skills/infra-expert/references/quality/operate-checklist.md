@@ -1,6 +1,6 @@
 # Operate checklist
 
-One row per recurring failure pattern. Read the reference file before acting on that pattern. For the full rules, see `../operate/01-orient.md` through `../operate/06-learn.md`.
+One row per recurring failure pattern. Read the reference file before acting on that pattern. For the full rules, see `../operate/01-orient.md` through `../operate/07-secrets.md` and `../areas/plans.md` for a change that needs a plan or an approval.
 
 | # | Pattern | Do instead | Reference file |
 |---|---------|------------|----------------|
@@ -24,16 +24,21 @@ One row per recurring failure pattern. Read the reference file before acting on 
 | 18 | Testing on a hand-written imitation | Run the same image or artifact as production with different variables | `../operate/04-change.md` |
 | 19 | Fleet machines drifting apart | Fix the bootstrap or module first, then every existing machine, then compare them | `../operate/04-change.md` |
 | 20 | Passwords in scripts and SSH-bound processes | Install an SSH key on first access and run services as units or containers with a restart policy | `../operate/02-access.md` |
-| 21 | Secrets pasted in chat | Store by variable name or path, warn about the transcript once, and never echo a value or put one in a URL | `../operate/06-learn.md` |
+| 21 | Secrets pasted in chat | Store by variable name or path, warn about the transcript once, and never echo a value or put one in a URL | `../operate/06-learn.md`, `../operate/07-secrets.md` |
 | 22 | Investigation narrated as a record | Use a field table with one date, grouped tables, no narration, and a Not checked section | `../operate/05-records.md` |
 | 23 | Session reused only on reads | Prefer read-only tools and their filter parameters and log every drop to a lower rung as an MCP gap | `../operate/01-orient.md`, `../operate/02-access.md`, `../operate/06-learn.md` |
 | 24 | Named method replaced by a manual deploy | Treat the method as a requirement, stop when its path is missing, propose creating it, and list manual work as pending | `../operate/04-change.md` |
 | 25 | Patching deploy output on the host | Change the script or its source and rerun it instead of editing host files by hand | `../operate/04-change.md` |
 | 26 | Re-encoding and resending a failed script | Fix the local file and resend it by stdin or `scp`; never base64 the script into each command | `../operate/02-access.md` |
-| 27 | Reading whole env or secret files | Read only key names with `grep -oE '^[A-Z0-9_]+='` and put generated secrets in the store named in `access.md` | `../operate/06-learn.md` |
+| 27 | Reading whole env or secret files | Read only key names with `grep -oE '^[A-Z0-9_]+='` and put generated secrets in the canonical manager named in `conventions.md` | `../operate/06-learn.md`, `../operate/07-secrets.md` |
 | 28 | Change causes downtime | Plan rolling or zero-downtime first; if none exists, stop, say what goes down and the options, and ask | `../operate/04-change.md` |
 | 29 | Change without a backup, or backups left behind | Back up state the source cannot rebuild, check the backup, delete non-database backups after verification, and keep database backups until the user confirms | `../operate/04-change.md` |
 | 30 | Had to be told the method, naming, or tags | Discover the provisioning path, closest example, naming, and full tag set into `conventions.md`; use the project's path by default and ask only what the repository cannot answer | `../operate/01-orient.md`, `../operate/04-change.md`, `../operate/06-learn.md` |
 | 31 | Scratch files written outside the run folder | Create one run folder with `knowledge.py tmp` at the start and keep every local file there; never use the system temporary folder, private folders, or other repository paths | `../operate/01-orient.md`, `../operate/04-change.md` |
 | 32 | Stopped at commit or plan on a bring-up request | Carry the request through the code change, the allowed commit and push, the pipeline apply, the run check, and the verified result | `../operate/04-change.md` |
 | 33 | Blocked the apply on an optional input with a later path | Apply without an input that has an empty default or a later step, and list it as pending with how to add it; block only on an input the apply cannot do without, and name it with the reason | `../operate/04-change.md` |
+| 34 | Secret stored outside the canonical manager | Find the manager named in the project rules and `conventions.md`, store every application secret there at the path convention, and record the role of any other manager found in the code | `../operate/07-secrets.md`, `../operate/01-orient.md` |
+| 35 | Secret value passed through the agent | Generate values where they are stored, read only names and metadata, compare hashes on the side that holds the value, and let hosts read with their own identity | `../operate/07-secrets.md` |
+| 36 | User asked to paste a token in chat | Give the exact manager, project, environment, path, and key plus the UI or CLI that sets it; if a value is pasted anyway, store it by name and warn about the transcript once | `../operate/07-secrets.md`, `../operate/06-learn.md` |
+| 37 | Multi-step change applied without a plan or approval | Write a change plan in `.gti/infra-expert/plans/`, record the decisions, and apply only approved steps through the named method | `../areas/plans.md`, `../operate/04-change.md` |
+| 38 | Plan steps applied out of order or without verification | Respect `depends_on`, mark each step applied then verified, and move on only after the check passes | `../areas/plans.md` |

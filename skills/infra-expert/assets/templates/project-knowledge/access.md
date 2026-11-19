@@ -13,12 +13,7 @@ This file is the single answer to "how do I reach target X?" for this project. K
 
 ## Where secrets live
 
-| Secret | Store or file | How to reference it |
-|---|---|---|
-| Example provider key | `<secret-store-path>/example-provider` | env var `EXAMPLE_PROVIDER_KEY` |
-| Example local env file | `.private/example.env` | load with `set -a; . .private/example.env; set +a` |
-
-Never paste a value into this file, a command, or a URL. Store a pasted secret in the location above and refer to it by name.
+The canonical manager, path convention, host identity and read method, bootstrap credential location, and the role of any other manager are recorded in the Secrets section of `conventions.md`. Read that section before storing, reading, generating, or moving any secret, and do not repeat it here. Refer to a secret by its variable name or manager path. Never paste a value into this file, a command, or a URL, and never ask for one in chat.
 
 ## Session reuse
 

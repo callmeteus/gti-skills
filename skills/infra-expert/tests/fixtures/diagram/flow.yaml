@@ -1,0 +1,46 @@
+title: Request flow
+direction: LR
+
+nodes:
+  - id: client
+    label: Client
+    kind: start
+  - id: gateway
+    label: 'Say "hi"; gateway'
+    kind: step
+  - id: valid
+    label: Valid request?
+    kind: decision
+  - id: api
+    label: 'token=abcdefghijklmnopqrstuvwxyz012345'
+    kind: step
+  - id: db
+    label: Database
+    kind: store
+  - id: done
+    label: Done
+    kind: end
+
+edges:
+  - from: client
+    to: gateway
+    label: HTTPS
+  - from: gateway
+    to: valid
+  - from: valid
+    to: api
+    label: yes
+  - from: valid
+    to: done
+    label: no
+  - from: api
+    to: db
+    label: query
+  - from: db
+    to: done
+
+lanes:
+  - name: Edge
+    nodes: [client, gateway]
+  - name: Application
+    nodes: [valid, api, db]

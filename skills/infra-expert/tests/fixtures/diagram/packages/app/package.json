@@ -1,0 +1,11 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "dependencies": {
+    "lib": "^1.2.0",
+    "external-http": "4.0.0"
+  },
+  "devDependencies": {
+    "tool": "^2.0.0"
+  }
+}

@@ -2,9 +2,9 @@
 
 # Infra Expert
 
-> Guardrails for every infrastructure operation, review, and CVE triage
+> Guardrails, reviews, CVE triage, change plans, and diagrams for infrastructure
 
-**Guards every infrastructure operation with operate mode, reviews and untangles infrastructure code and AWS accounts, and assesses CVEs with an explicit automatic mode.**
+**Guards every infrastructure operation, reviews and untangles infrastructure code and AWS accounts, assesses CVEs, writes change plans with approvals, and draws infrastructure diagrams.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
@@ -40,21 +40,24 @@
 
 Infrastructure work is not only source code in a repository. It is SSH sessions on hosts, cloud CLIs, deploys, Terraform applies, secret store writes, dashboards, model servers, and network devices. The same drift that makes a repository hard to change makes live work repetitive and risky: access is reinvented every session, identifiers are guessed, the wrong machine is edited, and lessons are lost between sessions. Vulnerabilities need the same discipline: one CVE must be mapped to real versions and conditions in the inventory and reported without anyone changing a running system by accident.
 
-This skill applies automatically to any infrastructure work through three modes. **Operate** adds guardrails from the first command: it reads the project's own knowledge, names the exact target, climbs an access ladder from the project MCP down to the project CLI, measures symptoms, changes only the source of truth, and records learnings and MCP gaps. **Review** does for infrastructure what Improve Codebase Architecture does for application code: read-only scans, a layout model of kinds and layers, three to six candidates in an HTML report, and a change in code so the pipeline applies only what was agreed. **CVE** triages a vulnerability or sweeps the inventory, classifies each service from primary sources and live read-only versions, writes a report and the records the project keeps, and never upgrades anything. Operate and CVE are project-agnostic: the project specifics live in the project's committed `.gti/infra-expert/` folder, and the agent prefers the project MCP before its CLI.
+This skill applies automatically to any infrastructure work through five modes. **Operate** adds guardrails from the first command: it reads the project's own knowledge, names the exact target, climbs an access ladder from the project MCP down to the project CLI, measures symptoms, changes only the source of truth, and records learnings and MCP gaps. **Review** does for infrastructure what Improve Codebase Architecture does for application code: read-only scans, a layout model of kinds and layers, three to six candidates in an HTML report, and a change in code so the pipeline applies only what was agreed. **CVE** triages a vulnerability or sweeps the inventory, classifies each service from primary sources and live read-only versions, writes a report and the records the project keeps, and never upgrades anything. **Plan** writes a Markdown change plan in the repository for a change that spans several targets or needs an approval, and applies only approved steps. **Diagram** draws plain Mermaid diagrams of modules, services, packages, hosts, or a flow from read-only inputs. All modes are project-agnostic: the project specifics live in the project's committed `.gti/infra-expert/` folder, and the agent prefers the project MCP before its CLI.
 
 ```text
    infrastructure work ──> mode chosen from the request
-          │                      │                     │
-          v                      v                     v
-     OPERATE                REVIEW                   CVE
-  read .gti/ first      area + hot spots      CVE ID or sweep
-  name exact target     read-only scans       OSV + KEV + advisory
-  MCP -> CLI ladder     layout (kind x layer) read live version, condition
-  diagnose + change     3 to 6 candidates     classify services
-  records + learn       HTML report           report + records
-          │                      │                     │
-          v                      v                     v
-  ~/.gti/infra-expert/<project>/  (all generated files and run state)
+           │
+           ├── OPERATE   read .gti/ first, name the target, MCP -> CLI,
+           │             diagnose + change, records + learn + secrets
+           ├── REVIEW    area + hot spots, read-only scans, layout model,
+           │             3 to 6 candidates, HTML report, code change
+           ├── CVE       CVE ID or sweep, OSV + KEV + advisory, live
+           │             version, classify, report + records, never patch
+           ├── PLAN      draft in .gti/infra-expert/plans/, approvals per
+           │             step, verify then apply, committed
+           └── DIAGRAM   read-only local input, Mermaid + HTML (+ SVG/PNG),
+                         report path, no viewer
+
+   ~/.gti/infra-expert/<project>/  generated files and run state
+   .gti/infra-expert/plans/        committed change plans
 ```
 
 | This skill does | This skill does not |
@@ -64,15 +67,22 @@ This skill applies automatically to any infrastructure work through three modes.
 | Audit an AWS account with describe, list, and get calls only | Change, delete, or create anything in the account |
 | Assess a CVE from primary sources and write a report and records | Upgrade, restart, push, or post a result |
 | Prefer the project MCP and log every CLI fallback as an MCP gap | Print or store a secret value |
+| Put every application secret in the project's canonical manager and let hosts read with their own identity | Ask the user to paste a token in chat or pass a value as a tool argument |
+| Write a change plan for a multi-target or approval-gated change and apply only approved steps | Apply a step that needs approval, a downtime window, or a gated action without it |
+| Draw plain infrastructure, package, and flow diagrams from read-only inputs | Open a viewer or hand a plain diagram to another design skill |
 | Make the agreed review change in code with `moved`, `import`, and `removed` blocks | Read gitignored secret files |
 
 ## Features
 
-- **Three modes:** operate (automatic guardrails during any infrastructure work), review (the six-step review and HTML report), and CVE (assess a vulnerability or sweep the inventory).
+- **Five modes:** operate (automatic guardrails during any infrastructure work), review (the six-step review and HTML report), CVE (assess a vulnerability or sweep the inventory), plan (write and track an approval-gated change), and diagram (draw a plain infrastructure, package, or flow diagram).
 - **Zero downtime:** every operate change to a running service is planned as rolling or zero-downtime; when no such path exists the agent stops, says what would go down and the options, and asks the user.
 - **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and discovers the provisioning path, closest example, naming, and tags into `conventions.md` so create and deploy requests follow the project's own way. Creates the folder from a template only when asked.
 - **Access ladder:** project MCP tools first, then the project CLI, then a vendor CLI with a documented profile, then raw SSH or HTTP only when the project documents it; every drop is recorded as an MCP gap.
-- **Operate checklist:** 31 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and scratch files outside the run folder.
+- **Operate checklist:** 38 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr and scratch files outside the run folder.
+- **Secret manager discipline:** finds the project's canonical manager from its rules and code, stores every application secret there, lets each host read with its own identity, generates values where they are stored, and never passes a value through the agent.
+- **Change plans:** writes a Markdown plan in `.gti/infra-expert/plans/` with ordered steps, backups, verification, rollback, dependencies, and explicit approvals; `plan.py` creates, checks, renders, summarizes, and tracks it, and a CVE fix plan carries the CVE id and report path.
+- **Approval contract:** writing or summarizing a plan applies nothing; a step runs only after the plan or that step is approved, and a step that needs downtime always needs its own approval. Summaries include text, Slack, and Telegram actions.
+- **Plain diagrams:** draws Terraform module graphs, Compose service maps, package dependency graphs, host topologies, and request, deploy, or incident flows as Mermaid source and a self-contained HTML page, with an optional SVG or PNG from `mmdc`.
 - **CVE lookup and report:** fetches OSV and CISA KEV facts online or from a saved file, validates findings, sorts CVEs worst first, groups large identical service sets, and renders a Markdown report.
 - **CVE automatic mode:** an explicit opt-in or a scheduled run that asks nothing, queries only inventory components and new IDs, lists upgrades and unread services as pending, and never patches.
 - **Areas:** `general` by default, or `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`, `other`, and `cve`, each with its own checks.
@@ -94,6 +104,7 @@ This skill applies automatically to any infrastructure work through three modes.
 | AWS CLI | v2 | The aws area; read-only credentials | No |
 | Terraform or OpenTofu | 1.7+ recommended | Optional: `fmt`, `validate`, and `plan`; `removed` blocks need 1.7 | No |
 | Browser | Any recent | Opens the review report; loads Mermaid 11.4.1 from jsDelivr for diagrams | No |
+| Mermaid CLI (`mmdc`) | Any recent | Optional: exports diagram SVG or PNG; Mermaid source and HTML need no renderer | No |
 
 Use `python3` on macOS and Linux and `python` or `py -3` on Windows. Operate and CVE work read the project knowledge folder at `.gti/infra-expert/` at the nearest git root when the project keeps one; it is never required to exist before you start.
 
@@ -155,6 +166,8 @@ The agent enters operate mode: it reads the project knowledge folder, names the 
 | Area | For review | `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`; `general` when none is given |
 | Regions | For review | `us-east-2`; the profile region by default |
 | CVE input | For CVE | A CVE ID, an advisory URL, a vendor plus "recent", or a sweep request |
+| Plan input | For plan | A multi-target change, a wait for approval, or a CVE fix plan with its report path |
+| Diagram question | For diagram | A diagram, flowchart, map, or infographic of hosts, modules, packages, or a flow |
 | Terraform states | For review | Permission to read them in the aws area, to find resources no code manages |
 | Chosen candidate | After the review report | "The second one" |
 
@@ -184,19 +197,34 @@ infra-expert/grafana: the tenant dashboards are copies of each other. What shoul
 Let's do candidate 1. Use moved blocks so nothing is recreated.
 ```
 
+```text
+Plan the edge proxy upgrade on both web hosts and wait for approval.
+```
+
+```text
+Show me how a request flows through the gateway, the API, and the database.
+```
+
 ## How It Works
 
 ```text
    mode chosen from the request
           │
-          ├── OPERATE ── orient -> access -> diagnose -> change -> records -> learn
+          ├── OPERATE ── orient -> access -> diagnose -> change -> records -> learn -> secrets
           │              project MCP first, CLI fallback logged as an MCP gap
+          │              canonical manager, host identity, no value through the agent
           │
           ├── REVIEW ── 1. Scope -> 2. Scan -> 3. Candidates -> 4. Report
           │                                      -> 5. Discuss -> 6. Change and report
           │
-          └── CVE ───── intake -> facts -> map to inventory -> read live version
-                         -> classify -> follow filter -> write -> never patch
+          ├── CVE ───── intake -> facts -> map to inventory -> read live version
+          │              -> classify -> follow filter -> write -> never patch
+          │
+          ├── PLAN ──── new -> fill steps -> check + render -> summarize -> approvals
+          │              verify each step, then apply; committed; never self-approve
+          │
+          └── DIAGRAM ─ pick subcommand -> read-only input -> Mermaid + HTML
+                         -> optional SVG/PNG -> report path; no viewer
 ```
 
 Review runs the six steps in order. Read a reference file only when its step starts. Nothing in the repository or the cloud account changes during steps 1 to 4.
@@ -357,7 +385,58 @@ python3 scripts/cve/cve_report.py cve-findings.json --out ~/.gti/infra-expert/<p
 |----------|---------|-------------|
 | `findings` | - | Findings JSON file, see `assets/templates/cve-findings.example.json` |
 | `--out` | `~/.gti/infra-expert/<project>/cve/`, timestamped `cve-report-<timestamp>.md` | Output Markdown path |
+| `--plan-dir` | None | Also write a fix plan in this folder when a service is affected or possible; use the committed `.gti/infra-expert/plans/` |
 | `--check` | Off | Validate only; do not write a report |
+
+### plan.py
+
+```bash
+python3 scripts/plan/plan.py new --title "Upgrade the edge proxy" --goal "Close the advisory" --start .
+python3 scripts/plan/plan.py check <plan.md>
+python3 scripts/plan/plan.py render <plan.md>
+python3 scripts/plan/plan.py summary <plan.md> --format text
+python3 scripts/plan/plan.py approve <plan.md> --step <step-id> --by "change owner"
+python3 scripts/plan/plan.py step <plan.md> <step-id> --status verified --log "Health stayed green"
+python3 scripts/plan/plan.py list --start .
+```
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `new` | Create a draft in `.gti/infra-expert/plans/` under the nearest git root | `--title` and `--goal` (required), `--slug`, `--start` (default `.`) |
+| `check` | Print one line per problem and exit 1 when the body is stale or the schema is wrong | `file` |
+| `render` | Rewrite the generated body below the marker from the front matter | `file` |
+| `summary` | Print the plan as text or as one JSON object with chat actions | `file`, `--format text\|slack\|telegram` (default `text`) |
+| `approve` | Record an approval and render | `file`, `--by` (required), `--step` (default the whole plan) |
+| `reject` | Record a rejection and render | `file`, `--by` (required), `--step`, `--reason` |
+| `step` | Record a step status and one timestamped log line, then render | `file`, `id`, `--status` (required), `--log` |
+| `list` | Show id, status, and title of every plan, newest first | `--start` (default `.`) |
+
+`new` derives the file name from `--start` and the title. `--status` takes `pending`, `approved`, `applied`, `verified`, `skipped`, `failed`, or `rolled-back`. The script refuses a step that needs its own approval and has none, or a step whose `depends_on` step is not `verified`. The front matter schema and the approval contract are in `references/areas/plans.md`.
+
+### diagram.py
+
+```bash
+python3 scripts/diagram/diagram.py terraform --scan terraform-scan.json --title "Module graph" --direction LR
+python3 scripts/diagram/diagram.py compose docker-compose.yml --name services
+python3 scripts/diagram/diagram.py packages . --name packages
+python3 scripts/diagram/diagram.py hosts .gti/infra-expert/hosts.md --group-by group
+python3 scripts/diagram/diagram.py flow flow.yaml --title "Request flow"
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `command` | - | `terraform`, `compose`, `packages`, `hosts`, or `flow` |
+| Input | - | Scan JSON, one or more Compose files, a directory, a Markdown host table, or a flow file, by subcommand |
+| `--scan` | - | Required for `terraform`: JSON from `terraform_scan.py --json` |
+| `--title` | None | Title of the diagram and HTML page |
+| `--out` | `~/.gti/infra-expert/<project>/diagrams/` | Output folder; use only when the user names a place |
+| `--direction` | `TB` | `LR` for request flows and timelines, `TB` for layered stacks |
+| `--max-nodes` | `40` | Node cap; each group past the cap collapses into `+N more` |
+| `--name` | Subcommand name | Base file name for `.mmd` and `.html` |
+| `--format` | `svg` | `svg` or `png` when `mmdc` is on PATH; otherwise only source and HTML are written |
+| `--group-by` | `group` | `hosts` only: group by the `Group` or `Kind` column |
+
+Each run writes `<name>.mmd` and `<name>.html`; the HTML loads Mermaid from jsDelivr and shows the source as text. Labels that look like a password, token, or key are redacted. The subcommands and read-only rules are in `references/areas/diagrams.md`.
 
 ### Reference files
 
@@ -374,23 +453,29 @@ python3 scripts/cve/cve_report.py cve-findings.json --out ~/.gti/infra-expert/<p
 | `references/areas/grafana.md` | Datasource UIDs, bases and copies, generated files, deployment | grafana area |
 | `references/areas/other-stacks.md` | Kubernetes, Compose, Ansible, CI, cross-repository ownership | other areas |
 | `references/areas/cve.md` | Intake, primary sources, mapping, classification, writing rules, automatic mode | CVE mode |
+| `references/areas/plans.md` | Front matter, approvals, apply steps, chat summaries, CVE fix plans | Plan mode |
+| `references/areas/diagrams.md` | Subcommands, read-only inputs, output files, when to hand off | Diagram mode |
 | `references/operate/01-orient.md` | Project knowledge, target naming, access ladder, preflight, feasibility | Operate step 1 |
 | `references/operate/02-access.md` | Connection reuse, scripts in files, first access, fleet batching | Operate step 2 |
 | `references/operate/03-diagnose.md` | Facts and timeline, stderr, waits and retries, real identifiers | Operate step 3 |
-| `references/operate/04-change.md` | Source of truth, safe apply, environments, names, announcements | Operate step 4 |
+| `references/operate/04-change.md` | Source of truth, safe apply, backups, zero downtime, and the pointer to change plans | Operate step 4 |
 | `references/operate/05-records.md` | Field tables, grouped lists, Not checked, record templates | Operate step 5 |
-| `references/operate/06-learn.md` | Learnings, MCP gaps, correcting the folder, secrets | Operate step 6 |
+| `references/operate/06-learn.md` | Learnings, MCP gaps, correcting the folder, pasted secrets in the transcript | Operate step 6 |
+| `references/operate/07-secrets.md` | Canonical manager, where values go, no value through the agent, host identity, migration, rotation, discovery | Operate step 7 |
 | `references/concepts/layers.md` | Kinds, layers, rules, target layouts, naming | Review steps 3 to 6 |
 | `references/concepts/plain-language.md` | Counting, naming, and the vague claims to avoid | Review steps 4 to 6 |
 | `references/concepts/project-docs.md` | Project rules, inventories, ADRs, glossary | Review steps 1 and 5 |
 | `references/quality/safety.md` | Commands that never run, need permission, or are safe; operate rules | Every mode |
-| `references/quality/operate-checklist.md` | 31 recurring failure patterns | Operate mode |
+| `references/quality/operate-checklist.md` | 38 recurring failure patterns, including plan and approval rows | Operate mode |
 | `references/quality/report-checklist.md` | Checks before rendering | Review step 4 |
 | `assets/templates/project-knowledge/README.md` | Template of the project's committed knowledge folder | Operate and CVE |
 | `assets/templates/project-knowledge/conventions.md` | Template for the project's provisioning path, closest examples, naming, tags, and inventories | Operate step 1 |
 | `assets/templates/cve-findings.example.json` | Findings JSON shape for `cve_report.py` | CVE step 7 |
 | `assets/templates/cve-record.md` | Fixed per-CVE record shape | CVE step 7 |
 | `assets/templates/cve-report.md` | Markdown report template | CVE step 7 |
+| `assets/templates/plan.md` | Plan file template with the front matter and body marker | Plan mode |
+| `assets/templates/plan.example.md` | Complete plan that passes `check` | Plan mode |
+| `assets/templates/diagram-flow.example.yaml` | Example input for a flow diagram | Diagram mode |
 
 ## Output
 
@@ -461,15 +546,61 @@ One Markdown report is written per run, even a run with no findings:
 | Left to do | Every upgrade that keeps the service up, with its rollout value, as a separate maintenance task for the user |
 | Needs a downtime decision | Upgrades with rollout `needs-downtime`, which the user must decide before they run |
 
+### Change plan
+
+One Markdown file is written per plan, in `.gti/infra-expert/plans/` at the nearest git root and committed with the project:
+
+```text
+   ---
+   id: "2026-11-19-upgrade-edge-proxy"
+   title: "Upgrade the edge proxy"
+   status: proposed
+   risk: medium
+   downtime: { kind: none, reason: "Rolling by node" }
+   scope: [web-01, web-02]
+   ...
+   ---
+
+   # Change plan: Upgrade the edge proxy
+   <!-- plan-body: generated by plan.py render, do not edit below this line -->
+
+   ## Steps
+   backup-config -> upgrade-web-01 -> upgrade-web-02 -> verify
+   Open decision: step upgrade-web-01 needs its own approval.
+```
+
+| Section | Contents |
+|---------|----------|
+| Front matter | id, title, goal, requester, created date, status, risk, scope, downtime, approvals, source, and open questions |
+| Steps | Ordered steps with target, method, rollout, backup, verify, rollback, dependencies, and approval flags |
+| Generated body | Step table rendered by `plan.py render`; `check` fails when it is stale |
+| Decisions | Dated approvals or rejections for the whole plan or a single step |
+
+### Diagrams
+
+Each diagram subcommand writes its files under `~/.gti/infra-expert/<project>/diagrams/`:
+
+```text
+   module-graph.mmd     Mermaid source, safe to read and edit
+   module-graph.html    Self-contained page that shows the source as text
+   module-graph.svg     Optional image, written only when mmdc is on PATH
+```
+
+| File | Contents |
+|------|----------|
+| `<name>.mmd` | Nodes, edges, and grouping in Mermaid source |
+| `<name>.html` | Page that loads Mermaid from jsDelivr and keeps the source readable offline |
+| `<name>.svg` or `<name>.png` | Image export when `mmdc` is available |
+
 ### Project knowledge folder
 
-The project commits `.gti/infra-expert/` itself at the nearest git root, so it is the only generated area that lives in a repository. It never holds a secret value.
+The project commits `.gti/infra-expert/` itself at the nearest git root, so it is one of two generated areas that live in a repository, the other being the change plans folder. It never holds a secret value.
 
 | File | Contents |
 |------|----------|
 | `README.md` | Index of the folder and the rule to read before the first remote command |
-| `conventions.md` | Provisioning path, closest examples, naming, tags, network defaults, inventories, and the source for each fact |
-| `access.md` | Access paths, profiles, secret-store references, and session reuse notes |
+| `conventions.md` | Provisioning path, closest examples, naming, tags, network defaults, inventories, the Secrets section, and the source for each fact |
+| `access.md` | Access paths, profiles, session reuse notes, and a pointer to the Secrets section in `conventions.md` |
 | `mcp.md` | Which project MCP tool to call and whether it reuses a connection |
 | `cli.md` | The documented CLI fallback commands |
 | `hosts.md` | Host aliases, addresses, and owners |
@@ -477,7 +608,7 @@ The project commits `.gti/infra-expert/` itself at the nearest git root, so it i
 | `mcp-gaps.md` | Dated MCP gaps with Need, Command, Proposal, and Status |
 | `records.md` | Where records go, which cases get one, and the inventory to sweep |
 
-All other generated files, including review reports, AWS snapshots, CVE reports, and `cve/state.json`, go to `~/.gti/infra-expert/<project>/`. Nothing is written to the repository until the user asks for that change, and CVE mode never changes a running system.
+All other generated files, including review reports, AWS snapshots, CVE reports, diagrams, and `cve/state.json`, go to `~/.gti/infra-expert/<project>/`. The exception is change plans: `plan.py new` writes `.gti/infra-expert/plans/` at the nearest git root and the project commits it. Nothing else is written to the repository until the user asks for that change, and CVE mode never changes a running system.
 
 Operate mode also writes local working files to `.gti/tmp/<run>/` at the nearest git root, one folder per task created by `knowledge.py tmp`. The folder holds scripts sent to hosts, parameter files, long command output, fleet JSON, and rendered configs, and is ignored by git through a `tmp/` line in `.gti/.gitignore`. Non-database files are deleted when the task is verified; database dumps stay until the user confirms. The repository root `.gitignore` is never changed.
 
@@ -488,9 +619,12 @@ Operate mode also writes local working files to `.gti/tmp/<run>/` at the nearest
 - **Snapshot contents:** the snapshot holds network layout, resource names, and tags, but no secrets. It stays in `~/.gti/infra-expert/<project>/`.
 - **State files:** Terraform state contains secrets. The aws area reads state only with the user's permission, writes it only to `~/.gti/infra-expert/<project>/`, and deletes it afterwards.
 - **Secrets:** the scanners skip gitignored files, and `knowledge.py` refuses a value that looks like a secret. No skill file stores a secret; only variable names and secret-store paths are written.
+- **Canonical manager:** operate mode takes the manager from the project rules, stores every application secret there at the project's path convention, lets each host read with its own identity, and never passes a value through the agent or the chat.
 - **Live state:** an operate change happens only when the request allows it, through the project's documented path, and never widens access or deletes or restarts beyond the request.
 - **Zero downtime:** a change to a running service is rolling or zero-downtime; if none is possible the agent stops and asks, and in Autonomous Mode it lists the step as pending with the options.
 - **CVE mode:** it reads live versions only, never upgrades or restarts a service, and leaves every upgrade step to the user.
+- **Plans:** writing, checking, or summarizing a plan changes only the plan file; no step runs before its approval, the agent never approves its own plan, and a step that needs downtime or a gated action stays pending.
+- **Diagrams:** every input comes from local files or earlier read-only scans, labels that look like secrets are redacted, and no host, cloud account, or repository file is written.
 - **Changes:** the review workflow never runs `apply`, `destroy`, or state commands that write; changes land in code for the user's pipeline.
 
 ## Development
@@ -522,6 +656,13 @@ The project does not keep a `.gti/infra-expert/` folder yet. Run `knowledge.py i
 <summary><strong>The agent acts on the wrong host</strong></summary>
 
 The operate reference requires naming the exact target and resolving nicknames through `hosts.md` before connecting, with a hostname guard at the top of every remote script. If a nickname is not in the folder, tell the agent which target it means before it connects.
+
+</details>
+
+<details>
+<summary><strong>The agent used the wrong secret manager</strong></summary>
+
+The operate secret rules require the project rule and the Secrets section of `conventions.md` to decide the canonical manager before any value is written. A manager used only to bootstrap a host's identity is not a home for application secrets. Record the canonical manager, its path convention, and the role of each other manager in `conventions.md` with a source, then move the values there.
 
 </details>
 
@@ -568,6 +709,27 @@ The report loads Mermaid from jsDelivr, and the browser could not reach it. Open
 </details>
 
 <details>
+<summary><strong>"stale body" or a schema error from plan.py check</strong></summary>
+
+The front matter and the generated body disagree. Edit only the front matter, run `plan.py render <plan.md>`, and then run `check` again. Fix any field the script names, for example an empty `verify`, a duplicate step id, or a `depends_on` that names a step that does not exist.
+
+</details>
+
+<details>
+<summary><strong>plan.py refuses to mark a step applied</strong></summary>
+
+The step needs its own approval, or a step in `depends_on` is not yet `verified`. Record the decision with `plan.py approve <plan.md> --step <id> --by "<name>"`, then verify the earlier step with `plan.py step <plan.md> <id> --status verified --log "..."`. Never approve the plan yourself or skip the verification.
+
+</details>
+
+<details>
+<summary><strong>diagram.py wrote only .mmd and .html</strong></summary>
+
+`mmdc` is not on PATH, so the optional SVG or PNG export was skipped. The Mermaid source and the HTML page are complete and readable offline; install `mmdc` and rerun the same command with `--format svg` or `--format png` when you need an image.
+
+</details>
+
+<details>
 <summary><strong>"findings error" from cve_report.py</strong></summary>
 
 The findings JSON does not match the required shape. Start from `assets/templates/cve-findings.example.json`: each CVE needs an `id`, a `component`, and at least one service with a valid status; an `affected` or `possible` service needs a version and a condition, and a `not-checked` service needs a reason. Each `left_to_do` item needs a `text` and a `rollout` value of `rolling`, `blue-green`, `reload`, `no-restart`, or `needs-downtime`. Fix the fields and run `--check` again.
@@ -591,7 +753,8 @@ Use `--from-file` with a saved JSON response from the same endpoint to work offl
 - The AWS audit covers EC2 networking, security groups, Elastic IPs, EBS, load balancers, RDS, Lambda, and S3. Launch templates, CloudFormation stacks, and other accounts can use a security group that looks unused.
 - Bucket duplicates are found by name and checked by the agent; the analyzer does not compare bucket contents.
 - Plans need credentials and backend access; without them the agent verifies with `fmt` and `validate` only and says so.
-- Diagrams need network access to render, because Mermaid is loaded from a CDN.
+- A plan cannot apply itself. Approval must come from a person, the agent never approves its own plan, and a step that needs downtime stays pending until the user decides.
+- Diagram HTML loads Mermaid from a CDN, so the visual needs network access; the source stays readable offline, and `mmdc` can export an SVG or PNG without the CDN.
 
 ## Acknowledgements
 

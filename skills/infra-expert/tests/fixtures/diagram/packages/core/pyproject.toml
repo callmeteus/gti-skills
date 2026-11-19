@@ -1,0 +1,9 @@
+[project]
+name = "core"
+version = "0.3.0"
+dependencies = [
+  "external-json>=2",
+]
+
+[project.optional-dependencies]
+extra = ["external-yaml>=1"]
