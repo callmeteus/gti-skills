@@ -4,5 +4,8 @@
     "packs": [
         "infra",
         "coding"
-    ]
+    ],
+    "harnessNotes": {
+        "cursor": "A project-scope install also adds an always-on rule at `.cursor/rules/infra-expert.mdc` that triggers operate mode before the first infrastructure command."
+    }
 }

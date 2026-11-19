@@ -1,0 +1,41 @@
+{
+  "vulns": [
+    {
+      "id": "CVE-2026-12345",
+      "summary": "HTTP/2 memory corruption in NGINX",
+      "modified": "2026-11-18T12:00:00Z",
+      "affected": [
+        {
+          "package": { "ecosystem": "Debian:12", "name": "nginx" },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                { "introduced": "0" },
+                { "fixed": "1.31.9" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CVE-2026-99304",
+      "summary": "CephFS client out of bounds read in the Linux kernel",
+      "modified": "2026-11-19T09:00:00Z",
+      "affected": [
+        {
+          "package": { "ecosystem": "Debian:12", "name": "linux" },
+          "ranges": [
+            {
+              "type": "ECOSYSTEM",
+              "events": [
+                { "introduced": "0" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

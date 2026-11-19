@@ -34,4 +34,5 @@ Ask the agent which skills it has loaded and check that `infra-expert` is listed
 ## Notes
 
 - Cursor CLI reads the same folders. Cursor also loads .agents/skills, .claude/skills, and .codex/skills.
+- A project-scope install also adds an always-on rule at `.cursor/rules/infra-expert.mdc` that triggers operate mode before the first infrastructure command.
 - Documentation: [Cursor / Cursor CLI](https://cursor.com/docs/skills) (path source: official).

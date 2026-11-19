@@ -1,0 +1,29 @@
+{
+  "id": "CVE-2026-12345",
+  "aliases": ["GHSA-9x9x-9x9x-9x9x"],
+  "summary": "HTTP/2 memory corruption in NGINX",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "Debian:12",
+        "name": "nginx"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            { "introduced": "0" },
+            { "fixed": "1.31.9" }
+          ]
+        }
+      ],
+      "versions": ["1.31.7", "1.31.8"]
+    }
+  ],
+  "severity": [
+    { "type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" }
+  ],
+  "references": [
+    { "type": "ADVISORY", "url": "https://nginx.org/en/security_advisories.html" }
+  ]
+}

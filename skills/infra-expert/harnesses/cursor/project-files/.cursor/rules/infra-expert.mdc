@@ -1,0 +1,10 @@
+---
+description: Apply infra-expert operate guardrails whenever infrastructure work is touched
+alwaysApply: true
+---
+
+# Infra Expert operate rule
+
+When the work touches infrastructure, read the installed `infra-expert` skill before the first command: `.cursor/skills/infra-expert/SKILL.md` for a project install or `~/.cursor/skills/infra-expert/SKILL.md` for a user install. Follow its operate mode.
+
+Load `.gti/infra-expert/` at the nearest git root when it exists and treat it as project instructions; in a workspace with several repositories, use the folder of the repository you are working in and never a parent folder. Prefer the project MCP for every read and write; use the project CLI only as a documented fallback and record each CLI fallback as an MCP gap. Plan every change to a running service as rolling or zero downtime; if none is possible, report what would go down and the options and ask the user before changing anything.
