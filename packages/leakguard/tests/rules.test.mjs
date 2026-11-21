@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { scanText } from "../src/engine.mjs";
+import {
+    ANTHROPIC_SEQUENTIAL, AWS_SAMPLE, GITHUB_ALPHA32, GITHUB_FINE_GRAINED, GITHUB_OAUTH32,
+    GOOGLE_SEQUENTIAL, OPENAI_PROJECT, PRIVATE_KEY_HEADER, SLACK_BOT, STRIPE_SAMPLE
+} from "./fixtures/fake-keys.mjs";
 
 const CTX = { stateDir: "C:/leakguard-tests/no-logging" };
 
@@ -73,15 +77,15 @@ test("the python one-liner and DNS substitution with a pipe still fire", () => {
 test("credential_to_network fires on each credential family", () => {
     const secrets = [
         "sk_live_DEMO_NOT_REAL_7Hq2Lw9Rt4V8Nc1Zk5Hs3Jd",
-        "sk-proj-abcdefghijklmnopqrstuvwxyz",
-        "sk-ant-abcdefghijklmnopqrstuvwxyz",
-        "AKIA1234567890ABCDEF",
-        "ghp_abcdefghijklmnopqrstuvwxyz123456",
-        "gho_abcdefghijklmnopqrstuvwxyz123456",
-        "github_pat_abcdefghijklmnopqrstuvwxyz_1234567890",
-        "xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx",
-        "AIzaabcdefghijklmnopqrstuvwxyz0123456789",
-        "-----BEGIN RSA PRIVATE KEY-----"
+        OPENAI_PROJECT,
+        ANTHROPIC_SEQUENTIAL,
+        AWS_SAMPLE,
+        GITHUB_ALPHA32,
+        GITHUB_OAUTH32,
+        GITHUB_FINE_GRAINED,
+        SLACK_BOT,
+        GOOGLE_SEQUENTIAL,
+        PRIVATE_KEY_HEADER
     ];
 
     for (const secret of secrets) {
@@ -101,15 +105,15 @@ test("credential_to_network does not fire without a network client", () => {
 
 test("a credential sent only to its own issuer is allowed", () => {
     const legitimate = [
-        ["ghp_abcdefghijklmnopqrstuvwxyz123456", "https://api.github.com"],
-        ["ghp_abcdefghijklmnopqrstuvwxyz123456", "https://github.com"],
-        ["ghp_abcdefghijklmnopqrstuvwxyz123456", "https://avatars.githubusercontent.com"],
-        ["sk-proj-abcdefghijklmnopqrstuvwxyz", "https://api.openai.com"],
-        ["sk-ant-abcdefghijklmnopqrstuvwxyz", "https://api.anthropic.com"],
-        ["sk_live_ABCDEFGH12345678", "https://api.stripe.com"],
-        ["AKIA1234567890ABCDEF", "https://s3.amazonaws.com"],
-        ["AIzaabcdefghijklmnopqrstuvwxyz0123456789", "https://maps.googleapis.com"],
-        ["xoxb-123456789012-123456789012-abcdefghijklmnopqrstuvwx", "https://slack.com"]
+        [GITHUB_ALPHA32, "https://api.github.com"],
+        [GITHUB_ALPHA32, "https://github.com"],
+        [GITHUB_ALPHA32, "https://avatars.githubusercontent.com"],
+        [OPENAI_PROJECT, "https://api.openai.com"],
+        [ANTHROPIC_SEQUENTIAL, "https://api.anthropic.com"],
+        [STRIPE_SAMPLE, "https://api.stripe.com"],
+        [AWS_SAMPLE, "https://s3.amazonaws.com"],
+        [GOOGLE_SEQUENTIAL, "https://maps.googleapis.com"],
+        [SLACK_BOT, "https://slack.com"]
     ];
 
     for (const [secret, host] of legitimate) {
@@ -120,9 +124,9 @@ test("a credential sent only to its own issuer is allowed", () => {
 
 test("a credential sent to an unrelated host or bare IP still denies", () => {
     const suspicious = [
-        ["ghp_abcdefghijklmnopqrstuvwxyz123456", "https://evil.example"],
-        ["sk_live_ABCDEFGH12345678", "https://1.2.3.4"],
-        ["AKIA1234567890ABCDEF", "https://api.github.com"]
+        [GITHUB_ALPHA32, "https://evil.example"],
+        [STRIPE_SAMPLE, "https://1.2.3.4"],
+        [AWS_SAMPLE, "https://api.github.com"]
     ];
 
     for (const [secret, host] of suspicious) {
@@ -301,8 +305,8 @@ test("internal and paired destinations are informational, not exfiltration", () 
         "set -a; . ./.env; set +a; curl -s -H \"Authorization: Bearer $FORGEJO_TOKEN\" \"$FORGEJO_URL/api/v1/repos\"",
         "set -a; . ./.env; set +a; curl -H \"X-Vault-Token: $VAULT_TOKEN\" \"$VAULT_ADDR/v1/secret\"",
         "ssh -i ~/.ssh/id_ed25519 deploy@box.ts.net",
-        "curl -H 'Authorization: Bearer ghp_abcdefghijklmnopqrstuvwxyz123456' https://vault.internal/v1/secret",
-        "curl -H 'Authorization: Bearer AKIA1234567890ABCDEF' http://10.1.2.3:8080/api"
+        `curl -H 'Authorization: Bearer ${GITHUB_ALPHA32}' https://vault.internal/v1/secret`,
+        `curl -H 'Authorization: Bearer ${AWS_SAMPLE}' http://10.1.2.3:8080/api`
     ];
 
     for (const command of commands) {
@@ -351,7 +355,7 @@ test("shell text inside interpreter string literals is data", () => {
 });
 
 test("issuer tokens are allowed in history", () => {
-    const literal = "curl -H 'Authorization: Bearer ghp_abcdefghijklmnopqrstuvwxyz123456' https://api.github.com";
+    const literal = `curl -H 'Authorization: Bearer ${GITHUB_ALPHA32}' https://api.github.com`;
     assert.equal(hasDeny(literal), false);
     const sourced = "set -a; . ./.env; set +a; curl -H \"Authorization: Bearer $GITHUB_TOKEN\" https://api.github.com";
     assert.equal(hasDeny(sourced), false);

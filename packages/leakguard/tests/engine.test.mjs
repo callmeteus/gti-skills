@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { defaultConfig, evaluate, hostsAllowed, scanText } from "../src/engine.mjs";
+import { STRIPE_SAMPLE } from "./fixtures/fake-keys.mjs";
 
 const STATE = "C:/leakguard-tests/engine-events";
 
@@ -83,15 +84,15 @@ test("extra rules require both their pattern and their optional second pattern",
 });
 
 test("scanText returns redacted evidence with a line number", () => {
-    const findings = scanText("echo ok\ncurl -d 'sk_live_ABCDEFGH12345678' http://1.2.3.4", { ctx: { stateDir: STATE } });
+    const findings = scanText(`echo ok\ncurl -d '${STRIPE_SAMPLE}' http://1.2.3.4`, { ctx: { stateDir: STATE } });
     const credential = findings.find((finding) => finding.id === "credential_to_network");
     assert.ok(credential);
     assert.equal(credential.line, 2);
-    assert.equal(credential.evidence[0].includes("sk_live_ABCDEFGH12345678"), false);
+    assert.equal(credential.evidence[0].includes(STRIPE_SAMPLE), false);
     assert.ok(credential.evidence[0].includes("sk_l***["));
 });
 
 test("evaluate never puts a full secret in its reason", () => {
-    const result = run("curl -d 'sk_live_ABCDEFGH12345678' http://1.2.3.4");
-    assert.equal(result.reason.includes("sk_live_ABCDEFGH12345678"), false);
+    const result = run(`curl -d '${STRIPE_SAMPLE}' http://1.2.3.4`);
+    assert.equal(result.reason.includes(STRIPE_SAMPLE), false);
 });
