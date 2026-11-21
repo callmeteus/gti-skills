@@ -1,0 +1,14 @@
+{
+    "id": "video-editor",
+    "displayName": "Video Editor",
+    "packs": [
+        "art",
+        "social"
+    ],
+    "package": "packages/videoeditor",
+    "rootPointer": "scripts/videoeditor.root",
+    "harnessNotes": {
+        "*": "This skill drives the packages/videoeditor engine. Build it once with `npm run build` there, and set VIDEOEDITOR_HOME to its folder if you copied the skill folder by hand instead of using the install command. The review server binds to 127.0.0.1 by default; exposing it on the LAN or Tailscale requires an explicit --bind 0.0.0.0.",
+        "opencode": "Every edit tool prints a `checks` array. Run `review --out <file>` for a static HTML report that needs no server."
+    }
+}

@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-18-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-19-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -55,6 +55,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Art Director** | art | Local-first graphic design studio. Designs photo-led, layered social posts, posters, covers, and slides in HTML/CSS/SVG with a professional style guide and effects toolkit, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
 | **Video to Skill** | coding | Turns a YouTube or X tutorial video into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
 | **Video to Markdown** | research | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
+| **Video Editor** | art, social | Measured local video editing: cut, trim silence, speed, reframe, loudness, styled captions, and Reels, Shorts, TikTok, or YouTube export, with a static review page and a localhost-only server by default. | Node 20+, ffmpeg and ffprobe | [README](skills/video-editor/README.md) |
 | **UX Psychology Review** | design | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 | **Unslop Interface** | design, coding | Removes the generated look from dashboards and app screens in eight ordered passes: spacing, radius, color, icons, typography and copy, data display, actions and structure, and states and feel. | None | [README](skills/unslop-interface/README.md) |
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
@@ -81,8 +82,8 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 | `infra` | Infrastructure as code, cloud accounts, and observability as code | Infra Expert |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | SEO Growth, Video to Markdown, Weight Space Programming, X Research |
-| `social` | Social media research, monitoring, and content | X Research |
-| `art` | Graphic design, illustration, and visual artwork | Art Director |
+| `social` | Social media research, monitoring, and content | Video Editor, X Research |
+| `art` | Graphic design, illustration, and visual artwork | Art Director, Video Editor |
 | `personal` | Personal productivity, notes, and everyday tasks | GTI, Maestro |
 
 ```bash
@@ -205,7 +206,7 @@ Copy-Item -Recurse skills\video-to-markdown C:\path\to\your\project\.claude\skil
 
 Each skill carries a short guide per agent in `skills/<skill-id>/harnesses/<agent-id>/GUIDE.md`: install paths, how to invoke the skill, and how to confirm it loaded. The skill itself is never duplicated per agent.
 
-> **Art Director needs its engine.** It drives the package in `packages/artdirector`. Build it once (see the [Art Director installation](skills/artdirector/README.md#installation)) and use the `install` command, which records where the package lives.
+> **Art Director and Video Editor need their engines.** They drive the packages in `packages/artdirector` and `packages/videoeditor`. Build each once (see the [Art Director installation](skills/artdirector/README.md#installation) and the [Video Editor installation](skills/video-editor/README.md#installation)) and use the `install` command, which records where each package lives.
 
 ## Supported Agents
 
@@ -239,6 +240,7 @@ Notes:
 | Art Director | 20+ | 3.8+, optional (photo scripts) | No | Fonts at render time; photo search |
 | Video to Skill | No | 3.8+ | Yes | YouTube, X |
 | Video to Markdown | No | 3.8+ | Yes | YouTube, X |
+| Video Editor | 20+ | No | Yes (ffmpeg and ffprobe, no yt-dlp) | No |
 | UX Psychology Review | No | No | No | No |
 | Unslop Interface | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |
 | Frontend Design Review | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |
@@ -394,6 +396,7 @@ gti-skills/
 │   ├── untangle-codebase/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
+│   ├── video-editor/
 │   ├── video-to-markdown/
 │   ├── video-to-skill/
 │   ├── web-performance-audit/
@@ -402,6 +405,7 @@ gti-skills/
 ├── packages/                  # Code packages
 │   ├── cli/                   # list, validate, build, check, install
 │   ├── artdirector/           # Engine behind the Art Director skill
+│   ├── videoeditor/           # Engine behind the Video Editor skill
 │   ├── lintapple/             # UI linter shared by Frontend Design Review and Unslop Interface
 │   └── python/
 │       ├── shared/            # Scripts shared by the video skills
@@ -457,7 +461,11 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
 | [packages/lintapple/README.md](packages/lintapple/README.md) | Vendored lintapple UI linter and the runner shared by the UI skills |
 | [packages/artdirector/ARCHITECTURE.md](packages/artdirector/ARCHITECTURE.md) | Art Director design decisions and limitations |
+| [packages/videoeditor/README.md](packages/videoeditor/README.md) | Video Editor engine source and scripts |
+| [packages/videoeditor/ARCHITECTURE.md](packages/videoeditor/ARCHITECTURE.md) | Video Editor design decisions and limitations |
+| [packages/videoeditor/NOTICE.md](packages/videoeditor/NOTICE.md) | Video Editor credits and third-party licenses |
 | [skills/artdirector/README.md](skills/artdirector/README.md) | Art Director installation, CLI, and workflow |
+| [skills/video-editor/README.md](skills/video-editor/README.md) | Editing video with a deterministic ffmpeg timeline |
 | [skills/video-to-skill/README.md](skills/video-to-skill/README.md) | Generating skills from tutorial videos |
 | [skills/video-to-markdown/README.md](skills/video-to-markdown/README.md) | Converting videos into Markdown notes |
 | [skills/ux-psychology-review/README.md](skills/ux-psychology-review/README.md) | Reviewing conversion screens with UX psychology principles |
@@ -504,5 +512,6 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
+| Video Editor | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.
