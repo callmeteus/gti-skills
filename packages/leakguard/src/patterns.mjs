@@ -129,7 +129,8 @@ export function hasNetworkClient(text) {
  * A dotenv file name. Excludes the template names .env.example, .env.sample and .env.template.
  * Allows compounds such as .env.local and .env.production.local.
  */
-export const DOTENV = /\.env(?:\.(?!example\b|sample\b|template\b)[\w-]+)*(?![.\w])/gi;
+// A word boundary before the dot keeps process.env.CT and my.env from reading as dotenv files.
+export const DOTENV = /(?<!\w)\.env(?:\.(?!example\b|sample\b|template\b)[\w-]+)*(?![.\w])/gi;
 
 /** Credential literals seen in real leaks, each with a stable short name. */
 export const CREDENTIALS = [
@@ -190,7 +191,7 @@ export const SECRET_PATHS = [
  * `export -p`, a bare cmd `set`, or the .NET environment table count as a dump.
  */
 export const ENV_DUMP = new RegExp(
-    BOUNDARY + String.raw`(?:env|printenv|export\s+-p)(?=[\s;|&)\]}\x60]|$)|` +
+    BOUNDARY + String.raw`(?:(?:env|printenv|export\s+-p)(?!(?:\s*[=.]))(?=[\s;|&)\]}\x60]|$))|` +
     BOUNDARY + String.raw`set(?=\s*(?:[;|&)}\r\n]|$))|` +
     BOUNDARY + String.raw`(?:(?:Get-ChildItem|gci|dir|ls)\s+env:\s*(?:$|[;|&)}\x60]))|` +
     String.raw`\[Environment\]::GetEnvironmentVariables\s*\(`,
@@ -202,7 +203,7 @@ export const ENCODER = /\b(?:base64|xxd|gzip|openssl\s+base64)\b/i;
 
 /** DNS clients that can carry data in a subdomain. They must appear as real command tokens. */
 export const DNS_TOOL = new RegExp(
-    COMMAND_START + String.raw`(?:nslookup|dig|host|Resolve-DnsName)\b(?![\w.-])`,
+    COMMAND_START + String.raw`(?:nslookup|dig|host|Resolve-DnsName)\b(?![\w.=-]|\s*=)`,
     "i"
 );
 
@@ -231,7 +232,7 @@ export function isPowerShell(text, state = {}) {
 
 /** Fetch a remote resource and execute it directly. */
 export const REMOTE_SCRIPT = new RegExp(
-    String.raw`\b(?:curl|wget|iwr|Invoke-WebRequest)\b[^\n|]*\|\s*(?:sh|bash|zsh|ksh|python3?|iex|pwsh)\b` +
+    String.raw`\b(?:curl|wget|iwr|Invoke-WebRequest)\b[^\n|]*\|\s*(?:sh|bash|zsh|ksh|python3?|iex|pwsh)\b(?![^\n]{0,40}\s(?:-c|-e|--eval)\b)` +
     String.raw`|\biex\s*\(\s*New-Object\s+Net\.WebClient\b[^\n]*DownloadString`,
     "i"
 );
@@ -404,10 +405,237 @@ export function collectMatches(re, text) {
 export function extractHosts(text) {
     const hosts = new Set();
     for (const match of text.matchAll(/[a-z][a-z0-9+.-]*:\/\/(?:[^\s/@]+@)?([^\s:/?#]+)/gi)) {
-        hosts.add(match[1].toLowerCase());
+        // A URL held as a JSON string value, such as original_url":"https://host/..., is data in a
+        // request body and not the destination of that request.
+        if (/["']\s*:\s*["']$/.test(text.slice(0, match.index))) {
+            continue;
+        }
+        // A quoted URL such as base="https://host" would otherwise keep the closing quote in the
+        // host and make an internal tailscale name look public.
+        // Interpreter code builds URLs by concatenation, for example "http://" + host or
+        // f"http://{host}". Those punctuation fragments are not destinations.
+        const host = match[1].replace(/^["'\x60+({]+/, "").replace(/["'\x60,;)\]}]+$/g, "").toLowerCase();
+        if (host) {
+            hosts.add(host);
+        }
     }
-    for (const match of text.matchAll(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)) {
+    // A quoted address is usually a data value, for example a DNS record content or a comparison,
+    // not a destination. URLs are still read from the original text so quoted URLs stay covered.
+    for (const match of blankQuoted(text).matchAll(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)) {
         hosts.add(match[0]);
     }
     return [...hosts];
+}
+
+/**
+ * True for a loopback address. Used only by the history path, where a whole dotenv upload to the
+ * local machine is informational rather than remote exfiltration.
+ *
+ * @param {string} host Host with port or brackets removed
+ * @returns {boolean} Whether the host is loopback
+ */
+export function isLoopbackHost(host) {
+    const value = String(host ?? "").toLowerCase().replace(/^\[|\]$/g, "").replace(/:\d+$/, "");
+    return value === "::1" || /^127\./.test(value);
+}
+
+/**
+ * True when the command uploads a whole dotenv file and every destination is loopback. Such a
+ * command is the guard's own proof run, not an outbound exfiltration.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the upload only targets loopback
+ */
+export function isWholeDotenvUploadToLoopback(text) {
+    const source = String(text ?? "");
+    // collectMatches copies the regex, so a global DOTENV lastIndex cannot affect this check.
+    if (!DOTENV_UPLOAD.test(source) || collectMatches(DOTENV, source).length === 0) {
+        return false;
+    }
+    const hosts = extractHosts(source);
+    return hosts.length > 0 && hosts.every(isLoopbackHost);
+}
+
+/**
+ * Registrable domain (the last two labels) of a host, or null for an address or single label. The
+ * first label of a tailscale or internal name is already covered by isInternalHost.
+ *
+ * @param {string} host Host with port or brackets removed
+ * @returns {string|null} Lowercase registrable domain
+ */
+export function registrableDomain(host) {
+    const value = String(host ?? "").toLowerCase().replace(/^\[|\]$/g, "").replace(/:\d+$/, "");
+    if (!value || value.includes(":") || /^\d+\.\d+\.\d+\.\d+$/.test(value)) {
+        return null;
+    }
+    const labels = value.split(".").filter(Boolean);
+    return labels.length < 2 ? null : labels.slice(-2).join(".");
+}
+
+/** Generic fragments that never identify a service when they are the only name token. */
+const GENERIC_NAME_TOKENS = new Set([
+    "API", "TOKEN", "KEY", "SECRET", "PASSWORD", "PASS", "URL", "HOST", "ADDR",
+    "APP", "SERVER", "CLIENT", "ID", "USER", "USERNAME", "AUTH", "ACCESS", "VALUE"
+]);
+
+/** Short variable prefixes that stand for a longer issuer name. */
+const NAME_ALIASES = { GH: "GITHUB", CF: "CLOUDFLARE" };
+
+/**
+ * Uppercase credential variable names referenced by a command. Covers dotenv grep assignments,
+ * PowerShell key filters, process and OS environment reads, dollar references and plain assignments.
+ *
+ * @param {string} text Command text
+ * @returns {string[]} Distinct uppercase names
+ */
+export function credentialVariableNames(text) {
+    const source = String(text ?? "");
+    const names = new Set();
+    const add = (name) => {
+        if (name && /^[A-Z][A-Z0-9_]*$/.test(name)) {
+            names.add(name);
+        }
+    };
+
+    for (const match of source.matchAll(/grep\s+['"]?\^?([A-Z][A-Z0-9_]*)\s*=/gi)) {
+        add(match[1]);
+    }
+    for (const match of source.matchAll(/['"]\^?([A-Z][A-Z0-9_]*)=(?:\(\.\*\))?['"]?/gi)) {
+        add(match[1]);
+    }
+    for (const match of source.matchAll(/(?:process\.env|os\.environ|os\.getenv|env\.get|environment\.get)\s*[\[.(]?['"]?([A-Z][A-Z0-9_]+)/gi)) {
+        add(match[1]);
+    }
+    for (const match of source.matchAll(/\$env:([A-Z][A-Z0-9_]+)/gi)) {
+        add(match[1]);
+    }
+    for (const match of source.matchAll(/\$?\b([A-Z][A-Z0-9_]{1,})\b/g)) {
+        add(match[1]);
+    }
+    return [...names];
+}
+
+/**
+ * True when interpreter code reads a dotenv file and then uses a stored URL or host key from it.
+ * The destination belongs to the same credential store and is therefore a paired destination.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the code uses a URL from the dotenv it reads
+ */
+export function isCodePairedDestination(text) {
+    const source = String(text ?? "");
+    if (/\b[A-Z_][A-Z0-9_]*\s*=\s*['"]?[a-z][a-z0-9+.-]*:\/\//i.test(source)) {
+        return false;
+    }
+    const readsDotenv = /open\s*\(\s*['"][^'"]*\.env|readFileSync\s*\([^)]*\.env|--env-file|Get-Content[^\n]*\.env|\.\s+[^\s]*\.env\b/i.test(source);
+    if (!readsDotenv) {
+        return false;
+    }
+    const storedKey = /^(?:[A-Z_][A-Z0-9_]*_(?:URL|ADDR|HOST)|URL|ADDR|HOST)$/i;
+    const stores = /(?:env|environ|cfg|config|secrets|settings|values|data|os\.environ|process\.env)/i;
+    const keyAccess = new RegExp(`${stores.source}\\s*(?:\\.get\\s*)?[\\[(]\\s*['\"]([A-Z_][A-Z0-9_]*)['\"]`, "gi");
+    for (const match of source.matchAll(keyAccess)) {
+        if (storedKey.test(match[1])) {
+            return true;
+        }
+    }
+    for (const match of source.matchAll(/\bprocess\.env\.([A-Z_][A-Z0-9_]*)/gi)) {
+        if (storedKey.test(match[1])) {
+            return true;
+        }
+    }
+    return /\$\{?[A-Z_][A-Z0-9_]*(?:_URL|_ADDR|_HOST)(?:\})?/i.test(source);
+}
+
+/**
+ * True when an encoder expression has a secret source inside its input. Base64 of a public fetch
+ * is data, not obfuscation of an exfiltration.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether an encoder input reads a secret
+ */
+export function encoderInputHasSecret(text) {
+    const source = String(text ?? "");
+    const secret = /\b(?:process\.env|os\.environ|os\.getenv|Get-Content|open\s*\()|\.env\b|\$\(\s*(?:grep|cat)\b|\b(?:grep|cat)\s+[^|\n]*\.env\b/i;
+    const fragments = source.match(/[^\n;]{0,200}?(?:base64|b64encode|toString\(\s*['"]base64|xxd|gzip)[^\n;]{0,200}/gi) ?? [];
+    return fragments.some((fragment) => secret.test(fragment));
+}
+
+/**
+ * Variable names assigned from a dotenv lookup in one part of a command. Their later dollar
+ * references are secret uses even when the reference itself contains no dotenv path.
+ *
+ * @param {string} text Command text
+ * @returns {string[]} Uppercase variable names
+ */
+export function dotenvSourcedVariableNames(text) {
+    const source = String(text ?? "");
+    const names = new Set();
+    for (const match of source.matchAll(/\b([A-Z][A-Z0-9_]*)\s*=\s*\$\(\s*(?:cat|grep)[^)]*\.env[^)]*\)/gi)) {
+        names.add(match[1]);
+    }
+    for (const match of source.matchAll(/grep\s+['"]?\^?([A-Z][A-Z0-9_]*)\s*=/gi)) {
+        names.add(match[1]);
+    }
+    return [...names];
+}
+
+/**
+ * Splits a shell command into quote aware segments. A separator inside quotes is data, so a git
+ * clone URL or a JSON value is never broken apart. Newlines inside a heredoc become segments too.
+ *
+ * @param {string} text Command text
+ * @returns {string[]} Nonempty trimmed segments
+ */
+export function splitCommandSegments(text) {
+    const parts = [];
+    let current = "";
+    let quote = null;
+    let escaped = false;
+    for (const char of String(text ?? "")) {
+        if (escaped) {
+            current += char;
+            escaped = false;
+            continue;
+        }
+        if (char === "\\" && quote !== "'") {
+            current += char;
+            escaped = true;
+            continue;
+        }
+        if (quote) {
+            current += char;
+            if (char === quote) {
+                quote = null;
+            }
+            continue;
+        }
+        if (char === "'" || char === '"' || char === "`") {
+            quote = char;
+            current += char;
+            continue;
+        }
+        if (char === "\n" || char === ";" || char === "|" || char === "&") {
+            parts.push(current);
+            current = "";
+            continue;
+        }
+        current += char;
+    }
+    parts.push(current);
+    return parts.map((part) => part.trim()).filter(Boolean);
+}
+
+/** Login tools that can carry a dotenv password or key to a host. */
+export const LOGIN_TOOL = new RegExp(
+    COMMAND_START + String.raw`(?:ssh|scp|sftp|sshpass|rsync\b[^\n]{0,80}?\b-e\s+ssh)\b`,
+    "i"
+);
+
+/**
+ * @param {string} text Command text
+ * @returns {boolean} Whether the command runs a login tool in command position
+ */
+export function isLoginToolCommand(text) {
+    return LOGIN_TOOL.test(String(text ?? ""));
 }

@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { defaultConfig } from "../config.mjs";
 import { scanText } from "../engine.mjs";
 import { makeContext } from "../log.mjs";
-import { extractHosts } from "../patterns.mjs";
+import { extractHosts, isWholeDotenvUploadToLoopback } from "../patterns.mjs";
 import { classifyTool } from "../toolkind.mjs";
 import { extractText } from "../util.mjs";
 import { antigravityFileEvents, antigravityJsonlEvents, emitGenericTool } from "./agents/antigravity.mjs";
@@ -84,7 +84,7 @@ function repoIdentity(path) {
  * @param {string} text Text to inspect
  * @param {object} ctx History context
  * @param {object} [meta] Source metadata with the originating tool and agent
- * @returns {{ denied: boolean, detectorIds: string[], evidence: string, remote: boolean }} Summary
+ * @returns {{ denied: boolean, detectorIds: string[], evidence: string, remote: boolean, severity?: string, note?: string }} Summary
  */
 function analyze(text, ctx, meta = {}) {
     const detections = scanText(text, {
@@ -96,12 +96,17 @@ function analyze(text, ctx, meta = {}) {
     const denied = detections.some((finding) => finding.severity === "high");
     const hosts = extractHosts(text);
     const remote = hosts.some((host) => !isLocalHost(host));
+    // A whole dotenv upload to loopback is the guard's own proof run. The live guard still denies
+    // it, but history reports it as low with a note instead of a critical remote exfiltration.
+    const loopbackUpload = isWholeDotenvUploadToLoopback(text);
 
     return {
         denied,
         detectorIds: [...new Set(detections.map((finding) => finding.id))],
         evidence: snippet(text, 400),
-        remote
+        remote,
+        severity: loopbackUpload ? "low" : undefined,
+        note: loopbackUpload ? "loopback destination" : undefined
     };
 }
 
@@ -157,7 +162,7 @@ function collectExfil(text, meta, sink) {
 
     const finding = makeFinding({
         kind: "exfil_executed",
-        severity: meta.executed ? "critical" : "high",
+        severity: result.severity ?? (meta.executed ? "critical" : "high"),
         title: result.remote
             ? "Tool call or shell line exfiltrates to a remote host"
             : "Tool call or shell line matches a secret exfiltration detector",
@@ -167,6 +172,7 @@ function collectExfil(text, meta, sink) {
         time: meta.time ?? null,
         evidence: result.evidence,
         remote: result.remote,
+        note: result.note ?? null,
         executed: meta.executed === true,
         detectorIds: result.detectorIds
     });
@@ -418,7 +424,10 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) 
     for (const [key, finding] of toolUses) {
         if (results.has(key)) {
             finding.executed = true;
-            finding.severity = "critical";
+            // A downgraded loopback proof run stays low even when the transcript shows it ran.
+            if (finding.severity !== "low") {
+                finding.severity = "critical";
+            }
             for (const occurrence of finding.occurrences) {
                 occurrence.executed = true;
             }

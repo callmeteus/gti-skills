@@ -48,7 +48,9 @@ const ISSUER_HOSTS = {
     stripe: ["api.stripe.com"],
     aws: ["amazonaws.com"],
     google: ["googleapis.com"],
-    slack: ["slack.com"]
+    slack: ["slack.com"],
+    cloudflare: ["cloudflare.com"],
+    pluggy: ["pluggy.ai"]
 };
 
 function hostMatches(host, entry) {
@@ -61,15 +63,66 @@ function hostMatches(host, entry) {
  * explicitly allowlisted. With no host present, the credential is treated as suspicious.
  */
 function credentialGoesToIssuer(name, hosts, allowHosts) {
-    const issuer = ISSUER_HOSTS[name];
+    // A URL password at an issuer host is the credential used at its own service. The literal name
+    // is generic, so check it against every known issuer instead of one fixed entry.
+    const issuer = name === "url-password" ? Object.values(ISSUER_HOSTS).flat() : ISSUER_HOSTS[name];
     if (!issuer || hosts.length === 0) {
         return false;
     }
 
     return hosts.every((host) =>
+        P.isInternalHost(host) ||
         issuer.some((entry) => hostMatches(host, entry)) ||
         allowHosts.some((entry) => hostMatches(host, entry))
     );
+}
+
+/**
+ * Meaningful tokens of a credential variable name. Generic fragments and tokens shorter than three
+ * characters never match on their own; short aliases expand to their full issuer name.
+ *
+ * @param {string} name Uppercase variable name
+ * @returns {string[]} Lowercase tokens
+ */
+function nameTokens(name) {
+    const value = String(name ?? "").toUpperCase();
+    const aliases = [];
+    for (const [alias, full] of [["GH", "GITHUB"], ["CF", "CLOUDFLARE"]]) {
+        if (value === alias || value.startsWith(alias)) {
+            aliases.push(full);
+        }
+    }
+    const GENERIC = new Set([
+        "API", "TOKEN", "KEY", "SECRET", "PASSWORD", "PASS", "URL", "HOST", "ADDR",
+        "APP", "SERVER", "CLIENT", "ID", "USER", "USERNAME", "AUTH", "ACCESS", "VALUE"
+    ]);
+    return value.split("_").concat(aliases)
+        .map((part) => part.toLowerCase())
+        .filter((part) => part.length >= 3 && !GENERIC.has(part.toUpperCase()));
+}
+
+/**
+ * True when a credential variable name shares a meaningful token with the host's registrable
+ * domain or with a known issuer. A subdomain label of an attacker domain or a path never matches.
+ *
+ * @param {string} name Uppercase variable name
+ * @param {string} host Host name
+ * @returns {boolean} Whether the name is paired with the host
+ */
+function nameMatchesHost(name, host) {
+    const tokens = nameTokens(name);
+    if (tokens.length === 0) {
+        return false;
+    }
+    const domain = P.registrableDomain(host);
+    const labels = domain ? domain.split(".") : [];
+    if (tokens.some((token) => labels.some((label) => label.includes(token)))) {
+        return true;
+    }
+    return tokens.some((token) => {
+        const issuer = ISSUER_HOSTS[token];
+        return issuer && issuer.some((entry) => hostMatches(host, entry));
+    });
 }
 
 /**
@@ -91,6 +144,20 @@ function ownServiceContext(text, state) {
     if (hosts.length === 0 && P.hasInternalDestination(text)) {
         return true;
     }
+    // Interpreter code that reads a dotenv file and calls a URL key from the same file uses a
+    // destination paired with the credential store.
+    if (P.isCodePairedDestination(text)) {
+        return true;
+    }
+
+    // Paired by name: a credential variable sent to a host whose registrable domain or issuer
+    // shares a meaningful token with the variable name is credential use, not exfiltration. A
+    // value fetched from an internal service and then used at its issuer is the same shape.
+    const names = P.credentialVariableNames(text);
+    if (hosts.length > 0 && names.length > 0 && hosts.every((host) =>
+        P.isInternalHost(host) || names.some((name) => nameMatchesHost(name, host)))) {
+        return true;
+    }
 
     const allowHosts = state.config?.allowHosts ?? [];
     const credentials = credentialMatchesNamed(text);
@@ -98,15 +165,47 @@ function ownServiceContext(text, state) {
         credentials.some((entry) => credentialGoesToIssuer(entry.name, [host], allowHosts)))) {
         return true;
     }
-    // A token variable that belongs to a known issuer, sent to that issuer's own host, is the
-    // credential's service even when the literal itself was loaded from a dotenv file.
-    const issuerVariable = /\b(?:GITHUB|GH|OPENAI|ANTHROPIC|STRIPE|AWS|GOOGLE|SLACK)_(?:TOKEN|KEY|SECRET|PAT)\b/i.test(text);
-    const issuerHosts = Object.values(ISSUER_HOSTS).flat();
-    if (issuerVariable && hosts.length > 0 && hosts.every((host) =>
-        issuerHosts.some((entry) => hostMatches(host, entry)))) {
-        return true;
+
+    // A mixed command can contain an independent public fetch and a separate credential use at an
+    // internal or paired host. Judge each quote aware segment by the hosts in that segment only.
+    const segments = P.splitCommandSegments(text);
+    if (segments.length > 1) {
+        const sourcedNames = P.dotenvSourcedVariableNames(text);
+        // An assignment can read a secret in one segment and use it in a later one. Only segments
+        // that both hold a secret and name a destination can show where the secret is sent.
+        const routed = segments.filter((segment) => segmentHasSecret(segment, state, sourcedNames))
+            .map((segment) => ({ segment, hosts: P.extractHosts(segment) }))
+            .filter((entry) => entry.hosts.length > 0);
+        if (routed.length > 0 && routed.every(({ segment, hosts }) => {
+            const literals = credentialMatchesNamed(segment);
+            return hosts.every((host) => P.isInternalHost(host) ||
+                names.some((name) => nameMatchesHost(name, host)) ||
+                literals.some((entry) => credentialGoesToIssuer(entry.name, [host], allowHosts)));
+        })) {
+            return true;
+        }
     }
     return false;
+}
+
+/**
+ * True when one quote aware segment of a command reads or holds a secret. Used to associate a
+ * secret with the destination in its own segment instead of every host named in the whole command.
+ *
+ * @param {string} segment Command segment
+ * @param {object} state Detector state
+ * @param {string[]} sourcedNames Variables assigned from a dotenv lookup in the whole command
+ * @returns {boolean} Whether the segment contains a secret source
+ */
+function segmentHasSecret(segment, state, sourcedNames) {
+    const variableUse = sourcedNames.some((name) =>
+        new RegExp(`\\$(?:\\{)?${name}(?:\\})?\\b`).test(segment));
+    return variableUse ||
+        P.collectMatches(P.DOTENV, segment).length > 0 ||
+        credentialMatchesNamed(segment).length > 0 ||
+        secretPathMatches(segment).length > 0 ||
+        envDumpMatches(segment).length > 0 ||
+        substitutionSources(segment, state).length > 0;
 }
 
 /**
@@ -148,7 +247,8 @@ function encoderMatches(text) {
 }
 
 function dnsMatches(text) {
-    return P.collectMatches(P.DNS_TOOL, text);
+    // A DNS tool named inside a quoted argument, such as a grep pattern ending in |HOST, is data.
+    return P.collectMatches(P.DNS_TOOL, P.blankQuoted(text));
 }
 
 /**
@@ -283,7 +383,10 @@ export const DETECTORS = [
                 return [finding(this.id, this.severity, this.title, [...dns, ...substitution.slice(0, 1)])];
             }
 
-            if (state.network && encoded.length && sources.length) {
+            // In interpreter code, encoding a public fetch is data. The encoder input must itself
+            // read a secret before this detector reports obfuscation.
+            const encoderInput = P.isInterpreterCode(text) ? P.encoderInputHasSecret(text) : true;
+            if (state.network && encoded.length && sources.length && encoderInput) {
                 return [networkFinding(this, text, state, [...encoded, ...sources])];
             }
 
@@ -300,6 +403,26 @@ export const DETECTORS = [
             }
             const matches = P.collectMatches(P.REMOTE_SCRIPT, text);
             return matches.length ? [finding(this.id, this.severity, this.title, matches)] : [];
+        }
+    },
+    {
+        id: "login_tool_credential_to_public_host",
+        severity: "medium",
+        title: "Uses a dotenv credential with a login tool on a non internal host",
+        test(text, state) {
+            if (!P.isLoginToolCommand(text)) {
+                return [];
+            }
+            const sourced = P.DOTENV_KEY_USE.test(text) || substitutionSources(text, state).length > 0;
+            if (!sourced) {
+                return [];
+            }
+            const names = P.credentialVariableNames(text);
+            const hosts = (state.hosts ?? []).filter((host) => !P.isInternalHost(host));
+            if (hosts.length === 0 || hosts.every((host) => names.some((name) => nameMatchesHost(name, host)))) {
+                return [];
+            }
+            return [finding(this.id, this.severity, this.title, hosts.slice(0, 1))];
         }
     },
     {
