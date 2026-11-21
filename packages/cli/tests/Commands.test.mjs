@@ -27,7 +27,7 @@ function collect() {
 
 describe("repository state", () => {
     it("has every skill and every skill validates", () => {
-        assert.deepEqual(discoverSkills().map((skill) => skill.id), ["artdirector", "better-tests", "fast-ci", "frontend-design-review", "gestures", "gti", "improve-codebase-architecture", "infra-expert", "llm-fine-tuning", "maestro", "security-audit", "seo-growth", "unslop-interface", "untangle-codebase", "ux-psychology-review", "video-editor", "video-to-markdown", "video-to-skill", "web-performance-audit", "weight-space-programming", "x-research"]);
+        assert.deepEqual(discoverSkills().map((skill) => skill.id), ["artdirector", "better-tests", "fast-ci", "frontend-design-review", "gestures", "gti", "improve-codebase-architecture", "infra-expert", "leak-guard", "llm-fine-tuning", "maestro", "security-audit", "seo-growth", "unslop-interface", "untangle-codebase", "ux-psychology-review", "video-editor", "video-to-markdown", "video-to-skill", "web-performance-audit", "weight-space-programming", "x-research"]);
         const io = collect();
         assert.equal(runValidate({}, io), 0, io.errors.join("\n"));
     });
@@ -89,11 +89,13 @@ describe("install", () => {
 
     it("writes the package pointers for engine skills and keeps scripts importable", () => {
         const project = mkdtempSync(join(tmpdir(), "gti-install-"));
-        assert.equal(runInstall({ harness: "kiro", skill: "artdirector,video-editor,video-to-skill" }, collect(), { cwd: project }), 0);
+        assert.equal(runInstall({ harness: "kiro", skill: "artdirector,video-editor,video-to-skill,leak-guard" }, collect(), { cwd: project }), 0);
         const artPointer = readFileSync(join(project, ".kiro", "skills", "artdirector", "scripts", "artdirector.root"), "utf8");
         assert.ok(artPointer.replace(/\\/g, "/").endsWith("packages/artdirector"));
         const videoPointer = readFileSync(join(project, ".kiro", "skills", "video-editor", "scripts", "videoeditor.root"), "utf8");
         assert.ok(videoPointer.replace(/\\/g, "/").endsWith("packages/videoeditor"));
+        const leakPointer = readFileSync(join(project, ".kiro", "skills", "leak-guard", "scripts", "leakguard.root"), "utf8");
+        assert.ok(leakPointer.replace(/\\/g, "/").endsWith("packages/leakguard"));
         assert.ok(existsSync(join(project, ".kiro", "skills", "video-to-skill", "scripts", "lib", "common.py")));
     });
 

@@ -1,0 +1,23 @@
+{
+    "id": "leak-guard",
+    "displayName": "Leak Guard",
+    "packs": [
+        "coding",
+        "infra"
+    ],
+    "package": "packages/leakguard",
+    "rootPointer": "scripts/leakguard.root",
+    "harnessNotes": {
+        "*": "This skill drives packages/leakguard. Read scripts/leakguard.root for the absolute package path; if you copied the skill folder by hand without the install command, locate packages/leakguard in the gti-skills repository and use its bin/leakguard.mjs and bin/leakguard-hook.mjs paths.",
+        "cursor": "The guard installs as a command hook (preToolUse) in .cursor/hooks.json or ~/.cursor/hooks.json.",
+        "claude": "The guard installs as a command hook (PreToolUse) in .claude/settings.json or ~/.claude/settings.json.",
+        "codex": "The guard installs as a command hook (PreToolUse) in .codex/hooks.json or ~/.codex/hooks.json. Hooks must be reviewed and trusted in /hooks before they run.",
+        "antigravity": "The guard installs as a command hook (PreToolUse) in .agents/hooks.json or ~/.gemini/config/hooks.json.",
+        "copilot": "The guard installs as a command hook (preToolUse) in a dedicated .github/hooks/leakguard.json or ~/.copilot/hooks/leakguard.json.",
+        "kiro": "The guard installs as a command hook (preToolUse) in .kiro/hooks/leakguard.json or ~/.kiro/hooks/leakguard.json.",
+        "opencode": "The guard installs as an in-process plugin shim in .opencode/plugins/leakguard.mjs, not as a command hook; there is no JSON on stdin.",
+        "kilo": "The guard installs as an in-process plugin shim in .kilo/plugin/leakguard.mjs, not as a command hook; there is no JSON on stdin.",
+        "cline": "No command hook is available; register plugins/cline/leakguard.mjs in the session's plugin config. Leak scanning still works.",
+        "muse": "Unsupported: no documented pre-tool hook exists. This skill can only scan for earlier leaks here; do not attempt to install a guard into Muse."
+    }
+}

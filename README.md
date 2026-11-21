@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-21-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-22-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -65,6 +65,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Fast CI** | coding, infra | Makes CI as fast as possible without letting it lie: audits the last 150 runs on any CI (GitHub Actions, Forgejo, Gitea, Woodpecker, GitLab, Jenkins, Kubernetes and K3s runners, or manual scripts) split into waiting, setup, and running, then lands small measured changes (warm runners, baked images, seeded caches, fast tools, time-balanced shards, proven test selection, hooks, budgets) until PRs get results in under a minute while the full suite still gates main. | Python 3.8+ | [README](skills/fast-ci/README.md) |
+| **Leak Guard** | coding, infra | Installs, checks, tunes, and removes a local pre-tool guard that blocks secret exfiltration across coding agents, then scans transcripts, shell history, git history, guard events, and hidden instructions for leaks that already happened, with a redacted report and a rotation checklist. | Node 18+ | [README](skills/leak-guard/README.md) |
 | **SEO Growth** | coding, research | Runs agency-style SEO inside the codebase: a live technical check (robots.txt, sitemap, soft 404s, redirects, canonicals, schema, and what Googlebot and AI crawlers actually receive), on-page fixes, Search Console mining for long questions, page-2 queries, and low CTR, buyer pages (comparison, alternatives, FAQ, clusters), and AI search visibility. | Python 3.8+ | [README](skills/seo-growth/README.md) |
 | **Security Audit** | coding | Defensive, source-first security review in three modes (guidance, diff review, full audit) that maps trust boundaries into a coverage ledger, hunts with isolated agents, has fresh agents try to disprove every candidate, and writes validated findings, reports, and SARIF. Adapted from Cloudflare's skill. | Node 18+, Git; a sandbox to run target code | [README](skills/security-audit/README.md) |
 | **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
@@ -80,8 +81,8 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
-| `infra` | Infrastructure as code, cloud accounts, and observability as code | Fast CI, Infra Expert |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `infra` | Infrastructure as code, cloud accounts, and observability as code | Fast CI, Infra Expert, Leak Guard |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | LLM Fine Tuning, SEO Growth, Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | Video Editor, X Research |
@@ -208,7 +209,7 @@ Copy-Item -Recurse skills\video-to-markdown C:\path\to\your\project\.claude\skil
 
 Each skill carries a short guide per agent in `skills/<skill-id>/harnesses/<agent-id>/GUIDE.md`: install paths, how to invoke the skill, and how to confirm it loaded. The skill itself is never duplicated per agent.
 
-> **Art Director and Video Editor need their engines.** They drive the packages in `packages/artdirector` and `packages/videoeditor`. Build each once (see the [Art Director installation](skills/artdirector/README.md#installation) and the [Video Editor installation](skills/video-editor/README.md#installation)) and use the `install` command, which records where each package lives.
+> **Art Director, Video Editor, and Leak Guard need their engines.** They drive the packages in `packages/artdirector`, `packages/videoeditor`, and `packages/leakguard`. Build the first two once (see the [Art Director installation](skills/artdirector/README.md#installation) and the [Video Editor installation](skills/video-editor/README.md#installation)); Leak Guard needs only Node 18+ and no build. Use the `install` command, which records where each package lives.
 
 ## Supported Agents
 
@@ -252,6 +253,7 @@ Notes:
 | Security Audit | 18+ | No | No | Optional: Cloudflare Radar Zero Wire page; target code runs only in a sandbox with no network |
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
 | Fast CI | No | 3.8+ | No | The CI server API, `gh`, or `kubectl` for the audit |
+| Leak Guard | 18+ | No | No | None; the guard and the history scanner are local and read only |
 | SEO Growth | No | 3.8+ | No | Target site for the live check |
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | LLM Fine Tuning | No | 3.9+; recipe 3.11+ with tinker-cookbook | No | Inference endpoint for probes; recipe: Tinker, Hugging Face, optional W&B and Modal |
@@ -395,6 +397,7 @@ gti-skills/
 │   ├── gti/
 │   ├── improve-codebase-architecture/
 │   ├── infra-expert/
+│   ├── leak-guard/
 │   ├── llm-fine-tuning/
 │   ├── maestro/
 │   ├── security-audit/
@@ -413,6 +416,7 @@ gti-skills/
 │   ├── artdirector/           # Engine behind the Art Director skill
 │   ├── videoeditor/           # Engine behind the Video Editor skill
 │   ├── lintapple/             # UI linter shared by Frontend Design Review and Unslop Interface
+│   ├── leakguard/             # Pre-tool guard engine, per-agent hooks, and leak history scanner
 │   └── python/
 │       ├── shared/            # Scripts shared by the video skills
 │       └── twitter-mcp/       # MCP server behind the X Research skill
@@ -466,6 +470,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [packages/python/twitter-mcp/README.md](packages/python/twitter-mcp/README.md) | The `twitter` MCP server used by the X Research skill |
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
 | [packages/lintapple/README.md](packages/lintapple/README.md) | Vendored lintapple UI linter and the runner shared by the UI skills |
+| [packages/leakguard/README.md](packages/leakguard/README.md) | Leakguard engine, per-agent hooks, CLI flags, and the history scanner |
 | [packages/artdirector/ARCHITECTURE.md](packages/artdirector/ARCHITECTURE.md) | Art Director design decisions and limitations |
 | [packages/videoeditor/README.md](packages/videoeditor/README.md) | Video Editor engine source and scripts |
 | [packages/videoeditor/ARCHITECTURE.md](packages/videoeditor/ARCHITECTURE.md) | Video Editor design decisions and limitations |
@@ -491,6 +496,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/maestro/README.md](skills/maestro/README.md) | Orchestrating tasks across cheap workers with review gates and reusable chats |
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
 | [skills/infra-expert/README.md](skills/infra-expert/README.md) | Reviewing and untangling infrastructure code and AWS accounts |
+| [skills/leak-guard/README.md](skills/leak-guard/README.md) | Installing the pre-tool guard, scanning local history, and rotating exposed credentials |
 
 ## About GTI
 
@@ -523,5 +529,6 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
 | X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
 | Video Editor | Not declared |
+| Leak Guard | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.

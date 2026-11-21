@@ -21,6 +21,7 @@ gti-skills/
 │   ├── cli/                # Node: list, validate, build, check, install
 │   ├── artdirector/        # Node and TypeScript: the engine behind the Art Director skill
 │   ├── lintapple/          # Node and TypeScript: UI linter shared by Frontend Design Review and Unslop Interface
+│   ├── leakguard/          # Node: pre-tool guard engine, per-agent hooks, and leak history scanner
 │   └── python/
 │       ├── shared/         # Python scripts shared by several skills
 │       └── twitter-mcp/    # Python: the MCP server behind the X Research skill
@@ -150,6 +151,7 @@ Tests:
 |---------|--------|
 | `npm test` | CLI tests and every Python test |
 | `cd packages/artdirector && npm test` | Art Director engine |
+| `cd packages/leakguard && npm test` | Leakguard engine, detectors, adapters, installer, redaction, and history scanner |
 | `cd packages/lintapple && npm test` | lintapple linter, including the ported upstream pull requests; needs `npx playwright install chromium` |
 
 ## Language
@@ -192,6 +194,7 @@ Current skills:
 | `llm-fine-tuning` | LLM Fine Tuning |
 | `video-editor` | Video Editor |
 | `fast-ci` | Fast CI |
+| `leak-guard` | Leak Guard |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 
