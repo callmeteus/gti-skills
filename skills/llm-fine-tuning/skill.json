@@ -1,0 +1,8 @@
+{
+    "id": "llm-fine-tuning",
+    "displayName": "LLM Fine Tuning",
+    "packs": [
+        "coding",
+        "research"
+    ]
+}

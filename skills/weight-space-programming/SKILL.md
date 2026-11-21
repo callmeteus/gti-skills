@@ -11,8 +11,8 @@ description: >-
   held-out evaluation. Use when the user asks to inspect, interpret, edit,
   patch, steer, or hand-write model weights, to find what a checkpoint was
   trained on, to fix a policy or LLM failure by editing weights, or mentions
-  weight-space programming. Do not use for ordinary training or fine-tuning,
-  hyperparameter tuning, or prompt engineering.
+  weight-space programming. Do not use for ordinary training or fine-tuning
+  (use llm-fine-tuning), hyperparameter tuning, or prompt engineering.
 compatibility: >-
   Python 3.9+ with numpy. Optional: PyTorch for .pt/.pth checkpoints and large
   models, safetensors is read and written without extra packages.
@@ -49,7 +49,7 @@ Everything this skill generates (reports, notes, logs, downloads, renders, measu
 - **Fix:** a trained network fails in a specific, repeatable way (a policy stuck in a local minimum, an LLM that loops or refuses) and the user wants a weight edit instead of retraining.
 - **Write:** the user wants a small network built by hand from a specification (rules, source code of an environment, an input and output layout) with no training.
 
-Do not use this skill to train, fine-tune, distill, or tune hyperparameters, or to change behavior through prompts.
+Do not use this skill to train, fine-tune, distill, or tune hyperparameters, or to change behavior through prompts. For training and fine-tuning, use `llm-fine-tuning`.
 
 ## The idea
 
