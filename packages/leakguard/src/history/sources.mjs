@@ -62,15 +62,17 @@ export function expand(path, ctx) {
 export function sourceSpecs(ctx) {
     const stateDir = ctx.stateDir.replace(/\\/g, "/");
 
+    const jsonl = /\.jsonl$/i;
+
     return {
         transcripts: [
-            { id: "claude", root: expand("~/.claude/projects", ctx), recursive: true },
-            { id: "codex", root: expand("~/.codex/sessions", ctx), recursive: true },
-            { id: "opencode", root: expand("~/.local/share/opencode", ctx), recursive: true },
-            { id: "kilo", root: expand("~/.local/share/kilo", ctx), recursive: true },
-            { id: "opencode-windows", root: expand("%APPDATA%/opencode", ctx), recursive: true },
-            { id: "kilo-windows", root: expand("%APPDATA%/kilo", ctx), recursive: true },
-            { id: "copilot", root: expand("~/.copilot/session-state", ctx), recursive: true }
+            { id: "claude", agent: "claude", root: expand("~/.claude/projects", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "codex", agent: "codex", root: expand("~/.codex/sessions", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "opencode", agent: "opencode", root: expand("~/.local/share/opencode", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "kilo", agent: "kilo", root: expand("~/.local/share/kilo", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "opencode-windows", agent: "opencode", root: expand("%APPDATA%/opencode", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "kilo-windows", agent: "kilo", root: expand("%APPDATA%/kilo", ctx), recursive: true, match: jsonl, noSizeCap: true },
+            { id: "copilot", agent: "copilot", root: expand("~/.copilot/session-state", ctx), recursive: true, match: jsonl, noSizeCap: true }
         ],
         shell: [
             { id: "bash", root: expand("~/.bash_history", ctx), recursive: false },
@@ -87,10 +89,64 @@ export function sourceSpecs(ctx) {
 }
 
 /**
- * Agents with no documented local history folder that this scanner reads. A scan lists them as
- * not covered instead of guessing at a location.
+ * Agents with no reader in this package. Muse has no documented local chat store, so it stays
+ * uncovered. Every other supported agent has a reader, even when no store is present on this
+ * machine; the coverage section records which stores were actually found.
  */
-export const UNCOVERED_TRANSCRIPTS = ["cursor", "kiro", "antigravity", "cline", "muse"];
+export const UNCOVERED_TRANSCRIPTS = ["muse"];
+
+/**
+ * SQLite and flat file chat stores for agents that do not use JSONL transcripts. `format` selects
+ * the reader, `agent` selects the extractor, and `match` filters files in a recursive root.
+ * Kiro stores are marked unverified in the report because they are not present on this machine.
+ *
+ * @param {{ home: string, env: NodeJS.ProcessEnv, stateDir: string }} ctx Context
+ * @returns {object[]} Store specs
+ */
+export function storeSpecs(ctx) {
+    const sqlite = /(?:\.db|\.vscdb)$/i;
+    const jsonl = /\.jsonl$/i;
+    const json = /\.json$/i;
+    const taskJson = /(?:api_conversation_history|ui_messages)\.json$/i;
+
+    return [
+        { id: "opencode-db", agent: "opencode", format: "sqlite", noSizeCap: true, root: expand("~/.local/share/opencode/opencode.db", ctx), recursive: false },
+        { id: "opencode-db-windows", agent: "opencode", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/opencode/opencode.db", ctx), recursive: false },
+        { id: "kilo-db", agent: "kilo", format: "sqlite", noSizeCap: true, root: expand("~/.local/share/kilo/kilo.db", ctx), recursive: false },
+        { id: "kilo-rc-db", agent: "kilo", format: "sqlite", noSizeCap: true, root: expand("~/.local/share/kilo/kilo-rc.db", ctx), recursive: false },
+        { id: "kilo-db-windows", agent: "kilo", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/kilo/kilo.db", ctx), recursive: false },
+
+        { id: "cursor-state", agent: "cursor", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/Cursor/User/globalStorage/state.vscdb", ctx), recursive: false },
+        { id: "cursor-search", agent: "cursor", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/Cursor/User/globalStorage/conversation-search.db", ctx), recursive: false },
+        { id: "cursor-workspace", agent: "cursor", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/Cursor/User/workspaceStorage", ctx), recursive: true, match: /state\.vscdb$/i },
+        { id: "cursor-cli", agent: "cursor", format: "sqlite", noSizeCap: true, root: expand("~/.cursor/chats", ctx), recursive: true, match: sqlite },
+        { id: "cursor-cli-json", agent: "cursor", format: "json", root: expand("~/.cursor/chats", ctx), recursive: true, match: json },
+        { id: "cursor-projects", agent: "cursor", format: "jsonl", root: expand("~/.cursor/projects", ctx), recursive: true, match: jsonl, noSizeCap: true },
+        { id: "cursor-project-db", agent: "cursor", format: "sqlite", noSizeCap: true, root: expand("~/.cursor/projects", ctx), recursive: true, match: sqlite },
+
+        { id: "cline-sessions-db", agent: "cline", format: "sqlite", noSizeCap: true, root: expand("~/.cline/data/db/sessions.db", ctx), recursive: false },
+        { id: "cline-tasks-db", agent: "cline", format: "sqlite", noSizeCap: true, root: expand("~/.cline/data/db/tasks.db", ctx), recursive: false },
+        { id: "cline-search-db", agent: "cline", format: "sqlite", noSizeCap: true, root: expand("~/.cline/data/db/session-search.db", ctx), recursive: false },
+        { id: "cline-session-jsonl", agent: "cline", format: "jsonl", root: expand("~/.cline/data/sessions", ctx), recursive: true, match: jsonl, noSizeCap: true },
+        { id: "cline-vscode", agent: "cline", format: "json", root: expand("%APPDATA%/Code/User/globalStorage/saoudrizwan.claude-dev/tasks", ctx), recursive: true, match: taskJson },
+
+        { id: "antigravity-conversations", agent: "antigravity", format: "sqlite", noSizeCap: true, root: expand("~/.gemini/antigravity/conversations", ctx), recursive: true, match: /\.db$/i },
+        { id: "antigravity-brain", agent: "antigravity", format: "agent-file", root: expand("~/.gemini/antigravity/brain", ctx), recursive: true, match: /\.(?:md|jsonl|pbtxt)$/i },
+        { id: "antigravity-annotations", agent: "antigravity", format: "agent-file", root: expand("~/.gemini/antigravity/annotations", ctx), recursive: true, match: /\.(?:pbtxt|pb)$/i },
+        { id: "antigravity-proto", agent: "antigravity", format: "agent-file", root: expand("~/.gemini/antigravity", ctx), recursive: false, match: /\.pb$/i },
+        { id: "antigravity-state", agent: "antigravity", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/Antigravity/User/globalStorage/state.vscdb", ctx), recursive: false },
+
+        { id: "kiro-ide", agent: "kiro", format: "agent-file", root: expand("%APPDATA%/Kiro/User/globalStorage/kiro.kiroagent", ctx), recursive: true, match: /\.(?:json|jsonl|pbtxt|pb)$/i },
+        { id: "kiro-ide-db", agent: "kiro", format: "sqlite", noSizeCap: true, root: expand("%APPDATA%/Kiro/User/globalStorage/kiro.kiroagent", ctx), recursive: true, match: /\.db$/i },
+        { id: "kiro-cli", agent: "kiro", format: "agent-file", root: expand("~/.local/share/kiro-cli", ctx), recursive: true, match: /\.(?:json|jsonl|pbtxt|pb)$/i },
+        { id: "kiro-cli-db", agent: "kiro", format: "sqlite", noSizeCap: true, root: expand("~/.local/share/kiro-cli", ctx), recursive: true, match: /\.db$/i },
+        { id: "kiro-cli-windows", agent: "kiro", format: "agent-file", root: expand("%LOCALAPPDATA%/kiro-cli", ctx), recursive: true, match: /\.(?:json|jsonl|pbtxt|pb)$/i },
+        { id: "kilo-vscode", agent: "kilo", format: "json", root: expand("%APPDATA%/Code/User/globalStorage/kilocode.kilo-code/tasks", ctx), recursive: true, match: taskJson }
+    ];
+}
+
+/** Agents that have a reader in this package. */
+export const TRANSCRIPT_AGENTS = ["claude", "codex", "copilot", "opencode", "kilo", "cursor", "cline", "antigravity", "kiro"];
 
 /**
  * Walks a root for readable files. Missing roots are recorded quietly; large and old files become
@@ -105,6 +161,8 @@ export function discover(spec, cutoffMs = null, maxFileBytes = DEFAULT_MAX_FILE_
     const files = [];
     const missing = [];
     const skipped = [];
+    const match = spec.match ?? /\.jsonl$/i;
+    const cap = spec.noSizeCap ? Infinity : maxFileBytes;
 
     function consider(path) {
         let stat;
@@ -116,7 +174,7 @@ export function discover(spec, cutoffMs = null, maxFileBytes = DEFAULT_MAX_FILE_
         if (!stat.isFile()) {
             return;
         }
-        if (stat.size > maxFileBytes) {
+        if (stat.size > cap) {
             skipped.push({ source: spec.id, path, reason: "file exceeds size cap", bytes: stat.size });
             return;
         }
@@ -165,7 +223,7 @@ export function discover(spec, cutoffMs = null, maxFileBytes = DEFAULT_MAX_FILE_
                 if (!SKIP_DIRS.has(entry.name)) {
                     pending.push(path);
                 }
-            } else if (entry.isFile() && entry.name.toLowerCase().endsWith(".jsonl")) {
+            } else if (entry.isFile() && match.test(entry.name)) {
                 consider(path);
             }
         }

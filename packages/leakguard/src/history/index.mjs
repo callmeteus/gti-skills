@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { defaultConfig } from "../config.mjs";
@@ -7,15 +7,21 @@ import { makeContext } from "../log.mjs";
 import { extractHosts } from "../patterns.mjs";
 import { classifyTool } from "../toolkind.mjs";
 import { extractText } from "../util.mjs";
+import { antigravityFileEvents, antigravityJsonlEvents, emitGenericTool } from "./agents/antigravity.mjs";
+import { clineJsonEvents } from "./agents/cline.mjs";
+import { jsonParse, jsonlEvents, printableStrings, textEvent } from "./agents/common.mjs";
+import { extractSqlite } from "./agents/index.mjs";
+import { kiroJsonEvents, kiroJsonlEvents } from "./agents/kiro.mjs";
 import {
     classifyFixtures, deduplicate, findSecrets, isFixturePath, isLocalHost,
     makeFinding, safe, secretHash, snippet, sortFindings
 } from "./findings.mjs";
 import { buildRotation, renderJson, renderMarkdown } from "./report.mjs";
 import {
-    DEFAULT_MAX_FILE_BYTES, UNCOVERED_TRANSCRIPTS, discover, git, gitEvidence,
-    parseSources, projectName, readJsonl, readText, sourceSpecs
+    DEFAULT_MAX_FILE_BYTES, TRANSCRIPT_AGENTS, UNCOVERED_TRANSCRIPTS, discover, git, gitEvidence,
+    parseSources, projectName, readJsonl, readText, sourceSpecs, storeSpecs
 } from "./sources.mjs";
+import { DEFAULT_MAX_CELL_CHARS, DEFAULT_MAX_COPY_BYTES, withSqlite } from "./sqlite.mjs";
 
 /** A comment or field must address an agent or model before it is treated as an instruction. */
 const ADDRESS = /\b(?:AI|assistant|agent|Claude|Copilot|LLM|ignore previous|before running|you must|do not tell)\b/i;
@@ -169,6 +175,78 @@ function collectExfil(text, meta, sink) {
 }
 
 /**
+ * Returns the coverage record for an agent, creating it on first use.
+ *
+ * @param {object} tracker Report tracker
+ * @param {string} agent Agent id
+ * @returns {object} Coverage record
+ */
+function coverageFor(tracker, agent) {
+    if (!tracker.coverage[agent]) {
+        tracker.coverage[agent] = {
+            agent,
+            storesFound: [],
+            rowsRead: 0,
+            sessions: 0,
+            skipped: [],
+            note: ""
+        };
+    }
+    return tracker.coverage[agent];
+}
+
+/**
+ * Scans normalized events produced by SQLite and flat file extractors. Text events can only yield
+ * secrets. Tool events can yield an exfiltration only when the tool is a shell tool, and that
+ * exfiltration is critical only when the store itself showed the tool ran.
+ *
+ * @param {object[]} events Normalized events
+ * @param {object} meta Base source metadata
+ * @param {object} tracker Report tracker
+ * @returns {void}
+ */
+function consumeEvent(event, meta, tracker) {
+    if (!event || typeof event !== "object") {
+        return;
+    }
+    if (event.kind === "text") {
+        if (typeof event.text === "string" && event.text) {
+            collectSecrets(event.text, { ...meta, time: event.time ?? meta.time, line: null }, tracker.findings);
+        }
+        return;
+    }
+    if (event.kind !== "tool") {
+        return;
+    }
+    const input = event.input ?? {};
+    collectSecrets(extractText(input), { ...meta, time: event.time ?? meta.time, line: null }, tracker.findings);
+    if (classifyTool(event.name, input).kind !== "shell") {
+        return;
+    }
+    const text = `${event.name}\n${extractText(input)}`;
+    collectExfil(text, {
+        ...meta,
+        time: event.time ?? meta.time,
+        tool: event.name,
+        executed: event.executed === true
+    }, tracker.findings);
+}
+
+/**
+ * Scans a list of normalized events.
+ *
+ * @param {object[]} events Normalized events
+ * @param {object} meta Base source metadata
+ * @param {object} tracker Report tracker
+ * @returns {void}
+ */
+function consumeEvents(events, meta, tracker) {
+    for (const event of events) {
+        consumeEvent(event, meta, tracker);
+    }
+}
+
+/**
  * Looks for hidden instructions in Markdown comments, manifest string values and invisible
  * characters.
  *
@@ -289,10 +367,16 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) 
     for (const spec of specs) {
         const found = discover(spec, cutoffMs, maxBytes);
         tracker.merge(found, spec.id);
+        const cov = coverageFor(tracker, spec.agent ?? spec.id);
+        for (const entry of found.skipped) {
+            cov.skipped.push({ path: entry.path, reason: entry.reason });
+        }
 
         for (const file of found.files) {
             tracker.countFile("transcripts");
+            cov.storesFound.push(file);
             await readJsonl(file, (record, line, raw) => {
+                cov.rowsRead += 1;
                 const recordCwd = typeof record.cwd === "string" ? record.cwd : "";
                 const sameRepo = recordCwd !== "" && identityFor(recordCwd) === repoId;
                 const meta = {
@@ -338,6 +422,168 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) 
             for (const occurrence of finding.occurrences) {
                 occurrence.executed = true;
             }
+        }
+    }
+}
+
+/**
+ * Builds the JSONL mapper for a non-Claude agent store.
+ *
+ * @param {string} agent Agent id
+ * @returns {(record: object) => object[]} Mapper
+ */
+function jsonlAgentMapper(agent) {
+    return (record) => {
+        if (agent === "antigravity") {
+            return antigravityJsonlEvents(record);
+        }
+        if (agent === "kiro") {
+            return kiroJsonlEvents(record);
+        }
+        const events = [];
+        for (const field of ["content", "message", "text", "prompt"]) {
+            const value = record[field];
+            if (typeof value === "string" && value) {
+                events.push(textEvent(value));
+            } else if (value && typeof value === "object") {
+                events.push(textEvent(extractText(value)));
+            }
+        }
+        const calls = record.toolUses ?? record.toolCalls ?? record.tool_calls ?? record.tools;
+        if (Array.isArray(calls)) {
+            for (const call of calls) {
+                emitGenericTool(call, (event) => events.push(event));
+            }
+        }
+        return events;
+    };
+}
+
+/**
+ * Turns a flat file in a known agent folder into normalized events.
+ *
+ * @param {object} spec Store spec
+ * @param {string} file File path
+ * @param {string} text File contents
+ * @returns {object[]} Events
+ */
+function agentFileEvents(spec, file, text) {
+    const lower = file.toLowerCase();
+    if (spec.format === "jsonl") {
+        return jsonlEvents(text, jsonlAgentMapper(spec.agent));
+    }
+    if (spec.format === "json") {
+        if (spec.agent === "cline" || spec.agent === "kilo") {
+            return clineJsonEvents(jsonParse(text));
+        }
+        if (spec.agent === "kiro") {
+            return kiroJsonEvents(text);
+        }
+        const data = jsonParse(text);
+        return data ? [textEvent(JSON.stringify(data))] : [];
+    }
+    if (lower.endsWith(".jsonl")) {
+        return jsonlEvents(text, jsonlAgentMapper(spec.agent));
+    }
+    if (lower.endsWith(".json")) {
+        if (spec.agent === "kiro") {
+            return kiroJsonEvents(text);
+        }
+        const data = jsonParse(text);
+        return data ? [textEvent(JSON.stringify(data))] : [];
+    }
+    if (lower.endsWith(".pb") || lower.endsWith(".pbtxt") || lower.endsWith(".md")) {
+        return antigravityFileEvents(text, lower.slice(lower.lastIndexOf(".")));
+    }
+    return text && text.trim() ? [textEvent(text)] : [];
+}
+
+/**
+ * Scans SQLite and flat file chat stores for every supported agent. Coverage records what was
+ * found, what was read, and what was skipped with a reason.
+ *
+ * @param {object} ctx History context
+ * @param {object[]} specs Store specs
+ * @param {number|null} cutoffMs Age cutoff
+ * @param {object} tracker Report tracker
+ * @param {object} options Scan options
+ * @returns {Promise<void>} Completion
+ */
+async function scanAgentStores(ctx, specs, cutoffMs, tracker, options) {
+    for (const spec of specs) {
+        const found = discover(spec, cutoffMs, options.maxFileBytes);
+        tracker.merge(found, spec.id);
+        const cov = coverageFor(tracker, spec.agent);
+        for (const entry of found.skipped) {
+            cov.skipped.push({ path: entry.path, reason: entry.reason });
+        }
+
+        for (const file of found.files) {
+            tracker.countFile("transcripts");
+            cov.storesFound.push(file);
+            const meta = {
+                ctx,
+                source: "transcripts",
+                location: file,
+                line: null,
+                time: null,
+                sameRepo: false
+            };
+
+            if (spec.format === "sqlite") {
+                const result = await withSqlite(file, (db, stats) => {
+                    extractSqlite(spec.agent, db, stats, (event) => consumeEvent(event, meta, tracker), options.maxCellChars);
+                }, {
+                    maxCellChars: options.maxCellChars,
+                    maxCopyBytes: options.maxCopyBytes,
+                    forceUnavailable: options.sqliteUnavailable === true
+                });
+
+                if (!result.ok) {
+                    const reason = result.reason === "node:sqlite unavailable"
+                        ? "node:sqlite unavailable"
+                        : `sqlite read failed: ${result.reason}`;
+                    tracker.skipped.push({ source: "transcripts", path: file, reason });
+                    cov.skipped.push({ path: file, reason });
+                    if (!cov.note) {
+                        cov.note = reason;
+                    }
+                    continue;
+                }
+
+                cov.rowsRead += result.stats.rows;
+                cov.sessions += result.stats.sessionIds.size;
+                if (result.stats.skippedCells > 0) {
+                    const reason = "cell exceeds size cap";
+                    tracker.skipped.push({ source: "transcripts", path: file, reason, count: result.stats.skippedCells });
+                    cov.skipped.push({ path: file, reason, count: result.stats.skippedCells });
+                }
+                if (result.stats.note && !cov.note) {
+                    cov.note = result.stats.note;
+                }
+                continue;
+            }
+
+            let text = readText(file);
+            if (text === null && /\.pb$/i.test(file)) {
+                try {
+                    text = printableStrings(readFileSync(file));
+                } catch {
+                    text = null;
+                }
+            }
+            if (text === null) {
+                const reason = "binary or unreadable";
+                tracker.skipped.push({ source: "transcripts", path: file, reason });
+                cov.skipped.push({ path: file, reason });
+                continue;
+            }
+            if (spec.format === "jsonl") {
+                cov.rowsRead += text.split("\n").filter(Boolean).length;
+            } else {
+                cov.rowsRead += 1;
+            }
+            consumeEvents(agentFileEvents(spec, file, text), meta, tracker);
         }
     }
 }
@@ -488,7 +734,10 @@ function scanGit(ctx, repo, sinceDays, maxBytes, injection, tracker) {
  * @param {number|string} [options.since] Age window in days
  * @param {string} [options.repo] Repository path, defaults to the context cwd
  * @param {string} [options.out] Output folder
- * @param {number} [options.maxFileBytes] Per-file size cap, mainly for tests
+ * @param {number} [options.maxFileBytes] Per-file size cap for non-transcript files, mainly for tests
+ * @param {number} [options.maxCellChars] Per-cell cap for SQLite stores
+ * @param {number} [options.maxCopyBytes] Larger SQLite stores are opened read only in place
+ * @param {boolean} [options.sqliteUnavailable] Simulate a Node without node:sqlite, for tests
  * @returns {Promise<{ report: object, out: string, findings: object[] }>} Scan result
  */
 export async function scanHistory(options = {}) {
@@ -515,6 +764,7 @@ export async function scanHistory(options = {}) {
         missing: [],
         skipped: [],
         errors: [],
+        coverage: {},
         merge(found, source) {
             this.missing.push(...found.missing);
             this.skipped.push(...found.skipped);
@@ -534,6 +784,12 @@ export async function scanHistory(options = {}) {
 
     if (parsed.selected.includes("transcripts")) {
         await scanTranscripts(ctx, specs.transcripts, cutoffMs, maxBytes, repoId, tracker);
+        await scanAgentStores(ctx, storeSpecs(ctx), cutoffMs, tracker, {
+            maxFileBytes: maxBytes,
+            maxCellChars: Number.isFinite(options.maxCellChars) ? options.maxCellChars : DEFAULT_MAX_CELL_CHARS,
+            maxCopyBytes: Number.isFinite(options.maxCopyBytes) ? options.maxCopyBytes : DEFAULT_MAX_COPY_BYTES,
+            sqliteUnavailable: options.sqliteUnavailable === true
+        });
     }
     if (parsed.selected.includes("shell")) {
         scanShell(ctx, specs.shell, cutoffMs, maxBytes, tracker);
@@ -546,6 +802,25 @@ export async function scanHistory(options = {}) {
     }
 
     const findings = sortFindings(classifyFixtures(deduplicate(tracker.findings)));
+    const coverage = TRANSCRIPT_AGENTS.map((agent) => {
+        const current = tracker.coverage[agent] ?? {
+            agent,
+            storesFound: [],
+            rowsRead: 0,
+            sessions: 0,
+            skipped: [],
+            note: ""
+        };
+        if (current.storesFound.length === 0 && !current.note) {
+            current.note = "no store present on this machine";
+        }
+        if (agent === "kiro" && current.storesFound.length > 0) {
+            current.note = current.note
+                ? `${current.note}; kiro store format is unverified`
+                : "kiro store format is unverified";
+        }
+        return current;
+    });
     const byKind = {};
     const bySource = {};
     const bySeverity = {};
@@ -564,6 +839,7 @@ export async function scanHistory(options = {}) {
             scanned: parsed.selected.map((id) => ({ source: id, files: fileCounts[id] ?? 0, skipped: skipCounts[id] ?? 0 })),
             missing: tracker.missing,
             uncovered: parsed.selected.includes("transcripts") ? [...UNCOVERED_TRANSCRIPTS] : [],
+            coverage: parsed.selected.includes("transcripts") ? coverage : [],
             skipped: tracker.skipped,
             errors: tracker.errors
         },

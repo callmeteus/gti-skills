@@ -3,7 +3,9 @@
 import "./adapters.test.mjs";
 import "./config.test.mjs";
 import "./engine.test.mjs";
+import "./history-agents.test.mjs";
 import "./history.test.mjs";
 import "./installer.test.mjs";
 import "./redaction.test.mjs";
+import "./round2-fixtures.test.mjs";
 import "./rules.test.mjs";

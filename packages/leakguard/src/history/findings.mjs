@@ -1,4 +1,4 @@
-import { CREDENTIALS, collectMatches } from "../patterns.mjs";
+import { CREDENTIALS, collectMatches, isInternalHost } from "../patterns.mjs";
 import { redact, sha8 } from "../util.mjs";
 
 /** Severity order used when two occurrences of one finding are merged. */
@@ -14,13 +14,22 @@ const ASCENDING_RUN = 8;
 const FIXTURE_DIR = /(?:^|\/)(?:tests?|__tests__|fixtures?|testdata)(?:\/|$)/i;
 const FIXTURE_FILE = /(?:\.(?:test|spec)\.|[-_]test\.|[-_]spec\.|^test_)/i;
 
-/** Hosts that are local to a machine or a container network. */
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "host.docker.internal"]);
-
 /** Common placeholder passwords in connection URLs. */
 const PLACEHOLDER_PASSWORDS = new Set(["password", "postgres", "changeme", "secret", "example", "pass", "root"]);
 
-const URL_WITH_PASSWORD = /^([a-z][a-z0-9+.-]*):\/\/([^:\s/@]+):([^\s@/]+)@([^\s/?#]+)/i;
+const URL_WITH_PASSWORD = new RegExp(
+    String.raw`^([a-z][a-z0-9+.-]*):\/\/([^:\s/@]+):([^\s@/]+)@([^\s\/?#"'` +
+    "\\x60" + String.raw`\\<>{}[\])]+)`,
+    "i"
+);
+
+/** Template, variable and example credentials that are documentation, not live secrets. */
+const TEMPLATE_AUTH = /^(?:<[^>]*>|\{[^}]*\}|\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*|%[^%]+%|\*{3,}|\.{3,}|user|password|pass|changeme|root)$/i;
+
+/** Documentation hosts that never identify a real credential destination. */
+const DOC_HOST = /^(?:<[^>]*>|\{[^}]*\}|\.{3,}|%.*|host|ip|your-[\w-]+|example\.com|.*\.example|mydb\.[a-z0-9]+\..*)$/i;
+
+const GITHUB_TOKEN = /(?:ghp_|github_pat_|gho_)[0-9a-zA-Z_]{20,}/i;
 
 /**
  * Short, stable identifier for a secret. It is the same digest the package redaction uses.
@@ -136,11 +145,7 @@ export function isFixtureValue(value) {
  * @returns {boolean} Whether the destination is local
  */
 export function isLocalHost(host) {
-    const value = String(host ?? "").toLowerCase();
-    if (LOCAL_HOSTS.has(value) || /^127\./.test(value)) {
-        return true;
-    }
-    return /^[a-z0-9-]+$/.test(value) && !value.includes(".");
+    return isInternalHost(host);
 }
 
 /**
@@ -172,37 +177,72 @@ export function findSecrets(text, location = "") {
     const fixturePath = isFixturePath(location);
 
     for (const credential of CREDENTIALS) {
-        for (const value of collectMatches(credential.re, text)) {
-            const hash = secretHash(value);
+        for (const rawValue of collectMatches(credential.re, text)) {
+            let value = rawValue;
+            let name = credential.name;
+            let hash = secretHash(value);
             if (seen.has(hash)) {
                 continue;
             }
-            seen.add(hash);
 
             let fixtureValue = isFixtureValue(value);
             let severity = "high";
             let local = false;
             let host = null;
             let note = null;
+            let drop = false;
 
-            if (credential.name === "url-password") {
+            if (name === "url-password") {
                 const parsed = value.match(URL_WITH_PASSWORD);
-                if (parsed) {
-                    host = hostWithoutPort(parsed[4]);
-                    const password = parsed[3].toLowerCase();
+                if (!parsed) {
+                    continue;
+                }
+                const user = parsed[2];
+                const password = parsed[3];
+                host = hostWithoutPort(parsed[4]).toLowerCase();
+                const passwordLower = password.toLowerCase();
+
+                if (TEMPLATE_AUTH.test(user) || TEMPLATE_AUTH.test(password) || DOC_HOST.test(host)) {
+                    drop = true;
+                } else if (host === "github.com") {
+                    const token = GITHUB_TOKEN.exec(password)?.[0] ?? GITHUB_TOKEN.exec(user)?.[0];
+                    if (token) {
+                        name = "github";
+                        host = "github.com";
+                        value = token;
+                        hash = secretHash(token);
+                        if (seen.has(hash)) {
+                            const existing = found.find((entry) => entry.hash === hash && entry.name === "github");
+                            if (existing && !existing.host) {
+                                existing.host = "github.com";
+                            }
+                            drop = true;
+                        } else {
+                            fixtureValue = isFixtureValue(token);
+                            note = "GitHub token used as URL credential; issuer is GitHub";
+                        }
+                    }
+                } else {
                     // Classify the password, not the whole URL: a host named example.com must not
                     // turn a real password into a placeholder.
-                    fixtureValue = isFixtureValue(parsed[3]);
-                    if (isLocalHost(host) || PLACEHOLDER_PASSWORDS.has(password)) {
+                    fixtureValue = isFixtureValue(password);
+                    if (isLocalHost(host) || PLACEHOLDER_PASSWORDS.has(passwordLower)) {
                         severity = "low";
                         local = true;
-                        note = "local or placeholder credential";
+                        note = isLocalHost(host)
+                            ? "internal destination; a password sent to a model provider in a transcript is still an exposure"
+                            : "placeholder credential";
                     }
                 }
             }
 
+            if (drop) {
+                continue;
+            }
+            seen.add(hash);
+
             found.push({
-                name: credential.name,
+                name,
                 hash,
                 redacted: safe(value),
                 severity,

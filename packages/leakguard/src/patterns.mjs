@@ -30,7 +30,7 @@ function escapeAlternatives(names) {
  * the scheme of a bare URL.
  */
 const NETWORK_CLIENT_AT_COMMAND = new RegExp(
-    COMMAND_START + String.raw`(?:` + escapeAlternatives(CLIENT_NAMES) + String.raw`)\b(?!:\/\/)`,
+    COMMAND_START + String.raw`(?<![\w.-])(?:` + escapeAlternatives(CLIENT_NAMES) + String.raw`)\b(?!:\/\/)`,
     "i"
 );
 
@@ -141,8 +141,34 @@ export const CREDENTIALS = [
     { name: "slack", re: /\bxox[abpr]-[0-9a-zA-Z-]{10,}\b/gi },
     { name: "google", re: /\bAIza[0-9A-Za-z_-]{30,}\b/g },
     { name: "private-key", re: /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/g },
-    { name: "url-password", re: /\b[a-z][a-z0-9+.-]*:\/\/[^:\s/@]+:[^\s@/]+@[^\s/@]+/gi }
+    {
+        name: "url-password",
+        re: new RegExp(
+            String.raw`\b[a-z][a-z0-9+.-]*:\/\/[^\s\/@"'<>{}[\])]+:[^\s\/@"'<>{}[\])]+@[^\s\/?#"'` +
+            "\\x60" + String.raw`\\<>{}[\])]+`,
+            "gi"
+        )
+    }
 ];
+
+/** A dotenv file whose contents are actually uploaded, as opposed to one key being read. */
+export const DOTENV_UPLOAD = new RegExp([
+    String.raw`@\.env(?:\.[\w-]+)?\b`,
+    String.raw`<\s*\.env\b`,
+    String.raw`(?:cat|type|Get-Content|gc)\s+[^\n|&;]*\.env\b[^\n|&;]*[;&|]+\s*(?:xargs\s+)?(?:curl|wget|iwr|Invoke-WebRequest|Invoke-RestMethod|nc|ncat|socat|scp|rsync)\b`,
+    String.raw`-T\s+[^\n]*\.env\b`,
+    String.raw`--upload-file[^\n]*\.env\b`,
+    String.raw`-F\s+[^\n]*=\s*@?\.env\b`,
+    String.raw`-InFile\s+[^\n]*\.env\b`,
+    String.raw`-Body\s*\(\s*(?:Get-Content|cat)[^\n]*\.env\b`
+].join("|"), "i");
+
+/** A single credential key read from a dotenv file for use as auth, not the whole file. */
+export const DOTENV_KEY_USE = new RegExp([
+    String.raw`grep\s+['"]?\^?[A-Z0-9_]*(?:TOKEN|PASSWORD|SECRET|KEY|PASS)[A-Z0-9_]*=?['"]?\s+[^\n]*\.env`,
+    String.raw`(?:Get-Content|gc)\s+[^\n|]*\.env\b[^\n|]*\|\s*Where-Object[^\n|]*-match`,
+    String.raw`(?:set\s+-a\s*[;]\s*)?\.\s+\.?\.?\.env\b` + String.raw`[^\n]*[;]\s*set\s+\+a`
+].join("|"), "i");
 
 /** Paths to local secret stores. A leading slash or backslash covers home and absolute paths. */
 export const SECRET_PATHS = [
@@ -158,11 +184,16 @@ export const SECRET_PATHS = [
     { name: "process-environ", re: /\/proc\/\d+\/environ\b/g }
 ];
 
-/** Environment dump commands in command position. A bare `set` is a Windows cmd dump; `set -e` and cmdlets are not. */
+/**
+ * Environment dump commands in command position. A `$env:NAME` reference is a single variable and
+ * is not a dump. Only a directory listing of `env:` with no name, a bare POSIX `env`, `printenv`,
+ * `export -p`, a bare cmd `set`, or the .NET environment table count as a dump.
+ */
 export const ENV_DUMP = new RegExp(
     BOUNDARY + String.raw`(?:env|printenv|export\s+-p)(?=[\s;|&)\]}\x60]|$)|` +
-    BOUNDARY + String.raw`set(?=\s*(?:[;|&)\]}\r\n]|$))|` +
-    BOUNDARY + String.raw`(?:Get-ChildItem|gci)\s+env:|\$env:`,
+    BOUNDARY + String.raw`set(?=\s*(?:[;|&)}\r\n]|$))|` +
+    BOUNDARY + String.raw`(?:(?:Get-ChildItem|gci|dir|ls)\s+env:\s*(?:$|[;|&)}\x60]))|` +
+    String.raw`\[Environment\]::GetEnvironmentVariables\s*\(`,
     "i"
 );
 
@@ -208,6 +239,149 @@ export const REMOTE_SCRIPT = new RegExp(
 /** Reading the environment of another process. */
 export const PROC_ENV = /\/proc\/\d+\/environ\b/g;
 export const PS_EWW = /\bps\s+eww\b/gi;
+
+/**
+ * True for a destination that belongs to the local machine, a private network, Tailscale or an
+ * internal service name. A credential used with one of these is not an outbound exfiltration.
+ *
+ * @param {string} host Host with port or brackets removed
+ * @returns {boolean} Whether the destination is internal
+ */
+export function isInternalHost(host) {
+    const value = String(host ?? "").toLowerCase().replace(/^\[|\]$/g, "");
+    if (value === "" || value === "localhost" || value === "::1") {
+        return true;
+    }
+    if (/^127\./.test(value) || /^10\./.test(value) || /^192\.168\./.test(value)) {
+        return true;
+    }
+    if (/^172\.(?:1[6-9]|2\d|3[01])\./.test(value)) {
+        return true;
+    }
+    // Tailscale CGNAT range.
+    if (/^100\.(?:6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\./.test(value)) {
+        return true;
+    }
+    if (/^169\.254\./.test(value) || /^fe80[:%]/.test(value)) {
+        return true;
+    }
+    if (/\.(?:ts\.net|local|internal)$/.test(value)) {
+        return true;
+    }
+    return /^[a-z0-9-]+$/.test(value);
+}
+
+/**
+ * True when a destination host is named anywhere in a command even without a URL scheme. Covers
+ * Tailscale names, single label service names and private IPv4 addresses in ssh and scp commands.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether an internal destination is named
+ */
+export function hasInternalDestination(text) {
+    const source = String(text ?? "");
+    const ipv4 = source.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) ?? [];
+    if (ipv4.some(isInternalHost)) {
+        return true;
+    }
+    return /(?:^|[^\w.-])(?:[\w-]+\.)?(?:ts\.net|local|internal)\b/i.test(source) ||
+        /(?:@|host\s+)(?:[a-z0-9-]+)(?:\s|$)/i.test(source);
+}
+
+/**
+ * True when a command reads a dotenv file into its environment instead of uploading it. Sourcing
+ * a file so a variable can be used as a URL is different from sending the file over the network.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the dotenv file is sourced
+ */
+export function isSourcedDotenv(text) {
+    return /(?:^|[;&|]\s*)(?:\.\s+|source\s+)(?:[^\s]*\/)?\.env\b/i.test(String(text ?? "")) ||
+        /set\s+-a[^\n]*[;&][^\n]*\.env\b[^\n]*[;&][^\n]*set\s+\+a/i.test(String(text ?? ""));
+}
+
+/**
+ * True when a command uploads a dotenv file itself rather than using one of its variables.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the file contents are the payload
+ */
+export function isUploadedDotenv(text) {
+    const source = String(text ?? "");
+    return /@\.env(?:\.[\w-]+)?\b/i.test(source) ||
+        /(?:cat|type|Get-Content)\s+[^\n]*\.env\b[^\n]*[|;]/i.test(source) ||
+        /--data(?:-binary)?\s+@\.env/i.test(source);
+}
+
+/**
+ * True when a URL comes from a variable that the same command loads from its dotenv file. The
+ * variable suffix marks a destination supplied by the credential store itself.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether a destination is paired with the source file
+ */
+export function isPairedDestination(text) {
+    const source = String(text ?? "");
+    // A destination assigned in the same command is attacker controlled. Only a variable loaded
+    // from the dotenv file can be trusted as the credential's own service.
+    if (/\b[A-Z_][A-Z0-9_]*\s*=\s*['"]?[a-z][a-z0-9+.-]*:\/\//i.test(source) ||
+        /\b[A-Z][A-Z0-9_]*(?:_URL|_ADDR|_HOST)\s*=/i.test(source)) {
+        return false;
+    }
+    const variable = /\$(?:\{)?[A-Z][A-Z0-9_]*(?:_URL|_ADDR|_HOST)(?:\})?/i.test(source) ||
+        /\$(?:\{)?(?:URL|ADDR|HOST)(?:\})?/i.test(source);
+    if (!variable) {
+        return false;
+    }
+    return collectMatches(DOTENV, source).length > 0 ||
+        /grep\s+['"]?\^[A-Z0-9_]+=/i.test(source);
+}
+
+/**
+ * True for a command that only saves a download to a file. Such a command is not a remote script
+ * execution; the download must be run by an interpreter in the same command to be one.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the command is a download only
+ */
+export function isDownloadOnly(text) {
+    const source = String(text ?? "");
+    const download = /\b(?:curl(?:\.exe)?|wget)\b[^\n]*\s(?:-o|--output|-O)\s+\S+/i.test(source) ||
+        /\bInvoke-WebRequest\b[^\n]*-OutFile\b/i.test(source) ||
+        /\bStart-BitsTransfer\b/i.test(source) ||
+        /urllib\.request\.urlretrieve|urlretrieve\s*\(/i.test(source);
+    if (!download) {
+        return false;
+    }
+    return !/\b(?:iex|Invoke-Expression|\|\s*(?:sh|bash|zsh|ksh|python3?|node|ruby|perl)\b|DownloadString\s*\(|\beval\s*\()/i.test(source);
+}
+
+/**
+ * True when the text is Python, Node, Ruby or Perl code passed with -c or -e, or through a heredoc.
+ * Shell words inside such code are data unless the code itself reads a secret and sends it.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether an interpreter code payload is present
+ */
+export function isInterpreterCode(text) {
+    const source = String(text ?? "");
+    return /\b(?:python3?|node|ruby|perl)\b[^\n]{0,120}?(?:\s(?:-c|-e|--eval)\s+["']|<<)/i.test(source) ||
+        /<<['"]?(?:PY|PYTHON|JS|NODE|RUBY|PERL|EOF)['"]?/i.test(source) ||
+        /@['"]\s*\r?\n[\s\S]{0,4000}?\b(?:import|fetch\s*\(|urllib|requests|process\.env|readFileSync)\b/i.test(source);
+}
+
+/**
+ * True when interpreter code itself reads a secret source and sends it through a network API.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether the code both reads a secret and sends it
+ */
+export function codeReadsAndSends(text) {
+    const source = String(text ?? "");
+    const reads = /\b(?:open\s*\(\s*['"][^'"]*(?:\.env|\.ssh|\.aws|credential|token|secret)|readFileSync\s*\(|process\.env|os\.environ|Get-Content|getenv\s*\()/i.test(source);
+    const sends = /\b(?:requests\.(?:post|put)|urllib\.request|httpx\.|fetch\s*\(|http\.request|https\.request|axios\.|net\.Socket|WebSocket)\b/i.test(source);
+    return reads && sends;
+}
 
 /**
  * Returns every distinct match of a global regular expression as raw strings.

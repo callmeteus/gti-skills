@@ -54,6 +54,38 @@ export function buildRotation(findings) {
 }
 
 /**
+ * Best effort agent name for a finding location. Used only to group secrets in the summary table.
+ *
+ * @param {string} location Finding location
+ * @returns {string} Agent id
+ */
+function agentForLocation(location) {
+    const path = String(location ?? "").replace(/\\/g, "/");
+    if (/\.claude\//i.test(path)) return "claude";
+    if (/\.codex\//i.test(path)) return "codex";
+    if (/\.copilot\//i.test(path)) return "copilot";
+    if (/opencode/i.test(path)) return "opencode";
+    if (/kilo/i.test(path)) return "kilo";
+    if (/cursor/i.test(path)) return "cursor";
+    if (/\.cline\//i.test(path)) return "cline";
+    if (/antigravity/i.test(path)) return "antigravity";
+    if (/kiro/i.test(path)) return "kiro";
+    return "other";
+}
+
+/**
+ * Folder part of a location, using forward slashes for stable Markdown.
+ *
+ * @param {string} location Finding location
+ * @returns {string} Folder
+ */
+function folderOf(location) {
+    const path = String(location ?? "").replace(/\\/g, "/");
+    const index = path.lastIndexOf("/");
+    return index > 0 ? path.slice(0, index) : path;
+}
+
+/**
  * Formats one occurrence as a Markdown list item.
  *
  * @param {object} occurrence Occurrence
@@ -107,6 +139,58 @@ export function renderMarkdown(report) {
     lines.push("");
     lines.push(`Findings kept after deduplication: ${counts.findings}. Skipped paths: ${counts.skippedFiles}.`);
 
+    const secrets = findings.filter((finding) => finding.secretHash);
+    lines.push("");
+    lines.push("## Distinct secrets");
+    lines.push("");
+    if (secrets.length === 0) {
+        lines.push("No credential literal was found in the scanned sources.");
+    } else {
+        lines.push("One row per credential hash. Occurrences are the number of places the same value appeared.");
+        lines.push("");
+        lines.push("| Secret | Type | Severity | Places | Agents | Folders |");
+        lines.push("|--------|------|----------|--------|--------|---------|");
+        for (const finding of secrets) {
+            const agents = [...new Set(finding.occurrences.map((occurrence) =>
+                agentForLocation(occurrence.location)))].sort();
+            const folders = [...new Set(finding.occurrences.map((occurrence) =>
+                folderOf(occurrence.location)))].sort();
+            const shown = folders.slice(0, 5).map((folder) => `\`${folder}\``).join(", ");
+            const more = folders.length > 5 ? ` (+${folders.length - 5} more)` : "";
+            const note = finding.local && finding.secretType === "url-password"
+                ? " internal host, still an exposure if sent to a model provider"
+                : "";
+            lines.push(`| ${finding.secretRedacted} (hash ${finding.secretHash}) | ${finding.secretType ?? "unknown"} | ${finding.severity}${note} | ${finding.occurrences.length} | ${agents.join(", ")} | ${shown}${more} |`);
+        }
+    }
+
+    if (Array.isArray(sources.coverage) && sources.coverage.length > 0) {
+        lines.push("");
+        lines.push("## Transcript coverage");
+        lines.push("");
+        lines.push("| Agent | Stores found | Rows read | Sessions | Skipped | Note |");
+        lines.push("|-------|--------------|-----------|----------|---------|------|");
+        for (const entry of sources.coverage) {
+            const count = entry.storesFound.length;
+            const paths = count === 0
+                ? "none"
+                : count === 1
+                    ? `\`${entry.storesFound[0].split("/").pop()}\``
+                    : `${count} paths`;
+            const skips = entry.skipped.length === 0
+                ? "0"
+                : entry.skipped.map((skip) => `${skip.reason}${skip.count ? ` (${skip.count})` : ""}`).join("; ");
+            lines.push(`| ${entry.agent} | ${paths} | ${entry.rowsRead} | ${entry.sessions} | ${skips} | ${entry.note || "-"} |`);
+        }
+        for (const entry of sources.coverage) {
+            if (entry.storesFound.length === 0) {
+                continue;
+            }
+            lines.push("");
+            lines.push(`- ${entry.agent} paths: ${entry.storesFound.map((path) => `\`${path}\``).join(", ")}`);
+        }
+    }
+
     if (sources.missing.length > 0) {
         lines.push("");
         lines.push("Absent sources, skipped quietly:");
@@ -116,7 +200,7 @@ export function renderMarkdown(report) {
     }
     if (sources.uncovered.length > 0) {
         lines.push("");
-        lines.push("Transcript sources not covered because no local history folder is documented:");
+        lines.push("Transcript sources with no reader because no local history format is documented:");
         lines.push(`- ${sources.uncovered.join(", ")}`);
     }
     if (sources.errors.length > 0) {

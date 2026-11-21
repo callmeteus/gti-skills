@@ -137,30 +137,33 @@ test("history scan finds all four finding kinds with redacted evidence", async (
         }
         assert.ok(markdown.includes(redact(STRIPE)));
         assert.ok(markdown.includes("Rotation checklist"));
-        assert.ok(markdown.includes("cursor, kiro, antigravity, cline, muse"));
+        assert.ok(markdown.includes("## Transcript coverage"));
+        assert.ok(markdown.includes("muse"));
     } finally {
         rmSync(fixtureData.root, { recursive: true, force: true });
     }
 });
 
-test("history scan honours the source selection and the per-file size cap", async () => {
+test("history scan honours the source selection, streams large JSONL and caps other files", async () => {
     const fixtureData = fixture();
     const out = join(fixtureData.root, "out-select");
 
     try {
         writeFileSync(join(fixtureData.home, ".claude", "projects", "session-a", "large.jsonl"), "x".repeat(1200));
+        writeFileSync(join(fixtureData.home, ".bash_history"), "y".repeat(1200));
         const { report } = await scanHistory({
             ctx: fixtureData.ctx,
             repo: fixtureData.repo,
             out,
-            sources: "guard,transcripts",
+            sources: "guard,transcripts,shell",
             maxFileBytes: 800
         });
 
-        assert.deepEqual(report.options.sources, ["guard", "transcripts"]);
-        assert.ok(report.sources.skipped.some((entry) => entry.reason === "file exceeds size cap"));
-        assert.ok(report.findings.every((finding) => ["guard", "transcripts"].includes(finding.source)));
-        assert.ok(report.sources.uncovered.length === 5);
+        assert.deepEqual(report.options.sources, ["guard", "transcripts", "shell"]);
+        assert.ok(report.sources.skipped.some((entry) => entry.reason === "file exceeds size cap" && entry.path.endsWith(".bash_history")));
+        assert.ok(!report.sources.skipped.some((entry) => entry.path.endsWith("large.jsonl")));
+        assert.ok(report.findings.every((finding) => ["guard", "transcripts", "shell"].includes(finding.source)));
+        assert.deepEqual(report.sources.uncovered, ["muse"]);
     } finally {
         rmSync(fixtureData.root, { recursive: true, force: true });
     }
@@ -238,18 +241,19 @@ test("fixture credentials become info and stay out of the rotation checklist", a
     }
 });
 
-test("local and placeholder URL passwords are low and keep only the host", async () => {
+test("internal URL passwords are low and placeholder URLs are dropped", async () => {
     const data = repoFixture({
         "README.md": "# Fixture\n",
-        "src/local.json": `{"url":"postgres://app:password@db:5432/app"}\n`,
-        "src/remote.json": `{"url":"postgres://app:Tr0ngRandomValue2026@db.remote.example:5432/app"}\n`
+        "src/local.json": `{"url":"postgres://app:Tr0ngLocalValue2026@db:5432/app"}\n`,
+        "src/placeholder.json": `{"url":"postgres://app:password@db:5432/app"}\n`,
+        "src/remote.json": `{"url":"postgres://app:Tr0ngRandomValue2026@db.remote.acme:5432/app"}\n`
     });
     const out = join(data.root, "out");
 
     try {
         const { report } = await scanHistory({ ctx: data.ctx, repo: data.repo, out, sources: "git" });
         const local = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db");
-        const remote = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db.remote.example");
+        const remote = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db.remote.acme");
 
         assert.ok(local);
         assert.equal(local.severity, "low");
@@ -258,9 +262,12 @@ test("local and placeholder URL passwords are low and keep only the host", async
         assert.ok(!local.evidence.includes("password@"));
         assert.ok(remote);
         assert.equal(remote.severity, "high");
+        assert.equal(report.findings.filter((finding) =>
+            finding.secretType === "url-password" && finding.host === "db").length, 1,
+            "the placeholder password finding is dropped");
 
         const markdown = readFileSync(join(out, "history.md"), "utf8");
-        assert.ok(markdown.includes("local or placeholder credential"));
+        assert.ok(markdown.includes("internal destination"));
     } finally {
         rmSync(data.root, { recursive: true, force: true });
     }
