@@ -171,6 +171,26 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.deepEqual(findings.filter((finding) => finding.rule === "off-lane"), []);
     });
 
+    it("finds the admin screen tells: empty table, open create form, labels beside fields, raw JSON, a one-option select, and an eyebrow that repeats the title", async () => {
+        const findings = await probeFixture("admin-slop.html");
+        const rules = (rule) => findings.filter((finding) => finding.rule === rule);
+        assert.equal(rules("empty-list-without-message").length, 1);
+        assert.match(rules("empty-list-without-message")[0].items[0].selector, /table#messages/);
+        assert.equal(rules("open-create-form").length, 1);
+        assert.match(rules("open-create-form")[0].actual, /"Criar destino"/);
+        assert.equal(rules("ragged-form-labels").length, 1);
+        assert.equal(rules("raw-json-field").length, 1);
+        assert.match(rules("unexplained-control")[0]?.actual ?? "", /one option \("Even7"\)/);
+        const headings = rules("repeated-heading").map((finding) => finding.actual).join(" | ");
+        assert.match(headings, /eyebrow "MENSAGENS"/);
+        assert.match(headings, /shared: mensagens/);
+    });
+
+    it("leaves a header button, an empty state, a form in a closed dialog, and labeled selects alone", async () => {
+        const findings = await probeFixture("admin-clean.html");
+        assert.deepEqual(findings, []);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

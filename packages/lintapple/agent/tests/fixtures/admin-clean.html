@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 16px/1.4 sans-serif; margin: 0; padding: 32px; width: 820px; }
+  .top { display: flex; justify-content: space-between; align-items: center; }
+  h1 { margin: 0; }
+  .empty { border: 1px solid #ccc; border-radius: 12px; padding: 32px; margin: 16px 0; text-align: center; }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <h1>Destinos SMS</h1>
+    <button type="button" id="new">+ Novo destino</button>
+  </div>
+  <section class="empty">
+    <p>Nenhum destino SMS ainda</p>
+    <p>Um destino envia as mensagens por um provedor, como a Twilio.</p>
+    <button type="button">+ Novo destino</button>
+  </section>
+  <dialog id="form-dialog">
+    <form method="dialog">
+      <div class="field"><label for="name">Nome</label><input id="name"></div>
+      <div class="field"><label for="driver">Provedor</label><select id="driver"><option>Twilio</option><option>Zenvia</option></select></div>
+      <button value="cancel">Cancelar</button>
+      <button type="submit">Criar destino</button>
+    </form>
+  </dialog>
+  <label for="channel">Canal</label>
+  <select id="channel"><option>Todos os canais</option><option>SMS</option></select>
+</body>
+</html>
