@@ -78,8 +78,8 @@ function credentialGoesToIssuer(name, hosts, allowHosts) {
 }
 
 /**
- * Meaningful tokens of a credential variable name. Generic fragments and tokens shorter than three
- * characters never match on their own; short aliases expand to their full issuer name.
+ * Meaningful tokens of a credential variable name. Generic fragments and tokens shorter than four
+ * characters never pair; short aliases expand to their full issuer name.
  *
  * @param {string} name Uppercase variable name
  * @returns {string[]} Lowercase tokens
@@ -94,16 +94,17 @@ function nameTokens(name) {
     }
     const GENERIC = new Set([
         "API", "TOKEN", "KEY", "SECRET", "PASSWORD", "PASS", "URL", "HOST", "ADDR",
-        "APP", "SERVER", "CLIENT", "ID", "USER", "USERNAME", "AUTH", "ACCESS", "VALUE"
+        "APP", "SERVER", "CLIENT", "ID", "USER", "USERNAME", "AUTH", "ACCESS", "VALUE", "EVIL"
     ]);
     return value.split("_").concat(aliases)
         .map((part) => part.toLowerCase())
-        .filter((part) => part.length >= 3 && !GENERIC.has(part.toUpperCase()));
+        .filter((part) => part.length >= 4 && !GENERIC.has(part.toUpperCase()));
 }
 
 /**
- * True when a credential variable name shares a meaningful token with the host's registrable
- * domain or with a known issuer. A subdomain label of an attacker domain or a path never matches.
+ * True when a credential token is the whole second level label of the registrable domain, or when
+ * the token names a known issuer. A substring of a hyphenated or compound label never pairs, so
+ * PLUGGY does not match pluggy-ai.com and EVIL does not match evil.io.
  *
  * @param {string} name Uppercase variable name
  * @param {string} host Host name
@@ -116,7 +117,7 @@ function nameMatchesHost(name, host) {
     }
     const domain = P.registrableDomain(host);
     const labels = domain ? domain.split(".") : [];
-    if (tokens.some((token) => labels.some((label) => label.includes(token)))) {
+    if (tokens.some((token) => labels.some((label) => label === token))) {
         return true;
     }
     return tokens.some((token) => {
@@ -126,44 +127,68 @@ function nameMatchesHost(name, host) {
 }
 
 /**
- * True when the command only uses a secret with a destination that belongs to its own service: an
- * internal host, a variable loaded from the same dotenv file, or the credential's own issuer.
+ * True when the first label of a host is exactly a credential token and the remaining suffix is
+ * internal or itself paired by another token. An attacker controlled public suffix never pairs.
+ *
+ * @param {string} host Host name
+ * @param {string[]} names Credential variable names in the command
+ * @returns {boolean} Whether the first label pairs with the command
+ */
+function firstLabelPairs(host, names) {
+    const parts = String(host ?? "").toLowerCase().split(".");
+    if (parts.length < 3 || !names.some((name) => nameTokens(name).includes(parts[0]))) {
+        return false;
+    }
+    const suffix = parts.slice(1).join(".");
+    if (P.isInternalHost(suffix)) {
+        return true;
+    }
+    const suffixDomain = P.registrableDomain(suffix);
+    const secondLevel = suffixDomain ? suffixDomain.split(".")[0] : "";
+    return secondLevel.length > 0 && names.some((name) => nameTokens(name).includes(secondLevel));
+}
+
+/**
+ * Reason when a secret is only used at its own service: a paired destination, an internal host, or
+ * an issuer. Null when the destination is unrelated. The reason also names allowed findings so a
+ * credential use is never reported as a file upload or encoded exfiltration.
  *
  * @param {string} text Command text
  * @param {object} state Detector state
- * @returns {boolean} Whether the destination is an own service
+ * @returns {"paired"|"internal"|"issuer"|null} Own service reason
  */
 function ownServiceContext(text, state) {
     if (P.isPairedDestination(text)) {
-        return true;
+        return "paired";
     }
     const hosts = state.hosts ?? [];
     if (hosts.length > 0 && hosts.every(P.isInternalHost)) {
-        return true;
+        return "internal";
     }
     if (hosts.length === 0 && P.hasInternalDestination(text)) {
-        return true;
+        return "internal";
     }
     // Interpreter code that reads a dotenv file and calls a URL key from the same file uses a
     // destination paired with the credential store.
     if (P.isCodePairedDestination(text)) {
-        return true;
+        return "paired";
     }
 
-    // Paired by name: a credential variable sent to a host whose registrable domain or issuer
-    // shares a meaningful token with the variable name is credential use, not exfiltration. A
-    // value fetched from an internal service and then used at its issuer is the same shape.
+    // Paired by name: only the whole second level label or a known issuer matches. A value fetched
+    // from an internal service and then used at its issuer is the same shape.
     const names = P.credentialVariableNames(text);
     if (hosts.length > 0 && names.length > 0 && hosts.every((host) =>
-        P.isInternalHost(host) || names.some((name) => nameMatchesHost(name, host)))) {
-        return true;
+        P.isInternalHost(host) ||
+        names.some((name) => nameMatchesHost(name, host)) ||
+        firstLabelPairs(host, names))) {
+        return "paired";
     }
 
     const allowHosts = state.config?.allowHosts ?? [];
     const credentials = credentialMatchesNamed(text);
     if (hosts.length > 0 && credentials.length > 0 && hosts.every((host) =>
         credentials.some((entry) => credentialGoesToIssuer(entry.name, [host], allowHosts)))) {
-        return true;
+        return "issuer";
     }
 
     // A mixed command can contain an independent public fetch and a separate credential use at an
@@ -171,8 +196,6 @@ function ownServiceContext(text, state) {
     const segments = P.splitCommandSegments(text);
     if (segments.length > 1) {
         const sourcedNames = P.dotenvSourcedVariableNames(text);
-        // An assignment can read a secret in one segment and use it in a later one. Only segments
-        // that both hold a secret and name a destination can show where the secret is sent.
         const routed = segments.filter((segment) => segmentHasSecret(segment, state, sourcedNames))
             .map((segment) => ({ segment, hosts: P.extractHosts(segment) }))
             .filter((entry) => entry.hosts.length > 0);
@@ -180,12 +203,13 @@ function ownServiceContext(text, state) {
             const literals = credentialMatchesNamed(segment);
             return hosts.every((host) => P.isInternalHost(host) ||
                 names.some((name) => nameMatchesHost(name, host)) ||
+                firstLabelPairs(host, names) ||
                 literals.some((entry) => credentialGoesToIssuer(entry.name, [host], allowHosts)));
         })) {
-            return true;
+            return routed.every(({ hosts }) => hosts.every(P.isInternalHost)) ? "internal" : "paired";
         }
     }
-    return false;
+    return null;
 }
 
 /**
@@ -220,10 +244,14 @@ function segmentHasSecret(segment, state, sourcedNames) {
  * @returns {object} Finding
  */
 function networkFinding(detector, text, state, matches, requireSourced = false) {
-    const safeContext = ownServiceContext(text, state) &&
+    const reason = ownServiceContext(text, state);
+    const safeContext = reason &&
         (!requireSourced || (P.isSourcedDotenv(text) && !P.isUploadedDotenv(text)));
-    const severity = safeContext ? "low" : detector.severity;
-    return finding(detector.id, severity, detector.title, matches);
+    if (!safeContext) {
+        return finding(detector.id, detector.severity, detector.title, matches);
+    }
+    const title = `Uses a credential at its own ${reason === "issuer" ? "issuer" : reason === "internal" ? "internal" : "paired"} service`;
+    return finding(`credential_use_${reason}`, "low", title, matches);
 }
 
 /**
@@ -239,7 +267,7 @@ function isCodeData(text) {
 }
 
 function envDumpMatches(text) {
-    return P.collectMatches(P.ENV_DUMP, text);
+    return [...P.collectMatches(P.ENV_DUMP, text), ...P.collectMatches(P.ENV_DUMP_SERIALIZE, text)];
 }
 
 function encoderMatches(text) {
@@ -286,6 +314,43 @@ function substitutionSources(text, state) {
 }
 
 /**
+ * True when interpreter code actually passes a secret to one of its own network calls. A program
+ * that reads a dotenv key in one place and uses it with a login tool in another is not sending the
+ * dotenv file over the network; rule C judges that use instead.
+ *
+ * @param {string} text Command text
+ * @returns {boolean} Whether a secret reaches a network call in the code
+ */
+function codeSendsSecret(text) {
+    if (!P.isInterpreterCode(text)) {
+        return true;
+    }
+    const lines = String(text ?? "").replace(/\\(["'])/g, "$1")
+        .split(/\r?\n|;/).map((line) => line.trim()).filter(Boolean);
+    const network = /\b(?:urlopen|urllib\.request|requests\.(?:post|put|patch|request)|fetch\s*\(|http\.request|https\.request|axios\.|Invoke-RestMethod|Invoke-WebRequest)\b/i;
+    const secret = /\b(?:open\s*\(\s*['"][^'"]*\.env|readFileSync\s*\([^)]*\.env|Get-Content[^\n]*\.env|process\.env\b|os\.environ\b|dict\s*\(\s*os\.environ|json\.dumps\s*\(\s*os\.environ|JSON\.stringify\s*\(\s*process\.env|Object\.entries\s*\(\s*process\.env)\b/i;
+    const names = P.dotenvSourcedVariableNames(text);
+    return lines.some((line) => network.test(line) && (
+        secret.test(line) || names.some((name) => new RegExp(`\\b${name}\\b`, "i").test(line))
+    ));
+}
+
+/**
+ * Destination hosts named in an ssh style invocation, including one built inside interpreter code.
+ *
+ * @param {string} text Command text
+ * @returns {string[]} Lowercase destination hosts
+ */
+function sshDestinationHosts(text) {
+    const hosts = new Set();
+    const source = String(text ?? "");
+    for (const match of source.matchAll(/(?:^|[^\w.-])(?:ssh|scp|sftp)\b[^\r\n]{0,240}?([A-Za-z0-9_.-]+)@([A-Za-z0-9_.:-]+)/gi)) {
+        hosts.add(match[2].replace(/:.*$/, "").toLowerCase().replace(/["'\x60]+$/, ""));
+    }
+    return [...hosts];
+}
+
+/**
  * The built in detectors. Every `test` returns an array of raw matches, empty when it does not fire.
  * Detectors marked `requiresNetwork` are skipped by the engine when allowHosts suppresses network
  * checks for a call.
@@ -301,7 +366,7 @@ export const DETECTORS = [
                 return [];
             }
             const uploaded = P.DOTENV_UPLOAD.test(text);
-            if (!uploaded && !P.codeReadsAndSends(text)) {
+            if (!uploaded && (!P.codeReadsAndSends(text) || !codeSendsSecret(text))) {
                 return [];
             }
             // The dotenv file itself is the payload. Reading one key for auth is credential use and
@@ -410,16 +475,23 @@ export const DETECTORS = [
         severity: "medium",
         title: "Uses a dotenv credential with a login tool on a non internal host",
         test(text, state) {
-            if (!P.isLoginToolCommand(text)) {
+            const shellLogin = P.isLoginToolCommand(text);
+            const interpreterLogin = /\b(?:subprocess\.(?:run|Popen|call)|os\.system)\s*\(/i.test(text) &&
+                /\bssh\b/i.test(text) && P.collectMatches(P.DOTENV, text).length > 0;
+            if (!shellLogin && !interpreterLogin) {
                 return [];
             }
-            const sourced = P.DOTENV_KEY_USE.test(text) || substitutionSources(text, state).length > 0;
+            const sourced = P.DOTENV_KEY_USE.test(text) ||
+                substitutionSources(text, state).length > 0 || interpreterLogin;
             if (!sourced) {
                 return [];
             }
             const names = P.credentialVariableNames(text);
-            const hosts = (state.hosts ?? []).filter((host) => !P.isInternalHost(host));
-            if (hosts.length === 0 || hosts.every((host) => names.some((name) => nameMatchesHost(name, host)))) {
+            const fromSsh = sshDestinationHosts(text);
+            const candidates = fromSsh.length > 0 ? fromSsh : (state.hosts ?? []);
+            const hosts = candidates.filter((host) => !P.isInternalHost(host));
+            if (hosts.length === 0 || hosts.every((host) => names.some((name) => nameMatchesHost(name, host)) ||
+                firstLabelPairs(host, names))) {
                 return [];
             }
             return [finding(this.id, this.severity, this.title, hosts.slice(0, 1))];

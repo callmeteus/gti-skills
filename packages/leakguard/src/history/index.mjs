@@ -84,7 +84,7 @@ function repoIdentity(path) {
  * @param {string} text Text to inspect
  * @param {object} ctx History context
  * @param {object} [meta] Source metadata with the originating tool and agent
- * @returns {{ denied: boolean, detectorIds: string[], evidence: string, remote: boolean, severity?: string, note?: string }} Summary
+ * @returns {{ denied: boolean, reportable: boolean, detectorIds: string[], evidence: string, remote: boolean, severity?: string, note?: string }} Summary
  */
 function analyze(text, ctx, meta = {}) {
     const detections = scanText(text, {
@@ -94,6 +94,7 @@ function analyze(text, ctx, meta = {}) {
         agent: meta.agent ?? ""
     });
     const denied = detections.some((finding) => finding.severity === "high");
+    const loginTool = detections.some((finding) => finding.id === "login_tool_credential_to_public_host");
     const hosts = extractHosts(text);
     const remote = hosts.some((host) => !isLocalHost(host));
     // A whole dotenv upload to loopback is the guard's own proof run. The live guard still denies
@@ -102,11 +103,14 @@ function analyze(text, ctx, meta = {}) {
 
     return {
         denied,
+        reportable: denied || loginTool,
         detectorIds: [...new Set(detections.map((finding) => finding.id))],
         evidence: snippet(text, 400),
         remote,
-        severity: loopbackUpload ? "low" : undefined,
-        note: loopbackUpload ? "loopback destination" : undefined
+        severity: loopbackUpload ? "low" : !denied && loginTool ? "medium" : undefined,
+        note: loopbackUpload ? "loopback destination"
+            : !denied && loginTool ? "login tool with a dotenv credential on a non internal host"
+                : undefined
     };
 }
 
@@ -156,7 +160,7 @@ function collectSecrets(text, meta, sink) {
  */
 function collectExfil(text, meta, sink) {
     const result = analyze(text, meta.ctx, meta);
-    if (!result.denied) {
+    if (!result.reportable) {
         return null;
     }
 
@@ -424,8 +428,9 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) 
     for (const [key, finding] of toolUses) {
         if (results.has(key)) {
             finding.executed = true;
-            // A downgraded loopback proof run stays low even when the transcript shows it ran.
-            if (finding.severity !== "low") {
+            // A downgraded loopback proof run stays low and a rule C login tool stays medium even
+            // when the transcript shows the command ran.
+            if (finding.severity !== "low" && finding.severity !== "medium") {
                 finding.severity = "critical";
             }
             for (const occurrence of finding.occurrences) {

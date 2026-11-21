@@ -198,6 +198,9 @@ export const ENV_DUMP = new RegExp(
     "i"
 );
 
+/** Whole environment tables serialized into a request body by interpreter code. */
+export const ENV_DUMP_SERIALIZE = /\b(?:dict\s*\(\s*os\.environ|json\.dumps\s*\(\s*os\.environ|JSON\.stringify\s*\(\s*process\.env|Object\.entries\s*\(\s*process\.env)\b/i;
+
 /** Encoders used to obfuscate exfiltrated data. */
 export const ENCODER = /\b(?:base64|xxd|gzip|openssl\s+base64)\b/i;
 
@@ -378,9 +381,11 @@ export function isInterpreterCode(text) {
  * @returns {boolean} Whether the code both reads a secret and sends it
  */
 export function codeReadsAndSends(text) {
-    const source = String(text ?? "");
+    // A harness can pass a one-liner with escaped quotes, for example open(\".env\"). Normalize
+    // those before matching so the code is judged by what it does, not by its shell quoting.
+    const source = String(text ?? "").replace(/\\(["'])/g, "$1");
     const reads = /\b(?:open\s*\(\s*['"][^'"]*(?:\.env|\.ssh|\.aws|credential|token|secret)|readFileSync\s*\(|process\.env|os\.environ|Get-Content|getenv\s*\()/i.test(source);
-    const sends = /\b(?:requests\.(?:post|put)|urllib\.request|httpx\.|fetch\s*\(|http\.request|https\.request|axios\.|net\.Socket|WebSocket)\b/i.test(source);
+    const sends = /\b(?:requests\.(?:post|put)|urllib\.request|httpx\.|fetch\s*\(|http\.request|https\.request|axios\.|net\.Socket|WebSocket)/i.test(source);
     return reads && sends;
 }
 
@@ -404,10 +409,11 @@ export function collectMatches(re, text) {
  */
 export function extractHosts(text) {
     const hosts = new Set();
-    for (const match of text.matchAll(/[a-z][a-z0-9+.-]*:\/\/(?:[^\s/@]+@)?([^\s:/?#]+)/gi)) {
+    const source = String(text ?? "").replace(/\\(["'])/g, "$1");
+    for (const match of source.matchAll(/[a-z][a-z0-9+.-]*:\/\/(?:[^\s/@]+@)?([^\s:/?#]+)/gi)) {
         // A URL held as a JSON string value, such as original_url":"https://host/..., is data in a
         // request body and not the destination of that request.
-        if (/["']\s*:\s*["']$/.test(text.slice(0, match.index))) {
+        if (/["']\s*:\s*["']$/.test(source.slice(0, match.index))) {
             continue;
         }
         // A quoted URL such as base="https://host" would otherwise keep the closing quote in the
@@ -421,7 +427,7 @@ export function extractHosts(text) {
     }
     // A quoted address is usually a data value, for example a DNS record content or a comparison,
     // not a destination. URLs are still read from the original text so quoted URLs stay covered.
-    for (const match of blankQuoted(text).matchAll(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)) {
+    for (const match of blankQuoted(source).matchAll(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g)) {
         hosts.add(match[0]);
     }
     return [...hosts];
@@ -575,6 +581,10 @@ export function dotenvSourcedVariableNames(text) {
         names.add(match[1]);
     }
     for (const match of source.matchAll(/grep\s+['"]?\^?([A-Z][A-Z0-9_]*)\s*=/gi)) {
+        names.add(match[1]);
+    }
+    // Interpreter code can read the whole file into a variable on one line and send it on another.
+    for (const match of source.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:open\s*\(\s*['"][^'"]*\.env|readFileSync\s*\([^)]*\.env|Get-Content[^\n]*\.env)/gi)) {
         names.add(match[1]);
     }
     return [...names];
