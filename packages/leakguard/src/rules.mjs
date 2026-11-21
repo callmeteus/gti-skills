@@ -1,3 +1,4 @@
+import { isFixtureValue } from "./history/findings.mjs";
 import * as P from "./patterns.mjs";
 
 /**
@@ -230,6 +231,22 @@ export const DETECTORS = [
         }
     }
 ];
+
+/**
+ * Detector used only for write tools. Writing a real credential into a file is a leak even with no
+ * network client in the call. Placeholder values are examples, not secrets, and are ignored.
+ */
+export const CREDENTIAL_WRITTEN_TO_FILE = {
+    id: "credential_written_to_file",
+    severity: "high",
+    title: "Writes a credential literal into a file",
+    test(text) {
+        const matches = credentialMatchesNamed(text)
+            .filter((match) => !isFixtureValue(match.value))
+            .map((match) => match.value);
+        return matches.length ? [finding(this.id, this.severity, this.title, matches)] : [];
+    }
+};
 
 /**
  * Compiles the optional regex rules from config into detector shaped objects.

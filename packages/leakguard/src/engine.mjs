@@ -1,7 +1,10 @@
 import { defaultConfig, loadConfig } from "./config.mjs";
 import { appendEvent, makeContext } from "./log.mjs";
 import { extractHosts, hasNetworkClient } from "./patterns.mjs";
-import { DETECTORS, buildCustomDetectors } from "./rules.mjs";
+import { CREDENTIAL_WRITTEN_TO_FILE, DETECTORS, buildCustomDetectors } from "./rules.mjs";
+import {
+    classifyTool, hasUrlArgument, stringArgs, targetPath, writeContent
+} from "./toolkind.mjs";
 import { extractText, lineOf, rank, redact } from "./util.mjs";
 
 /**
@@ -67,8 +70,29 @@ function buildReason(findings, decision) {
 }
 
 /**
- * Evaluates a normalized tool call against config and all detectors, logs when required and
- * returns the decision. Internal failures are not expected here; the hook entry point fail opens.
+ * Runs a group of detectors over one text. The caller prepares the state for the tool kind, so a
+ * write never inherits the shell network context and a fetch never runs command detectors.
+ *
+ * @param {object[]} detectors Detectors to run
+ * @param {string} text Text to inspect
+ * @param {object} state Detector state
+ * @param {Set<string>} disabled Disabled detector ids
+ * @param {object[]} findings Finding sink
+ */
+function applyDetectors(detectors, text, state, disabled, findings) {
+    for (const detector of detectors) {
+        if (disabled.has(detector.id) || (detector.requiresNetwork && state.suppressNetwork)) {
+            continue;
+        }
+
+        findings.push(...(detector.test(text, state) ?? []));
+    }
+}
+
+/**
+ * Evaluates a normalized tool call against config and the detectors for its tool kind, logs when
+ * required and returns the decision. An unknown tool has no eligible detectors and is allowed.
+ * Internal failures are not expected here; the hook entry point fails open.
  *
  * @param {{ tool?: string, input?: unknown, cwd?: string, agent?: string, ctx?: object }} call Tool call
  * @param {{ config?: object, configSource?: { config: object, warnings?: object[] } }} [options] Overrides
@@ -76,7 +100,7 @@ function buildReason(findings, decision) {
  */
 export function evaluate(call = {}, options = {}) {
     const normalized = normalize(call);
-    const { text, ctx } = normalized;
+    const { ctx } = normalized;
     const loaded = options.configSource ?? loadConfig(ctx);
     const config = options.config ?? loaded.config;
 
@@ -89,30 +113,59 @@ export function evaluate(call = {}, options = {}) {
         }, ctx);
     }
 
-    const suppressNetwork = hostsAllowed(text, config.allowHosts);
-    const rawNetwork = hasNetworkClient(text);
-    const state = {
-        network: rawNetwork && !suppressNetwork,
-        rawNetwork,
-        suppressNetwork,
-        hosts: extractHosts(text),
+    const kind = classifyTool(normalized.tool, normalized.input).kind;
+    const disabled = new Set(Array.isArray(config.disable) ? config.disable : []);
+    const detectors = [...DETECTORS, ...buildCustomDetectors(config.rules)];
+    const findings = [];
+    let inspectedText = normalized.text;
+
+    const base = {
         cwd: normalized.cwd,
         tool: normalized.tool,
         agent: normalized.agent,
         config
     };
 
-    const disabled = new Set(Array.isArray(config.disable) ? config.disable : []);
-    const detectors = [...DETECTORS, ...buildCustomDetectors(config.rules)];
-    const findings = [];
-
-    for (const detector of detectors) {
-        if (disabled.has(detector.id) || (detector.requiresNetwork && suppressNetwork)) {
-            continue;
-        }
-
-        const found = detector.test(text, state) ?? [];
-        findings.push(...found);
+    if (kind === "shell") {
+        const text = normalized.text;
+        inspectedText = text;
+        const rawNetwork = hasNetworkClient(text);
+        const suppressNetwork = hostsAllowed(text, config.allowHosts);
+        applyDetectors(detectors, text, {
+            ...base,
+            network: rawNetwork && !suppressNetwork,
+            rawNetwork,
+            suppressNetwork,
+            hosts: extractHosts(text)
+        }, disabled, findings);
+    } else if (kind === "write") {
+        const target = targetPath(normalized.input);
+        const content = writeContent(normalized.input);
+        inspectedText = content || target || normalized.text;
+        const quiet = { ...base, network: false, rawNetwork: false, suppressNetwork: false, hosts: [] };
+        applyDetectors(detectors.filter((detector) => detector.id === "secret_file_read"), target, quiet, disabled, findings);
+        applyDetectors([CREDENTIAL_WRITTEN_TO_FILE], content, quiet, disabled, findings);
+    } else if (kind === "fetch" || (kind === "other" && hasUrlArgument(normalized.input))) {
+        const text = stringArgs(normalized.input);
+        inspectedText = text;
+        const suppressNetwork = hostsAllowed(text, config.allowHosts);
+        applyDetectors(detectors.filter((detector) => detector.id === "credential_to_network"), text, {
+            ...base,
+            network: !suppressNetwork,
+            rawNetwork: true,
+            suppressNetwork,
+            hosts: extractHosts(text)
+        }, disabled, findings);
+    } else if (kind === "read") {
+        const text = normalized.text;
+        inspectedText = text;
+        applyDetectors(detectors.filter((detector) => detector.id === "secret_file_read"), text, {
+            ...base,
+            network: false,
+            rawNetwork: false,
+            suppressNetwork: false,
+            hosts: extractHosts(text)
+        }, disabled, findings);
     }
 
     let top = null;
@@ -150,7 +203,7 @@ export function evaluate(call = {}, options = {}) {
             decision,
             policyDecision,
             mode: config.mode,
-            text: redact(text)
+            text: redact(inspectedText)
         }, ctx);
     }
 

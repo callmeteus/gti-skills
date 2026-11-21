@@ -5,6 +5,7 @@ import { defaultConfig } from "../config.mjs";
 import { scanText } from "../engine.mjs";
 import { makeContext } from "../log.mjs";
 import { extractHosts } from "../patterns.mjs";
+import { classifyTool } from "../toolkind.mjs";
 import { extractText } from "../util.mjs";
 import {
     classifyFixtures, deduplicate, findSecrets, isFixturePath, isLocalHost,
@@ -310,11 +311,17 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) 
 
                 for (const block of blocksOf(content)) {
                     if (block.type === "tool_use" && typeof block.id === "string") {
-                        const text = `${typeof block.name === "string" ? block.name : ""}\n${extractText(block.input ?? {})}`;
-                        const callMeta = { ...meta, tool: typeof block.name === "string" ? block.name : "" };
-                        const finding = collectExfil(text, callMeta, tracker.findings);
-                        if (finding) {
-                            toolUses.set(`${file}:${block.id}`, finding);
+                        const name = typeof block.name === "string" ? block.name : "";
+                        const input = block.input ?? {};
+                        // Only shell tool calls can execute an exfiltration command. A write that
+                        // documents a command, or a read or fetch tool, is not an executed exfil.
+                        if (classifyTool(name, input).kind === "shell") {
+                            const text = `${name}\n${extractText(input)}`;
+                            const callMeta = { ...meta, tool: name };
+                            const finding = collectExfil(text, callMeta, tracker.findings);
+                            if (finding) {
+                                toolUses.set(`${file}:${block.id}`, finding);
+                            }
                         }
                     } else if (block.type === "tool_result" && typeof block.tool_use_id === "string") {
                         results.add(`${file}:${block.tool_use_id}`);
@@ -433,8 +440,9 @@ function scanGit(ctx, repo, sinceDays, maxBytes, injection, tracker) {
     }
 
     for (const added of evidence.addedLines) {
-        const meta = { ctx, source: "git", location: added.file, line: null, executed: false, tool: "shell" };
-        collectExfil(added.text, meta, tracker.findings);
+        // Committed source lines are not shell tool calls or shell history lines, so they cannot
+        // produce an exfil_executed finding. Credentials in them are still reported.
+        const meta = { ctx, source: "git", location: added.file, line: null, executed: false, tool: "" };
         collectSecrets(added.text, meta, tracker.findings);
         if (injection) {
             collectInjection(added.text, meta, tracker.findings);

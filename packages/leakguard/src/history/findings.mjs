@@ -179,7 +179,7 @@ export function findSecrets(text, location = "") {
             }
             seen.add(hash);
 
-            const fixtureValue = isFixtureValue(value);
+            let fixtureValue = isFixtureValue(value);
             let severity = "high";
             let local = false;
             let host = null;
@@ -190,6 +190,9 @@ export function findSecrets(text, location = "") {
                 if (parsed) {
                     host = hostWithoutPort(parsed[4]);
                     const password = parsed[3].toLowerCase();
+                    // Classify the password, not the whole URL: a host named example.com must not
+                    // turn a real password into a placeholder.
+                    fixtureValue = isFixtureValue(parsed[3]);
                     if (isLocalHost(host) || PLACEHOLDER_PASSWORDS.has(password)) {
                         severity = "low";
                         local = true;
@@ -301,9 +304,11 @@ export function deduplicate(findings) {
 }
 
 /**
- * Downgrades a credential to an informational test fixture when every git occurrence is under a
- * test or fixture path and every transcript occurrence belongs to that same repository. A value
- * seen outside those paths, or in another repository's transcript, keeps its normal severity.
+ * Downgrades a credential to an informational finding when its value is a placeholder, or when
+ * every git occurrence is under a test or fixture path and every transcript occurrence belongs to
+ * that same repository. Placeholder classification uses the value alone, so it applies to every
+ * source, including a value seen only in agent transcripts. A live-looking value seen outside
+ * those paths, or in another repository's transcript, keeps its normal severity.
  *
  * @param {object[]} findings Deduplicated findings
  * @returns {object[]} Same findings with fixture classification applied
@@ -314,6 +319,7 @@ export function classifyFixtures(findings) {
             continue;
         }
 
+        const placeholder = finding.fixtureValue === true;
         const git = finding.occurrences.filter((occurrence) => occurrence.source === "git");
         const transcripts = finding.occurrences.filter((occurrence) => occurrence.source === "transcripts");
         const onlyGitAndTranscripts = finding.occurrences.every(
@@ -321,12 +327,12 @@ export function classifyFixtures(findings) {
         );
         const gitAllFixtures = git.length > 0 && git.every((occurrence) => occurrence.fixturePath);
         const transcriptsSameRepo = transcripts.every((occurrence) => occurrence.sameRepo);
-        const isFixture = onlyGitAndTranscripts && gitAllFixtures && transcriptsSameRepo;
+        const isFixture = placeholder || (onlyGitAndTranscripts && gitAllFixtures && transcriptsSameRepo);
 
         finding.fixture = isFixture;
         if (isFixture) {
             finding.severity = "info";
-            finding.note = "test fixture credential";
+            finding.note = placeholder ? "placeholder credential" : "test fixture credential";
         }
     }
     return findings;

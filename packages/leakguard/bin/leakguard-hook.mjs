@@ -23,16 +23,17 @@ function agentFromArgv(argv) {
 }
 
 /**
- * Reads all of stdin as UTF-8.
+ * Reads all of stdin as UTF-8, removing a leading byte order mark and surrounding whitespace.
+ * Some agents prepend a BOM to the JSON they pipe in, which JSON.parse would otherwise reject.
  *
- * @returns {Promise<string>} Raw stdin
+ * @returns {Promise<string>} Cleaned stdin
  */
 async function readStdin() {
     const chunks = [];
     for await (const chunk of process.stdin) {
         chunks.push(chunk);
     }
-    return Buffer.concat(chunks).toString("utf8");
+    return Buffer.concat(chunks).toString("utf8").replace(/^\uFEFF/, "").trim();
 }
 
 /**
