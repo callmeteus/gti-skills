@@ -1,38 +1,46 @@
 import { evaluate } from "../../src/engine.mjs";
 
+function verdict(tool, input, context = {}) {
+    return evaluate({
+        tool: typeof tool === "string" ? tool : "",
+        input: input ?? {},
+        cwd: context.directory ?? context.location?.directory ?? context.worktree ?? process.cwd(),
+        agent: "opencode"
+    });
+}
+
 /**
- * Hook used by both OpenCode and Kilo, which share the plugin API. V1 blocks by throwing from
- * `tool.execute.before`. V2 additionally supports a permission evaluate hook with a mutable
- * `effect` field. The function is fail open for unexpected payload shapes.
+ * V1 plugin shape shared with Kilo. Both document `tool.execute.before` and show a plugin as an
+ * async function that returns a hook map. Blocking is done by throwing an Error with the reason.
  *
  * @param {object} context Plugin context supplied by the harness
- * @returns {object} Hook map
+ * @returns {Promise<object>} Hook map
  */
-export default function leakguardPlugin(context = {}) {
-    const directory = context.directory ?? context.worktree ?? process.cwd();
-
-    function verdict(tool, args) {
-        return evaluate({
-            tool: typeof tool === "string" ? tool : "",
-            input: args ?? {},
-            cwd: directory,
-            agent: "opencode"
-        });
+export const LeakGuard = async (context = {}) => ({
+    "tool.execute.before": async (input = {}, output = {}) => {
+        const result = verdict(input.tool, output.args ?? input.args ?? input.input, context);
+        if (result.decision === "deny") {
+            throw new Error(result.reason);
+        }
     }
+});
 
-    return {
-        "tool.execute.before": async (input = {}, output = {}) => {
-            const result = verdict(input.tool, output.args ?? input.args);
+/**
+ * V2 plugin shape. OpenCode 2.x reads `id` and `setup()` from the default export and registers
+ * hooks through the context. The `server()` function keeps the V1 shape available from the same
+ * entrypoint, as the OpenCode migration guide recommends.
+ */
+export default {
+    id: "leakguard",
+    async setup(ctx) {
+        await ctx.tool.hook("execute.before", (event) => {
+            const result = verdict(event.tool, event.input, ctx);
             if (result.decision === "deny") {
                 throw new Error(result.reason);
             }
-        },
-        "permission.evaluate": async (input = {}, output = {}) => {
-            const result = verdict(input.tool ?? input.action, output.args ?? input.args ?? input.resources);
-            if (result.decision !== "allow" && output) {
-                output.effect = result.decision === "ask" ? "ask" : "deny";
-                output.message = result.reason;
-            }
-        }
-    };
-}
+        });
+    },
+    async server() {
+        return LeakGuard({ directory: process.cwd() });
+    }
+};

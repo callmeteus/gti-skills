@@ -6,7 +6,7 @@ A local dependency-free pre-tool guard that blocks secret exfiltration across co
 
 Leakguard reads a pending tool call from a coding agent, extracts the text to inspect, and returns `allow`, `ask` or `deny` in that agent's hook format. It combines eight built in detectors with optional JSON rules, writes redacted decisions to a local log, and exposes the same rule engine for retrospective scanning through `scanText`. It is used by the [Leak Guard skill](../../skills/leak-guard/README.md).
 
-This package owns the rule engine, the per-agent command hook adapters, the OpenCode and Cline plugins, and the installer CLI. It does not sandbox tools, patch the model, or replace the agent's own permission system. It has no runtime dependencies and requires Node.js 18 or newer.
+This package owns the rule engine, the per-agent command hook adapters, the OpenCode and Cline plugins, and the installer CLI. The installer writes command hooks for six agents and plugin shims for OpenCode and Kilo. Both the `.mjs` path and a `.js` companion are written because OpenCode 2.x discovers `.js` and `.ts` plugin files but not `.mjs`. Cline and Muse remain printed instructions because they have no file based hook. Credentials sent only to their own issuer host, such as a GitHub token to `api.github.com`, are allowed. It does not sandbox tools, patch the model, or replace the agent's own permission system. It has no runtime dependencies and requires Node.js 18 or newer.
 
 ## Run
 

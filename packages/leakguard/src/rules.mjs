@@ -29,8 +29,46 @@ function secretPathMatches(text) {
     return allMatches(P.SECRET_PATHS, text);
 }
 
-function credentialMatches(text) {
-    return allMatches(P.CREDENTIALS, text);
+function credentialMatchesNamed(text) {
+    const matches = [];
+    for (const item of P.CREDENTIALS) {
+        for (const value of P.collectMatches(item.re, text)) {
+            matches.push({ name: item.name, value });
+        }
+    }
+    return matches;
+}
+
+/** Hosts owned by each credential issuer. A suffix also covers its subdomains. */
+const ISSUER_HOSTS = {
+    github: ["github.com", "githubusercontent.com"],
+    openai: ["api.openai.com"],
+    anthropic: ["api.anthropic.com"],
+    stripe: ["api.stripe.com"],
+    aws: ["amazonaws.com"],
+    google: ["googleapis.com"],
+    slack: ["slack.com"]
+};
+
+function hostMatches(host, entry) {
+    const value = entry.toLowerCase();
+    return host === value || host.endsWith(`.${value}`);
+}
+
+/**
+ * True when every destination host of a command belongs to the credential's own issuer or is
+ * explicitly allowlisted. With no host present, the credential is treated as suspicious.
+ */
+function credentialGoesToIssuer(name, hosts, allowHosts) {
+    const issuer = ISSUER_HOSTS[name];
+    if (!issuer || hosts.length === 0) {
+        return false;
+    }
+
+    return hosts.every((host) =>
+        issuer.some((entry) => hostMatches(host, entry)) ||
+        allowHosts.some((entry) => hostMatches(host, entry))
+    );
 }
 
 function envDumpMatches(text) {
@@ -73,7 +111,10 @@ export const DETECTORS = [
             if (!state.network) {
                 return [];
             }
-            const matches = credentialMatches(text);
+            const allowHosts = state.config?.allowHosts ?? [];
+            const matches = credentialMatchesNamed(text)
+                .filter((match) => !credentialGoesToIssuer(match.name, state.hosts ?? [], allowHosts))
+                .map((match) => match.value);
             return matches.length ? [finding(this.id, this.severity, this.title, matches)] : [];
         }
     },

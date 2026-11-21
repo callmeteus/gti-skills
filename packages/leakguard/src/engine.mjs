@@ -1,6 +1,6 @@
 import { defaultConfig, loadConfig } from "./config.mjs";
 import { appendEvent, makeContext } from "./log.mjs";
-import { NETWORK_CLIENT, NETWORK_LIBRARY, SCRIPT_RUNTIME, extractHosts } from "./patterns.mjs";
+import { extractHosts, hasNetworkClient } from "./patterns.mjs";
 import { DETECTORS, buildCustomDetectors } from "./rules.mjs";
 import { extractText, lineOf, rank, redact } from "./util.mjs";
 
@@ -46,10 +46,6 @@ export function hostsAllowed(text, allowHosts = []) {
         const entry = allowed.toLowerCase();
         return host === entry || host.endsWith(`.${entry}`);
     }));
-}
-
-function hasNetworkClient(text) {
-    return NETWORK_CLIENT.test(text) || (SCRIPT_RUNTIME.test(text) && NETWORK_LIBRARY.test(text));
 }
 
 /**
@@ -99,6 +95,7 @@ export function evaluate(call = {}, options = {}) {
         network: rawNetwork && !suppressNetwork,
         rawNetwork,
         suppressNetwork,
+        hosts: extractHosts(text),
         cwd: normalized.cwd,
         config
     };
@@ -176,6 +173,7 @@ export function scanText(text, opts = {}) {
         network: rawNetwork && !suppressNetwork,
         rawNetwork,
         suppressNetwork,
+        hosts: extractHosts(source),
         cwd: ctx.cwd,
         config
     };

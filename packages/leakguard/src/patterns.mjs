@@ -7,29 +7,89 @@
 /** Characters that can end one command and begin another. */
 const BOUNDARY = String.raw`(?:^|[\s;|&(\[\`"'=])`;
 
+/** A command can start at the beginning, after a separator, or after a known command wrapper. */
+const COMMAND_START = String.raw`(?:^|[\r\n]|[|;&]{1,2}|\$\(|\x60|[({\[]|\b(?:xargs|sudo|doas|then|do|else)\b|\benv(?:\s+[A-Za-z_][A-Za-z0-9_]*=[^\s;|&]+)*)\s*`;
+
 /** Program names that can send data over a network. */
 const CLIENT_NAMES = [
     "curl", "wget", "nc", "ncat", "netcat", "socat",
     "http", "httpie", "xh",
     "Invoke-WebRequest", "iwr", "Invoke-RestMethod", "irm",
-    "scp", "rsync",
-    "python", "python3", "node", "deno", "bun"
+    "scp", "rsync"
 ];
 
-const escapedClients = CLIENT_NAMES.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+/** Script runtimes count as network clients only when a network library appears in the code. */
+const RUNTIME_NAMES = ["python", "python3", "node", "deno", "bun"];
+
+function escapeAlternatives(names) {
+    return names.map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+}
 
 /**
- * Matches a network client in command position. The `http` token is rejected when it is
- * the scheme of a bare URL (http://...) so ordinary links do not count as a client.
+ * Matches a network client only in command position. The `http` token is rejected when it is
+ * the scheme of a bare URL.
  */
-export const NETWORK_CLIENT = new RegExp(
-    BOUNDARY + String.raw`(?:(?:sudo|doas)\s+)?(?:\b(?:` + escapedClients + String.raw`)\b)(?!:\/\/)`,
+const NETWORK_CLIENT_AT_COMMAND = new RegExp(
+    COMMAND_START + String.raw`(?:` + escapeAlternatives(CLIENT_NAMES) + String.raw`)\b(?!:\/\/)`,
+    "i"
+);
+
+const RUNTIME_AT_COMMAND = new RegExp(
+    COMMAND_START + String.raw`(?:` + escapeAlternatives(RUNTIME_NAMES) + String.raw`)\b`,
     "i"
 );
 
 /** A script runtime that may perform network I/O only when a network library is also present. */
-export const SCRIPT_RUNTIME = /\b(?:python3?|node|deno|bun)\b/i;
+export const SCRIPT_RUNTIME = RUNTIME_AT_COMMAND;
 export const NETWORK_LIBRARY = /\b(?:requests|urllib|httpx|fetch|axios|node:http|node:https|http\.client|net\.Socket|https?\.request|WebSocket)\b/i;
+
+/**
+ * Blanks the contents of quoted strings while preserving their length. Quoted words can then no
+ * longer be mistaken for command tokens; the original text is still used for secret detection.
+ *
+ * @param {string} text Original text
+ * @returns {string} Text with quoted contents replaced by spaces
+ */
+export function blankQuoted(text) {
+    let output = "";
+    let quote = null;
+
+    for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+
+        if (quote) {
+            if (char === "\\" && index + 1 < text.length) {
+                output += "  ";
+                index += 1;
+            } else if (char === quote) {
+                quote = null;
+                output += char;
+            } else {
+                output += char === "\r" || char === "\n" ? char : " ";
+            }
+        } else if (char === "'" || char === '"') {
+            quote = char;
+            output += char;
+        } else {
+            output += char;
+        }
+    }
+
+    return output;
+}
+
+/**
+ * True when the text contains a real network client. A client must appear as a command token.
+ * Python and Node one-liners count only when a network library is present in the original text.
+ *
+ * @param {string} text Original text
+ * @returns {boolean} Whether a network client is present
+ */
+export function hasNetworkClient(text) {
+    const commandText = blankQuoted(text);
+    return NETWORK_CLIENT_AT_COMMAND.test(commandText) ||
+        (RUNTIME_AT_COMMAND.test(commandText) && NETWORK_LIBRARY.test(text));
+}
 
 /**
  * A dotenv file name. Excludes the template names .env.example, .env.sample and .env.template.
