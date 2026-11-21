@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { evaluate, scanText } from "../src/engine.mjs";
+import { scanHistory } from "../src/history/index.mjs";
 import { install, status, uninstall } from "../src/install.mjs";
 
 const MAX_SCAN_BYTES = 2 * 1024 * 1024;
@@ -16,6 +17,7 @@ Usage:
   node packages/leakguard/bin/leakguard.mjs status [--agent <ids|all>] [--dest <dir>]
   node packages/leakguard/bin/leakguard.mjs test "<command>" [--agent claude]
   node packages/leakguard/bin/leakguard.mjs scan <file|dir> [--json]
+  node packages/leakguard/bin/leakguard.mjs history [--sources <list>] [--since <days>] [--repo <path>] [--json] [--out <dir>]
 `;
 
 /**
@@ -199,6 +201,29 @@ if (!command || command === "--help" || command === "-h") {
                 io.out(`${finding.file}:${line}: [${finding.severity}] ${finding.id} ${evidence}`);
             }
         }
+    }
+} else if (command === "history") {
+    try {
+        const { report, out } = await scanHistory({
+            sources: typeof flags.sources === "string" ? flags.sources : undefined,
+            since: typeof flags.since === "string" ? flags.since : undefined,
+            repo: typeof flags.repo === "string" ? flags.repo : undefined,
+            out: typeof flags.out === "string" ? flags.out : undefined
+        });
+
+        if (flags.json === true) {
+            io.out(JSON.stringify(report, null, 2));
+        } else {
+            io.out(`history: ${report.counts.findings} finding(s), ${report.counts.skippedFiles} path(s) skipped`);
+            for (const [kind, count] of Object.entries(report.counts.byKind)) {
+                io.out(`  ${kind}: ${count}`);
+            }
+            io.out(`report: ${join(out, "history.md")}`);
+            io.out(`data: ${join(out, "history.json")}`);
+        }
+    } catch (error) {
+        io.err(`history: ${error.message}`);
+        process.exitCode = 1;
     }
 } else {
     io.err(`Unknown command: ${command}`);
