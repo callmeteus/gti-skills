@@ -4,9 +4,11 @@ import { join, resolve } from "node:path";
 import { defaultConfig } from "../config.mjs";
 import { scanText } from "../engine.mjs";
 import { makeContext } from "../log.mjs";
+import { extractHosts } from "../patterns.mjs";
 import { extractText } from "../util.mjs";
 import {
-    deduplicate, findSecrets, makeFinding, safe, secretHash, snippet, sortFindings
+    classifyFixtures, deduplicate, findSecrets, isFixturePath, isLocalHost,
+    makeFinding, safe, secretHash, snippet, sortFindings
 } from "./findings.mjs";
 import { buildRotation, renderJson, renderMarkdown } from "./report.mjs";
 import {
@@ -14,20 +16,29 @@ import {
     parseSources, projectName, readJsonl, readText, sourceSpecs
 } from "./sources.mjs";
 
-/** Pattern for an instruction aimed at an autonomous agent. No command is ever constructed here. */
-const HINT = /\b(?:ignore (?:all |any )?(?:previous|prior|earlier) instructions|system prompt|disregard (?:all |any )?instructions)\b/i;
-const ACTION = /\b(?:send|sending|upload|uploading|post|posting|exfiltrate|exfiltrating|visit|open|fetch|retrieve|execute|exec|run|running|curl|wget|invoke)\b/i;
-const TARGET = /\b(?:https?:\/\/|\.env\b|credential|secret|api[ _-]?key|token|ssh[ _-]?key|command|url|link|server|endpoint|password|verify the environment)\b/i;
-const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/;
+/** A comment or field must address an agent or model before it is treated as an instruction. */
+const ADDRESS = /\b(?:AI|assistant|agent|Claude|Copilot|LLM|ignore previous|before running|you must|do not tell)\b/i;
+const ACTION = /\b(?:send|sending|upload|uploading|post|posting|fetch|posting to|run|running|execute|exec|read|curl|wget|invoke|open)\b/i;
+const TARGET = /\b(?:https?:\/\/|\.env\b|credential|secret|api[ _-]?key|token|ssh[ _-]?key|password|connection url|file|command)\b/i;
+
+/** Files where comment and manifest string instructions are meaningful. */
+const MARKDOWN_FILE = /(?:\.mdx?|\.markdown|README(?:[.\-_]|$))/i;
+const LOCKFILE = /(?:^|\/)(?:package-lock\.json|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|Cargo\.lock|uv\.lock)$/i;
+const SKIP_MANIFEST_FIELD = /^\s*(?:resolved|repository|homepage|bugs|\$schema|funding)\s*:/i;
+
+/** Bidi controls in source code, and zero-width characters inside an instruction. */
+const BIDI = /[\u202A-\u202E\u2066-\u2069]/;
+const ZERO_WIDTH = /[\u200B-\u200F\uFEFF]/;
+const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|py|rb|go|rs|java|cs|php|sh|ps1|vue|svelte|swift|kt)$/i;
 
 /**
- * True when a comment or string value reads like an instruction to an agent.
+ * True when a comment or string value addresses an agent AND asks for an action with a target.
  *
  * @param {string} text Candidate text
  * @returns {boolean} Whether it looks like an injected instruction
  */
 function isInstruction(text) {
-    return HINT.test(text) || (ACTION.test(text) && TARGET.test(text));
+    return ADDRESS.test(text) && ACTION.test(text) && TARGET.test(text);
 }
 
 /**
@@ -47,19 +58,25 @@ function lineAt(text, index) {
  *
  * @param {string} text Text to inspect
  * @param {object} ctx History context
- * @returns {{ denied: boolean, detectorIds: string[], evidence: string }} Decision summary
+ * @param {object} [meta] Source metadata with the originating tool and agent
+ * @returns {{ denied: boolean, detectorIds: string[], evidence: string, remote: boolean }} Summary
  */
-function analyze(text, ctx) {
-    const detections = scanText(text, { config: defaultConfig(), ctx });
+function analyze(text, ctx, meta = {}) {
+    const detections = scanText(text, {
+        config: defaultConfig(),
+        ctx,
+        tool: meta.tool ?? "",
+        agent: meta.agent ?? ""
+    });
     const denied = detections.some((finding) => finding.severity === "high");
-    const evidence = detections.length > 0
-        ? detections.map((finding) => finding.evidence).join(" ")
-        : text;
+    const hosts = extractHosts(text);
+    const remote = hosts.some((host) => !isLocalHost(host));
 
     return {
         denied,
         detectorIds: [...new Set(detections.map((finding) => finding.id))],
-        evidence: snippet(evidence, 200)
+        evidence: snippet(text, 400),
+        remote
     };
 }
 
@@ -71,19 +88,28 @@ function analyze(text, ctx) {
  * @param {object[]} sink Finding sink
  */
 function collectSecrets(text, meta, sink) {
-    for (const secret of findSecrets(text)) {
+    for (const secret of findSecrets(text, meta.location)) {
         sink.push(makeFinding({
             kind: "secret_exposed",
-            severity: "high",
-            title: `${secret.name} credential exposed`,
+            severity: secret.severity,
+            title: secret.local
+                ? `${secret.name} credential with a local or placeholder destination`
+                : `${secret.name} credential exposed`,
             source: meta.source,
             location: meta.location,
             line: meta.line ?? null,
             time: meta.time ?? null,
-            evidence: snippet(text, 200),
+            evidence: secret.name === "url-password"
+                ? `URL password for host ${secret.host ?? "unknown"}${secret.local ? " (local or placeholder)" : ""}`
+                : snippet(text, 200),
             secretType: secret.name,
             secretHash: secret.hash,
             secretRedacted: secret.redacted,
+            host: secret.host,
+            local: secret.local,
+            note: secret.note,
+            fixtureValue: secret.fixtureValue,
+            fixturePath: secret.fixturePath,
             detectorIds: ["credential-literal"]
         }));
     }
@@ -98,7 +124,7 @@ function collectSecrets(text, meta, sink) {
  * @returns {object|null} Created finding
  */
 function collectExfil(text, meta, sink) {
-    const result = analyze(text, meta.ctx);
+    const result = analyze(text, meta.ctx, meta);
     if (!result.denied) {
         return null;
     }
@@ -106,12 +132,15 @@ function collectExfil(text, meta, sink) {
     const finding = makeFinding({
         kind: "exfil_executed",
         severity: meta.executed ? "critical" : "high",
-        title: "Tool call or shell line matches a secret exfiltration detector",
+        title: result.remote
+            ? "Tool call or shell line exfiltrates to a remote host"
+            : "Tool call or shell line matches a secret exfiltration detector",
         source: meta.source,
         location: meta.location,
         line: meta.line ?? null,
         time: meta.time ?? null,
         evidence: result.evidence,
+        remote: result.remote,
         executed: meta.executed === true,
         detectorIds: result.detectorIds
     });
@@ -128,27 +157,31 @@ function collectExfil(text, meta, sink) {
  * @param {object[]} sink Finding sink
  */
 function collectInjection(text, meta, sink) {
-    for (const match of text.matchAll(/<!--([\s\S]{0,4000}?)-->/g)) {
-        if (!isInstruction(match[1])) {
-            continue;
+    const name = meta.location.split("/").pop() ?? "";
+
+    if (MARKDOWN_FILE.test(name)) {
+        for (const match of text.matchAll(/<!--([\s\S]{0,4000}?)-->/g)) {
+            if (!isInstruction(match[1])) {
+                continue;
+            }
+            sink.push(makeFinding({
+                kind: "injection_found",
+                severity: "medium",
+                title: "Hidden instruction in a Markdown comment",
+                source: meta.source,
+                location: meta.location,
+                line: lineAt(text, match.index ?? 0),
+                evidence: snippet(match[1], 200),
+                detectorIds: ["html-comment"]
+            }));
         }
-        sink.push(makeFinding({
-            kind: "injection_found",
-            severity: "medium",
-            title: "Hidden instruction in a Markdown comment",
-            source: meta.source,
-            location: meta.location,
-            line: lineAt(text, match.index ?? 0),
-            evidence: snippet(match[1], 200),
-            detectorIds: ["html-comment"]
-        }));
     }
 
-    if (/\.(?:json|ya?ml|toml)$/i.test(meta.location)) {
+    if (!LOCKFILE.test(name) && /\.(?:json|ya?ml|toml)$/i.test(name)) {
         const lines = text.split("\n");
         lines.forEach((line, index) => {
-            const match = line.match(/:\s*["']([^"']{12,})["']/);
-            if (!match || !isInstruction(match[1])) {
+            const match = line.match(/^\s*([\w$.-]+)\s*:\s*["']([^"']{12,})["']/);
+            if (!match || SKIP_MANIFEST_FIELD.test(match[1]) || !isInstruction(match[2])) {
                 return;
             }
             sink.push(makeFinding({
@@ -158,25 +191,46 @@ function collectInjection(text, meta, sink) {
                 source: meta.source,
                 location: meta.location,
                 line: index + 1,
-                evidence: snippet(match[1], 200),
+                evidence: snippet(match[2], 200),
                 detectorIds: ["manifest-string"]
             }));
         });
     }
 
-    const invisible = text.match(INVISIBLE);
-    if (invisible) {
-        const index = text.indexOf(invisible[0]);
+    if (isFixturePath(meta.location)) {
+        return;
+    }
+
+    if (BIDI.test(text) && SOURCE_FILE.test(name)) {
+        const index = text.search(BIDI);
         sink.push(makeFinding({
             kind: "injection_found",
             severity: "medium",
-            title: "Zero-width or bidi character in a repository file",
+            title: "Bidi control character in a source file",
             source: meta.source,
             location: meta.location,
             line: lineAt(text, index),
-            evidence: `invisible character ${JSON.stringify(invisible[0])} in ${snippet(text.slice(Math.max(0, index - 40), index + 40), 120)}`,
-            detectorIds: ["invisible-character"]
+            evidence: `bidi character ${JSON.stringify(text[index])} in ${snippet(text.slice(Math.max(0, index - 40), index + 40), 120)}`,
+            detectorIds: ["bidi-control"]
         }));
+        return;
+    }
+
+    if (ZERO_WIDTH.test(text)) {
+        const index = text.search(ZERO_WIDTH);
+        const around = text.slice(Math.max(0, index - 240), index + 240);
+        if (isInstruction(around)) {
+            sink.push(makeFinding({
+                kind: "injection_found",
+                severity: "medium",
+                title: "Zero-width character inside an agent instruction",
+                source: meta.source,
+                location: meta.location,
+                line: lineAt(text, index),
+                evidence: `zero-width character ${JSON.stringify(text[index])} in ${snippet(around, 160)}`,
+                detectorIds: ["zero-width-in-instruction"]
+            }));
+        }
     }
 }
 
@@ -227,7 +281,8 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, tracker) {
                 for (const block of blocksOf(content)) {
                     if (block.type === "tool_use" && typeof block.id === "string") {
                         const text = `${typeof block.name === "string" ? block.name : ""}\n${extractText(block.input ?? {})}`;
-                        const finding = collectExfil(text, meta, tracker.findings);
+                        const callMeta = { ...meta, tool: typeof block.name === "string" ? block.name : "" };
+                        const finding = collectExfil(text, callMeta, tracker.findings);
                         if (finding) {
                             toolUses.set(`${file}:${block.id}`, finding);
                         }
@@ -281,7 +336,8 @@ function scanShell(ctx, specs, cutoffMs, maxBytes, tracker) {
                     source: "shell",
                     location: file,
                     line: index + 1,
-                    executed: true
+                    executed: true,
+                    tool: "shell"
                 };
                 collectExfil(line, meta, tracker.findings);
                 collectSecrets(line, meta, tracker.findings);
@@ -347,7 +403,7 @@ function scanGit(ctx, repo, sinceDays, maxBytes, injection, tracker) {
     }
 
     for (const added of evidence.addedLines) {
-        const meta = { ctx, source: "git", location: added.file, line: null, executed: false };
+        const meta = { ctx, source: "git", location: added.file, line: null, executed: false, tool: "shell" };
         collectExfil(added.text, meta, tracker.findings);
         collectSecrets(added.text, meta, tracker.findings);
         if (injection) {
@@ -364,7 +420,7 @@ function scanGit(ctx, repo, sinceDays, maxBytes, injection, tracker) {
         if (text === null) {
             continue;
         }
-        const meta = { ctx, source: "git", location: path, line: null, executed: false };
+        const meta = { ctx, source: "git", location: path, line: null, executed: false, tool: "shell" };
         collectSecrets(text, meta, tracker.findings);
         if (injection) {
             collectInjection(text, meta, tracker.findings);
@@ -375,7 +431,7 @@ function scanGit(ctx, repo, sinceDays, maxBytes, injection, tracker) {
         if (seen.has(blob.path)) {
             continue;
         }
-        const meta = { ctx, source: "git", location: blob.path, line: null, executed: false };
+        const meta = { ctx, source: "git", location: blob.path, line: null, executed: false, tool: "shell" };
         collectSecrets(blob.text, meta, tracker.findings);
         if (injection) {
             collectInjection(blob.text, meta, tracker.findings);
@@ -450,12 +506,14 @@ export async function scanHistory(options = {}) {
         scanGit(ctx, repo, sinceDays, maxBytes, parsed.selected.includes("injection"), tracker);
     }
 
-    const findings = sortFindings(deduplicate(tracker.findings));
+    const findings = sortFindings(classifyFixtures(deduplicate(tracker.findings)));
     const byKind = {};
     const bySource = {};
+    const bySeverity = {};
     for (const finding of findings) {
         byKind[finding.kind] = (byKind[finding.kind] ?? 0) + 1;
         bySource[finding.source] = (bySource[finding.source] ?? 0) + 1;
+        bySeverity[finding.severity] = (bySeverity[finding.severity] ?? 0) + 1;
     }
 
     const report = {
@@ -474,6 +532,7 @@ export async function scanHistory(options = {}) {
             findings: findings.length,
             byKind,
             bySource,
+            bySeverity,
             skippedFiles: tracker.skipped.length
         },
         findings,

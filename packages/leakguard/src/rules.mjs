@@ -84,6 +84,40 @@ function dnsMatches(text) {
 }
 
 /**
+ * Returns substitution bodies that actually read a secret source. Backticks count only for POSIX
+ * shells; in PowerShell they are escape characters.
+ *
+ * @param {string} text Command text
+ * @param {object} state Detector state
+ * @returns {string[]} Redacted-by-caller snippets of the substitution bodies
+ */
+function substitutionSources(text, state) {
+    const bodies = [];
+
+    for (const match of text.matchAll(new RegExp(P.SUBSHELL_DOLLAR.source, "gi"))) {
+        bodies.push(match[1]);
+    }
+    if (!P.isPowerShell(text, state)) {
+        for (const match of text.matchAll(new RegExp(P.SUBSHELL_BACKTICK.source, "g"))) {
+            bodies.push(match[1]);
+        }
+    }
+
+    const reading = [];
+    for (const body of bodies) {
+        const fromBody = [
+            ...P.collectMatches(P.DOTENV, body),
+            ...secretPathMatches(body),
+            ...envDumpMatches(body),
+            ...credentialMatchesNamed(body).map((entry) => entry.value)
+        ];
+        reading.push(...fromBody);
+    }
+
+    return reading;
+}
+
+/**
  * The built in detectors. Every `test` returns an array of raw matches, empty when it does not fire.
  * Detectors marked `requiresNetwork` are skipped by the engine when allowHosts suppresses network
  * checks for a call.
@@ -151,7 +185,7 @@ export const DETECTORS = [
         test(text, state) {
             const encoded = encoderMatches(text);
             const dns = dnsMatches(text);
-            const substitution = P.collectMatches(P.SUBSHELL, text);
+            const substitution = substitutionSources(text, state);
             const sources = [...dotenvMatches(text), ...secretPathMatches(text), ...envDumpMatches(text)];
 
             if (dns.length && substitution.length) {

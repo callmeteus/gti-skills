@@ -97,6 +97,8 @@ export function evaluate(call = {}, options = {}) {
         suppressNetwork,
         hosts: extractHosts(text),
         cwd: normalized.cwd,
+        tool: normalized.tool,
+        agent: normalized.agent,
         config
     };
 
@@ -160,7 +162,7 @@ export function evaluate(call = {}, options = {}) {
  * evidence and a line number, so callers can safely print them.
  *
  * @param {string|unknown} text Text or tool input to scan
- * @param {{ config?: object, ctx?: object, disable?: string[] }} [opts] Options
+ * @param {{ config?: object, ctx?: object, disable?: string[], tool?: string, agent?: string }} [opts] Options
  * @returns {{ id: string, severity: string, title: string, evidence: string[], line: number|null }[]} Findings
  */
 export function scanText(text, opts = {}) {
@@ -175,6 +177,8 @@ export function scanText(text, opts = {}) {
         suppressNetwork,
         hosts: extractHosts(source),
         cwd: ctx.cwd,
+        tool: typeof opts.tool === "string" ? opts.tool : "",
+        agent: typeof opts.agent === "string" ? opts.agent : "",
         config
     };
 

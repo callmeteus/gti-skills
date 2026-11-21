@@ -4,6 +4,21 @@ import { redact, sha8 } from "../util.mjs";
 /** Severity order used when two occurrences of one finding are merged. */
 export const SEVERITY_RANK = { critical: 4, high: 3, medium: 2, info: 1, low: 1 };
 
+/** Markers that identify a credential example rather than a live secret. */
+const FIXTURE_MARKERS = /EXAMPLE|DEMO|NOT_REAL|FAKE|DUMMY|TEST|xxxx|0000|1234567890/i;
+
+/** Path segments and file names used for tests and fixtures. */
+const FIXTURE_DIR = /(?:^|\/)(?:tests?|__tests__|fixtures?|testdata)(?:\/|$)/i;
+const FIXTURE_FILE = /(?:\.(?:test|spec)\.|[-_]test\.|[-_]spec\.|^test_)/i;
+
+/** Hosts that are local to a machine or a container network. */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "host.docker.internal"]);
+
+/** Common placeholder passwords in connection URLs. */
+const PLACEHOLDER_PASSWORDS = new Set(["password", "postgres", "changeme", "secret", "example", "pass", "root"]);
+
+const URL_WITH_PASSWORD = /^([a-z][a-z0-9+.-]*):\/\/([^:\s/@]+):([^\s@/]+)@([^\s/?#]+)/i;
+
 /**
  * Short, stable identifier for a secret. It is the same digest the package redaction uses.
  *
@@ -38,15 +53,72 @@ export function snippet(value, max = 200) {
 }
 
 /**
- * Finds credential literals in a piece of text. Each result carries only a hash and a redacted
- * form, plus the detector name that matched it.
+ * True when a location is a test or fixture path.
+ *
+ * @param {string} location File path
+ * @returns {boolean} Whether the path holds test data
+ */
+export function isFixturePath(location) {
+    const path = String(location ?? "").replace(/\\/g, "/");
+    const name = path.split("/").pop() ?? "";
+    return FIXTURE_DIR.test(path) || FIXTURE_FILE.test(name);
+}
+
+/**
+ * True when a credential value is a demo marker or has obvious low entropy.
+ *
+ * @param {string} value Credential literal
+ * @returns {boolean} Whether it reads as a fixture value
+ */
+export function isFixtureValue(value) {
+    const text = String(value ?? "");
+    if (FIXTURE_MARKERS.test(text) || /(.)\1{5,}/.test(text)) {
+        return true;
+    }
+    return text.length >= 8 && new Set(text).size <= 4;
+}
+
+/**
+ * True for local machine, container and single-label service hosts.
+ *
+ * @param {string} host Host name with the port removed
+ * @returns {boolean} Whether the destination is local
+ */
+export function isLocalHost(host) {
+    const value = String(host ?? "").toLowerCase();
+    if (LOCAL_HOSTS.has(value) || /^127\./.test(value)) {
+        return true;
+    }
+    return /^[a-z0-9-]+$/.test(value) && !value.includes(".");
+}
+
+/**
+ * Strips the port and brackets from the host part of a connection URL.
+ *
+ * @param {string} hostport Host with optional port
+ * @returns {string} Host name
+ */
+function hostWithoutPort(hostport) {
+    const value = String(hostport ?? "");
+    if (value.startsWith("[")) {
+        const end = value.indexOf("]");
+        return end >= 0 ? value.slice(1, end).toLowerCase() : value.toLowerCase();
+    }
+    return value.replace(/:\d+$/, "").toLowerCase();
+}
+
+/**
+ * Finds credential literals in a piece of text. Fixture hints are recorded, not applied here:
+ * a value that also appears outside a test path keeps its normal severity after deduplication.
  *
  * @param {string} text Text to inspect
- * @returns {{ name: string, hash: string, redacted: string }[]} Secret references
+ * @param {string} [location] Source path, used for the fixture path hint
+ * @returns {object[]} Secret references with classification metadata
  */
-export function findSecrets(text) {
+export function findSecrets(text, location = "") {
     const found = [];
     const seen = new Set();
+    const fixturePath = isFixturePath(location);
 
     for (const credential of CREDENTIALS) {
         for (const value of collectMatches(credential.re, text)) {
@@ -55,7 +127,37 @@ export function findSecrets(text) {
                 continue;
             }
             seen.add(hash);
-            found.push({ name: credential.name, hash, redacted: safe(value) });
+
+            const fixtureValue = isFixtureValue(value);
+            let severity = "high";
+            let local = false;
+            let host = null;
+            let note = null;
+
+            if (credential.name === "url-password") {
+                const parsed = value.match(URL_WITH_PASSWORD);
+                if (parsed) {
+                    host = hostWithoutPort(parsed[4]);
+                    const password = parsed[3].toLowerCase();
+                    if (isLocalHost(host) || PLACEHOLDER_PASSWORDS.has(password)) {
+                        severity = "low";
+                        local = true;
+                        note = "local or placeholder credential";
+                    }
+                }
+            }
+
+            found.push({
+                name: credential.name,
+                hash,
+                redacted: safe(value),
+                severity,
+                fixtureValue,
+                fixturePath,
+                local,
+                host,
+                note
+            });
         }
     }
 
@@ -82,6 +184,13 @@ export function makeFinding(fields = {}) {
         secretType: fields.secretType ?? null,
         secretHash: fields.secretHash ?? null,
         secretRedacted: fields.secretRedacted ?? null,
+        host: fields.host ?? null,
+        local: fields.local === true,
+        note: fields.note ?? null,
+        remote: fields.remote === true,
+        fixture: fields.fixture === true,
+        fixtureValue: fields.fixtureValue === true,
+        fixturePath: fields.fixturePath === true,
         executed: fields.executed === true,
         detectorIds: fields.detectorIds ?? [],
         occurrences: fields.occurrences ?? []
@@ -95,7 +204,8 @@ function occurrenceOf(finding) {
         line: finding.line,
         time: finding.time,
         evidence: finding.evidence,
-        executed: finding.executed
+        executed: finding.executed,
+        fixturePath: finding.fixturePath === true
     };
 }
 
@@ -124,6 +234,8 @@ export function deduplicate(findings) {
         const existing = grouped.get(key);
         existing.occurrences.push(occurrenceOf(finding));
         existing.executed = existing.executed || finding.executed;
+        existing.remote = existing.remote || finding.remote;
+        existing.host = existing.host ?? finding.host;
         if ((SEVERITY_RANK[finding.severity] ?? 0) > (SEVERITY_RANK[existing.severity] ?? 0)) {
             existing.severity = finding.severity;
         }
@@ -136,6 +248,48 @@ export function deduplicate(findings) {
 }
 
 /**
+ * Downgrades a credential to an informational test fixture when every occurrence is a fixture
+ * value in a test path. A single occurrence outside those paths keeps the normal severity.
+ *
+ * @param {object[]} findings Deduplicated findings
+ * @returns {object[]} Same findings with fixture classification applied
+ */
+export function classifyFixtures(findings) {
+    for (const finding of findings) {
+        if (!finding.secretHash || !finding.fixtureValue) {
+            continue;
+        }
+        const onlyFixtures = finding.occurrences.every((occurrence) => occurrence.fixturePath);
+        finding.fixture = onlyFixtures;
+        if (onlyFixtures) {
+            finding.severity = "info";
+            finding.note = "test fixture credential";
+        }
+    }
+    return findings;
+}
+
+/**
+ * Risk tier used by the report: remote executed exfiltration, exposed live credentials,
+ * requested-only or local exfiltration, then low and informational findings.
+ *
+ * @param {object} finding Finding
+ * @returns {number} Tier from 0 to 3
+ */
+export function riskTier(finding) {
+    if (finding.kind === "exfil_executed" && finding.executed && finding.remote) {
+        return 0;
+    }
+    if (finding.kind === "secret_exposed" && finding.severity === "high" && !finding.fixture) {
+        return 1;
+    }
+    if (finding.kind === "exfil_executed") {
+        return 2;
+    }
+    return 3;
+}
+
+/**
  * Sorts findings by severity, then by source and location, so the report is stable.
  *
  * @param {object[]} findings Findings
@@ -143,6 +297,10 @@ export function deduplicate(findings) {
  */
 export function sortFindings(findings) {
     return [...findings].sort((left, right) => {
+        const tier = riskTier(left) - riskTier(right);
+        if (tier !== 0) {
+            return tier;
+        }
         const delta = (SEVERITY_RANK[right.severity] ?? 0) - (SEVERITY_RANK[left.severity] ?? 0);
         if (delta !== 0) {
             return delta;

@@ -124,9 +124,10 @@ export const SECRET_PATHS = [
     { name: "process-environ", re: /\/proc\/\d+\/environ\b/g }
 ];
 
-/** Environment dump commands in command position. */
+/** Environment dump commands in command position. A bare `set` is a Windows cmd dump; `set -e` and cmdlets are not. */
 export const ENV_DUMP = new RegExp(
-    BOUNDARY + String.raw`(?:env|printenv|set|export\s+-p)(?=[\s;|&)\]}\x60]|$)|` +
+    BOUNDARY + String.raw`(?:env|printenv|export\s+-p)(?=[\s;|&)\]}\x60]|$)|` +
+    BOUNDARY + String.raw`set(?=\s*(?:[;|&)\]}\r\n]|$))|` +
     BOUNDARY + String.raw`(?:Get-ChildItem|gci)\s+env:|\$env:`,
     "i"
 );
@@ -134,11 +135,34 @@ export const ENV_DUMP = new RegExp(
 /** Encoders used to obfuscate exfiltrated data. */
 export const ENCODER = /\b(?:base64|xxd|gzip|openssl\s+base64)\b/i;
 
-/** DNS clients that can carry data in a subdomain. */
-export const DNS_TOOL = /\b(?:nslookup|dig|host)\b/i;
+/** DNS clients that can carry data in a subdomain. They must appear as real command tokens. */
+export const DNS_TOOL = new RegExp(
+    COMMAND_START + String.raw`(?:nslookup|dig|host|Resolve-DnsName)\b(?![\w.-])`,
+    "i"
+);
 
 /** Command substitution, either POSIX dollar-parenthesis or backticks. */
 export const SUBSHELL = /\$\(|`/;
+
+/** Substitution bodies, kept separate so a caller can require that one reads a secret source. */
+export const SUBSHELL_DOLLAR = /\$\(([^)]*)\)/gi;
+export const SUBSHELL_BACKTICK = /`([^`]*)`/g;
+
+/**
+ * Heuristic for PowerShell syntax. In PowerShell a backtick is an escape character, not a POSIX
+ * substitution, and `Host` in `Write-Host` or `$Host` is not the DNS tool `host`.
+ *
+ * @param {string} text Command text
+ * @param {{ tool?: string, agent?: string }} [state] Detector state
+ * @returns {boolean} Whether the command reads as PowerShell
+ */
+export function isPowerShell(text, state = {}) {
+    const tool = String(state.tool ?? "").toLowerCase();
+    if (/(?:powershell|pwsh|\.ps1)/.test(tool)) {
+        return true;
+    }
+    return /\b(?:Write|Read|Get|Set|New|Remove|Invoke|Out|Select|Where|ForEach)-[A-Z][A-Za-z]*\b|\bResolve-DnsName\b|\$env:|\$Host\b|\s-Command\b/i.test(text);
+}
 
 /** Fetch a remote resource and execute it directly. */
 export const REMOTE_SCRIPT = new RegExp(

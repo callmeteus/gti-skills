@@ -1,4 +1,4 @@
-import { safe, snippet } from "./findings.mjs";
+import { riskTier, safe, snippet } from "./findings.mjs";
 
 /** Rotation destination for each credential type the package recognises. */
 const PROVIDERS = {
@@ -27,7 +27,7 @@ export function buildRotation(findings) {
     const byType = new Map();
 
     for (const finding of findings) {
-        if (!finding.secretHash) {
+        if (!finding.secretHash || finding.fixture) {
             continue;
         }
         const key = finding.secretType ?? "unknown";
@@ -63,7 +63,7 @@ function occurrenceLine(occurrence) {
     const where = occurrence.line ? `${occurrence.location}:${occurrence.line}` : occurrence.location;
     const time = occurrence.time ? `, ${occurrence.time}` : "";
     const state = occurrence.executed ? "ran" : "requested";
-    return `- ${occurrence.source} - \`${where}\` (${state}${time}): ${snippet(occurrence.evidence, 160)}`;
+    return `- ${occurrence.source} - \`${where}\` (${state}${time}): ${snippet(occurrence.evidence, 320)}`;
 }
 
 /**
@@ -84,6 +84,11 @@ export function renderMarkdown(report) {
     lines.push(`Repository: \`${options.repo}\``);
     lines.push(`Window: ${window}`);
     lines.push(`Output: \`${options.out}\``);
+    lines.push("");
+    const severityLine = ["critical", "high", "medium", "low", "info"]
+        .map((level) => `${level}=${counts.bySeverity?.[level] ?? 0}`)
+        .join(", ");
+    lines.push(`Severity counts: ${severityLine}`);
     lines.push("");
 
     lines.push("## Summary");
@@ -127,37 +132,62 @@ export function renderMarkdown(report) {
     }
 
     lines.push("");
-    lines.push("## Findings grouped by secret");
+    lines.push("## Findings by risk");
     lines.push("");
 
-    const grouped = findings.filter((finding) => finding.secretHash);
-    if (grouped.length === 0) {
-        lines.push("No credential literal was found. Other findings are listed below.");
-    } else {
-        for (const finding of grouped) {
+    const renderFinding = (finding) => {
+        if (finding.secretHash) {
             lines.push(`### ${finding.secretRedacted} (hash ${finding.secretHash})`);
-            lines.push("");
-            lines.push(`${finding.secretType ?? "credential"}, severity ${finding.severity}, ${finding.occurrences.length} occurrence(s).`);
-            lines.push("");
-            for (const occurrence of finding.occurrences) {
-                lines.push(occurrenceLine(occurrence));
-            }
-            lines.push("");
+        } else {
+            lines.push(`### ${finding.kind} (${finding.severity}): ${snippet(finding.title, 120)}`);
+        }
+        lines.push("");
+        const details = [finding.kind, `severity ${finding.severity}`];
+        if (finding.secretType) {
+            details.push(finding.secretType);
+        }
+        if (finding.host) {
+            details.push(`host ${finding.host}`);
+        }
+        if (finding.note) {
+            details.push(finding.note);
+        }
+        lines.push(`${details.join(", ")}. ${finding.occurrences.length} occurrence(s).`);
+        lines.push("");
+        for (const occurrence of finding.occurrences) {
+            lines.push(occurrenceLine(occurrence));
+        }
+        lines.push("");
+    };
+
+    const sections = [
+        [0, "Executed exfiltration to a remote host"],
+        [1, "Exposed credentials with a remote destination or live-looking key"],
+        [2, "Requested-only or local exfiltration"],
+        [3, "Low and informational findings"]
+    ];
+    for (const [tier, title] of sections) {
+        const items = findings.filter((finding) => riskTier(finding) === tier && !finding.fixture);
+        if (items.length === 0) {
+            continue;
+        }
+        lines.push(`### ${title} (${items.length})`);
+        lines.push("");
+        for (const finding of items) {
+            renderFinding(finding);
         }
     }
 
-    const other = findings.filter((finding) => !finding.secretHash);
-    if (other.length > 0) {
-        lines.push("## Other findings");
+    const fixtures = findings.filter((finding) => finding.fixture);
+    if (fixtures.length > 0) {
+        lines.push("<details>");
+        lines.push(`<summary>Test fixtures (${fixtures.length})</summary>`);
         lines.push("");
-        for (const finding of other) {
-            lines.push(`### ${finding.kind} (${finding.severity}): ${snippet(finding.title, 120)}`);
-            lines.push("");
-            for (const occurrence of finding.occurrences) {
-                lines.push(occurrenceLine(occurrence));
-            }
-            lines.push("");
+        for (const finding of fixtures) {
+            renderFinding(finding);
         }
+        lines.push("</details>");
+        lines.push("");
     }
 
     lines.push("## Rotation checklist");

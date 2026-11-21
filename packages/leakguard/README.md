@@ -67,6 +67,8 @@ Config files are optional. `<GTI_HOME>/leak-guard/config.json` sets user policy 
 
 `history` reads transcripts, shell history, committed git content, the guard event log and injected instructions. It uses no network, writes only to `--out` (default `<GTI_HOME>/leak-guard/<project>/`), skips files above 32 MB with a recorded reason, and streams JSONL files line by line. `--sources` accepts a comma separated subset of `transcripts,shell,git,guard,injection`. Cursor, Kiro, Antigravity, Cline and Muse transcript folders are listed as not covered because no local history folder is documented for them.
 
+Findings are triaged by risk: executed exfiltration to a remote host first, then exposed live-looking credentials, then requested-only or local exfiltration, then low and informational items. Credentials with demo markers or low entropy in test and fixture paths are informational and stay out of the rotation checklist; a value that also appears outside those paths keeps its normal severity. URL passwords to local hosts, container service names, or placeholder passwords are low and report only the host. Injection checks flag only agent directed instructions in Markdown comments and non URL valued manifest fields; lockfiles, SVG comments, and zero width characters outside instructions are ignored.
+
 ## Testing
 
 ```bash
