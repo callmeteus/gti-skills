@@ -6,8 +6,10 @@
  * rendered colors that match none of the page's color tokens (CSS custom properties),
  * instances of one component side by side whose size or inner parts do not match,
  * forms repeated inside every item of a list, too many filled buttons competing on one view,
- * headings or short text that repeat the heading above them, and large blocks with
- * different space above and below.
+ * headings or short text that repeat the heading above them, large blocks with
+ * different space above and below, and admin screen tells: empty tables with no empty
+ * state, create forms left open, labels beside fields, raw JSON fields, and controls with
+ * no label or a single option.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -412,6 +414,16 @@ export function measurePage(options) {
     const seenText = new Map();
     headings.forEach((heading, index) => {
         const text = plain(heading.innerText.trim().replace(/\s+/g, " "));
+        // An eyebrow right above the heading ("MENSAGENS" over "Mensagens SMS") that only repeats it.
+        const eyebrow = heading.previousElementSibling;
+        if (eyebrow && /^h[1-3]$/i.test(heading.tagName) && !eyebrow.matches(`${headingSelector}, a, button, label, input, select, textarea`) && shown(eyebrow)) {
+            const line = eyebrow.innerText.trim().replace(/\s+/g, " ");
+            const own = words(line);
+            const headingOwn = words(heading.innerText);
+            if (own.length && line.length <= 40 && own.every((word) => headingOwn.some((other) => sameWord(word, other)))) {
+                add("repeated-heading", [asBox(eyebrow), asBox(heading)], `the eyebrow "${line.slice(0, 32)}" above the heading only repeats its words`, "an eyebrow that adds a level the heading does not name, or no eyebrow", "Remove the eyebrow, or make it name the parent area when that area is not already in the heading or the navigation.");
+            }
+        }
         if (/^h[1-3]$/i.test(heading.tagName) && !inItem(heading, document.body)) {
             const earlier = seenText.get(text);
             if (earlier) add("repeated-heading", [asBox(earlier), asBox(heading)], `two headings read "${heading.innerText.trim().slice(0, 48)}"`, "each heading names a different part of the page", "Keep one of the two. When both parts are needed, name each one for what it holds.");
@@ -611,6 +623,95 @@ export function measurePage(options) {
     if (filled.length > 2) {
         add("competing-primaries", filled.slice(0, 4), `${filled.length} filled, saturated buttons in the first viewport`, "one primary action per view, two at most", "Keep one filled primary for the main task of the view. Make repeated item actions secondary (outline or plain), and move the rest into the item's detail, a modal, or an overflow menu.");
     }
+
+    // Admin screens: an empty table with only its header row, a creation form left open under the
+    // list instead of a "New" button, form labels beside their fields that push each field to a
+    // different start, raw JSON typed into a text box, and selects or inputs nobody can name.
+    const fieldSelector = "input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=reset]):not([type=checkbox]):not([type=radio]), select, textarea";
+    const inDialog = (el) => Boolean(el.closest("dialog, [role=dialog], [aria-modal=true], details:not([open])"));
+    const dataRows = (table) => [...table.querySelectorAll("tr")].filter((row) => !row.closest("thead") && row.querySelector("td") && shown(row) && row.innerText.trim());
+    for (const table of document.querySelectorAll("table, [role=table], [role=grid]")) {
+        if (!shown(table) || (ignore && table.closest(ignore))) continue;
+        const headers = table.querySelectorAll("th, [role=columnheader]");
+        const rows = table.matches("table") ? dataRows(table) : [...table.querySelectorAll("[role=row]")].filter((row) => !row.querySelector("[role=columnheader]") && shown(row) && row.innerText.trim());
+        if (!headers.length || rows.length) continue;
+        let message = "";
+        for (let node = table.nextElementSibling; node && !message; node = node.nextElementSibling) if (shown(node)) message = node.innerText.trim();
+        const caption = [...table.querySelectorAll("caption, tfoot, td")].some((cell) => shown(cell) && cell.innerText.trim());
+        if (!message && !caption) add("empty-list-without-message", [asBox(table)], `a table with ${headers.length} column header(s) and no rows, and nothing that says it is empty`, "an empty state: what is missing, what it is for, and the button that creates the first one", "Replace the empty table with an empty state: one line that names what is missing (\"No SMS destinations yet\"), one line on what it is for, and the same \"New\" button the page header has. Show the table again when the first row exists.");
+    }
+    const createVerb = /^\s*(\+\s*)?(criar|crie|create|adicionar|adicione|add|novo|nova|new|cadastrar|incluir)\b/i;
+    const hasList = largestList >= 3 || [...document.querySelectorAll("table, [role=table], [role=grid]")].some(shown);
+    if (hasList) {
+        const reported = new Set();
+        for (const button of document.querySelectorAll("button, input[type=submit], [role=button]")) {
+            const label = (button.innerText || button.value || "").trim();
+            if (!createVerb.test(label) || !shown(button) || inDialog(button) || button.closest("tr, li")) continue;
+            let form = button.closest("form");
+            if (!form) for (let node = button.parentElement, depth = 0; node && depth < 6 && !form; node = node.parentElement, depth++) if (node.querySelectorAll(fieldSelector).length >= 2) form = node;
+            if (!form || reported.has(form) || inDialog(form)) continue;
+            const fields = [...form.querySelectorAll(fieldSelector)].filter(shown);
+            if (fields.length < 2 || fields.some((field) => field.type === "search")) continue;
+            reported.add(form);
+            add("open-create-form", [asBox(form), asBox(button)], `a creation form with ${fields.length} field(s) ("${label.slice(0, 32)}") is always open on a page that lists the items`, "a \"New\" button with a plus icon in the page header that opens the form in a dialog, a drawer, or its own page", "Put one primary \"+ New <item>\" button at the right of the page title. It opens the form in a dialog or drawer (or its own page when the form is long), with Cancel and the create button at the bottom. The list stays on the page, with an empty state when it has no rows.");
+        }
+    }
+    const fieldOf = (label) => label.control ?? (label.nextElementSibling?.matches(fieldSelector) ? label.nextElementSibling : null);
+    const formGroups = new Map();
+    for (const label of document.querySelectorAll("label")) {
+        const field = fieldOf(label);
+        if (!field || !shown(label) || !shown(field) || label.contains(field) && label.innerText.trim() === "") continue;
+        const own = [...label.childNodes].filter((node) => node.nodeType === 3 && node.textContent.trim());
+        let labelRect = label.getBoundingClientRect();
+        if (label.contains(field) && own.length) {
+            const range = document.createRange();
+            range.selectNodeContents(own[0]);
+            labelRect = range.getBoundingClientRect();
+        }
+        const fieldRect = field.getBoundingClientRect();
+        const beside = labelRect.right <= fieldRect.left + 2 && Math.min(labelRect.bottom, fieldRect.bottom) - Math.max(labelRect.top, fieldRect.top) > 0;
+        if (!beside) continue;
+        const form = field.closest("form, fieldset, section, [role=form]") ?? document.body;
+        const group = formGroups.get(form) ?? [];
+        group.push({ label, field, labelLeft: labelRect.left, fieldLeft: fieldRect.left });
+        formGroups.set(form, group);
+    }
+    for (const group of formGroups.values()) {
+        const columns = [];
+        for (const pair of group) {
+            const column = columns.find((list) => Math.abs(list[0].labelLeft - pair.labelLeft) <= 4);
+            if (column) column.push(pair);
+            else columns.push([pair]);
+        }
+        const ragged = columns.filter((column) => column.length >= 2 && Math.max(...column.map((pair) => pair.fieldLeft)) - Math.min(...column.map((pair) => pair.fieldLeft)) > 4);
+        if (ragged.length) {
+            const starts = new Set(ragged.flatMap((column) => column.map((pair) => Math.round(pair.fieldLeft))));
+            add("ragged-form-labels", ragged.flatMap((column) => column.map((pair) => asBox(pair.field))).slice(0, 4), `${ragged.reduce((sum, column) => sum + column.length, 0)} field(s) with the label beside them start at ${starts.size} different x positions`, "labels above their fields, so every field in a column starts at the same edge", "Put each label above its field (a column of label, field, help text), give the fields one width per column, and line the columns up on one grid. Keep the create and cancel buttons at the bottom, aligned to the fields.");
+        }
+    }
+    const rawJson = [...document.querySelectorAll("textarea, input:not([type=hidden])")].filter((field) => {
+        if (!shown(field)) return false;
+        const text = (field.value || field.getAttribute("placeholder") || "").trim();
+        return /^[[{]/.test(text) && /"[^"]+"\s*:|^\[\s*"/.test(text);
+    });
+    if (rawJson.length) add("raw-json-field", rawJson.slice(0, 3).map(asBox), `${rawJson.length} field(s) where the user types raw JSON`, "one labeled field per setting, with its type (text, list, number, toggle)", "Replace the JSON box with a field for each key it holds (\"Account SID\", \"Allowed senders\" as a list of phone numbers), each with its label and help text, and build the JSON in code. Keep a raw JSON editor only behind an \"Advanced\" disclosure, with syntax highlighting and validation.");
+    const choicePhrase = /^(todos|todas|all|any|qualquer|escolha|selecione|choose|select|pick)\b/i;
+    const unclear = [];
+    for (const field of document.querySelectorAll(fieldSelector)) {
+        if (!shown(field) || (ignore && field.closest(ignore))) continue;
+        const named = field.labels?.length || field.getAttribute("aria-label")?.trim() || field.getAttribute("aria-labelledby") || field.getAttribute("title")?.trim();
+        const before = field.previousElementSibling;
+        const visibleName = before && !before.matches(fieldSelector) && !before.matches("button") && shown(before) && before.innerText.trim().length <= 40 && before.innerText.trim();
+        if (field.tagName === "SELECT") {
+            const options = [...field.options].filter((option) => !option.disabled && !option.hidden);
+            const selected = field.options[field.selectedIndex]?.text.trim() ?? "";
+            if (options.length === 1) unclear.push({ field, reason: `a select with one option ("${selected.slice(0, 24)}") offers no choice` });
+            else if (!named && !visibleName && !choicePhrase.test(selected)) unclear.push({ field, reason: `a select showing "${selected.slice(0, 24)}" has no label, so nothing says what it chooses` });
+        } else if (!named && !visibleName && !field.getAttribute("placeholder")?.trim()) {
+            unclear.push({ field, reason: "a field with no label and no placeholder" });
+        }
+    }
+    if (unclear.length) add("unexplained-control", unclear.slice(0, 4).map((entry) => asBox(entry.field)), unclear.slice(0, 4).map((entry) => entry.reason).join("; "), "every control says what it sets, and a choice has at least two options", "Give each control a visible label (\"Workspace\", \"Event\"), or put the facet in its first option (\"All channels\"). When a select has only one option, show the value as text (or nothing) until a second option exists. A switcher for the current account or event belongs in the navigation, labeled, not next to the page title.");
 
     // Colors that match no token: every color custom property the page defines is resolved to
     // rgb, and each painted text, background, and border color must equal one of them.

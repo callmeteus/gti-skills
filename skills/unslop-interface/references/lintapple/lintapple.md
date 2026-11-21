@@ -58,7 +58,12 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `filters-outweigh-items` | More filter chips or links than items to filter, as 11 filter chips over 4 auction items. A compact row of selects does not count, and select options are still checked by `duplicate-filter` |
 | `lonely-word` | A heading or short text that wraps and leaves one word alone on its last line, without `text-wrap: balance` or `pretty` |
 | `transition-all` | Elements that animate with `transition: all` |
-| `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), or short text under a heading that only repeats its words (an "Attendees only" tag). Card titles in a grid of items are not compared with the page heading |
+| `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), short text under a heading that only repeats its words (an "Attendees only" tag), or an eyebrow right above a heading that only repeats it ("MENSAGENS" over "Mensagens SMS"). Card titles in a grid of items are not compared with the page heading |
+| `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
+| `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
+| `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |
+| `raw-json-field` | A text box or text area whose value or placeholder is JSON |
+| `unexplained-control` | A select with one option, a select with no label whose shown option does not name its facet ("All channels"), or an input with no label and no placeholder |
 | `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |
 
 | Option | Use |

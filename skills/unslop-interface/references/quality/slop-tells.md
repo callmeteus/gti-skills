@@ -104,6 +104,14 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | The same filter in two groups ("Online" and "Pagamento online"), or a filter that repeats the page's sections | Common | 07 |
 | Tags in every card that link to the filter options | Common | 07 |
 | A filter panel restyled (new grid, bigger chips) instead of turned into one row of selects | Common | 07 |
+| A "New <item>" form always open under the list, and no "+" button in the page header | Admin panels | 07 |
+| A table with only its header row when there is no data, and no empty state | Admin panels | 07 |
+| Labels beside their fields, so every field starts at a different edge | Admin panels | 07 |
+| Free text boxes for fixed choices (driver, channel, status) | Admin panels | 07 |
+| A raw JSON text box for settings | Admin panels | 07 |
+| An unlabeled select next to the page title ("Even7"), or a select with one option | Admin panels | 07 |
+| A "Refresh" button on a page that reloads after each change | Admin panels | 07 |
+| Eyebrow, page title, and card title that repeat one word ("MENSAGENS", "Mensagens SMS", "Mensagens") | Admin panels | 07 |
 
 ## States and feel
 

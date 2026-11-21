@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 16px/1.4 sans-serif; margin: 0; padding: 32px; width: 820px; }
+  .top { display: flex; justify-content: space-between; align-items: end; }
+  .eyebrow { font-size: 12px; margin: 0; }
+  h1 { margin: 0; }
+  .card { border: 1px solid #ccc; border-radius: 12px; padding: 20px; margin-top: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+  .row { display: flex; align-items: center; gap: 0; }
+  .row input, .row textarea { margin-left: 4px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <p class="eyebrow">MENSAGENS</p>
+      <h1>Mensagens SMS</h1>
+    </div>
+    <div><select id="tenant"><option>Even7</option></select> <button type="button">Atualizar</button></div>
+  </div>
+  <section class="card">
+    <h2>Mensagens</h2>
+    <table id="messages"><thead><tr><th>ID</th><th>Canal</th><th>Destino</th><th>Status</th></tr></thead><tbody></tbody></table>
+  </section>
+  <section class="card" id="create">
+    <h2>Novo destino</h2>
+    <form class="grid">
+      <div class="row"><label for="name">Nome</label><input id="name" value="gio"></div>
+      <div class="row"><label for="driver">Driver</label><input id="driver" value="Twilio"></div>
+      <div class="row"><label for="channel">Canal</label><input id="channel" value="SMS"></div>
+      <div class="row"><label for="secret">Segredo</label><input id="secret" type="password" value="abc"></div>
+      <div class="row"><label for="config">Config JSON</label><textarea id="config">{"account_sid":"","allowed_from":["+5511999999999"]}</textarea></div>
+      <div></div>
+      <div><button type="submit">Criar destino</button></div>
+    </form>
+  </section>
+</body>
+</html>

@@ -241,7 +241,7 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
 
 ### scripts/lintapple/snapshot.mjs
 
