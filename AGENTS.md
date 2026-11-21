@@ -191,6 +191,7 @@ Current skills:
 | `seo-growth` | SEO Growth |
 | `llm-fine-tuning` | LLM Fine Tuning |
 | `video-editor` | Video Editor |
+| `fast-ci` | Fast CI |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

@@ -1,0 +1,8 @@
+{
+    "id": "fast-ci",
+    "displayName": "Fast CI",
+    "packs": [
+        "coding",
+        "infra"
+    ]
+}
