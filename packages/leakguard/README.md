@@ -84,4 +84,8 @@ cd packages/leakguard && npm test
 
 The suites cover every detector's positive and negative cases, severity policy, config merge and invalid config, all six command hook adapters, the hook entry point, installer idempotency and backups, redaction, and the history scanner on fixture files in a temporary home with a fixture git repository. The history agent suite builds fixture SQLite stores for OpenCode, Kilo, Cursor, Cline and Antigravity plus a Kiro JSONL store, and checks secret detection, executed shell exfiltration, write tool calls that do not exfiltrate, WAL only rows read through the copy, and a recorded skip when `node:sqlite` is unavailable. Tests write only to temporary directories and never read the real user home.
 
+## Limitations
+
+Name pairing requires a whole second level label match, so an attacker who registers `<token>.<tld>` for a credential token can still make that variable look paired.
+
 See [../../README.md](../../README.md) for the full repository.
