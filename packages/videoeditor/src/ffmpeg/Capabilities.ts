@@ -119,6 +119,9 @@ export async function forSpec(
     for (const track of spec.music ?? []) {
         sources.add(resolveSource(workspace, stateDir, track.source));
     }
+    for (const overlay of spec.overlays ?? []) {
+        sources.add(resolveSource(workspace, stateDir, overlay.source));
+    }
 
     const entries = await Promise.all([...sources].map(async (path) => [path, await probe(path)] as const));
     return new Map(entries);

@@ -100,7 +100,7 @@ Video Editor isolates state by chat. The CLI reads `VIDEOEDITOR_SESSION`, `PASEO
 1. **doctor** once. Read tool availability. Fix missing tools by telling the user, not by guessing.
 2. **probe** every source. `probe --source <path> --json` returns stream facts; `probe --all --json` checks the timeline. Unreadable, empty, and unsupported files are refused with a reason before ffmpeg runs.
 3. **plan** a composed edit when the request spans several clips, captions, or music. Write `scope.specPath` directly or use `scene add` and `music add`. The schema is in [references/workflow/spec.md](references/workflow/spec.md).
-4. **Run** the right tool for the job: `cut`, `trim-silence`, `speed`, `reframe`, `loudness`, `captions`, or `export`. For a composed timeline run `render`. Each prints `data.checks` with measured results.
+4. **Run** the right tool for the job: `cut`, `trim-silence`, `speed`, `reframe`, `loudness`, `captions`, or `export`. For a composed timeline run `render`. For motion graphics, follow the analyze, compose, render, review loop in the Motion Graphics section. Each prints `data.checks` with measured results.
 5. **Read the checks** before moving on. A failing check means the output is wrong or the input was misread; fix the spec or the flags and run again once. Never ignore a failing check.
 6. **review --out <file>** to write a static HTML page. It shows the inputs, checks from every step, a phone-frame preview with the platform safe-area overlay, and a timeline of clips, captions, and audio. Clicking an item and writing a note produces a copyable instruction for the agent. No server is needed.
 7. **Fix** the named item only. Edit the one scene or rerun the one tool, then re-read the checks. Do not loop on cosmetic tweaks.
@@ -114,7 +114,7 @@ Forbidden after a successful export:
 
 ## Commands
 
-`doctor` `tools` `status` `probe` `cut` `trim-silence` `speed` `reframe` `loudness` `export` `waveform` `frame` `captions` `review` `init` `plan` `render` `scene add` `music add` `history` `studio` `studio stop` `demo` `resume` `help`
+`doctor` `tools` `status` `probe` `cut` `trim-silence` `speed` `reframe` `loudness` `export` `waveform` `frame` `captions` `review` `motion styles` `motion new` `motion render` `motion analyze` `motion add` `init` `plan` `render` `scene add` `music add` `history` `studio` `studio stop` `demo` `resume` `help`
 
 Every command accepts `--json`. Flags, returned fields, and error codes: [references/workflow/commands.md](references/workflow/commands.md).
 
@@ -128,6 +128,17 @@ Feature guides, one per area:
 - [Review](references/workflow/review.md)
 
 A ready to copy starter timeline lives in [assets/templates/timeline.json](assets/templates/timeline.json). Render check rules are in [references/quality/render-check.md](references/quality/render-check.md) and codec notes in [references/quality/ffmpeg-notes.md](references/quality/ffmpeg-notes.md).
+
+## Motion Graphics
+
+Motion graphics are another kind of clip: HTML/CSS/SVG compositions rendered locally by seeking, the Art Director way. No generative video API and no cloud service. `doctor` reports Playwright and Chromium; when they are missing, tell the user to run `npm install && npx playwright install chromium` in `packages/videoeditor`. Nothing here assumes a design question: pick the closest starter guide and template and note the choice.
+
+The loop is **analyze, compose, render, review**: run `motion analyze --source <ref>` to get cuts, pacing, palette, and keyframes; choose a `Motion.md` guide from `motion styles`; write an editable composition with `motion new --template <id> --brand <brand.json>`; render it with `motion render --preset <platform> --duration <sec>`; add it with `motion add --as clip|overlay --at <t>`; then `review --out`. Every motion command prints `checks` measured with ffprobe. Full guides:
+
+- [Composition contract](references/motion/composition-contract.md)
+- [Style guides and brand kit](references/motion/style-and-brand.md)
+- [Analyze, compose, render, review](references/motion/analyze-compose-render.md)
+- [Quality checks](references/motion/quality.md)
 
 ## Security
 

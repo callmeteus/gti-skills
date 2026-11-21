@@ -2,6 +2,27 @@ import { spawn } from "node:child_process";
 
 import { VideoErrors } from "../core/Errors";
 
+/**
+ * Inserts a thread limit into an ffmpeg encode command. The limit is opt in
+ * through VIDEOEDITOR_FFMPEG_THREADS so normal renders keep all cores, while
+ * test suites can keep x264 allocations small on modest machines.
+ */
+function withThreadLimit(command: string, args: string[]): string[] {
+    if (command !== "ffmpeg") {
+        return args;
+    }
+    const raw = process.env.VIDEOEDITOR_FFMPEG_THREADS;
+    const limit = raw ? Number(raw) : 0;
+
+    if (!Number.isFinite(limit) || limit <= 0 || !args.includes("-c:v")) {
+        return args;
+    }
+
+    const limited = [...args];
+    limited.splice(Math.max(0, limited.length - 1), 0, "-threads", String(Math.floor(limit)));
+    return limited;
+}
+
 /** Result of a spawned command. */
 export interface RunResult {
     code: number;
@@ -18,7 +39,7 @@ export interface RunResult {
  */
 export function run(command: string, args: string[]): Promise<RunResult> {
     return new Promise((resolve, reject) => {
-        const child = spawn(command, args, { windowsHide: true });
+        const child = spawn(command, withThreadLimit(command, args), { windowsHide: true });
         let stdout = "";
         let stderr = "";
 
@@ -33,6 +54,34 @@ export function run(command: string, args: string[]): Promise<RunResult> {
         });
         child.on("close", (code) => {
             resolve({ code: code ?? 1, stdout, stderr });
+        });
+    });
+}
+
+/**
+ * Runs a command and captures raw bytes from stdout, for decoder output.
+ *
+ * @param command Executable name or absolute path
+ * @param args Arguments
+ * @returns Exit code and stdout as a Buffer
+ */
+export function runBuffer(command: string, args: string[]): Promise<{ code: number; stdout: Buffer; stderr: string }> {
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, withThreadLimit(command, args), { windowsHide: true });
+        const chunks: Buffer[] = [];
+        let stderr = "";
+
+        child.stdout?.on("data", (chunk: Buffer) => {
+            chunks.push(Buffer.from(chunk));
+        });
+        child.stderr?.on("data", (chunk: Buffer) => {
+            stderr += chunk.toString();
+        });
+        child.on("error", (error) => {
+            reject(VideoErrors.ffmpeg(`Cannot run ${command}: ${error.message}`));
+        });
+        child.on("close", (code) => {
+            resolve({ code: code ?? 1, stdout: Buffer.concat(chunks), stderr });
         });
     });
 }

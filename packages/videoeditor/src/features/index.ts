@@ -16,6 +16,7 @@ import { probe, resolveSource } from "../ffmpeg/Capabilities";
 import { atempoChain, avDurations, detectSilence, keepRanges, normalizeLoudness, round, tail } from "../ffmpeg/Measure";
 import { requireTool, run, toolsAvailable } from "../ffmpeg/Runner";
 import { requireInput } from "../input";
+import { motionDoctorChecks } from "../motion";
 import { ExportPresets, isPreset, type ExportPreset } from "../presets";
 import { renderReviewHtml, type ReviewData } from "../review";
 import { Project, type ProjectRef } from "../session";
@@ -126,6 +127,7 @@ export async function doctor(ctx: FeatureContext): Promise<CommandResult> {
     for (const tool of transcribers) {
         checks.push({ name: `transcriber:${tool.name}`, ok: tool.available, measured: tool.detail });
     }
+    checks.push(...await motionDoctorChecks());
     const fontCandidates = [
         "C:/Windows/Fonts/segoeui.ttf", "C:/Windows/Fonts/arial.ttf",
         "/System/Library/Fonts/Supplemental/Arial.ttf",
@@ -629,7 +631,8 @@ export function buildReviewData(scope: ProjectScope): ReviewData {
         music: spec.music ?? [],
         renders,
         captions: captionData ? { style: captionData.style, cueCount: captionData.cueCount, timing: captionData.timing } : null,
-        preset
+        preset,
+        motion: spec.overlays ?? []
     };
 }
 

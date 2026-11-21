@@ -23,7 +23,7 @@ const input = (name: string, type: ToolIO["type"], required: boolean, descriptio
 const output = (name: string, type: ToolIO["type"], description: string): ToolIO =>
     ({ name, type, required: true, description });
 
-/** Complete tool contract. Ideas ported from kajisho5/ffmpeg-skill (MIT). */
+/** Complete tool contract. Ideas ported from kajisho5/ffmpeg-skill (MIT) and OpenMotion (Apache-2.0). */
 export const Tools: ToolContract[] = [
     {
         name: "doctor",
@@ -108,6 +108,41 @@ export const Tools: ToolContract[] = [
         summary: "Import SRT/VTT or transcribe with word timings, then burn styled ASS captions in the safe area.",
         inputs: [input("source", "path", true, "Video file"), input("srt", "path", false, "SRT or VTT file"), input("language", "string", false, "Language code; auto detect when omitted"), input("style", "string", false, "Named caption style")],
         outputs: [output("path", "path", "Video with burned captions"), output("ass", "path", "Generated ASS file"), output("checks", "json", "Cue count, word timing source, and safe area")]
+    },
+    {
+        name: "motion styles",
+        stability: "experimental",
+        summary: "List original starter Motion.md style guides with mood, type, easing, and durations.",
+        inputs: [],
+        outputs: [output("styles", "json", "Style guide summaries"), output("checks", "json", "Guide count and format")]
+    },
+    {
+        name: "motion new",
+        stability: "experimental",
+        summary: "Write an editable HTML composition from a template and brand kit into the request.",
+        inputs: [input("template", "string", true, "Template id"), input("brand", "path", false, "brand.json kit"), input("text", "string", false, "Copy token"), input("title", "string", false, "Title token"), input("accent", "string", false, "Accent token"), input("label", "string", false, "Label token"), input("number", "string", false, "Number token"), input("preset", "string", false, "Platform canvas"), input("size", "string", false, "WxH canvas"), input("fps", "number", false, "Frame rate"), input("duration", "number", false, "Composition duration")],
+        outputs: [output("path", "path", "Composition HTML"), output("checks", "json", "Template, brand, canvas, seek contract")]
+    },
+    {
+        name: "motion render",
+        stability: "experimental",
+        summary: "Seek a composition frame by frame in Chromium and encode MP4 or alpha WebM with ffmpeg.",
+        inputs: [input("source", "path", false, "Composition HTML, defaults to the last motion new"), input("preset", "string", false, "Platform canvas"), input("size", "string", false, "WxH canvas"), input("fps", "number", false, "Frame rate"), input("duration", "number", false, "Seconds to render"), input("alpha", "flag", false, "WebM with alpha for overlays"), input("out", "path", false, "Named output")],
+        outputs: [output("path", "path", "Rendered video"), output("checks", "json", "ffprobe size, fps, duration, frame count, codec")]
+    },
+    {
+        name: "motion analyze",
+        stability: "experimental",
+        summary: "Measure a reference video: cuts, pacing, palette, motion intensity, and text-heavy frames. No AI model.",
+        inputs: [input("source", "path", true, "Reference video")],
+        outputs: [output("brief", "path", "motion-brief.md"), output("checks", "json", "Cut count, palette, keyframes, brief")]
+    },
+    {
+        name: "motion add",
+        stability: "experimental",
+        summary: "Add a rendered motion clip to the timeline as a clip or a timed overlay.",
+        inputs: [input("source", "path", false, "Rendered motion file, defaults to the last render"), input("as", "string", false, "clip or overlay"), input("at", "number", false, "Overlay start time"), input("duration", "number", false, "Clip length")],
+        outputs: [output("added", "json", "Scene or overlay record"), output("checks", "json", "Mode, placement, and source")]
     },
     {
         name: "review",

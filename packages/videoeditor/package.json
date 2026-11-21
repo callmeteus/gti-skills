@@ -35,9 +35,13 @@
         "ffmpeg",
         "editing",
         "timeline",
+        "motion-graphics",
         "local-first",
         "agent-skill"
     ],
+    "dependencies": {
+        "playwright": "1.64.1"
+    },
     "devDependencies": {
         "@types/node": "^22.10.5",
         "tsup": "^8.3.5",

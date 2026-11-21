@@ -68,10 +68,15 @@ export function collectInputs(scope: ProjectScope): string[] {
     let fromSpec: string[] = [];
 
     if (existsSync(scope.specPath)) {
-        const spec = Json.read<{ scenes?: Array<{ source: string }>; music?: Array<{ source: string }> }>(scope.specPath);
+        const spec = Json.read<{
+            scenes?: Array<{ source: string }>;
+            music?: Array<{ source: string }>;
+            overlays?: Array<{ source: string }>;
+        }>(scope.specPath);
         fromSpec = [
             ...(spec.scenes ?? []).map((scene) => scene.source),
-            ...(spec.music ?? []).map((track) => track.source)
+            ...(spec.music ?? []).map((track) => track.source),
+            ...(spec.overlays ?? []).map((overlay) => overlay.source)
         ];
     }
 
