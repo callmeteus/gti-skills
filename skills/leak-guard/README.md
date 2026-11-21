@@ -286,6 +286,7 @@ A scan always writes two files into `--out`. A trimmed `history.md` looks like t
 |---------|----------|
 | Summary | Finding counts by kind, files scanned and skipped per source, and absent sources |
 | Transcript coverage | Per agent stores found, rows and sessions read, skips with reasons, and notes such as an unverified Kiro store or Muse not covered |
+| Distinct secrets | One row per credential hash with type, severity, place count, agents, and folders |
 | Findings grouped by secret | One heading per credential hash, with every source, path, line, time, and redacted evidence |
 | Other findings | Exfiltration, injection, and guard events with no credential literal |
 | Rotation checklist | Provider page and redacted identifier for each credential type, plus a reminder to remove the value first |

@@ -71,7 +71,10 @@ export async function withSqlite(file, fn, options = {}) {
     }
 
     const sidecars = ["-wal", "-shm"].filter((suffix) => existsSync(file + suffix));
-    const useCopy = size < maxCopyBytes || sidecars.length > 0;
+    const walBytes = existsSync(file + "-wal") ? statSync(file + "-wal").size : 0;
+    // A large store is never copied and never opened without the immutable flag. Opening an
+    // original WAL database read only creates -wal and -shm beside it, so that path is not used.
+    const useCopy = size < maxCopyBytes;
     let scratch = null;
     let openPath = file;
     let db = null;
@@ -89,16 +92,21 @@ export async function withSqlite(file, fn, options = {}) {
             stats.copied = true;
             db = new DatabaseSync(openPath, { readOnly: true });
         } else {
-            // SQLite immutable mode: no locking, no WAL, no write to the original file. Stores this
-            // large on this machine have no WAL sidecar, so no recent rows are lost.
-            stats.note = "opened read only in place (immutable) because the store exceeds the copy threshold";
+            // SQLite immutable mode takes no lock and creates no sidecar next to the original.
             const uri = `file:${file.replace(/\\/g, "/")}?immutable=1`;
             try {
                 db = new DatabaseSync(uri, { readOnly: true });
-            } catch {
-                db = new DatabaseSync(file, { readOnly: true });
-                stats.note = "opened read only in place because the store exceeds the copy threshold";
+            } catch (error) {
+                return {
+                    ok: false,
+                    reason: `immutable open failed: ${String(error.message ?? error).slice(0, 160)}`,
+                    stats
+                };
             }
+            const walNote = walBytes > 0
+                ? `rows only in the non-empty WAL (${walBytes} bytes) may be missed`
+                : "WAL is empty or absent";
+            stats.note = `opened read only in place (immutable) because the store exceeds the copy threshold; ${walNote}`;
         }
 
         await fn(db, stats, DatabaseSync);

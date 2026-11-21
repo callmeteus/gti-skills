@@ -15,7 +15,7 @@ node "<pkg>/bin/leakguard.mjs" history --sources transcripts,shell,git,guard,inj
 `--json` prints the report object to stdout. The command always writes two files to `--out`, which defaults to `~/.gti/leak-guard/<project>/` with `GTI_HOME` replacing `~/.gti`:
 
 - `history.json`: the machine readable report.
-- `history.md`: the summary table, findings grouped by secret with every place it appeared, and the rotation checklist.
+- `history.md`: the summary table, a distinct secrets table with one row per credential hash and its agents and folders, findings grouped by secret with every place it appeared, the coverage table, and the rotation checklist.
 
 Use `--out` only when the user names a different place for the report. Leave `--since` off to scan all time. `--repo` defaults to the current directory. `--sources` takes a comma separated subset of `transcripts,shell,git,guard,injection`.
 

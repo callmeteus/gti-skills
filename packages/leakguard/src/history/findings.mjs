@@ -1,4 +1,4 @@
-import { CREDENTIALS, collectMatches } from "../patterns.mjs";
+import { CREDENTIALS, collectMatches, isInternalHost } from "../patterns.mjs";
 import { redact, sha8 } from "../util.mjs";
 
 /** Severity order used when two occurrences of one finding are merged. */
@@ -13,9 +13,6 @@ const ASCENDING_RUN = 8;
 /** Path segments and file names used for tests and fixtures. */
 const FIXTURE_DIR = /(?:^|\/)(?:tests?|__tests__|fixtures?|testdata)(?:\/|$)/i;
 const FIXTURE_FILE = /(?:\.(?:test|spec)\.|[-_]test\.|[-_]spec\.|^test_)/i;
-
-/** Hosts that are local to a machine or a container network. */
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "host.docker.internal"]);
 
 /** Common placeholder passwords in connection URLs. */
 const PLACEHOLDER_PASSWORDS = new Set(["password", "postgres", "changeme", "secret", "example", "pass", "root"]);
@@ -136,11 +133,7 @@ export function isFixtureValue(value) {
  * @returns {boolean} Whether the destination is local
  */
 export function isLocalHost(host) {
-    const value = String(host ?? "").toLowerCase();
-    if (LOCAL_HOSTS.has(value) || /^127\./.test(value)) {
-        return true;
-    }
-    return /^[a-z0-9-]+$/.test(value) && !value.includes(".");
+    return isInternalHost(host);
 }
 
 /**
@@ -196,7 +189,9 @@ export function findSecrets(text, location = "") {
                     if (isLocalHost(host) || PLACEHOLDER_PASSWORDS.has(password)) {
                         severity = "low";
                         local = true;
-                        note = "local or placeholder credential";
+                        note = isLocalHost(host)
+                            ? "internal destination; a password sent to a model provider in a transcript is still an exposure"
+                            : "placeholder credential";
                     }
                 }
             }

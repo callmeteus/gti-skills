@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -279,6 +279,43 @@ test("an unavailable node:sqlite is recorded as a skip instead of failing", asyn
         assert.equal(coverage.note, "node:sqlite unavailable");
         assert.equal(coverage.rowsRead, 0);
     } finally {
+        rmSync(f.root, { recursive: true, force: true });
+    }
+});
+
+test("a large WAL mode store is opened immutable and its folder is untouched", async () => {
+    const f = makeFixture();
+    const dir = join(f.home, ".local", "share", "opencode");
+    const file = join(dir, "opencode.db");
+    const listing = () => readdirSync(dir).sort().map((name) => {
+        const stat = statSync(join(dir, name));
+        return `${name}:${stat.size}:${stat.mtimeMs}`;
+    });
+    const tempBefore = readdirSync(tmpdir()).filter((name) => name.startsWith("lg-sqlite-")).sort();
+    let writer = null;
+    try {
+        mkdirSync(dir, { recursive: true });
+        writer = new DatabaseSync(file);
+        writer.exec("PRAGMA journal_mode=WAL");
+        writer.exec("CREATE TABLE session_message(id TEXT, type TEXT, data TEXT)");
+        writer.prepare("INSERT INTO session_message VALUES (?, ?, ?)").run("m1", "user", JSON.stringify({ type: "user", text: `see ${STRIPE}` }));
+        const before = listing();
+        assert.ok(before.some((entry) => entry.startsWith("opencode.db-wal:")), "fixture has a WAL sidecar");
+        assert.ok(before.some((entry) => entry.startsWith("opencode.db-shm:")), "fixture has a SHM sidecar");
+
+        const { report } = await scanHistory({
+            ctx: f.ctx, repo: f.repo, out: f.out, sources: "transcripts", maxCopyBytes: 1
+        });
+
+        assert.deepEqual(listing(), before, "no sidecar was created or modified next to the original store");
+        assert.deepEqual(readdirSync(tmpdir()).filter((name) => name.startsWith("lg-sqlite-")).sort(), tempBefore, "no temp copy remains");
+        const coverage = report.sources.coverage.find((entry) => entry.agent === "opencode");
+        assert.ok(coverage.note.includes("immutable"), coverage.note);
+        assert.ok(coverage.note.includes("WAL"), coverage.note);
+    } finally {
+        if (writer) {
+            writer.close();
+        }
         rmSync(f.root, { recursive: true, force: true });
     }
 });

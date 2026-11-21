@@ -263,7 +263,7 @@ test("local and placeholder URL passwords are low and keep only the host", async
         assert.equal(remote.severity, "high");
 
         const markdown = readFileSync(join(out, "history.md"), "utf8");
-        assert.ok(markdown.includes("local or placeholder credential"));
+        assert.ok(markdown.includes("internal destination"));
     } finally {
         rmSync(data.root, { recursive: true, force: true });
     }
