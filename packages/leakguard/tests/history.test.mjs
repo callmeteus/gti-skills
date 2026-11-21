@@ -137,30 +137,33 @@ test("history scan finds all four finding kinds with redacted evidence", async (
         }
         assert.ok(markdown.includes(redact(STRIPE)));
         assert.ok(markdown.includes("Rotation checklist"));
-        assert.ok(markdown.includes("cursor, kiro, antigravity, cline, muse"));
+        assert.ok(markdown.includes("## Transcript coverage"));
+        assert.ok(markdown.includes("muse"));
     } finally {
         rmSync(fixtureData.root, { recursive: true, force: true });
     }
 });
 
-test("history scan honours the source selection and the per-file size cap", async () => {
+test("history scan honours the source selection, streams large JSONL and caps other files", async () => {
     const fixtureData = fixture();
     const out = join(fixtureData.root, "out-select");
 
     try {
         writeFileSync(join(fixtureData.home, ".claude", "projects", "session-a", "large.jsonl"), "x".repeat(1200));
+        writeFileSync(join(fixtureData.home, ".bash_history"), "y".repeat(1200));
         const { report } = await scanHistory({
             ctx: fixtureData.ctx,
             repo: fixtureData.repo,
             out,
-            sources: "guard,transcripts",
+            sources: "guard,transcripts,shell",
             maxFileBytes: 800
         });
 
-        assert.deepEqual(report.options.sources, ["guard", "transcripts"]);
-        assert.ok(report.sources.skipped.some((entry) => entry.reason === "file exceeds size cap"));
-        assert.ok(report.findings.every((finding) => ["guard", "transcripts"].includes(finding.source)));
-        assert.ok(report.sources.uncovered.length === 5);
+        assert.deepEqual(report.options.sources, ["guard", "transcripts", "shell"]);
+        assert.ok(report.sources.skipped.some((entry) => entry.reason === "file exceeds size cap" && entry.path.endsWith(".bash_history")));
+        assert.ok(!report.sources.skipped.some((entry) => entry.path.endsWith("large.jsonl")));
+        assert.ok(report.findings.every((finding) => ["guard", "transcripts", "shell"].includes(finding.source)));
+        assert.deepEqual(report.sources.uncovered, ["muse"]);
     } finally {
         rmSync(fixtureData.root, { recursive: true, force: true });
     }
