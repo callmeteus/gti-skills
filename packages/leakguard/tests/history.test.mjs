@@ -241,18 +241,19 @@ test("fixture credentials become info and stay out of the rotation checklist", a
     }
 });
 
-test("local and placeholder URL passwords are low and keep only the host", async () => {
+test("internal URL passwords are low and placeholder URLs are dropped", async () => {
     const data = repoFixture({
         "README.md": "# Fixture\n",
-        "src/local.json": `{"url":"postgres://app:password@db:5432/app"}\n`,
-        "src/remote.json": `{"url":"postgres://app:Tr0ngRandomValue2026@db.remote.example:5432/app"}\n`
+        "src/local.json": `{"url":"postgres://app:Tr0ngLocalValue2026@db:5432/app"}\n`,
+        "src/placeholder.json": `{"url":"postgres://app:password@db:5432/app"}\n`,
+        "src/remote.json": `{"url":"postgres://app:Tr0ngRandomValue2026@db.remote.acme:5432/app"}\n`
     });
     const out = join(data.root, "out");
 
     try {
         const { report } = await scanHistory({ ctx: data.ctx, repo: data.repo, out, sources: "git" });
         const local = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db");
-        const remote = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db.remote.example");
+        const remote = report.findings.find((finding) => finding.secretType === "url-password" && finding.host === "db.remote.acme");
 
         assert.ok(local);
         assert.equal(local.severity, "low");
@@ -261,6 +262,9 @@ test("local and placeholder URL passwords are low and keep only the host", async
         assert.ok(!local.evidence.includes("password@"));
         assert.ok(remote);
         assert.equal(remote.severity, "high");
+        assert.equal(report.findings.filter((finding) =>
+            finding.secretType === "url-password" && finding.host === "db").length, 1,
+            "the placeholder password finding is dropped");
 
         const markdown = readFileSync(join(out, "history.md"), "utf8");
         assert.ok(markdown.includes("internal destination"));

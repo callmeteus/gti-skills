@@ -200,8 +200,17 @@ export const DETECTORS = [
             if (!state.network || isCodeData(text)) {
                 return [];
             }
+            const uploaded = P.DOTENV_UPLOAD.test(text);
+            if (!uploaded && !P.codeReadsAndSends(text)) {
+                return [];
+            }
+            // The dotenv file itself is the payload. Reading one key for auth is credential use and
+            // belongs to credential_to_network, which applies the destination rules. Code that
+            // reads a secret and sends it applies the destination rules too.
             const matches = dotenvMatches(text);
-            return matches.length ? [networkFinding(this, text, state, matches, true)] : [];
+            return matches.length
+                ? [uploaded ? finding(this.id, this.severity, this.title, matches) : networkFinding(this, text, state, matches)]
+                : [];
         }
     },
     {
@@ -214,9 +223,20 @@ export const DETECTORS = [
                 return [];
             }
             const allowHosts = state.config?.allowHosts ?? [];
-            const matches = credentialMatchesNamed(text)
+            let matches = credentialMatchesNamed(text)
                 .filter((match) => !credentialGoesToIssuer(match.name, state.hosts ?? [], allowHosts))
                 .map((match) => match.value);
+
+            if (matches.length === 0 && P.DOTENV_KEY_USE.test(text) && !ownServiceContext(text, state)) {
+                const publicHosts = (state.hosts ?? []).filter((host) => !P.isInternalHost(host));
+                const issuerHosts = Object.values(ISSUER_HOSTS).flat();
+                const allIssuer = publicHosts.length > 0 && publicHosts.every((host) =>
+                    issuerHosts.some((entry) => hostMatches(host, entry)));
+                if (publicHosts.length > 0 && !allIssuer) {
+                    matches = ["dotenv credential used with a public destination"];
+                }
+            }
+
             return matches.length ? [networkFinding(this, text, state, matches)] : [];
         }
     },

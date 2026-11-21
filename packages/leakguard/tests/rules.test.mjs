@@ -308,7 +308,7 @@ test("internal and paired destinations are informational, not exfiltration", () 
     for (const command of commands) {
         assert.equal(hasDeny(command), false, command);
     }
-    assert.ok(severities(commands[0]).some((finding) => finding.severity === "low"), "a sourced dotenv still produces an informational finding");
+    assert.equal(severities(commands[0]).some((finding) => finding.severity === "high"), false);
 });
 
 test("public destinations and uploaded dotenv files still deny", () => {

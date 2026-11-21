@@ -141,8 +141,34 @@ export const CREDENTIALS = [
     { name: "slack", re: /\bxox[abpr]-[0-9a-zA-Z-]{10,}\b/gi },
     { name: "google", re: /\bAIza[0-9A-Za-z_-]{30,}\b/g },
     { name: "private-key", re: /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/g },
-    { name: "url-password", re: /\b[a-z][a-z0-9+.-]*:\/\/[^:\s/@]+:[^\s@/]+@[^\s/@]+/gi }
+    {
+        name: "url-password",
+        re: new RegExp(
+            String.raw`\b[a-z][a-z0-9+.-]*:\/\/[^\s\/@"'<>{}[\])]+:[^\s\/@"'<>{}[\])]+@[^\s\/?#"'` +
+            "\\x60" + String.raw`\\<>{}[\])]+`,
+            "gi"
+        )
+    }
 ];
+
+/** A dotenv file whose contents are actually uploaded, as opposed to one key being read. */
+export const DOTENV_UPLOAD = new RegExp([
+    String.raw`@\.env(?:\.[\w-]+)?\b`,
+    String.raw`<\s*\.env\b`,
+    String.raw`(?:cat|type|Get-Content|gc)\s+[^\n|&;]*\.env\b[^\n|&;]*[;&|]+\s*(?:xargs\s+)?(?:curl|wget|iwr|Invoke-WebRequest|Invoke-RestMethod|nc|ncat|socat|scp|rsync)\b`,
+    String.raw`-T\s+[^\n]*\.env\b`,
+    String.raw`--upload-file[^\n]*\.env\b`,
+    String.raw`-F\s+[^\n]*=\s*@?\.env\b`,
+    String.raw`-InFile\s+[^\n]*\.env\b`,
+    String.raw`-Body\s*\(\s*(?:Get-Content|cat)[^\n]*\.env\b`
+].join("|"), "i");
+
+/** A single credential key read from a dotenv file for use as auth, not the whole file. */
+export const DOTENV_KEY_USE = new RegExp([
+    String.raw`grep\s+['"]?\^?[A-Z0-9_]*(?:TOKEN|PASSWORD|SECRET|KEY|PASS)[A-Z0-9_]*=?['"]?\s+[^\n]*\.env`,
+    String.raw`(?:Get-Content|gc)\s+[^\n|]*\.env\b[^\n|]*\|\s*Where-Object[^\n|]*-match`,
+    String.raw`(?:set\s+-a\s*[;]\s*)?\.\s+\.?\.?\.env\b` + String.raw`[^\n]*[;]\s*set\s+\+a`
+].join("|"), "i");
 
 /** Paths to local secret stores. A leading slash or backslash covers home and absolute paths. */
 export const SECRET_PATHS = [
@@ -158,11 +184,16 @@ export const SECRET_PATHS = [
     { name: "process-environ", re: /\/proc\/\d+\/environ\b/g }
 ];
 
-/** Environment dump commands in command position. A bare `set` is a Windows cmd dump; `set -e` and cmdlets are not. */
+/**
+ * Environment dump commands in command position. A `$env:NAME` reference is a single variable and
+ * is not a dump. Only a directory listing of `env:` with no name, a bare POSIX `env`, `printenv`,
+ * `export -p`, a bare cmd `set`, or the .NET environment table count as a dump.
+ */
 export const ENV_DUMP = new RegExp(
     BOUNDARY + String.raw`(?:env|printenv|export\s+-p)(?=[\s;|&)\]}\x60]|$)|` +
-    BOUNDARY + String.raw`set(?=\s*(?:[;|&)\]}\r\n]|$))|` +
-    BOUNDARY + String.raw`(?:Get-ChildItem|gci)\s+env:|\$env:`,
+    BOUNDARY + String.raw`set(?=\s*(?:[;|&)}\r\n]|$))|` +
+    BOUNDARY + String.raw`(?:(?:Get-ChildItem|gci|dir|ls)\s+env:\s*(?:$|[;|&)}\x60]))|` +
+    String.raw`\[Environment\]::GetEnvironmentVariables\s*\(`,
     "i"
 );
 
@@ -291,6 +322,12 @@ export function isUploadedDotenv(text) {
  */
 export function isPairedDestination(text) {
     const source = String(text ?? "");
+    // A destination assigned in the same command is attacker controlled. Only a variable loaded
+    // from the dotenv file can be trusted as the credential's own service.
+    if (/\b[A-Z_][A-Z0-9_]*\s*=\s*['"]?[a-z][a-z0-9+.-]*:\/\//i.test(source) ||
+        /\b[A-Z][A-Z0-9_]*(?:_URL|_ADDR|_HOST)\s*=/i.test(source)) {
+        return false;
+    }
     const variable = /\$(?:\{)?[A-Z][A-Z0-9_]*(?:_URL|_ADDR|_HOST)(?:\})?/i.test(source) ||
         /\$(?:\{)?(?:URL|ADDR|HOST)(?:\})?/i.test(source);
     if (!variable) {
@@ -329,7 +366,8 @@ export function isDownloadOnly(text) {
 export function isInterpreterCode(text) {
     const source = String(text ?? "");
     return /\b(?:python3?|node|ruby|perl)\b[^\n]{0,120}?(?:\s(?:-c|-e|--eval)\s+["']|<<)/i.test(source) ||
-        /<<['"]?(?:PY|PYTHON|JS|NODE|RUBY|PERL|EOF)['"]?/i.test(source);
+        /<<['"]?(?:PY|PYTHON|JS|NODE|RUBY|PERL|EOF)['"]?/i.test(source) ||
+        /@['"]\s*\r?\n[\s\S]{0,4000}?\b(?:import|fetch\s*\(|urllib|requests|process\.env|readFileSync)\b/i.test(source);
 }
 
 /**
