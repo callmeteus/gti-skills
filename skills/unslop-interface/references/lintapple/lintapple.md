@@ -59,6 +59,8 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `lonely-word` | A heading or short text that wraps and leaves one word alone on its last line, without `text-wrap: balance` or `pretty` |
 | `transition-all` | Elements that animate with `transition: all` |
 | `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), short text under a heading that only repeats its words (an "Attendees only" tag), or an eyebrow right above a heading that only repeats it ("MENSAGENS" over "Mensagens SMS"). Card titles in a grid of items are not compared with the page heading |
+| `icon-column` | In one list of three or more rows with an icon and a label (sidebar, menu, tab list), icons that start off the common icon line, labels that start off the common label line, or section headers that do not start on the icon line |
+| `toolbar-center` | Two or more controls in one flex row whose vertical centers differ by more than 1.5px |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |
