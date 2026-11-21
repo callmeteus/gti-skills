@@ -1,4 +1,4 @@
-# Step 8: Ship and report
+# Step 9: Ship and report
 
 Goal: every change lands small and measured, and the user gets one report with total time and cost, before and after.
 

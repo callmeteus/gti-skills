@@ -4,7 +4,7 @@
 
 > PR results in under a minute, without a CI that lies
 
-**Audits real CI runs on any platform, splits the time into waiting, setup, and running, and lands small measured changes until a pull request gets its result in under 1 minute at the median and 2 at p95, with the full suite still gating main.**
+**Audits real CI runs on any platform, splits the time into waiting, setup, and running, and lands small measured changes until a pull request gets its result in under 1 minute at the median and 2 at p95, with the full suite still gating main and a drilled rollback behind it.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
@@ -40,7 +40,7 @@
 
 Slow CI is usually not one slow thing. It is a queue for a cold runner, a toolchain installed on every job, a cache that misses on every PR, jobs that wait on each other, and one fat test job. The usual fixes (retries, skipped tests, path filters on required checks) make CI faster by making it lie.
 
-Fast CI gives the agent a fixed order of work: three rules that outrank speed, an audit of the last 150 real runs split into waiting, setup, and running at p50 and p95, per-stage budgets, and one small measured change at a time. It works on GitHub Actions, Forgejo and Gitea Actions, Woodpecker, GitLab CI, Jenkins, Kubernetes and K3s runners (Tekton, Argo, ARC, act_runner, Kubernetes agents), and manual or script-based CI, because every collector writes the same timing rows.
+Fast CI gives the agent a fixed order of work: three rules that outrank speed, an audit of the last 150 real runs split into waiting, setup, and running at p50 and p95, per-stage budgets, and one small measured change at a time. Because a fast CI ships often, it also checks that a bad release comes back fast: rollback scripts, rollback jobs, and migrations are scanned, and rollbacks are drilled and timed. It works on GitHub Actions, Forgejo and Gitea Actions, Woodpecker, GitLab CI, Jenkins, Kubernetes and K3s runners (Tekton, Argo, ARC, act_runner, Kubernetes agents), and manual or script-based CI, because every collector writes the same timing rows.
 
 ```text
   repository + CI system (+ API token or kubectl context)
@@ -56,6 +56,9 @@ Fast CI gives the agent a fixed order of work: three rules that outrank speed, a
           │                         │
           │                         └──> shard_plan.py plan / list / verify
           v
+  rollback: rollback_check.py scan ──> scripts, CI jobs, migrations; drill ──> time to healthy
+          │
+          v
   small measured changes in the repository + report in ~/.gti/fast-ci/<project>/
 ```
 
@@ -67,6 +70,7 @@ Fast CI gives the agent a fixed order of work: three rules that outrank speed, a
 | Balance shards by recorded test time and verify every file ran | Delete tests without two weeks of evidence and approval |
 | Select tests on PRs and prove the selector goes red on a hidden change | Use selection on main or in the merge queue |
 | Add hooks and budgets that fail slow jobs | Push or open pull requests unless asked |
+| Scan rollback scripts, jobs, and migrations, and time drills on staging | Run a rollback drill against production unless asked |
 
 ## Features
 
@@ -79,13 +83,14 @@ Fast CI gives the agent a fixed order of work: three rules that outrank speed, a
 - **Platform guides:** where time goes and which levers exist on each CI system, including K3s registry mirrors and image pre-pulls.
 - **Toolchains:** fast defaults for JavaScript and TypeScript (the source prompt's bun stack), Python, Go, Rust, JVM, .NET, Ruby, and PHP, with a procedure to prove each switch.
 - **Evidence-based test removal:** a two-week log of every failure as a caught regression or a change detector, and a ban on deleting authorization, privacy, migration, or concurrency tests.
+- **Rollback check:** a static scan of rollback scripts, rollback jobs on every CI platform, Kubernetes and Helm rollbacks, and migrations (golang-migrate, Flyway, Liquibase, Alembic, Django, Rails, Knex, TypeORM, Laravel, Prisma) for rebuilds, `latest` targets, swallowed errors, missing health checks, prompts, empty down migrations, and one-step column drops, plus timed drills against a 5-minute budget.
 - **One report:** before and after numbers from real runs, every change, tool switches, the selection check, hidden failures, and one pending list with monthly cost.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| Python | 3.8+ | Runs `ci_timings.py` and `shard_plan.py` (standard library only) | No |
+| Python | 3.8+ | Runs `ci_timings.py`, `shard_plan.py`, and `rollback_check.py` (standard library only) | No |
 | `gh` CLI | Any recent | Collecting GitHub Actions runs with your existing login | No |
 | `kubectl` | Any recent | Collecting CI pod timings on Kubernetes or K3s | No |
 | API token | - | Forgejo, Gitea, Woodpecker, GitLab, or Jenkins collection, read from environment variables | No |
@@ -175,6 +180,10 @@ Our CI is a Makefile on a build box. Make it fast and stop people skipping check
 Shard our tests by real time and prove every file still runs.
 ```
 
+```text
+Review our rollback script and migrations, and tell me how long a rollback takes.
+```
+
 ## How It Works
 
 ```text
@@ -192,7 +201,9 @@ Shard our tests by real time and prove every file still runs.
           │
   7. Local and budgets     hooks under 9 s, jobs that fail over budget
           │
-  8. Ship and report       one small PR per change, pending list with cost, before and after
+  8. Rollback              rollback_check.py scan, fixes, drill on staging under 5 min
+          │
+  9. Ship and report       one small PR per change, pending list with cost, before and after
 ```
 
 ## Reference
@@ -239,6 +250,20 @@ python3 scripts/shards/shard_plan.py verify --files "src/**/*.test.ts" --ran sha
 
 `--timings` and `--ran` take JUnit XML or a JSON map of file to seconds. `--files` takes globs, paths, or `@list.txt`.
 
+### rollback_check.py
+
+```bash
+python3 scripts/rollback/rollback_check.py scan --root . --fail-on blocker
+python3 scripts/rollback/rollback_check.py drill --name staging --verify "curl -fsS https://staging.example.com/healthz" -- ./scripts/rollback.sh v1.42.0
+```
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `scan` | Find rollback scripts, rollback jobs, and migrations, flag what breaks a rollback, and summarize drills | `--root` (`.`), `--fail-on` (`none`), `--budget` (300 s), `--out` |
+| `drill` | Run and time a rollback, then a health check; append the row to `drills.jsonl` | `--name` (required), `--verify`, `--out` |
+
+`--project` goes before the subcommand, as in `ci_timings.py`. `scan` exits 1 when a finding is at or above `--fail-on`; `drill` returns the rollback's exit code, or the health check's when the rollback succeeded.
+
 ### Reference files
 
 | File | Contents |
@@ -250,10 +275,11 @@ python3 scripts/shards/shard_plan.py verify --files "src/**/*.test.ts" --ran sha
 | `references/workflow/05-tests-and-shards.md` | Isolation, random order, cores and shards, databases, the failure log |
 | `references/workflow/06-selection-and-shape.md` | Parallel jobs, folded checks, diff selection, and the planted failure |
 | `references/workflow/07-local-and-budgets.md` | Hooks and budgets that fail, per platform |
-| `references/workflow/08-ship-and-report.md` | Small PRs, the pending list with cost, and the report |
+| `references/workflow/08-rollback.md` | Rollback rules, budget, scan rules, platform levers, and drills |
+| `references/workflow/09-ship-and-report.md` | Small PRs, the pending list with cost, and the report |
 | `references/platforms/*.md` | GitHub Actions, Forgejo and Gitea, Woodpecker, GitLab, Jenkins, Kubernetes and K3s, manual, and other systems |
 | `references/stacks/toolchains.md` | Fast defaults per ecosystem |
-| `references/quality/checklist.md` | The 41-item checklist |
+| `references/quality/checklist.md` | The 45-item checklist |
 | `references/quality/anti-patterns.md` | Speed-ups that make CI lie |
 
 ## Output
@@ -283,8 +309,9 @@ python3 scripts/shards/shard_plan.py verify --files "src/**/*.test.ts" --ran sha
 | Tool switches | What the new tool missed and how the gap was closed |
 | Selection check | Planted changes and whether CI went red |
 | Hidden failures found | Retries, skips, and `allow_failure` with their status |
+| Rollback | Rollback path, drills, time to healthy, and scan findings with status |
 | Pending | Accounts, secrets, settings, and bills, with expected monthly cost |
-| Checklist | The 41 items marked done, failing, not applicable, or not checked |
+| Checklist | The 45 items marked done, failing, not applicable, or not checked |
 | Total CI time and cost | Before and after |
 
 | Path | Contents |
@@ -292,6 +319,7 @@ python3 scripts/shards/shard_plan.py verify --files "src/**/*.test.ts" --ran sha
 | `~/.gti/fast-ci/<project>/timings/` | Normalized timing rows |
 | `~/.gti/fast-ci/<project>/audits/` | Analyses in Markdown and JSON |
 | `~/.gti/fast-ci/<project>/shards/` | Shard plans |
+| `~/.gti/fast-ci/<project>/rollback/` | Rollback scans and `drills.jsonl` |
 | `~/.gti/fast-ci/<project>/failures.md` | The two-week failure log |
 | `~/.gti/fast-ci/<project>/reports/` | Final reports |
 | `~/.gti/fast-ci/<project>/state.md` | Baseline, change list, and history |
@@ -302,8 +330,8 @@ python3 scripts/shards/shard_plan.py verify --files "src/**/*.test.ts" --ran sha
 
 - **Network:** `collect` sends read-only GET requests to the CI server you name, or runs `gh api` and `kubectl get pods`. Nothing else leaves the machine.
 - **Tokens:** read from environment variables you already set; the skill never asks you to paste a token and never writes one to disk.
-- **File access:** the scripts read the files you pass and write only under `~/.gti/fast-ci/` (or `--out`). `record` runs the command you give it.
-- **Outward actions:** pushes, pull requests, runner vendor sign-ups, secrets, settings, and paid plans are listed as pending unless you asked for them.
+- **File access:** the scripts read the files you pass and write only under `~/.gti/fast-ci/` (or `--out`). `rollback_check.py scan` reads the repository and never runs what it reads. `record` and `drill` run the command you give them.
+- **Outward actions:** pushes, pull requests, runner vendor sign-ups, secrets, settings, paid plans, and rollback drills against production are listed as pending unless you asked for them.
 
 ## Development
 
@@ -355,6 +383,13 @@ The JUnit reports name suites by something other than the file path (a describe 
 </details>
 
 <details>
+<summary><strong>The rollback scan finds no rollback script that exists</strong></summary>
+
+The scan finds scripts by name (`rollback`, `revert`, `downgrade`, `undo`) and CI jobs by the word rollback. Rename the script, or check the job by hand and record it in the report. Folders such as `node_modules`, `vendor`, `dist`, and `build` are skipped.
+
+</details>
+
+<details>
 <summary><strong>The agent does not see the skill</strong></summary>
 
 Restart the agent session after installing, and confirm the folder is in the path your agent reads (see the table in [Installation](#installation)).
@@ -363,6 +398,7 @@ Restart the agent session after installing, and confirm the folder is in the pat
 
 ## Limitations
 
+- The rollback scan matches patterns in files; it cannot prove a rollback works, and it may flag the contract half of an expand and contract that already shipped. Only a drill proves a rollback.
 - The collectors read each platform's public API; fields change between server versions, and older versions give less detail (marked approximate).
 - GitLab and Forgejo task rows have no step timing, so setup is not separated without the job log.
 - Kubernetes timings exist only while pods are kept; most controllers delete them after a while.

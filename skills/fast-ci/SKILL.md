@@ -7,12 +7,13 @@ description: >-
   into waiting, setup, and running at p50 and p95, then hits per-stage budgets
   with warm runners, baked images, seeded caches, fast tools, shards balanced by
   recorded time, test selection proven to go red, parallel jobs, hooks, and
-  jobs that fail over budget. Works on GitHub Actions, Forgejo, Gitea,
+  jobs that fail over budget, and checks rollback scripts, jobs, and migrations
+  with timed drills. Works on GitHub Actions, Forgejo, Gitea,
   Woodpecker, GitLab CI, Jenkins, Kubernetes and K3s runners (Tekton, Argo,
   ARC, act_runner), and manual script CI. Use when the user says CI is slow,
   wants PR feedback in a minute, sharding, test selection, caching, runner
-  changes, or a CI time and cost report. Do not use for writing tests (use
-  better-tests), deploy pipelines, or infrastructure unrelated to CI.
+  changes, a rollback review, or a CI time and cost report. Do not use for
+  writing tests (use better-tests) or infrastructure unrelated to CI.
 metadata:
   display-name: Fast CI
 ---
@@ -39,7 +40,8 @@ In this skill:
 - **Runner vendor, bigger machines, new accounts, secrets (step 3):** never sign up, add secrets, or raise a bill. Prepare the change on a branch or as a patch, and add it to the pending list with the expected monthly cost.
 - **Tool switches (step 4):** switch only after the side-by-side run shows the new tool misses nothing; when it misses something, keep the old tool and record why.
 - **Deleting change-detector tests (step 5):** never delete tests in this mode. Write the evidence log and list the candidates as pending.
-- **Opening pull requests (step 8):** commit one change per branch locally when the request allows commits; never push or open pull requests unless the request said so. List each as pending.
+- **Rollback drills (step 8):** drill only against staging, a preview environment, or a throwaway namespace you can identify from the repository; never against production. With no such environment, run only the scan and list the drill as pending with the exact command.
+- **Opening pull requests (step 9):** commit one change per branch locally when the request allows commits; never push or open pull requests unless the request said so. List each as pending.
 - **Merge queue or branch protection settings:** these are repository settings; list them as pending with the exact setting to change.
 
 ## Output Location
@@ -51,6 +53,7 @@ Everything this skill generates (timing rows, audits, shard plans, failure logs,
 | `~/.gti/fast-ci/<project>/timings/` | Normalized timing rows (`.jsonl`) from `ci_timings.py collect` and `record` |
 | `~/.gti/fast-ci/<project>/audits/` | `ci_timings.py analyze` results (`.md` and `.json`) |
 | `~/.gti/fast-ci/<project>/shards/` | `shard_plan.py plan` results |
+| `~/.gti/fast-ci/<project>/rollback/` | `rollback_check.py scan` results (`.md` and `.json`) and `drills.jsonl` |
 | `~/.gti/fast-ci/<project>/failures.md` | The two-week log of every test failure: caught regression or change detector |
 | `~/.gti/fast-ci/<project>/reports/` | The final report from the template |
 | `~/.gti/fast-ci/<project>/state.md` | Baseline numbers, the change list, and what shipped when |
@@ -61,6 +64,7 @@ Everything this skill generates (timing rows, audits, shard plans, failure logs,
 - The user asks about sharding, test selection, caching, runners, runner images, or merge queues.
 - The user wants to know where CI time and money go, with before and after numbers.
 - The user has flaky checks that are being retried, or timeouts that keep growing.
+- The user wants rollback scripts, rollback jobs, or down migrations reviewed, or wants to know how long a rollback takes.
 
 Do not use this skill to write new tests or fix weak tests (use `better-tests`), to tune page speed (use `web-performance-audit`), or for infrastructure that is not CI (use `infra-expert`).
 
@@ -129,7 +133,16 @@ Budgets are targets for the stack, not excuses: when a budget is impossible on t
 
 7. **Local hooks and budgets.** Pre-commit formats and lints staged files, pre-push runs the same check as CI, under 9 s, as a hook and not a line in `AGENTS.md`, because agents skip steps. Fail every job that exceeds its budget. Read [references/workflow/07-local-and-budgets.md](references/workflow/07-local-and-budgets.md).
 
-8. **Ship and report.** One small change per pull request, each with before and after numbers from real runs. Do everything that needs no account, secret, or bigger bill first; bring the rest as one list with expected monthly cost. End with total CI time and cost, before and after. Write the report from [assets/templates/ci-report.md](assets/templates/ci-report.md) to `~/.gti/fast-ci/<project>/reports/`. Read [references/workflow/08-ship-and-report.md](references/workflow/08-ship-and-report.md).
+8. **Rollback.** A fast CI ships often, so a bad release must come back fast: one command that redeploys the pinned artifact of the last good release (never a rebuild, never `latest`), fails loudly, waits until healthy, runs from CI, and finishes in under 5 minutes. Migrations keep the previous app version working (expand and contract), so an app rollback never needs a down migration. Scan, fix, then drill against staging:
+
+   ```bash
+   python3 <skill-dir>/scripts/rollback/rollback_check.py scan --root .
+   python3 <skill-dir>/scripts/rollback/rollback_check.py drill --name staging --verify "curl -fsS https://staging.example.com/healthz" -- ./scripts/rollback.sh v1.42.0
+   ```
+
+   Read [references/workflow/08-rollback.md](references/workflow/08-rollback.md).
+
+9. **Ship and report.** One small change per pull request, each with before and after numbers from real runs. Do everything that needs no account, secret, or bigger bill first; bring the rest as one list with expected monthly cost. End with total CI time and cost, before and after. Write the report from [assets/templates/ci-report.md](assets/templates/ci-report.md) to `~/.gti/fast-ci/<project>/reports/`. Read [references/workflow/09-ship-and-report.md](references/workflow/09-ship-and-report.md).
 
 Before reporting, go through [references/quality/checklist.md](references/quality/checklist.md) and check every change against [references/quality/anti-patterns.md](references/quality/anti-patterns.md), the ways a fast CI starts to lie.
 
@@ -156,6 +169,16 @@ IfNotPresent. Waiting drops to 3s at p50.
 ```
 
 ```text
+User: Check whether our rollback script actually works.
+Agent: Runs rollback_check.py scan. Finds scripts/rollback.sh with no `set -e`, a
+`kubectl rollout undo` with no --to-revision, `|| true` on the rollout, and no health
+check, never called from CI; and a migration that drops a column in one step. Fixes the
+script (pinned digest argument, set -euo pipefail, rollout status with a timeout, curl
+health check), adds a workflow_dispatch rollback job, splits the migration into expand
+and contract, and drills it on staging: healthy in 1m40s.
+```
+
+```text
 User: CI here is a Makefile someone runs on a build box. Make it fast.
 Agent: Wraps each make target with `ci_timings.py record` for ten runs to get a baseline,
 runs lint, typecheck, and tests in parallel with `make -j`, adds a pre-push hook that
@@ -166,12 +189,13 @@ runs the same `make ci`, and adds a budget check that fails any step over its bu
 
 | Path | Purpose |
 |------|---------|
-| `references/workflow/` | One file per step: rules and scope, audit, waiting and setup, tools, tests and shards, selection and shape, local hooks and budgets, ship and report |
+| `references/workflow/` | One file per step: rules and scope, audit, waiting and setup, tools, tests and shards, selection and shape, local hooks and budgets, rollback, ship and report |
 | `references/platforms/` | One guide per CI system: where time goes, how to collect timings, and the platform's own levers |
 | `references/stacks/toolchains.md` | Fast default tools per ecosystem (JavaScript and TypeScript, Python, Go, Rust, JVM, .NET, Ruby, PHP) and how to prove a switch |
 | `references/quality/checklist.md` | Every item the report marks done, failing, not applicable, or not checked |
 | `references/quality/anti-patterns.md` | Speed-ups that make CI lie, and what to do instead |
 | `scripts/audit/ci_timings.py` | Collect timings from any CI into one format, record manual runs, and analyze p50 and p95 per bucket and job with budgets and cost |
+| `scripts/rollback/rollback_check.py` | Scan rollback scripts, rollback jobs, and migrations for what makes a rollback slow, unsafe, or impossible, and time rollback drills |
 | `scripts/shards/shard_plan.py` | Plan shards from recorded test times, print one shard's files inside CI, and verify every file ran |
 | `assets/templates/ci-report.md` | The final report structure |
 

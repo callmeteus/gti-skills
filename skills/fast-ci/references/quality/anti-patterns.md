@@ -21,3 +21,9 @@ Each of these makes CI faster or greener by checking less or hiding a failure. N
 | `--no-verify` in scripts | Hooks exist but never run | Make the hook faster |
 | Cancelling runs on main or the merge queue | The gate never finishes | Cancel superseded runs on PR branches only |
 | Numbers from one run or from an estimate | One run is noise; estimates are not measurements | p50 and p95 from at least 10 real runs; label estimates |
+| A rollback that rebuilds from source | Slow, and may not produce what last worked | Redeploy the stored artifact or digest of the last good release |
+| Rolling back to `latest` or "the previous one" | Usually the broken release, or flips back on a second run | Roll back to a version or digest recorded at deploy time |
+| A rollback that ends without a health check | It reports success while the old version is still down | Wait on rollout status, then a health check with a timeout |
+| An empty down migration | The rollback reports success and leaves the new schema | Write the inverse, or keep the previous app compatible and roll forward |
+| Dropping or renaming a column in one release | The previous app version breaks, so the app cannot roll back | Expand and contract across releases |
+| A rollback nobody has run | It fails the one time it is needed | Drill it on staging from CI, every release or monthly |

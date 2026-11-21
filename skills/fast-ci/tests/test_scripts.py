@@ -2,7 +2,8 @@
 
 The timing tests feed small API payloads shaped like GitHub Actions, Gitea and Forgejo, Woodpecker,
 GitLab, Jenkins, and Kubernetes pods, then check the normalized rows and the analysis. The shard tests
-plan, list, and verify against JUnit XML written to a temporary folder. Nothing touches the network.
+plan, list, and verify against JUnit XML written to a temporary folder. The rollback tests scan a small
+repository written to a temporary folder and time a drill. Nothing touches the network.
 """
 
 import io
@@ -18,6 +19,7 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from audit import ci_timings as ct  # noqa: E402
+from rollback import rollback_check as rc  # noqa: E402
 from shards import shard_plan as sp  # noqa: E402
 
 T0 = 1_700_000_000
@@ -248,6 +250,115 @@ class ShardTests(unittest.TestCase):
 
     def test_verify_matches_absolute_report_paths_to_relative_files(self):
         self.assertEqual(sp.verify(["src/a.test.ts"], ["/home/runner/work/app/src/a.test.ts"])["missing"], [])
+
+
+def write_tree(root, files):
+    for rel, text in files.items():
+        path = Path(root) / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+
+
+class RollbackScanTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def rules(self, files):
+        write_tree(self.root, files)
+        return {(f["rule"], f["file"]) for f in rc.scan(self.root)["findings"]}
+
+    def test_unsafe_rollback_script_is_flagged_line_by_line(self):
+        found = self.rules({"scripts/rollback.sh": "#!/usr/bin/env bash\n"
+                            "read -p 'version? ' V\n"
+                            "docker build -t app:latest .\n"
+                            "kubectl rollout undo deploy/app || true\n"
+                            "sleep 30\n"})
+        for rule in ("RB001", "RB010", "RB006", "RB003", "RB004", "RB002", "RB009", "RB005", "RP002"):
+            self.assertIn((rule, "scripts/rollback.sh"), found)
+
+    def test_safe_rollback_script_run_from_ci_has_no_findings(self):
+        found = self.rules({
+            "scripts/rollback.sh": "#!/usr/bin/env bash\nset -euo pipefail\n"
+                                   "kubectl set image deploy/app app=registry/app@\"$1\"\n"
+                                   "kubectl rollout status deploy/app --timeout=120s\n"
+                                   "curl -fsS https://staging.example.test/healthz\n",
+            ".github/workflows/rollback.yml": "on: workflow_dispatch\njobs:\n  rollback:\n    runs-on: ubuntu-latest\n"
+                                              "    timeout-minutes: 5\n    steps:\n"
+                                              "      - run: ./scripts/rollback.sh ${{ inputs.digest }}\n"})
+        self.assertEqual(found, set())
+
+    def test_repository_that_deploys_with_no_rollback_is_a_blocker(self):
+        found = self.rules({".gitlab-ci.yml": "deploy:\n  script:\n    - helm upgrade app ./chart --atomic --timeout 5m\n"})
+        self.assertIn(("RP001", "(repository)"), found)
+
+    def test_helm_rollback_job_in_ci_needs_wait_and_upgrade_needs_atomic(self):
+        found = self.rules({"Jenkinsfile": "pipeline {\n  stages {\n    stage('Deploy') {\n"
+                                           "      steps { sh 'helm upgrade app ./chart' }\n    }\n"
+                                           "    stage('Rollback') {\n      steps {\n"
+                                           "        sh 'helm rollback app 0'\n      }\n    }\n  }\n}\n"})
+        self.assertIn(("RB008", "Jenkinsfile"), found)
+        self.assertIn(("RB014", "Jenkinsfile"), found)
+
+    def test_migrations_missing_down_empty_down_and_one_step_drops(self):
+        found = self.rules({
+            "db/migrations/001_users.up.sql": "CREATE TABLE users (id int);\n",
+            "db/migrations/002_drop.up.sql": "ALTER TABLE users DROP COLUMN email;\n",
+            "db/migrations/002_drop.down.sql": "ALTER TABLE users ADD COLUMN email text;\n",
+            "alembic/versions/abc_add.py": "def upgrade() -> None:\n    op.drop_column('t', 'c')\n\n\n"
+                                           "def downgrade() -> None:\n    pass\n",
+            "app/migrations/0003_data.py": "operations = [migrations.RunPython(fill)]\n",
+            "database/migrations/2024_x.php": "public function down(): void\n    {\n    }\n"})
+        self.assertIn(("MG001", "db/migrations/001_users.up.sql"), found)
+        self.assertNotIn(("MG001", "db/migrations/002_drop.up.sql"), found)
+        self.assertIn(("MG006", "db/migrations/002_drop.up.sql"), found)
+        self.assertIn(("MG002", "alembic/versions/abc_add.py"), found)
+        self.assertIn(("MG006", "alembic/versions/abc_add.py"), found)
+        self.assertIn(("MG004", "app/migrations/0003_data.py"), found)
+        self.assertIn(("MG002", "database/migrations/2024_x.php"), found)
+
+    def test_drops_inside_a_down_migration_are_not_flagged(self):
+        found = self.rules({"db/migrate/20240101_add.rb": "class Add < ActiveRecord::Migration[7.1]\n"
+                                                          "  def up\n    add_column :users, :age, :integer\n  end\n\n"
+                                                          "  def down\n    remove_column :users, :age\n  end\nend\n"})
+        self.assertNotIn(("MG006", "db/migrate/20240101_add.rb"), found)
+
+    def test_reversible_run_python_is_not_flagged(self):
+        found = self.rules({"app/migrations/0004.py":
+                            "operations = [migrations.RunPython(fill, migrations.RunPython.noop)]\n"})
+        self.assertNotIn(("MG004", "app/migrations/0004.py"), found)
+
+    def test_checkers_and_tests_named_rollback_are_not_rollback_scripts(self):
+        write_tree(self.root, {"scripts/rollback_check.py": "input()\n", "tests/rollback.test.ts": "sleep 5\n",
+                               "test_rollback.py": "input()\n"})
+        self.assertEqual(rc.scan(self.root)["scripts"], [])
+
+    def test_fail_on_exits_one_and_writes_the_report(self):
+        write_tree(self.root, {"rollback.sh": "kubectl rollout undo deploy/app\n"})
+        out = self.root / "out"
+        with redirect_stdout(io.StringIO()):
+            code = rc.main(["--project", "t", "scan", "--root", str(self.root), "--fail-on", "major", "--out", str(out)])
+            clean = rc.main(["--project", "t", "scan", "--root", str(self.root), "--out", str(out)])
+        self.assertEqual((code, clean), (1, 0))
+        self.assertTrue(list(out.glob("rollback-check-*.md")))
+
+
+class RollbackDrillTests(unittest.TestCase):
+    def test_drill_records_time_to_healthy_and_the_failing_verify(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "drills.jsonl"
+            ok = rc.main(["--project", "t", "drill", "--name", "staging", "--out", str(log), "--",
+                          sys.executable, "-c", "pass"])
+            bad = rc.main(["--project", "t", "drill", "--name", "staging", "--out", str(log),
+                           "--verify", '"%s" -c "raise SystemExit(3)"' % sys.executable, "--", sys.executable, "-c", "pass"])
+            rows = rc.read_drills(log)
+        self.assertEqual((ok, bad), (0, 3))
+        self.assertEqual([r["verify_exit"] for r in rows], [None, 3])
+        summary = rc.drill_summary(rows)
+        self.assertEqual((summary["drills"], summary["passed"], summary["last_passed"]), (2, 1, False))
 
 
 if __name__ == "__main__":

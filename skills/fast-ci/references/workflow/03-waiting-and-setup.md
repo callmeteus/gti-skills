@@ -11,7 +11,7 @@ Waiting is everything between "the run was created" and "the job's first step ra
 - **Cancel superseded runs.** When a new commit lands on a branch, cancel its in-progress run so runners are free (GitHub and Forgejo `concurrency` with `cancel-in-progress`, GitLab `interruptible: true` with auto-cancel, Woodpecker's cancel-previous setting, Jenkins `disableConcurrentBuilds(abortPrevious: true)`). Never cancel runs on main or in the merge queue.
 - **Enough capacity for the shape.** If a PR run has 6 parallel jobs and only 4 runners are idle, two jobs wait. Size the warm pool for the widest run times the usual number of open PRs.
 
-A new vendor, a bigger machine, or more idle runners usually means an account, a secret, or a bigger bill: prepare the change, then put it on the pending list with the expected monthly cost (step 8).
+A new vendor, a bigger machine, or more idle runners usually means an account, a secret, or a bigger bill: prepare the change, then put it on the pending list with the expected monthly cost (step 9).
 
 ## Setup, under 15 seconds
 

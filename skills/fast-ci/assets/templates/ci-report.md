@@ -55,6 +55,23 @@ One row per pull request or branch, in the order they shipped.
 |-------|------|--------|
 | <.github/workflows/ci.yml> | <retry: 2 on e2e> | <removed after fixing the race in checkout.test.ts> |
 
+## Rollback
+
+From `rollback_check.py scan` and the drill log.
+
+| Metric | Value | Budget |
+|--------|-------|--------|
+| Rollback path | <one command: scripts/rollback.sh DIGEST, run by the rollback workflow> | one command from CI |
+| Drills passed / run | <3 / 3> | |
+| Last passing drill | <YYYY-MM-DD, staging> | under 30 days ago |
+| Time to healthy p50 / p95 | <1m40s / 2m10s> | under 5 min at p95 |
+| Scan findings | <0 blocker, 1 major, 2 minor> | 0 blocker |
+
+| Where | Finding | Status |
+|-------|---------|--------|
+| <scripts/rollback.sh:4> | <RB004 rollout undo without --to-revision> | <fixed: sets the recorded digest> |
+| <db/migrations/012_drop_email.up.sql:1> | <MG006 one-step column drop> | <split into expand and contract> |
+
 ## Pending: needs the user
 
 Everything that needs an account, a secret, a setting, or a bigger bill.

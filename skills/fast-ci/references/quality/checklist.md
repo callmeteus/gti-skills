@@ -60,9 +60,16 @@ Mark each item done, failing, not applicable, or not checked in the report.
 36. Hooks are a hook manager, not a line in `AGENTS.md`, and run under 9 s.
 37. Every job fails when it exceeds its budget.
 
-## Ship (step 8)
+## Rollback (step 8)
 
-38. One small change per pull request or branch, each with before and after numbers from real runs.
-39. Everything needing an account, a secret, or a bigger bill is on one list with expected monthly cost.
-40. The report ends with total CI time and cost, before and after.
-41. PR time to result p50 under 60 s and p95 under 120 s.
+38. The rollback scan has no blocker; every major finding is fixed or recorded with a reason.
+39. The rollback redeploys a pinned artifact or digest (no rebuild, no `latest`), stops on the first failure, waits until healthy, and runs from CI without prompts.
+40. Every migration keeps the previous app version working (expand and contract); no empty down migration reports success.
+41. A drill against a non-production environment passed within 5 minutes in the last 30 days, and a CI job keeps drilling it.
+
+## Ship (step 9)
+
+42. One small change per pull request or branch, each with before and after numbers from real runs.
+43. Everything needing an account, a secret, or a bigger bill is on one list with expected monthly cost.
+44. The report ends with total CI time and cost, before and after.
+45. PR time to result p50 under 60 s and p95 under 120 s.
