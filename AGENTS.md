@@ -188,6 +188,7 @@ Current skills:
 | `gti` | GTI |
 | `maestro` | Maestro |
 | `gestures` | Gestures |
+| `seo-growth` | SEO Growth |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

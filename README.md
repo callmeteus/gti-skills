@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-17-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-18-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -63,6 +63,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Maestro** | coding, personal | Orchestrates a request as delegated tasks: plans on the strongest model, remembers the user's model preferences, discovers the providers and models the harness can run, routes each task by context, speed, cost, and health, probes orchestration MCP servers such as OpenAgents, spawns cheaper workers, reuses their chats for review and fixes, falls back on rate limits, and never does the work itself. Detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and other ACP harnesses. | A harness with subagents, a worker CLI on PATH, or an MCP orchestration server; Git | [README](skills/maestro/README.md) |
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
+| **SEO Growth** | coding, research | Runs agency-style SEO inside the codebase: a live technical check (robots.txt, sitemap, soft 404s, redirects, canonicals, schema, and what Googlebot and AI crawlers actually receive), on-page fixes, Search Console mining for long questions, page-2 queries, and low CTR, buyer pages (comparison, alternatives, FAQ, clusters), and AI search visibility. | Python 3.8+ | [README](skills/seo-growth/README.md) |
 | **Security Audit** | coding | Defensive, source-first security review in three modes (guidance, diff review, full audit) that maps trust boundaries into a coverage ledger, hunts with isolated agents, has fresh agents try to disprove every candidate, and writes validated findings, reports, and SARIF. Adapted from Cloudflare's skill. | Node 18+, Git; a sandbox to run target code | [README](skills/security-audit/README.md) |
 | **X Research** | research, social | Researches X (Twitter) through a free, browser-based MCP server with a call budget, typed errors, and a web search fallback that the answer discloses. | Python 3.10+, Playwright Chromium, twitter MCP, X account | [README](skills/x-research/README.md) |
 | **Weight Space Programming** | coding, research | Reads, fixes, and writes neural network weights by reasoning about what each layer computes, with no training: infers a checkpoint's task, removes failure directions with minimal edits, and hand-builds small networks, under a forward-pass budget and held-out evaluation. | Python 3.9+, numpy; PyTorch optional | [README](skills/weight-space-programming/README.md) |
@@ -76,10 +77,10 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Maestro, Security Audit, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Maestro, Security Audit, SEO Growth, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `infra` | Infrastructure as code, cloud accounts, and observability as code | Infra Expert |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
-| `research` | Finding, collecting, and summarizing information from the web, video, and social media | Video to Markdown, Weight Space Programming, X Research |
+| `research` | Finding, collecting, and summarizing information from the web, video, and social media | SEO Growth, Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | X Research |
 | `art` | Graphic design, illustration, and visual artwork | Art Director |
 | `personal` | Personal productivity, notes, and everyday tasks | GTI, Maestro |
@@ -246,6 +247,7 @@ Notes:
 | Better Tests | 18+ for JS and TS projects | No | No | npm registry, to install Stryker and fast-check outside the project |
 | Security Audit | 18+ | No | No | Optional: Cloudflare Radar Zero Wire page; target code runs only in a sandbox with no network |
 | Web Performance Audit | LTS (MCP server) | No | No | Target site; npm; PageSpeed Insights API for field data |
+| SEO Growth | No | 3.8+ | No | Target site for the live check |
 | X Research | No | 3.10+ (MCP server) | No | x.com; FxTwitter API; web search for the fallback |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
@@ -388,6 +390,7 @@ gti-skills/
 │   ├── infra-expert/
 │   ├── maestro/
 │   ├── security-audit/
+│   ├── seo-growth/
 │   ├── untangle-codebase/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
@@ -465,6 +468,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/better-tests/README.md](skills/better-tests/README.md) | Writing tests that catch bugs and pruning brittle suites |
 | [skills/security-audit/README.md](skills/security-audit/README.md) | Defensive security reviews, full audits with a coverage ledger, and SARIF export |
 | [skills/web-performance-audit/README.md](skills/web-performance-audit/README.md) | Auditing page load and Core Web Vitals with Chrome DevTools |
+| [skills/seo-growth/README.md](skills/seo-growth/README.md) | Technical SEO, Search Console mining, buyer pages, and AI search visibility |
 | [skills/x-research/README.md](skills/x-research/README.md) | Researching X with the twitter MCP server and its web search fallback |
 | [skills/weight-space-programming/README.md](skills/weight-space-programming/README.md) | Reading, fixing, and writing neural network weights without training |
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
@@ -493,6 +497,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Better Tests | Not declared |
 | Security Audit | MIT, see [LICENSE](skills/security-audit/LICENSE); adapted from Cloudflare's security-audit-skill |
 | Web Performance Audit | Not declared |
+| SEO Growth | Not declared |
 | Weight Space Programming | Not declared |
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
 | Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project |
