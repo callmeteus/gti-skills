@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; padding: 24px; display: flex; gap: 48px; }
+  nav { width: 220px; }
+  nav a { display: flex; align-items: center; gap: 10px; padding: 6px 16px; color: inherit; text-decoration: none; }
+  nav svg { width: 16px; height: 16px; flex: none; }
+  .group-label { display: block; padding: 12px 16px 4px; font-size: 12px; }
+  #broken .group-label { padding-left: 42px; }
+  #broken a.pushed { padding-left: 20px; }
+  #broken a.wide { gap: 14px; }
+  .toolbar { display: flex; gap: 8px; margin-top: 24px; }
+  #broken-bar { align-items: flex-start; }
+  #clean-bar { align-items: center; }
+  .toolbar button { height: 32px; }
+  .toolbar button.tall { height: 40px; }
+</style>
+</head>
+<body>
+  <div>
+    <nav id="broken">
+      <span class="group-label">Workspace</span>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Inbox</a>
+      <a href="#" class="pushed"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Projects</a>
+      <a href="#" class="wide"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Views</a>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Teams</a>
+    </nav>
+    <div class="toolbar" id="broken-bar"><button>Filter</button><button class="tall">Display</button><button>New</button></div>
+  </div>
+  <div>
+    <nav id="clean">
+      <span class="group-label">Workspace</span>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Inbox</a>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Projects</a>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Views</a>
+      <a href="#"><svg viewBox="0 0 16 16"><rect width="16" height="16"/></svg>Teams</a>
+    </nav>
+    <div class="toolbar" id="clean-bar"><button>Filter</button><button class="tall">Display</button><button>New</button></div>
+  </div>
+</body>
+</html>

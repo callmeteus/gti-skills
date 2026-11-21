@@ -191,6 +191,19 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.deepEqual(findings, []);
     });
 
+    it("finds icons, labels, and section headers off their guide lines, and a toolbar off its center line", async () => {
+        const findings = await probeFixture("gridlines.html");
+        const column = findings.filter((finding) => finding.rule === "icon-column");
+        const center = findings.filter((finding) => finding.rule === "toolbar-center");
+        assert.equal(column.length, 1, JSON.stringify(column));
+        assert.match(column[0].actual, /1 of 4 icon\(s\)/);
+        assert.match(column[0].actual, /2 of 4 label\(s\)/);
+        assert.match(column[0].actual, /1 section header/);
+        assert.ok(column[0].items.every((item) => /nav#broken/.test(item.selector)));
+        assert.equal(center.length, 1, JSON.stringify(center));
+        assert.match(center[0].items[0].selector, /div#broken-bar/);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

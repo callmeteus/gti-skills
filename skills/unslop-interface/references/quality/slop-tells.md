@@ -54,6 +54,10 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Decorative emoji per category where a color key would carry information | Source | 04 |
 | Icons that are not on one vertical line | Source | 04 |
 | Main action and secondary link set as the same plain text, external links with no arrow | Source (Kowalski clip) | 04 |
+| Icons or labels in one list that start at different x positions | Pritam Paul (/gridlines) | 04 |
+| Section headers aligned to the labels instead of the icon edge | Pritam Paul (/gridlines) | 04 |
+| Toolbar controls on different center lines (a select 4px higher than the button next to it) | Pritam Paul (/gridlines) | 04 |
+| One row nudged with its own margin instead of fixing the shared row or the container | Pritam Paul (/gridlines) | 04 |
 
 ## Type and copy
 

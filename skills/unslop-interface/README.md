@@ -241,7 +241,7 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
 
 ### scripts/lintapple/snapshot.mjs
 
@@ -395,6 +395,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 | [Murat Alpay: ui-diff](https://x.com/imuratalpay/status/2123745913063477684) | Standard X post terms | The idea behind the before and after snapshot diff |
 | [Felipe Basurto: unslop-ui taste lists](https://x.com/fildotai/status/2123812865207632371) | Standard X post terms | The taste file format and the false tells to avoid |
 | [Why is AI-generated language so hard to understand? (arXiv 2610.29162)](https://arxiv.org/abs/2610.29162), shared by [Dan Korchinski](https://x.com/DanKorchinski/status/2123725394503406002) | arXiv terms | The plain sentence rules in the copy pass |
+| [Pritam Paul: /gridlines](https://x.com/pritamux/status/2124157134212673722) | Standard X post terms | The guide line rules: one icon line and one label line, headers on the icon edge, toolbars on one center line, fix the container and not one item |
 | [Dionisselamii: five skills that kill AI slop](https://x.com/Dionisselamii/status/2123871446913229285) | Standard X post terms | Pointer to the Vercel guidelines; the other linked skills were not readable |
 | [Emil Kowalski: a vocabulary for agents](https://x.com/emilkowalski/status/2115425807388619022), from [AI for UI](https://aiforui.dev/) | Standard X post terms | Affordance, leading, ligature, and sticky header rules, and the vocabulary file |
 

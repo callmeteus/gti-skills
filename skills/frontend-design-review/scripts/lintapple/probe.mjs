@@ -9,7 +9,8 @@
  * headings or short text that repeat the heading above them, large blocks with
  * different space above and below, and admin screen tells: empty tables with no empty
  * state, create forms left open, labels beside fields, raw JSON fields, and controls with
- * no label or a single option.
+ * no label or a single option, icons, labels, and section headers off their guide lines,
+ * and toolbar controls off one center line.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -712,6 +713,78 @@ export function measurePage(options) {
         }
     }
     if (unclear.length) add("unexplained-control", unclear.slice(0, 4).map((entry) => asBox(entry.field)), unclear.slice(0, 4).map((entry) => entry.reason).join("; "), "every control says what it sets, and a choice has at least two options", "Give each control a visible label (\"Workspace\", \"Event\"), or put the facet in its first option (\"All channels\"). When a select has only one option, show the value as text (or nothing) until a second option exists. A switcher for the current account or event belongs in the navigation, labeled, not next to the page title.");
+
+    // Guide lines: in a list of rows with an icon and a label (a sidebar, a menu), every icon
+    // starts on one vertical line, every label on a second one, and section headers sit on the
+    // icon line. In a toolbar, the controls share one horizontal center line.
+    const iconSelector = "svg, img, i, [class*=icon], [data-icon]";
+    const textStart = (el, skip) => {
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            if (!node.textContent.trim() || (skip && skip.contains(node.parentElement))) continue;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            const rect = range.getBoundingClientRect();
+            if (rect.width > 0) return rect.left;
+        }
+        return null;
+    };
+    const spread = (values) => Math.max(...values) - Math.min(...values);
+    const mode = (values) => {
+        const counts = new Map();
+        for (const value of values) counts.set(Math.round(value), (counts.get(Math.round(value)) ?? 0) + 1);
+        return [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    };
+    const rowSelector = "a, button, [role=menuitem], [role=option], [role=tab], li";
+    for (const list of document.querySelectorAll("nav, aside, [role=navigation], [role=menu], [role=listbox], [role=tablist], ul")) {
+        if (!shown(list) || (ignore && list.closest(ignore)) || list.parentElement?.closest("nav, aside, [role=navigation], [role=menu], [role=listbox], [role=tablist], ul")) continue;
+        const rows = [];
+        for (const row of list.querySelectorAll(rowSelector)) {
+            if (!shown(row) || row.parentElement.closest(rowSelector) && list.contains(row.parentElement.closest(rowSelector))) continue;
+            const icons = [...row.querySelectorAll(iconSelector)].filter((icon) => shown(icon) && !icon.parentElement.closest("svg") && icon.getBoundingClientRect().width <= 32);
+            if (icons.length < 1 || !row.innerText.trim()) continue;
+            const icon = icons[0];
+            const label = textStart(row, icon);
+            if (label === null || label <= icon.getBoundingClientRect().left) continue;
+            rows.push({ row, icon, iconLeft: icon.getBoundingClientRect().left, labelLeft: label });
+        }
+        if (rows.length < 3) continue;
+        const problems = [];
+        const iconLine = mode(rows.map((row) => row.iconLeft));
+        const labelLine = mode(rows.map((row) => row.labelLeft));
+        const offIcon = rows.filter((row) => Math.abs(row.iconLeft - iconLine) > 1);
+        const offLabel = rows.filter((row) => Math.abs(row.labelLeft - labelLine) > 1);
+        if (offIcon.length) problems.push(`${offIcon.length} of ${rows.length} icon(s) start off the icon line at x=${iconLine}`);
+        if (offLabel.length) problems.push(`${offLabel.length} of ${rows.length} label(s) start off the label line at x=${labelLine}`);
+        const headers = [...list.querySelectorAll("h2, h3, h4, h5, h6, [role=heading], [class*=header], [class*=title], [class*=group-label], [class*=section-label]")]
+            .filter((header) => shown(header) && !header.closest(rowSelector) && !header.querySelector(rowSelector) && ownText(header));
+        const offHeaders = headers.filter((header) => {
+            const left = textStart(header);
+            return left !== null && Math.abs(left - iconLine) > 1;
+        });
+        if (offHeaders.length) problems.push(`${offHeaders.length} section header(s) start off the icon line (at x=${Math.round(textStart(offHeaders[0]))}, icon line x=${iconLine})`);
+        if (problems.length) add("icon-column", [...offIcon, ...offLabel].map((row) => asBox(row.row)).concat(offHeaders.map(asBox)).slice(0, 4), problems.join("; "), "one icon line, one label line, and section headers on the icon line", "Set the inset and the icon to label gap on the shared row component or the list container, not on the one row that is off: one icon size, one fixed icon box, one gap. Start section headers at the icon line, not the label line.");
+    }
+    const controlSelector = "button, a, input, select, textarea, [role=button], svg, img";
+    for (const row of document.querySelectorAll("body *")) {
+        const style = getComputedStyle(row);
+        if (!style.display.endsWith("flex") || style.flexDirection !== "row" || !shown(row) || (ignore && row.closest(ignore))) continue;
+        const children = [...row.children].filter((child) => shown(child) && getComputedStyle(child).position !== "absolute");
+        if (children.length < 2) continue;
+        const rects = children.map((child) => child.getBoundingClientRect());
+        if (rects.some((rect) => rect.height > 56)) continue;
+        if (Math.max(...rects.map((rect) => rect.top)) >= Math.min(...rects.map((rect) => rect.bottom))) continue;
+        const controlsInRow = children.filter((child) => child.matches(controlSelector) || (child.children.length === 1 && child.firstElementChild.matches(controlSelector) && !child.innerText.trim().includes("\n")));
+        if (controlsInRow.length < 2) continue;
+        const target = (child) => child.matches(controlSelector) ? child : child.firstElementChild;
+        const centers = controlsInRow.map((child) => {
+            const rect = target(child).getBoundingClientRect();
+            return (rect.top + rect.bottom) / 2;
+        });
+        if (spread(centers) > 1.5) {
+            add("toolbar-center", controlsInRow.slice(0, 4).map((child) => asBox(target(child))), `${controlsInRow.length} controls in one row have centers ${Math.round(spread(centers) * 2) / 2}px apart`, "every control in a toolbar on one horizontal center line", "Center the row on its container (`align-items: center`) and give its controls one height, instead of nudging one control with a margin. When one control is taller on purpose, center it on the same line.");
+        }
+    }
 
     // Colors that match no token: every color custom property the page defines is resolved to
     // rgb, and each painted text, background, and border color must equal one of them.
