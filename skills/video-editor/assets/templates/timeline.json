@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "name": "my-edit",
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "background": "black"
+  },
+  "scenes": [
+    {
+      "id": "scene-1",
+      "source": "clip-a.mp4",
+      "in": 0,
+      "duration": 5,
+      "fit": "cover",
+      "fadeIn": 0.5,
+      "volume": 1
+    },
+    {
+      "id": "scene-2",
+      "source": "card.png",
+      "duration": 4,
+      "fit": "contain",
+      "fadeOut": 0.5,
+      "volume": 0,
+      "text": [
+        {
+          "value": "Replace with your title",
+          "x": "(w-text_w)/2",
+          "y": "h-180",
+          "fontSize": 96,
+          "fontColor": "white"
+        }
+      ]
+    }
+  ],
+  "music": [
+    {
+      "id": "music-1",
+      "source": "bed.mp3",
+      "in": 0,
+      "volume": 0.3,
+      "fadeIn": 1,
+      "fadeOut": 1.5
+    }
+  ],
+  "output": {
+    "format": "mp4",
+    "quality": "final"
+  }
+}
