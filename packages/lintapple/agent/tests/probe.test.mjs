@@ -154,6 +154,18 @@ describe("layout probe", { skip: browser ? false : "Chromium for Playwright is n
         assert.match(findings.find((finding) => finding.rule === "duplicate-filter").items[0].selector, /select/);
     });
 
+    it("finds a word alone on the last line and transition: all, and leaves the fixed versions alone", async () => {
+        const findings = await probeFixture("wrap-motion.html");
+        const lonely = findings.filter((finding) => finding.rule === "lonely-word");
+        const motion = findings.filter((finding) => finding.rule === "transition-all");
+        assert.equal(lonely.length, 1, JSON.stringify(findings.map((finding) => finding.actual)));
+        assert.match(lonely[0].actual, /^1 heading/);
+        assert.match(lonely[0].items[0].selector, /div#loose/);
+        assert.equal(motion.length, 1);
+        assert.match(motion[0].actual, /^1 element/);
+        assert.match(motion[0].items[0].selector, /div#loose/);
+    });
+
     it("leaves a full-bleed band inside a card off the lane check", async () => {
         const findings = await probeFixture("card-band.html");
         assert.deepEqual(findings.filter((finding) => finding.rule === "off-lane"), []);

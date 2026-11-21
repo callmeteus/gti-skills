@@ -24,6 +24,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 |------|---------|------|
 | Pill-shaped search fields, nav items, and badges next to rounded rectangle cards | Source | 02 |
 | Many unrelated radius values on one screen | Source | 02 |
+| Large cards and sheets whose corners start their curve abruptly where smoothing is supported | Common | 02 |
 | One-side accent border on a rounded card, curving around the corners into a crescent | Common | 02 |
 | Accent border inside a card that already has one, stacking two curved strokes | Common | 02 |
 | Fully rounded bars in charts used as decoration | Source | 06 |
@@ -73,6 +74,9 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Decorative ligatures in body or UI text | Source (Kowalski clip) | 05 |
 | A tagline under every page title, restating it ("Settings" / "Manage your account settings") | Common | 05 |
 | Chips, tags, and metadata shown as underlined links | Common | 05 |
+| A heading that leaves one word alone on its last line | Common | 05 |
+| Stacked nouns, things doing human actions ("The dashboard wants..."), and long, passive sentences in UI copy | Common | 05 |
+| Three dots instead of `…`, hand-built date and money formats | Common | 05 |
 | A section heading that repeats the page title ("Auctions" over "Auction for attendees"), and tags that repeat the heading again ("Attendees only") | Common | 05 |
 | Helper text that narrates the interface: what each control does, how the feature works inside, what it is not | Common | 05 |
 
@@ -100,3 +104,18 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | The same filter in two groups ("Online" and "Pagamento online"), or a filter that repeats the page's sections | Common | 07 |
 | Tags in every card that link to the filter options | Common | 07 |
 | A filter panel restyled (new grid, bigger chips) instead of turned into one row of selects | Common | 07 |
+
+## States and feel
+
+| Tell | Seen in | Pass |
+|------|---------|------|
+| A spinner in an empty box where the content shape is known | Common | 08 |
+| Images that load into an empty gray box, or with no size so the page jumps | Common | 08 |
+| A like, save, or toggle that waits for the server before it changes | Common | 08 |
+| An "Are you sure?" popup for a delete the user could undo | Common | 08 |
+| A hard cut from a tapped card to its screen | Common | 08 |
+| A sheet or drawer that closes only with an X | Common | 08 |
+| A verification code typed digit by digit into separate boxes with no `one-time-code` autofill | Common | 08 |
+| `transition: all`, or motion that ignores `prefers-reduced-motion` | Common | 08 |
+| Controls with no hover or `:focus-visible` state, or `outline: none` with no replacement | Common | 08 |
+

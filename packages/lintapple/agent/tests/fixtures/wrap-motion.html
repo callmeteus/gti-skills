@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wrap and motion fixture</title>
+<style>
+  body { margin: 0; padding: 24px; font: 16px/1.5 system-ui, sans-serif; background: #fff; }
+  .card { width: 300px; padding: 16px; border: 1px solid #ddd; border-radius: 12px; margin-bottom: 24px; }
+  h2 { font: 600 24px/1.3 monospace; margin: 0 0 8px; }
+  #loose h2 { width: 17ch; }
+  #calm h2 { width: 17ch; text-wrap: balance; }
+  #loose .go { transition: all 0.3s; }
+  #calm .go { transition: background-color 0.2s, transform 0.2s; }
+</style>
+</head>
+<body>
+  <div class="card" id="loose"><h2>Your daily plan is ready in a few seconds</h2><button class="go">Continue</button></div>
+  <div class="card" id="calm"><h2>Your daily plan is ready in a few seconds</h2><button class="go">Continue</button></div>
+</body>
+</html>

@@ -56,6 +56,8 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `duplicate-filter` | Filter options in different groups that share a key word ("Online" and "Pagamento online"), or a filter option that repeats a split two or more section headings already make |
 | `filter-link-in-item` | Links inside list items that repeat the filter options, by link target or by label |
 | `filters-outweigh-items` | More filter chips or links than items to filter, as 11 filter chips over 4 auction items. A compact row of selects does not count, and select options are still checked by `duplicate-filter` |
+| `lonely-word` | A heading or short text that wraps and leaves one word alone on its last line, without `text-wrap: balance` or `pretty` |
+| `transition-all` | Elements that animate with `transition: all` |
 | `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), or short text under a heading that only repeats its words (an "Attendees only" tag). Card titles in a grid of items are not compared with the page heading |
 | `off-token-color` | A rendered text, background, or border color that equals none of the color custom properties the page defines. Colors are compared by value with opacity ignored, so a raw color that happens to equal a token passes; the source scan below catches it. With no color tokens on the page, the rule is skipped with a note |
 
@@ -68,6 +70,17 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `--json` | Print every finding as JSON |
 
 Each finding lists the elements with their position, the measured value, and a fix. The probe measures geometry; it does not know intent. Treat a finding as a defect unless the offset is a deliberate step on the spacing scale or the design system defines it, and say which. The edge checks compare only boxes in one page region (header, nav, main, footer, aside) and within 400px of each other, and they skip items of wrapping rows, so a header link and a footer logo never count as a near miss. Exit codes: `0` no findings, `1` findings, `2` the probe did not finish. A page that answers HTTP 400 or higher is not measured and exits `2`: an error page is not the interface, so fix the error first.
+
+## Compare before and after
+
+`snapshot.mjs` captures every labeled element and painted surface of a page (position, size, radius, colors, border, font size and weight, shadow, text) and a full-page screenshot. Run it before the changes and again after them to list what changed per element, the way a reviewer would read a UI pull request:
+
+```bash
+node <skill-dir>/scripts/lintapple/snapshot.mjs <url> --name before
+node <skill-dir>/scripts/lintapple/snapshot.mjs <url> --compare ~/.gti/lintapple/<project>/snapshots/before.json
+```
+
+The second run prints lines such as `button "Save": width 72 -> 120; radius 6 -> 14` plus the elements added and removed, and the paths of both screenshots. Elements are matched by tag, label, and order, not by class names, so a refactor that renames classes still lines up. Output goes to `~/.gti/lintapple/<project>/snapshots/` (`--out` changes it), never into the project. Options: `--viewport WxH` (default `1440x900`), `--ready SELECTOR`, `--project DIR`, `--json`. A page that answers HTTP 400 or higher is not captured.
 
 ## Scan the source for colors outside tokens
 

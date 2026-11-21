@@ -20,6 +20,7 @@ The clip marks the corners of the search field, the active nav item, and the sta
 5. Store the values as tokens (for example `--radius-control`, `--radius-card`).
 6. Straighten accent borders. A one-side colored border (`border-left: 4px solid`) on a box with rounded corners bends around those corners into a crescent. Square the corners on the accent side, draw the accent as an inset bar inside the padding (a pseudo-element or an inset `box-shadow`), or remove it.
 7. Keep accents to one level. A group with an accent border whose items also have accent borders stacks two curved strokes. Keep the accent on the outer group, or on the items, never both, and separate the items with spacing or a plain border.
+8. Smooth large corners where the browser allows it. A plain circular radius starts its curve abruptly; the corners on a phone ease into the curve (a squircle, about 60% smoothing). Add `corner-shape: squircle` (or `superellipse()`) inside `@supports (corner-shape: squircle)` on large surfaces such as cards, sheets, and app icons, and keep the same `border-radius` as the fallback. Do not fake it with SVG masks on every element.
 
 ## Check
 

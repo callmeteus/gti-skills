@@ -506,7 +506,7 @@ export function measurePage(options) {
     // Filters that outweigh the list: more chip or link options than items to filter. A compact
     // row of selects is allowed on a short list, so select options do not count here.
     const filterSelector = "[class*=filter], [class*=filtro], [aria-label*=ilt]";
-    const scoped = (selector) => filterSelector.split(", ").map((area) => `${area} ${selector}`).join(", ");
+    const scoped = (selector) => filterSelector.split(", ").flatMap((area) => selector.split(", ").map((part) => `${area} ${part}`)).join(", ");
     const chipOptions = [...document.querySelectorAll(scoped("a, button:not([type=submit]):not([type=reset]), input[type=radio], input[type=checkbox]"))].filter(shown);
     const filterSelects = [...document.querySelectorAll(scoped("select"))].filter(shown);
     const selectOptions = filterSelects.flatMap((select) => [...select.options]);
@@ -554,6 +554,44 @@ export function measurePage(options) {
         if (inItems.length) {
             add("filter-link-in-item", inItems.slice(0, 3).map(asBox), `${inItems.length} link(s) inside list items repeat the filter options (${[...new Set(inItems.map(optionText))].slice(0, 4).join(", ")})`, "item facts as plain text; filtering only in the filter control", "Show the item's facts as plain text or quiet chips without links. Filtering belongs to the one filter control above the list, not to every item.");
         }
+    }
+
+    // A word alone on the last line: a heading or short paragraph that wraps and leaves one
+    // short word on its own line. `text-wrap: balance` (headings) or `pretty` (paragraphs) fixes it.
+    const lonely = [];
+    for (const el of document.querySelectorAll("h1, h2, h3, h4, p, li, button, a, [role=heading]")) {
+        if (!shown(el) || (ignore && el.closest(ignore)) || el.closest("p, li, button, a, h1, h2, h3, h4, [role=heading]") !== el) continue;
+        const text = (el.innerText || "").trim();
+        if (text.length > 220 || text.split(/\s+/).length < 3) continue;
+        const wrap = getComputedStyle(el);
+        if (/balance|pretty/.test(`${wrap.textWrap || ""} ${wrap.textWrapStyle || ""}`)) continue;
+        // Place every word, then count the words on the lowest line.
+        const tops = [];
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+            for (const match of node.textContent.matchAll(/\S+/g)) {
+                const range = document.createRange();
+                range.setStart(node, match.index);
+                range.setEnd(node, match.index + match[0].length);
+                const rect = [...range.getClientRects()].find((item) => item.width > 0);
+                if (rect) tops.push({ top: rect.top, height: rect.height, word: match[0] });
+            }
+        }
+        if (tops.length < 3) continue;
+        const lowest = Math.max(...tops.map((item) => item.top));
+        const lastLine = tops.filter((item) => Math.abs(item.top - lowest) < item.height / 2);
+        const firstLine = Math.min(...tops.map((item) => item.top));
+        if (lowest - firstLine < 1 || lastLine.length !== 1 || lastLine[0].word.length > 14) continue;
+        lonely.push({ el, rect: el.getBoundingClientRect(), word: lastLine[0].word });
+    }
+    if (lonely.length) {
+        add("lonely-word", lonely.slice(0, 3), `${lonely.length} heading(s) or short text(s) leave one word alone on the last line (${lonely.slice(0, 3).map((item) => `"${item.word}"`).join(", ")})`, "lines of similar length, no single word on the last line", "Set `text-wrap: balance` on headings and short labels and `text-wrap: pretty` on paragraphs. Do not fix it with manual line breaks.");
+    }
+
+    // `transition: all`: animates every property, including layout, and makes changes lag.
+    const animatesAll = boxes.filter((box) => box.style.transitionProperty.split(",").some((name) => name.trim() === "all") && box.style.transitionDuration.split(",").some((time) => parseFloat(time) > 0));
+    if (animatesAll.length) {
+        add("transition-all", animatesAll.slice(0, 3), `${animatesAll.length} element(s) use \`transition: all\``, "transitions that name their properties", "List the properties that change, usually `transform`, `opacity`, `background-color`, or `color`, and keep layout properties out of transitions.");
     }
 
     // Filled buttons competing on one view: buttons and button-like links with a saturated
