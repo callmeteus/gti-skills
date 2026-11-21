@@ -21,7 +21,11 @@ const SHELL_TOOLS = new Set([
     // Cline
     "execute_command",
     // Copilot, OpenCode and Kilo use bash or shell, already listed above
-    "terminal", "terminal_command"
+    "terminal", "terminal_command",
+    // Alternate names seen in agent tool catalogues
+    "run_shell_command", "shell_command", "run_shell", "execute_shell",
+    "run_terminal_command", "terminal_execute", "terminal_exec", "bash_command",
+    "cmd", "pwsh", "powershell_command", "execute_terminal"
 ]);
 
 /** Tool names that create or modify a file. */

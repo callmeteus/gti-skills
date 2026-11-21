@@ -107,6 +107,33 @@ export function renderMarkdown(report) {
     lines.push("");
     lines.push(`Findings kept after deduplication: ${counts.findings}. Skipped paths: ${counts.skippedFiles}.`);
 
+    if (Array.isArray(sources.coverage) && sources.coverage.length > 0) {
+        lines.push("");
+        lines.push("## Transcript coverage");
+        lines.push("");
+        lines.push("| Agent | Stores found | Rows read | Sessions | Skipped | Note |");
+        lines.push("|-------|--------------|-----------|----------|---------|------|");
+        for (const entry of sources.coverage) {
+            const count = entry.storesFound.length;
+            const paths = count === 0
+                ? "none"
+                : count === 1
+                    ? `\`${entry.storesFound[0].split("/").pop()}\``
+                    : `${count} paths`;
+            const skips = entry.skipped.length === 0
+                ? "0"
+                : entry.skipped.map((skip) => `${skip.reason}${skip.count ? ` (${skip.count})` : ""}`).join("; ");
+            lines.push(`| ${entry.agent} | ${paths} | ${entry.rowsRead} | ${entry.sessions} | ${skips} | ${entry.note || "-"} |`);
+        }
+        for (const entry of sources.coverage) {
+            if (entry.storesFound.length === 0) {
+                continue;
+            }
+            lines.push("");
+            lines.push(`- ${entry.agent} paths: ${entry.storesFound.map((path) => `\`${path}\``).join(", ")}`);
+        }
+    }
+
     if (sources.missing.length > 0) {
         lines.push("");
         lines.push("Absent sources, skipped quietly:");
@@ -116,7 +143,7 @@ export function renderMarkdown(report) {
     }
     if (sources.uncovered.length > 0) {
         lines.push("");
-        lines.push("Transcript sources not covered because no local history folder is documented:");
+        lines.push("Transcript sources with no reader because no local history format is documented:");
         lines.push(`- ${sources.uncovered.join(", ")}`);
     }
     if (sources.errors.length > 0) {
