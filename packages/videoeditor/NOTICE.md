@@ -24,6 +24,12 @@ The related open-source project that was found and consulted for caption ideas i
 - **License:** MIT
 - **Used for:** the idea of generating SRT/WebVTT subtitles and burning them deterministically with ffmpeg. The SRT/VTT parser, ASS generator with karaoke word highlighting, safe-area margin, and burn command in this package are original code.
 
+## Motion graphics
+
+- **Project:** [nexu-io/openmotion](https://github.com/nexu-io/openmotion)
+- **License:** Apache-2.0
+- **Used for:** the idea that motion graphics are editable HTML/CSS/JS compositions driven by a deterministic timeline, that a Motion.md style guide records mood, pacing and keep/change rules, that a brand kit feeds identity through the composition, that a reference video is broken down into shot order, pacing, typography and sound before rebuilding, and that exports are verified for size, fps and duration. The composition contract, renderer, style guides, templates, analyzer and review integration in this package are original code. No OpenMotion source, template, guide or asset was copied.
+
 ## Third party tools
 
-ffmpeg, ffprobe, and optional local transcribers (`faster-whisper`, `whisper.cpp`, `whisper`) are external executables. They are detected at runtime and are not bundled with this package. Their licenses remain with their respective projects.
+ffmpeg, ffprobe, Playwright with Chromium, and optional local transcribers (`faster-whisper`, `whisper.cpp`, `whisper`) are external executables or libraries. They are detected at runtime and are not bundled with this package. Their licenses remain with their respective projects.

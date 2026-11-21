@@ -17,6 +17,9 @@ import { forSpec, probe, resolveSource } from "../ffmpeg/Capabilities";
 import { build } from "../ffmpeg/Planner";
 import { requireTool, run, toolsAvailable } from "../ffmpeg/Runner";
 import { requireInput } from "../input";
+import {
+    motionAdd, motionAnalyze, motionDoctorChecks, motionNew, motionRender, motionStyles
+} from "../motion";
 import { startStudio, stopStudio } from "../server/Studio";
 import { Project, type ProjectRef } from "../session/Project";
 import { addMusic, addScene, assertValid, defaultSpec, totalDuration, validate } from "../session/Spec";
@@ -107,6 +110,20 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         return finish(await demo(parsed.flags, workspace), json);
     }
 
+    if (command === "motion") {
+        const ctx = { ref, workspace, flags: parsed.flags, scope: featureScope(ref, workspace) };
+
+        switch (parsed.rest[0]) {
+            case "styles": return finish(motionStyles(ctx), json);
+            case "new": return finish(motionNew(ctx), json);
+            case "render": return finish(await motionRender(ctx), json);
+            case "analyze": return finish(await motionAnalyze(ctx), json);
+            case "add": return finish(await motionAdd(ctx), json);
+            default:
+                throw VideoErrors.spec("motion needs a subcommand: styles, new, render, analyze, or add.");
+        }
+    }
+
     const FeatureCommands = new Set([
         "doctor", "tools", "cut", "trim-silence", "speed", "reframe", "loudness",
         "export", "waveform", "frame", "captions", "review"
@@ -174,7 +191,8 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
             const spec = await loadSpec(ref, parsed.flags, workspace);
             const paths = [
                 ...spec.spec.scenes.map((scene) => resolveSource(workspace, stateDir, scene.source)),
-                ...(spec.spec.music ?? []).map((track) => resolveSource(workspace, stateDir, track.source))
+                ...(spec.spec.music ?? []).map((track) => resolveSource(workspace, stateDir, track.source)),
+                ...(spec.spec.overlays ?? []).map((overlay) => resolveSource(workspace, stateDir, overlay.source))
             ];
             paths.forEach((path) => requireInput(path, "any"));
             await requireTool("ffprobe");
@@ -283,7 +301,8 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
         const stateDir = scope?.stateDir ?? workspace;
         const inputPaths = [
             ...spec.scenes.map((scene) => resolveSource(workspace, stateDir, scene.source)),
-            ...(spec.music ?? []).map((track) => resolveSource(workspace, stateDir, track.source))
+            ...(spec.music ?? []).map((track) => resolveSource(workspace, stateDir, track.source)),
+            ...(spec.overlays ?? []).map((overlay) => resolveSource(workspace, stateDir, overlay.source))
         ];
         inputPaths.forEach((path) => requireInput(path, "any"));
         const caps = await forSpec(spec, workspace, stateDir);

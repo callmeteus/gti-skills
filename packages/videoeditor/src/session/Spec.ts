@@ -31,6 +31,7 @@ export function defaultSpec(name = "untitled"): TimelineSpec {
         },
         scenes: [],
         music: [],
+        overlays: [],
         output: {
             format: "mp4",
             quality: "final"
@@ -110,6 +111,18 @@ export function validate(spec: TimelineSpec): string[] {
     for (const track of spec.music ?? []) {
         if (!track.source?.trim()) {
             errors.push(`Music track ${track.id || "?"} has no source.`);
+        }
+    }
+
+    for (const overlay of spec.overlays ?? []) {
+        if (!overlay.source?.trim()) {
+            errors.push(`Motion overlay ${overlay.id || "?"} has no source.`);
+        }
+        if (!Number.isFinite(overlay.at) || overlay.at < 0) {
+            errors.push(`Motion overlay ${overlay.id || "?"} needs a non-negative at time.`);
+        }
+        if (!Number.isFinite(overlay.duration) || overlay.duration <= 0) {
+            errors.push(`Motion overlay ${overlay.id || "?"} needs a duration greater than 0.`);
         }
     }
 

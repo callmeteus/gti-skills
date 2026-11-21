@@ -55,7 +55,7 @@ GTI Skills is the collection the [Gio Technology Investments (GTI)](https://gith
 | **Art Director** | art | Local-first graphic design studio. Designs photo-led, layered social posts, posters, covers, and slides in HTML/CSS/SVG with a professional style guide and effects toolkit, iterates in a browser Live Mode, audits, and exports PNG, JPEG, SVG, or PDF. Never calls generative image APIs. | Node 20+, Chromium | [README](skills/artdirector/README.md) |
 | **Video to Skill** | coding | Turns a YouTube or X tutorial video into a ready-to-use, validated skill folder by cross-referencing the transcript with keyframes of code, terminals, and UI. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-skill/README.md) |
 | **Video to Markdown** | research | Converts a YouTube, X, or local video into study notes, a tutorial, a full transcript, or meeting notes with timestamp links and inline keyframes. | Python 3.8+, ffmpeg, yt-dlp | [README](skills/video-to-markdown/README.md) |
-| **Video Editor** | art, social | Measured local video editing: cut, trim silence, speed, reframe, loudness, styled captions, and Reels, Shorts, TikTok, or YouTube export, with a static review page and a localhost-only server by default. | Node 20+, ffmpeg and ffprobe | [README](skills/video-editor/README.md) |
+| **Video Editor** | art, social | Measured local video editing: cut, trim silence, speed, reframe, loudness, styled captions, seekable HTML motion graphics from Motion.md guides and a brand kit, platform export, and a static review page. | Node 20+, ffmpeg and ffprobe; Playwright and Chromium for motion graphics | [README](skills/video-editor/README.md) |
 | **UX Psychology Review** | design | Reviews forms, onboarding, signup, upgrade, and pricing screens against six behavioral principles and returns before and after changes that pass an ethics check. | None | [README](skills/ux-psychology-review/README.md) |
 | **Unslop Interface** | design, coding | Removes the generated look from dashboards and app screens in eight ordered passes: spacing, radius, color, icons, typography and copy, data display, actions and structure, and states and feel. | None | [README](skills/unslop-interface/README.md) |
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
@@ -243,7 +243,7 @@ Notes:
 | Art Director | 20+ | 3.8+, optional (photo scripts) | No | Fonts at render time; photo search |
 | Video to Skill | No | 3.8+ | Yes | YouTube, X |
 | Video to Markdown | No | 3.8+ | Yes | YouTube, X |
-| Video Editor | 20+ | No | Yes (ffmpeg and ffprobe, no yt-dlp) | No |
+| Video Editor | 20+ | No | Yes (ffmpeg and ffprobe, no yt-dlp); Playwright and Chromium for motion graphics | No |
 | UX Psychology Review | No | No | No | No |
 | Unslop Interface | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |
 | Frontend Design Review | 22+ optional (lintapple) | No | No | npm, once, if lintapple runs through npx |

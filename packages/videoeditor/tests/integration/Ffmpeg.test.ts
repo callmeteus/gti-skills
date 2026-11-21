@@ -41,7 +41,7 @@ describe.skipIf(!hasFfmpeg)("ffmpeg integration", () => {
             "-y", "-loglevel", "error",
             "-f", "lavfi", "-i", "testsrc=duration=3:size=640x360:rate=25",
             "-f", "lavfi", "-i", "sine=frequency=440:duration=3",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", clip
+            "-c:v", "libx264", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", clip
         ], { windowsHide: true });
 
         expect(generated.status, generated.stderr.toString()).toBe(0);
@@ -52,7 +52,7 @@ describe.skipIf(!hasFfmpeg)("ffmpeg integration", () => {
             "-y", "-loglevel", "error",
             "-f", "lavfi", "-i", "testsrc=duration=2:size=1280x720:rate=25",
             "-f", "lavfi", "-i", "sine=frequency=440:duration=2",
-            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", wide
+            "-c:v", "libx264", "-threads", "2", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", wide
         ], { windowsHide: true });
         expect(wideGenerated.status, wideGenerated.stderr.toString()).toBe(0);
         expect(existsSync(wide)).toBe(true);

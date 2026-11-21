@@ -210,6 +210,31 @@ export function build(
         videoMap = "[vout]";
     }
 
+    (spec.overlays ?? []).forEach((overlay, index) => {
+        const source = resolveSource(workspace, stateDir, overlay.source);
+        const caps = capabilities.get(source);
+
+        if (!caps?.exists || caps.kind !== "video") {
+            warnings.push(`Motion overlay ${index + 1} has no readable video stream and was skipped.`);
+            return;
+        }
+
+        const inputIndex = inputs.length;
+        inputs.push({ index: inputIndex, path: source, loop: false });
+        const overlayWidth = num(overlay.width, width);
+        const overlayHeight = num(overlay.height, height);
+        filters.push(
+            `[${inputIndex}:v]scale=${overlayWidth}:${overlayHeight},format=rgba,setpts=PTS-STARTPTS[mo${index}]`
+        );
+        const x = overlay.x ?? "(w-ow)/2";
+        const y = overlay.y ?? "(h-oh)/2";
+        filters.push(
+            `${videoMap}[mo${index}]overlay=${quote(x)}:${quote(y)}:` +
+            `enable='between(t,${round(overlay.at)},${round(overlay.at + overlay.duration)})'[mout${index}]`
+        );
+        videoMap = `[mout${index}]`;
+    });
+
     let baseLabel: string | null = null;
 
     if (audioSegments.length === 1) {

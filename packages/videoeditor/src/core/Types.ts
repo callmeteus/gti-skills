@@ -43,6 +43,19 @@ export interface Scene {
     volume?: number;
 }
 
+/** A motion graphics clip laid over the timeline at a fixed time. */
+export interface MotionOverlay {
+    id: string;
+    source: string;
+    /** Seconds from the start of the timeline. */
+    at: number;
+    duration: number;
+    x?: string;
+    y?: string;
+    width?: number;
+    height?: number;
+}
+
 /** A music or narration track laid over the whole timeline. */
 export interface MusicTrack {
     id: string;
@@ -73,6 +86,7 @@ export interface TimelineSpec {
     };
     scenes: Scene[];
     music?: MusicTrack[];
+    overlays?: MotionOverlay[];
     output?: OutputOptions;
 }
 

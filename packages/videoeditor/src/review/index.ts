@@ -1,5 +1,5 @@
 import type { CheckStep } from "../core/Checks";
-import type { MusicTrack, Scene } from "../core/Types";
+import type { MotionOverlay, MusicTrack, Scene } from "../core/Types";
 import type { ExportPreset } from "../presets";
 
 /** Data shown by the static review page. */
@@ -13,6 +13,8 @@ export interface ReviewData {
     renders: string[];
     captions: { style: string; cueCount: number; timing: string } | null;
     preset: ExportPreset | null;
+    /** Motion overlays and clips added to the timeline. */
+    motion: MotionOverlay[];
 }
 
 /** Turns a local render path into a src attribute a file:// page can open. */
@@ -65,6 +67,13 @@ function timelineHtml(data: ReviewData): string {
         items.push(
             `<li class="item caption" data-kind="captions" data-time="0" data-label="captions (${esc(data.captions.style)})">` +
             `<span class="tag caption">CAPTIONS</span> ${esc(data.captions.cueCount)} cues, ${esc(data.captions.timing)} timing, style ${esc(data.captions.style)}</li>`
+        );
+    }
+
+    for (const overlay of data.motion) {
+        items.push(
+            `<li class="item motion" data-kind="motion" data-time="${overlay.at.toFixed(2)}" data-label="motion overlay (${esc(overlay.id)})">` +
+            `<span class="tag motion">MOTION</span> ${esc(overlay.source)} <small>at ${overlay.at.toFixed(2)}s for ${overlay.duration.toFixed(2)}s</small></li>`
         );
     }
 
@@ -144,8 +153,11 @@ export function renderReviewHtml(data: ReviewData): string {
         ".item{padding:9px 12px;border:1px solid #e3e5ea;border-left-width:5px;border-radius:6px;margin:6px 0;cursor:pointer}",
         ".item.selected{background:#eef3ff;border-color:#315efb}",
         ".item.clip{border-left-color:#315efb}.item.caption{border-left-color:#d97706}.item.audio{border-left-color:#0f766e}",
+        ".item.motion{border-left-color:#7c3aed}",
         ".tag{font-size:10px;font-weight:700;padding:2px 5px;border-radius:3px;color:#fff}",
         ".tag.clip{background:#315efb}.tag.caption{background:#d97706}.tag.audio{background:#0f766e}",
+        ".tag.motion{background:#7c3aed}",
+        ".motion-badge{position:absolute;top:10px;left:10px;background:#7c3aed;color:#fff;font-size:10px;padding:4px 7px;border-radius:4px}",
         ".note{display:flex;flex-direction:column;gap:8px;margin-top:18px}",
         "textarea,input[type=text]{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccd0da;border-radius:6px;font:inherit}",
         "button{padding:9px 14px;border:0;border-radius:6px;background:#315efb;color:#fff;cursor:pointer}",
@@ -157,6 +169,9 @@ export function renderReviewHtml(data: ReviewData): string {
         captionLine,
         '<div class="layout"><div>',
         '<div class="phone">', player,
+        data.motion.length > 0
+            ? `<div class="motion-badge">${data.motion.length} motion overlay(s)</div>`
+            : "",
         `<div class="safe" style="height:${safe}%">platform UI safe area ${safe}%</div>`,
         "</div>",
         '<div class="note">',

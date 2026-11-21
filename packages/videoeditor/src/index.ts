@@ -4,6 +4,7 @@ export * from "./core";
 export * from "./ffmpeg";
 export * from "./features";
 export * from "./input";
+export * from "./motion";
 export * from "./presets";
 export * from "./review";
 export * from "./server";
