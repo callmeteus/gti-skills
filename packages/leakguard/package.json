@@ -1,0 +1,21 @@
+{
+    "name": "@gti-skills/leakguard",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Local dependency-free pre-tool guard that blocks secret exfiltration across coding agents.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/callmeteus/gti-skills.git"
+    },
+    "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
+    "bin": {
+        "leakguard": "./bin/leakguard.mjs",
+        "leakguard-hook": "./bin/leakguard-hook.mjs"
+    },
+    "scripts": {
+        "test": "node --test tests/"
+    }
+}

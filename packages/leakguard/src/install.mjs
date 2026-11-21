@@ -1,0 +1,438 @@
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { makeContext } from "./log.mjs";
+
+/** Absolute path of this package, used in the installed hook command. */
+export const PACKAGE_ROOT = fileURLToPath(new URL("..", import.meta.url));
+
+/** Marker used to detect an already installed entry and to remove only our own entries. */
+export const MARKER = "leakguard-hook.mjs";
+
+/**
+ * Agents that expose a command hook with a config file we can merge.
+ * Project and user functions return the config file path for that scope.
+ */
+export const COMMAND_AGENTS = [
+    {
+        id: "claude",
+        shape: "nested",
+        event: "PreToolUse",
+        project: (root) => join(root, ".claude", "settings.json"),
+        user: (home) => join(home, ".claude", "settings.json")
+    },
+    {
+        id: "codex",
+        shape: "nested",
+        event: "PreToolUse",
+        project: (root) => join(root, ".codex", "hooks.json"),
+        user: (home) => join(home, ".codex", "hooks.json")
+    },
+    {
+        id: "cursor",
+        shape: "flat",
+        event: "preToolUse",
+        project: (root) => join(root, ".cursor", "hooks.json"),
+        user: (home) => join(home, ".cursor", "hooks.json")
+    },
+    {
+        id: "antigravity",
+        shape: "flat",
+        event: "PreToolUse",
+        project: (root) => join(root, ".agents", "hooks.json"),
+        user: (home) => join(home, ".gemini", "config", "hooks.json")
+    },
+    {
+        id: "copilot",
+        shape: "copilot",
+        event: "preToolUse",
+        project: (root) => join(root, ".github", "copilot", "settings.json"),
+        user: (home) => join(home, ".copilot", "settings.json")
+    },
+    {
+        id: "kiro",
+        shape: "kiro",
+        event: "preToolUse",
+        project: (root) => join(root, ".kiro", "hooks", "leakguard.json"),
+        user: (home) => join(home, ".kiro", "hooks", "leakguard.json")
+    }
+];
+
+/** Agents with no documented command hook config file. */
+export const PLUGIN_AGENTS = [
+    { id: "opencode", note: "no command hook; load plugins/opencode/leakguard.mjs as a plugin (also used by Kilo)" },
+    { id: "kilo", note: "no command hook; load plugins/opencode/leakguard.mjs as a plugin" },
+    { id: "cline", note: "no command hook; register plugins/cline/leakguard.mjs in the session config" },
+    { id: "muse", note: "no documented pre-tool hook; unsupported" }
+];
+
+export const ALL_AGENTS = [...COMMAND_AGENTS.map((agent) => agent.id), ...PLUGIN_AGENTS.map((agent) => agent.id)];
+
+/**
+ * Resolves a comma separated agent selection or "all".
+ *
+ * @param {string} selection Agent ids or "all"
+ * @returns {{ command: object[], plugin: object[], unknown: string[] }} Selected agents
+ */
+export function selectAgents(selection) {
+    const ids = selection === "all" ? ALL_AGENTS : String(selection ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+    const unknown = ids.filter((id) => !ALL_AGENTS.includes(id));
+    return {
+        command: COMMAND_AGENTS.filter((agent) => ids.includes(agent.id)),
+        plugin: PLUGIN_AGENTS.filter((agent) => ids.includes(agent.id)),
+        unknown
+    };
+}
+
+/**
+ * Builds the exact command written into an agent's hook config.
+ *
+ * @param {string} agentId Agent id
+ * @param {string} packageRoot Package root
+ * @returns {string} Hook command
+ */
+export function hookCommand(agentId, packageRoot = PACKAGE_ROOT) {
+    return `node "${join(packageRoot, "bin", "leakguard-hook.mjs")}" --agent ${agentId}`;
+}
+
+function isMarked(value) {
+    return typeof value === "string" && value.includes(MARKER);
+}
+
+function commandEntries(config, shape, event) {
+    if (shape === "nested") {
+        return config.hooks?.[event]?.flatMap((group) => group.hooks ?? []) ?? [];
+    }
+    if (shape === "copilot") {
+        return config.hooks?.[event] ?? [];
+    }
+    if (shape === "flat") {
+        return config[event] ?? [];
+    }
+    return config.then ?? [];
+}
+
+/**
+ * Inserts one hook entry into a config object. Unrelated keys are left untouched.
+ *
+ * @param {object} config Config object
+ * @param {object} agent Agent spec
+ * @param {string} command Hook command
+ * @returns {{ value: object, changed: boolean }} Updated config
+ */
+export function insertEntry(config, agent, command) {
+    const value = config ?? {};
+
+    if (agent.shape === "kiro") {
+        const then = Array.isArray(value.then) ? value.then : [];
+        if (then.some((entry) => isMarked(entry?.command))) {
+            return { value, changed: false };
+        }
+        return {
+            value: {
+                ...value,
+                name: value.name ?? "Leakguard pre-tool guard",
+                description: value.description ?? "Blocks secret exfiltration before a tool runs.",
+                when: value.when ?? { type: "preToolUse" },
+                then: [...then, { type: "executeCommand", command }]
+            },
+            changed: true
+        };
+    }
+
+    if (agent.shape === "nested") {
+        const hooks = value.hooks ?? {};
+        const groups = Array.isArray(hooks[agent.event]) ? hooks[agent.event] : [];
+        if (groups.some((group) => (group.hooks ?? []).some((entry) => isMarked(entry?.command)))) {
+            return { value, changed: false };
+        }
+        return {
+            value: {
+                ...value,
+                hooks: {
+                    ...hooks,
+                    [agent.event]: [...groups, { matcher: "*", hooks: [{ type: "command", command }] }]
+                }
+            },
+            changed: true
+        };
+    }
+
+    if (agent.shape === "copilot") {
+        const hooks = value.hooks ?? {};
+        const entries = Array.isArray(hooks[agent.event]) ? hooks[agent.event] : [];
+        if (entries.some((entry) => isMarked(entry?.command))) {
+            return { value, changed: false };
+        }
+        return {
+            value: {
+                ...value,
+                hooks: { ...hooks, [agent.event]: [...entries, { type: "command", command }] }
+            },
+            changed: true
+        };
+    }
+
+    const entries = Array.isArray(value[agent.event]) ? value[agent.event] : [];
+    if (entries.some((entry) => isMarked(entry?.command))) {
+        return { value, changed: false };
+    }
+
+    return {
+        value: { ...value, [agent.event]: [...entries, { type: "command", command }] },
+        changed: true
+    };
+}
+
+/**
+ * Removes only entries whose command contains the leakguard marker.
+ *
+ * @param {object} config Config object
+ * @param {object} agent Agent spec
+ * @returns {{ value: object, changed: boolean, empty: boolean }} Updated config
+ */
+export function removeEntry(config, agent) {
+    const value = config ?? {};
+    const withoutMarked = (entries) => (entries ?? []).filter((entry) => !isMarked(entry?.command));
+
+    if (agent.shape === "kiro") {
+        const then = withoutMarked(value.then);
+        return {
+            value: { ...value, then },
+            changed: then.length !== (value.then ?? []).length,
+            empty: then.length === 0
+        };
+    }
+
+    if (agent.shape === "nested" || agent.shape === "copilot") {
+        const hooks = value.hooks ?? {};
+        const updated = { ...hooks };
+        let changed = false;
+
+        for (const event of Object.keys(updated)) {
+            if (agent.shape === "nested") {
+                const groups = updated[event];
+                if (!Array.isArray(groups)) {
+                    continue;
+                }
+                const next = groups
+                    .map((group) => ({ ...group, hooks: withoutMarked(group.hooks) }))
+                    .filter((group) => group.hooks.length > 0);
+                if (next.length !== groups.length || groups.some((group) => withoutMarked(group.hooks).length !== (group.hooks ?? []).length)) {
+                    changed = true;
+                    updated[event] = next;
+                }
+            } else {
+                const entries = updated[event];
+                if (!Array.isArray(entries)) {
+                    continue;
+                }
+                const next = withoutMarked(entries);
+                if (next.length !== entries.length) {
+                    changed = true;
+                    updated[event] = next;
+                }
+            }
+        }
+
+        const empty = Object.values(updated).every((entries) => Array.isArray(entries) && entries.length === 0);
+        return { value: { ...value, hooks: updated }, changed, empty };
+    }
+
+    const entries = withoutMarked(value[agent.event]);
+    const changed = entries.length !== (value[agent.event] ?? []).length;
+    return { value: { ...value, [agent.event]: entries }, changed, empty: entries.length === 0 };
+}
+
+function readConfig(path) {
+    try {
+        const raw = readFileSync(path, "utf8");
+        const value = JSON.parse(raw);
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+            return { value: null, error: "expected a JSON object" };
+        }
+        return { value, error: null };
+    } catch (error) {
+        return { value: null, error: error.message };
+    }
+}
+
+function backupName(path) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `${path}.leakguard-backup-${stamp}`;
+}
+
+function writeConfig(path, value) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function baseFor(scope, ctx, dest) {
+    return scope === "project" ? resolve(ctx.cwd, dest ?? ".") : ctx.home;
+}
+
+function scopeValue(flags) {
+    return flags?.scope === "user" ? "user" : "project";
+}
+
+/**
+ * Installs the guard hook into the selected agents. Writes a timestamped backup before each
+ * change. A second run detects the marker and writes nothing.
+ *
+ * @param {string} selection Agent ids or "all"
+ * @param {{ scope?: string, dest?: string, dryRun?: boolean, cwd?: string, home?: string, stateDir?: string, env?: object, io?: object }} [options] Options
+ * @returns {{ actions: object[], selected: object }} Actions
+ */
+export function install(selection, options = {}) {
+    const ctx = makeContext(options);
+    const io = options.io ?? { out: () => {}, err: () => {} };
+    const scope = scopeValue(options);
+    const dryRun = options.dryRun === true;
+    const base = baseFor(scope, ctx, options.dest);
+    const selected = selectAgents(selection);
+    const actions = [];
+
+    for (const agent of selected.command) {
+        const path = agent[scope](base);
+        const existing = existsSync(path) ? readConfig(path) : { value: {}, error: null };
+
+        if (existing.error) {
+            io.err(`warn     ${agent.id}: could not parse ${path}: ${existing.error}`);
+            actions.push({ agent: agent.id, path, action: "warn", reason: existing.error });
+            continue;
+        }
+
+        const command = hookCommand(agent.id);
+        const inserted = insertEntry(existing.value ?? {}, agent, command);
+
+        if (!inserted.changed) {
+            io.out(`skip     ${agent.id}: already installed in ${path}`);
+            actions.push({ agent: agent.id, path, action: "skip" });
+            continue;
+        }
+
+        let backup = null;
+        if (existsSync(path) && !dryRun) {
+            backup = backupName(path);
+            copyFileSync(path, backup);
+        } else if (existsSync(path) && dryRun) {
+            backup = backupName(path);
+        }
+
+        io.out(`${dryRun ? "would    " : "install  "}${agent.id}: ${path}${backup ? ` (backup ${backup})` : ""}`);
+
+        if (!dryRun) {
+            writeConfig(path, inserted.value);
+        }
+
+        actions.push({ agent: agent.id, path, action: dryRun ? "would-install" : "install", backup, command });
+    }
+
+    for (const agent of selected.plugin) {
+        io.out(`skip     ${agent.id}: ${agent.note}`);
+        actions.push({ agent: agent.id, action: "skip", reason: agent.note });
+    }
+
+    for (const id of selected.unknown) {
+        io.err(`warn     unknown agent: ${id}`);
+        actions.push({ agent: id, action: "unknown" });
+    }
+
+    return { actions, selected };
+}
+
+/**
+ * Removes leakguard entries from the selected agents.
+ *
+ * @param {string} selection Agent ids or "all"
+ * @param {object} [options] Options, same shape as install
+ * @returns {{ actions: object[], selected: object }} Actions
+ */
+export function uninstall(selection, options = {}) {
+    const ctx = makeContext(options);
+    const io = options.io ?? { out: () => {}, err: () => {} };
+    const scope = scopeValue(options);
+    const dryRun = options.dryRun === true;
+    const base = baseFor(scope, ctx, options.dest);
+    const selected = selectAgents(selection);
+    const actions = [];
+
+    for (const agent of selected.command) {
+        const path = agent[scope](base);
+
+        if (!existsSync(path)) {
+            io.out(`skip     ${agent.id}: no config at ${path}`);
+            actions.push({ agent: agent.id, path, action: "skip" });
+            continue;
+        }
+
+        const existing = readConfig(path);
+        if (existing.error) {
+            io.err(`warn     ${agent.id}: could not parse ${path}: ${existing.error}`);
+            actions.push({ agent: agent.id, path, action: "warn", reason: existing.error });
+            continue;
+        }
+
+        const removed = removeEntry(existing.value, agent);
+        if (!removed.changed) {
+            io.out(`skip     ${agent.id}: no leakguard entry in ${path}`);
+            actions.push({ agent: agent.id, path, action: "skip" });
+            continue;
+        }
+
+        const backup = backupName(path);
+        io.out(`${dryRun ? "would    " : "remove  "}${agent.id}: ${path}${backup ? ` (backup ${backup})` : ""}`);
+
+        if (!dryRun) {
+            copyFileSync(path, backup);
+            mkdirSync(dirname(path), { recursive: true });
+            writeFileSync(path, `${JSON.stringify(removed.value, null, 2)}\n`, "utf8");
+        }
+
+        actions.push({ agent: agent.id, path, action: dryRun ? "would-remove" : "remove", backup });
+    }
+
+    for (const agent of selected.plugin) {
+        io.out(`skip     ${agent.id}: no config entry to remove`);
+        actions.push({ agent: agent.id, action: "skip" });
+    }
+
+    return { actions, selected };
+}
+
+/**
+ * Reports installation state for both scopes.
+ *
+ * @param {string} selection Agent ids or "all"
+ * @param {object} [options] Options, same shape as install
+ * @returns {object[]} Status rows
+ */
+export function status(selection, options = {}) {
+    const ctx = makeContext(options);
+    const selected = selectAgents(selection);
+    const rows = [];
+
+    for (const agent of selected.command) {
+        for (const scope of ["project", "user"]) {
+            const base = baseFor(scope, ctx, options.dest);
+            const path = agent[scope](base);
+            let installed = false;
+
+            if (existsSync(path) && statSync(path).isFile()) {
+                const parsed = readConfig(path);
+                if (parsed.value) {
+                    installed = commandEntries(parsed.value, agent.shape, agent.event).some((entry) => isMarked(entry?.command));
+                }
+            }
+
+            rows.push({ agent: agent.id, scope, path, installed });
+        }
+    }
+
+    for (const agent of selected.plugin) {
+        rows.push({ agent: agent.id, scope: "plugin", path: "", installed: false, note: agent.note });
+    }
+
+    return rows;
+}
