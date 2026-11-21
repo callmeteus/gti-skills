@@ -59,7 +59,8 @@ The guard is a pattern layer, not a cure for prompt injection. It blocks or flag
 | Show a dry run and the config diff before writing | Claim to stop every prompt injection |
 | Verify with a dotenv example and each agent's payload shape | Replace the agent's own permission system |
 | Scan local history and group findings by credential hash | Rotate a key, rewrite git history, or force push |
-| Name the provider page for each credential type | Read transcript folders that have no documented local format |
+| Name the provider page for each credential type | Read Muse chats, which have no documented local format |
+| Read the chat stores of nine agents and report coverage per agent | Claim that an unverified Kiro store was fully parsed |
 
 ## Features
 
@@ -67,17 +68,18 @@ The guard is a pattern layer, not a cure for prompt injection. It blocks or flag
 - **Project scope default:** writes into the project first; user scope needs explicit approval.
 - **Evidence before change:** dry run, timestamped backups, config diffs, and status comparisons.
 - **Payload verification:** one dotenv example plus a real hook payload shape per installed agent.
-- **History scanner:** streams JSONL transcripts, reads shell history, scans committed and tracked git content, and reads earlier guard events.
+- **History scanner:** streams JSONL transcripts, reads SQLite and flat file chat stores from nine agents, reads shell history, scans committed and tracked git content, and reads earlier guard events.
 - **Injection detection:** finds instructions in hidden Markdown comments, manifest string fields, and zero-width or bidi characters.
 - **Redaction by design:** every reported secret is reduced to four characters, three asterisks, and a short SHA-256 prefix.
 - **Rotation checklist:** groups occurrences by secret hash and names the provider page for each credential type.
-- **Safe defaults:** a 32 MB per-file cap with recorded skips, no network, and no repository or agent config writes during a scan.
+- **Coverage report:** lists the chat stores found, rows and sessions read, and skips with reasons for every agent.
+- **Safe defaults:** a 32 MB cap for non transcript files and a 2 MB cell cap for SQLite stores, with recorded skips, no network, and no repository or agent config writes during a scan.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|----------------|
-| Node.js | 18 or newer | Runs the Leakguard engine, CLI, and history scanner | No |
+| Node.js | 18 or newer, 22.5 or newer for SQLite chat stores | Runs the Leakguard engine, CLI, and history scanner; `node:sqlite` stores are recorded as skipped on older Node | No |
 | Git | Any recent version | Only for the `git` and `injection` history sources | No |
 | Leakguard package | Bundled in this repository | The engine and CLI this skill drives | With the skill install |
 | npm | Comes with Node.js | Only for running the package test suite | No |
@@ -282,7 +284,8 @@ A scan always writes two files into `--out`. A trimmed `history.md` looks like t
 
 | Section | Contents |
 |---------|----------|
-| Summary | Finding counts by kind, files scanned and skipped per source, absent sources, and uncovered agents |
+| Summary | Finding counts by kind, files scanned and skipped per source, and absent sources |
+| Transcript coverage | Per agent stores found, rows and sessions read, skips with reasons, and notes such as an unverified Kiro store or Muse not covered |
 | Findings grouped by secret | One heading per credential hash, with every source, path, line, time, and redacted evidence |
 | Other findings | Exfiltration, injection, and guard events with no credential literal |
 | Rotation checklist | Provider page and redacted identifier for each credential type, plus a reminder to remove the value first |
@@ -312,14 +315,14 @@ The agent folder may not exist, or the wrong `--dest` was used. Re-run [01-detec
 <details>
 <summary><strong>The history report has no findings but I expected some</strong></summary>
 
-Confirm which sources were actually scanned. Missing folders are listed as absent, and Cursor, Kiro, Antigravity, Cline, and Muse are listed as not covered. Add `--sources` explicitly and check that `--since` was not too narrow. A clean scan is not proof that no leak happened.
+Confirm which sources were actually scanned. Missing folders are listed as absent, Muse is the only uncovered agent, and the transcript coverage table shows what was read for every other agent. Add `--sources` explicitly and check that `--since` was not too narrow. A clean scan is not proof that no leak happened.
 
 </details>
 
 <details>
 <summary><strong>The report lists skipped files</strong></summary>
 
-Files above 32 MB are skipped with a recorded reason, and oversized JSONL lines are skipped with a counter. Copy the wanted file into a separate folder and point `--repo` or the source path at it, or raise the per-file cap only for a scan you control.
+Non transcript files above 32 MB, SQLite cells above 2 MB, and JSONL lines above 2 MB are skipped with a recorded reason or counter. JSONL transcripts themselves are streamed with no whole-file cap. A SQLite store above 2 GB is opened read only in place instead of being copied, which the coverage note records. Narrow the time window or scan a smaller copy of the store when a skip matters.
 
 </details>
 
@@ -336,8 +339,8 @@ Reproduce it with `test`, read the detector ids, and prefer an exact `allowHosts
 - OpenCode, Kilo, and Cline expose plugin callbacks, not a JSON-on-stdin command hook.
 - Muse has no documented pre-tool hook and is unsupported for guard installation.
 - The scanner reads only local files reachable from the current machine and never contacts the network.
-- Transcript formats without a documented local JSONL history, including Cursor, Kiro, Antigravity, Cline, and Muse, are listed as not covered.
-- Files above 32 MB and very long JSONL lines are skipped with a recorded reason.
+- Muse has no documented local store and is the only uncovered transcript agent; Kiro stores are read when present but are marked unverified.
+- Non transcript files above 32 MB, SQLite cells above 2 MB, and very long JSONL lines are skipped with a recorded reason. JSONL transcripts have no whole-file cap.
 - A secret found in git history stays there until someone with permission rewrites it; this skill only describes the commands.
 - Redaction shortens a secret to four characters and a digest prefix; it is for correlation, not for identifying a live key.
 
