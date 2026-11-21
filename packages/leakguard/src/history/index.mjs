@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { defaultConfig } from "../config.mjs";
@@ -12,7 +12,7 @@ import {
 } from "./findings.mjs";
 import { buildRotation, renderJson, renderMarkdown } from "./report.mjs";
 import {
-    DEFAULT_MAX_FILE_BYTES, UNCOVERED_TRANSCRIPTS, discover, gitEvidence,
+    DEFAULT_MAX_FILE_BYTES, UNCOVERED_TRANSCRIPTS, discover, git, gitEvidence,
     parseSources, projectName, readJsonl, readText, sourceSpecs
 } from "./sources.mjs";
 
@@ -50,6 +50,24 @@ function isInstruction(text) {
  */
 function lineAt(text, index) {
     return text.slice(0, index).split("\n").length;
+}
+
+/**
+ * Identity of a git repository. A worktree and its main checkout share an identity, so a
+ * transcript produced in either one belongs to the same project.
+ *
+ * @param {string} path Directory path
+ * @returns {string} Lowercase identity
+ */
+function repoIdentity(path) {
+    if (!existsSync(path)) {
+        return resolve(path).toLowerCase();
+    }
+    const result = git(["rev-parse", "--git-common-dir"], path);
+    if (result.ok && result.stdout.trim()) {
+        return resolve(path, result.stdout.trim()).toLowerCase();
+    }
+    return resolve(path).toLowerCase();
 }
 
 /**
@@ -99,6 +117,7 @@ function collectSecrets(text, meta, sink) {
             location: meta.location,
             line: meta.line ?? null,
             time: meta.time ?? null,
+            sameRepo: meta.sameRepo === true,
             evidence: secret.name === "url-password"
                 ? `URL password for host ${secret.host ?? "unknown"}${secret.local ? " (local or placeholder)" : ""}`
                 : snippet(text, 200),
@@ -252,11 +271,19 @@ function blocksOf(content) {
  * @param {object[]} specs Transcript source specs
  * @param {number|null} cutoffMs Age cutoff
  * @param {number} maxBytes Per-file cap
+ * @param {string} repoId Git identity of the repository being scanned
  * @param {object} tracker Report trackers
  */
-async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, tracker) {
+async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, repoId, tracker) {
     const toolUses = new Map();
     const results = new Set();
+    const identityCache = new Map();
+    const identityFor = (cwd) => {
+        if (!identityCache.has(cwd)) {
+            identityCache.set(cwd, repoIdentity(cwd));
+        }
+        return identityCache.get(cwd);
+    };
 
     for (const spec of specs) {
         const found = discover(spec, cutoffMs, maxBytes);
@@ -265,12 +292,15 @@ async function scanTranscripts(ctx, specs, cutoffMs, maxBytes, tracker) {
         for (const file of found.files) {
             tracker.countFile("transcripts");
             await readJsonl(file, (record, line, raw) => {
+                const recordCwd = typeof record.cwd === "string" ? record.cwd : "";
+                const sameRepo = recordCwd !== "" && identityFor(recordCwd) === repoId;
                 const meta = {
                     ctx,
                     source: "transcripts",
                     location: file,
                     line,
-                    time: typeof record.timestamp === "string" ? record.timestamp : null
+                    time: typeof record.timestamp === "string" ? record.timestamp : null,
+                    sameRepo
                 };
                 collectSecrets(raw, meta, tracker.findings);
 
@@ -468,6 +498,7 @@ export async function scanHistory(options = {}) {
     const maxBytes = Number.isFinite(options.maxFileBytes) ? options.maxFileBytes : DEFAULT_MAX_FILE_BYTES;
     const cutoffMs = sinceDays === null ? null : Date.now() - sinceDays * 24 * 60 * 60 * 1000;
     const specs = sourceSpecs(ctx);
+    const repoId = repoIdentity(repo);
 
     const fileCounts = Object.fromEntries(parsed.selected.map((id) => [id, 0]));
     const skipCounts = Object.fromEntries(parsed.selected.map((id) => [id, 0]));
@@ -494,7 +525,7 @@ export async function scanHistory(options = {}) {
     };
 
     if (parsed.selected.includes("transcripts")) {
-        await scanTranscripts(ctx, specs.transcripts, cutoffMs, maxBytes, tracker);
+        await scanTranscripts(ctx, specs.transcripts, cutoffMs, maxBytes, repoId, tracker);
     }
     if (parsed.selected.includes("shell")) {
         scanShell(ctx, specs.shell, cutoffMs, maxBytes, tracker);

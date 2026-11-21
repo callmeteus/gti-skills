@@ -5,7 +5,10 @@ import { redact, sha8 } from "../util.mjs";
 export const SEVERITY_RANK = { critical: 4, high: 3, medium: 2, info: 1, low: 1 };
 
 /** Markers that identify a credential example rather than a live secret. */
-const FIXTURE_MARKERS = /EXAMPLE|DEMO|NOT_REAL|FAKE|DUMMY|TEST|xxxx|0000|1234567890/i;
+const FIXTURE_MARKERS = /EXAMPLE|DEMO|NOT_REAL|FAKE|DUMMY|TEST|xxxx|0000|1234567890|0123456789|qwerty|abcdefghijklmnopqrstuvwxyz/i;
+
+/** Length of an ascending character run that reads as a placeholder body. */
+const ASCENDING_RUN = 8;
 
 /** Path segments and file names used for tests and fixtures. */
 const FIXTURE_DIR = /(?:^|\/)(?:tests?|__tests__|fixtures?|testdata)(?:\/|$)/i;
@@ -65,7 +68,52 @@ export function isFixturePath(location) {
 }
 
 /**
- * True when a credential value is a demo marker or has obvious low entropy.
+ * True when a body contains a run of consecutive ascending characters.
+ *
+ * @param {string} text Credential literal
+ * @param {number} length Required run length
+ * @returns {boolean} Whether an ascending run is present
+ */
+function hasAscendingRun(text, length) {
+    let run = 1;
+    for (let index = 1; index < text.length; index += 1) {
+        const step = text.charCodeAt(index) - text.charCodeAt(index - 1);
+        run = step === 1 ? run + 1 : 1;
+        if (run >= length) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * True when more than half of the body is the same short repeating pattern.
+ *
+ * @param {string} text Credential literal
+ * @returns {boolean} Whether a repeating pattern dominates
+ */
+function isMostlyRepeated(text) {
+    for (let size = 1; size <= 4; size += 1) {
+        if (text.length < size * 3) {
+            continue;
+        }
+        const pattern = text.slice(0, size);
+        let covered = 0;
+        for (let index = 0; index + size <= text.length; index += size) {
+            if (text.slice(index, index + size) === pattern) {
+                covered += size;
+            }
+        }
+        if (covered / text.length > 0.5) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * True when a credential value is a demo marker, a sequential or keyboard-run body, or has
+ * obvious low entropy.
  *
  * @param {string} value Credential literal
  * @returns {boolean} Whether it reads as a fixture value
@@ -73,6 +121,9 @@ export function isFixturePath(location) {
 export function isFixtureValue(value) {
     const text = String(value ?? "");
     if (FIXTURE_MARKERS.test(text) || /(.)\1{5,}/.test(text)) {
+        return true;
+    }
+    if (hasAscendingRun(text, ASCENDING_RUN) || isMostlyRepeated(text)) {
         return true;
     }
     return text.length >= 8 && new Set(text).size <= 4;
@@ -191,6 +242,7 @@ export function makeFinding(fields = {}) {
         fixture: fields.fixture === true,
         fixtureValue: fields.fixtureValue === true,
         fixturePath: fields.fixturePath === true,
+        sameRepo: fields.sameRepo === true,
         executed: fields.executed === true,
         detectorIds: fields.detectorIds ?? [],
         occurrences: fields.occurrences ?? []
@@ -205,7 +257,8 @@ function occurrenceOf(finding) {
         time: finding.time,
         evidence: finding.evidence,
         executed: finding.executed,
-        fixturePath: finding.fixturePath === true
+        fixturePath: finding.fixturePath === true,
+        sameRepo: finding.sameRepo === true
     };
 }
 
@@ -248,20 +301,30 @@ export function deduplicate(findings) {
 }
 
 /**
- * Downgrades a credential to an informational test fixture when every occurrence is a fixture
- * value in a test path. A single occurrence outside those paths keeps the normal severity.
+ * Downgrades a credential to an informational test fixture when every git occurrence is under a
+ * test or fixture path and every transcript occurrence belongs to that same repository. A value
+ * seen outside those paths, or in another repository's transcript, keeps its normal severity.
  *
  * @param {object[]} findings Deduplicated findings
  * @returns {object[]} Same findings with fixture classification applied
  */
 export function classifyFixtures(findings) {
     for (const finding of findings) {
-        if (!finding.secretHash || !finding.fixtureValue) {
+        if (!finding.secretHash) {
             continue;
         }
-        const onlyFixtures = finding.occurrences.every((occurrence) => occurrence.fixturePath);
-        finding.fixture = onlyFixtures;
-        if (onlyFixtures) {
+
+        const git = finding.occurrences.filter((occurrence) => occurrence.source === "git");
+        const transcripts = finding.occurrences.filter((occurrence) => occurrence.source === "transcripts");
+        const onlyGitAndTranscripts = finding.occurrences.every(
+            (occurrence) => occurrence.source === "git" || occurrence.source === "transcripts"
+        );
+        const gitAllFixtures = git.length > 0 && git.every((occurrence) => occurrence.fixturePath);
+        const transcriptsSameRepo = transcripts.every((occurrence) => occurrence.sameRepo);
+        const isFixture = onlyGitAndTranscripts && gitAllFixtures && transcriptsSameRepo;
+
+        finding.fixture = isFixture;
+        if (isFixture) {
             finding.severity = "info";
             finding.note = "test fixture credential";
         }

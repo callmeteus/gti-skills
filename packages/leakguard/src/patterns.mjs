@@ -79,16 +79,50 @@ export function blankQuoted(text) {
 }
 
 /**
- * True when the text contains a real network client. A client must appear as a command token.
- * Python and Node one-liners count only when a network library is present in the original text.
+ * Interpreters and exec wrappers whose quoted argument is executed as a command. A quoted string
+ * passed to any other program remains data.
+ */
+const INTERPRETER_QUOTED = [
+    new RegExp(
+        COMMAND_START + String.raw`(?:sh|bash|zsh|ksh|cmd|powershell|pwsh|python3?|node|ruby|perl)\b[^\r\n"']{0,80}?(?:--eval|-Command|-c|-e|/c)\s+["']([^"']{4,})["']`,
+        "i"
+    ),
+    new RegExp(COMMAND_START + String.raw`(?:eval|Invoke-Expression)\s+["']([^"']{4,})["']`, "i"),
+    new RegExp(COMMAND_START + String.raw`ssh\b[^\r\n"']{0,160}?["']([^"']{4,})["']`, "i"),
+    new RegExp(COMMAND_START + String.raw`xargs\s+["']([^"']{4,})["']`, "i")
+];
+
+/**
+ * Returns the quoted arguments that an interpreter or exec wrapper would run as commands.
+ *
+ * @param {string} text Original command text
+ * @returns {string} Newline joined command fragments, empty when no argument is executed
+ */
+export function executedQuoted(text) {
+    const parts = [];
+    for (const pattern of INTERPRETER_QUOTED) {
+        for (const match of text.matchAll(new RegExp(pattern.source, "gi"))) {
+            parts.push(match[1]);
+        }
+    }
+    return parts.join("\n");
+}
+
+/**
+ * True when the text contains a real network client. Quoted text is data unless the receiving
+ * program is an interpreter or exec wrapper that runs its argument. Python and Node one-liners
+ * count only when a network library is present.
  *
  * @param {string} text Original text
  * @returns {boolean} Whether a network client is present
  */
 export function hasNetworkClient(text) {
-    const commandText = blankQuoted(text);
+    const executed = executedQuoted(text);
+    const commandText = `${blankQuoted(text)}\n${executed}`;
+    const networkSource = `${text}\n${executed}`;
+
     return NETWORK_CLIENT_AT_COMMAND.test(commandText) ||
-        (RUNTIME_AT_COMMAND.test(commandText) && NETWORK_LIBRARY.test(text));
+        (RUNTIME_AT_COMMAND.test(commandText) && NETWORK_LIBRARY.test(networkSource));
 }
 
 /**

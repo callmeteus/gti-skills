@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
+import { isFixtureValue } from "../src/history/findings.mjs";
 import { scanHistory } from "../src/history/index.mjs";
 import { discover } from "../src/history/sources.mjs";
 import { makeContext } from "../src/log.mjs";
@@ -316,5 +317,64 @@ test("the report orders findings by risk and keeps enough exfil evidence to judg
         assert.ok(exfil.evidence.length > 40);
     } finally {
         rmSync(fixtureData.root, { recursive: true, force: true });
+    }
+});
+
+test("sequential and repeating bodies read as placeholder values", () => {
+    const placeholders = [
+        "sk-proj-abcdefghijklmnopqrstuvwxyz",
+        "ghp_0123456789abcdefghijklmnopqrstuvwxyz",
+        "xoxb-qwertyqwertyqwertyqwerty",
+        "abcabcabcabcabcabcabc12"
+    ];
+    for (const value of placeholders) {
+        assert.equal(isFixtureValue(value), true, value);
+    }
+    assert.equal(isFixtureValue("sk_live_7Qw2Er5Ty8Ui1Op4As6Df9Gh0"), false);
+});
+
+test("a test-path secret seen only in this repository's transcripts is a fixture", async () => {
+    const root = mkdtempSync(join(tmpdir(), "lg-hist-r2-"));
+    const home = join(root, "home");
+    const repo = join(root, "repo");
+    const otherRepo = join(root, "other-repo");
+    const value = "sk_live_7Qw2Er5Ty8Ui1Op4As6Df9Gh0";
+
+    mkdirSync(join(home, ".claude", "projects", "session"), { recursive: true });
+    mkdirSync(join(repo, "tests"), { recursive: true });
+    writeFileSync(join(repo, "tests", "unit.test.mjs"), `const key = "${value}";\n`);
+
+    const env = { GTI_HOME: join(root, "gti"), LEAKGUARD_HOME_OVERRIDE: home };
+    const ctx = makeContext({ cwd: repo, env });
+    const git = (args) => execFileSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+    git(["init", "-q", "-b", "main"]);
+    git(["config", "user.email", "fixture@example.invalid"]);
+    git(["config", "user.name", "Fixture"]);
+    git(["add", "."]);
+    git(["commit", "-q", "-m", "fixture"]);
+
+    const transcript = join(home, ".claude", "projects", "session", "t.jsonl");
+    const line = (cwd) => `${JSON.stringify({
+        type: "user",
+        cwd,
+        timestamp: "2026-11-21T00:00:00Z",
+        message: { role: "user", content: `see ${value}` }
+    })}\n`;
+
+    try {
+        writeFileSync(transcript, line(repo));
+        let { report } = await scanHistory({ ctx, repo, out: join(root, "out-a"), sources: "git,transcripts" });
+        let finding = report.findings.find((entry) => entry.secretType === "stripe");
+        assert.ok(finding);
+        assert.equal(finding.severity, "info");
+        assert.equal(finding.fixture, true);
+
+        writeFileSync(transcript, line(repo) + line(otherRepo));
+        ({ report } = await scanHistory({ ctx, repo, out: join(root, "out-b"), sources: "git,transcripts" }));
+        finding = report.findings.find((entry) => entry.secretType === "stripe");
+        assert.equal(finding.severity, "high");
+        assert.equal(finding.fixture, false);
+    } finally {
+        rmSync(root, { recursive: true, force: true });
     }
 });
