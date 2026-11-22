@@ -31,8 +31,7 @@ gti-skills/
 │   ├── lintapple/          # Node and TypeScript: UI linter shared by Frontend Design Review and Unslop Interface
 │   ├── leakguard/          # Node: pre-tool guard engine, per-agent hooks, and leak history scanner
 │   └── python/
-│       ├── shared/         # Python scripts shared by several skills
-│       └── twitter-mcp/    # Python: the MCP server behind the X Research skill
+│       └── shared/         # Python scripts shared by several skills
 ├── AGENTS.md
 └── README.md
 ```
