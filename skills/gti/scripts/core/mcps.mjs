@@ -20,12 +20,13 @@ export const Manifest = ".gti-mcp.json";
 const SKIP = new Set([".venv", "venv", "__pycache__", ".git", "node_modules", ".pytest_cache", ".mypy_cache", "tests", Manifest]);
 const SKIP_FILES = new Set([".env", "cookies.json"]);
 
-/** Finds every MCP server in the gtihq/ai-mcps tree: one <name>-mcp folder per server at the root. */
+/** Finds every MCP server in the gtihq/ai-mcps tree: one <name>-mcp folder under mcps/ (or at the root in older checkouts). */
 export function discoverMcps(root) {
     const found = [];
     const candidates = [];
-    // Cada servidor é uma pasta "<nome>-mcp" na raiz do repositório
-    for (const entry of readdirSync(root)) if (entry.endsWith("-mcp")) candidates.push(join(root, entry));
+    const mcpsRoot = existsSync(join(root, "mcps")) ? join(root, "mcps") : root;
+    const prefix = mcpsRoot === root ? "" : "mcps/";
+    for (const entry of readdirSync(mcpsRoot)) if (entry.endsWith("-mcp")) candidates.push(join(mcpsRoot, entry));
     const rootGo = existsSync(join(root, "go.mod"));
     for (const dir of candidates.sort()) {
         if (!statSync(dir).isDirectory()) continue;
@@ -40,7 +41,7 @@ export function discoverMcps(root) {
                 name,
                 folder,
                 source: localGo ? dir : root,
-                serverDir: localGo ? "." : folder,
+                serverDir: localGo ? "." : `${prefix}${folder}`,
                 entry: "main.go",
                 language: "go",
                 runtime: "go",

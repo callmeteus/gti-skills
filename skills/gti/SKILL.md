@@ -47,7 +47,7 @@ Everything this skill generates (reports, notes, logs, downloads, renders, measu
 ## What it manages
 
 - **Skills:** every gti-skills skill installed in any of the ten supported agents, at user or project level. Updated by the gti-skills CLI from the latest commit on GitHub `master`. `update` also installs skills that are new in that commit for installs that use every pack; a partial install stays as the user chose it.
-- **MCP servers:** the servers in the separate `gtihq/ai-mcps` repository (one `<name>-mcp` folder per server at its root). Each one gets a managed copy in `~/.gti/skills/mcps/<name>/` with either a built Go binary or, for a legacy Python server, a `.venv`, and agent configs point at that copy.
+- **MCP servers:** the servers in the separate `gtihq/ai-mcps` repository (one `<name>-mcp` folder per server under `mcps/`). Each one gets a managed copy in `~/.gti/skills/mcps/<name>/` with either a built Go binary or, for a legacy Python server, a `.venv`, and agent configs point at that copy.
 - **Source:** the latest skills commit is downloaded to `~/.gti/skills/sources/<commit>/`, the same place the CLI uses, and the latest MCP commit to `~/.gti/skills/mcps-sources/<commit>/`. No clone of either repository is needed.
 
 ## Commands

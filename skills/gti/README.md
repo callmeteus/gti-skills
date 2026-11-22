@@ -188,7 +188,7 @@ Shows which skills are out of date and where each MCP server is registered.
   2. Skills     node <source>/packages/cli update --install-new
                 (records, untracked installs, missing skills, builds)
   3. MCPs       download gtihq/ai-mcps into ~/.gti/skills/mcps-sources/<commit-12>/
-                and discover the <name>-mcp folders at its root
+                and discover the <name>-mcp folders under its mcps/ folder
                 for each server already managed or registered:
                   copy files ──> carry login state from the old copy ──> go build (legacy Python: .venv + pip + Chromium)
                   start check (MCP initialize) ──> on failure, leave agent entries alone
