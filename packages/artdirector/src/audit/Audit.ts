@@ -3,6 +3,8 @@ import { dirname } from "node:path";
 
 import type { ArtworkVariant } from "../core";
 import { HtmlDocument, UnifiedRenderer } from "../renderer";
+import { HouseStyle } from "./HouseStyle";
+import { ShapeFit } from "./ShapeFit";
 
 /**
  * One audit finding.
@@ -76,7 +78,7 @@ export namespace ArtworkAudit {
 
         try {
             const inspection = await owned.inspect(html, async (page) => {
-                return page.evaluate((): {
+                const layout = await page.evaluate((): {
                     overflowX: boolean;
                     overflowY: boolean;
                     clipped: string[];
@@ -188,6 +190,12 @@ export namespace ArtworkAudit {
                         scrollHeight: document.documentElement.scrollHeight
                     };
                 });
+
+                return {
+                    ...layout,
+                    tics: await page.evaluate(HouseStyle.scan),
+                    shapes: await page.evaluate(ShapeFit.scan)
+                };
             }, dirname(htmlPath), root);
 
             if (inspection.overflowX || inspection.overflowY) {
@@ -237,6 +245,9 @@ export namespace ArtworkAudit {
                     message: `Text is blurred on ${label}. Blurred type reads as a rendering bug; hide it with a sticker, tape, or redaction instead.`
                 });
             }
+
+            findings.push(...ShapeFit.findings(inspection.shapes));
+            findings.push(...HouseStyle.findings(inspection.tics));
 
             for (const image of inspection.images) {
                 if (!image.ok) {

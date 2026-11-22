@@ -1,12 +1,12 @@
 # Texture and ornament
 
-Texture makes a board feel printed and alive; ornaments make it feel native to the feed. Both must serve the mood. The effect names below are explained in [the effects catalog](../effects/catalog.md).
+Texture makes a board feel printed and alive; ornaments carry small facts. Both are optional and must belong to the piece's idea ([visual-language.md](visual-language.md)). Added by habit, they are what makes every piece look the same. The effect names below are explained in [the effects catalog](../effects/catalog.md).
 
 ## Textures
 
 | Texture | Effect | Feels like |
 |---------|--------|-----------|
-| Film grain | `fx-grain` | Every piece. Opacity 0.08 to 0.25; `multiply` on light fields, `overlay` on dark ones |
+| Film grain | `fx-grain` | Film, print, and vintage ideas. Opacity 0.08 to 0.25; `multiply` on light fields, `overlay` on dark ones. Not a default |
 | Aged poster paper | `fx-paper`, `fx-creases` | Sports, vintage, street |
 | Soft pastel paper | `fx-paper fx-paper-soft` | Fashion, beauty, collage |
 | Smoke and curtain | `fx-smoke` | Drama, nightlife, horror, premium launches |
@@ -16,13 +16,13 @@ Texture makes a board feel printed and alive; ornaments make it feel native to t
 | Faint grid | 1 px lines at 3 to 5 percent opacity, faded with a mask | News, data, editorial |
 | Lace and doily | the `#doily` symbol | Romantic, fashion, retro feminine |
 
-Never leave a large flat field without one of these.
+A flat field is fine when the hero fills the board. Texture belongs on a field that shows, and only the one that fits the idea.
 
 ## Ornaments
 
 | Ornament | Effect or symbol | Use |
 |----------|------------------|-----|
-| Label pill | `.pill` | Category, edition, "feriado nacional", "novidade" |
+| Label pill | `.pill` | A category the brief names ("feriado nacional", "novidade"). A default move: not in every piece |
 | Slanted price tag | `.price-tag` | Offers above a price |
 | Logo tab | `.logo-tab` | Publisher or brand mark hanging from the top edge |
 | Circled arrow | `.arrow-circle` with `#i-arrow-right` | Next, read more, decision |
@@ -38,8 +38,24 @@ Never leave a large flat field without one of these.
 
 ## Density
 
-- **Count:** two to five kinds of ornament per piece. More reads as clip art, fewer reads as a template.
-- **Scale ladder:** one large ornament (frame, orb, crest), two or three medium, a few tiny marks.
+- **Count:** zero to three kinds of ornament per piece. Each one is there because the idea or the brief needs it.
+- **Scale ladder:** when you use several, one large (frame, orb, crest), the rest small.
 - **Color:** ornaments use the accent or a neutral, never a new color.
 - **Placement:** cluster near the hero or along the edges; leave the headline's area clean.
-- **Purpose:** every ornament either frames the hero, points to something, or carries a fact (price, date, category, handle).
+- **Purpose:** every ornament either frames the hero, points to something, or carries a fact (price, date, category, handle). If you cannot say which, delete it.
+- **Attached, not floating:** an ornament touches or points at what it is about. Marks floating alone near an edge read as dirt.
+
+## Precision objects
+
+Some objects only work when they are exact. Drawn loosely they look broken, and the user sees nothing else.
+
+| Object | Build it like this | Never |
+|--------|--------------------|-------|
+| Barcode | One `<svg>` with bars at integer x positions and integer widths (1 to 4 units), all the same height, from one row of data; the whole group upright, or rotated once as a group | Bars as separate divs, random widths with fractions, per-bar transforms, a tilted group on a straight cover |
+| QR code | A real QR generated from a real payload, or none | A random grid of squares |
+| Starburst, seal, badge with text | Shape first, then text sized to the shape's inner circle: the text block fits inside 70 percent of the shape's width and height; check it in the audit (`shape-clip`, `shape-spill`) | Text the same size as the shape, letters touching or cut by the points |
+| Speech bubble, chat window, app interface | The real proportions of that interface: title bar, buttons, padding, and fonts all on one grid | Approximate chrome, buttons of different sizes |
+| Motion and attention marks | Short strokes attached to the moving or shaking object, three to five, the same length and angle | Loose bars floating near the board's edge, far from anything |
+| Stars, sparkles, confetti | One symbol, a few sizes, placed near the hero | Dozens of random shapes everywhere |
+
+When an object cannot be built exactly, leave it out.

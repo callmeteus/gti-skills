@@ -18,7 +18,9 @@ All families below load from Bunny Fonts: `@import url("https://fonts.bunny.net/
 | Editorial serif | Fraunces, DM Serif Display, Playfair Display | Premium, culture, long quotes |
 | Light italic lead | Plus Jakarta Sans 300 italic, Fraunces 300 italic | Small lead-ins such as "edição" or "especial" |
 
-Do not use Inter, Roboto, Arial, or system UI fonts as the design voice.
+Do not use Inter, Roboto, Arial, or system UI fonts as the design voice, unless the idea is an interface that uses them (a chat window in Tahoma, a phone notification).
+
+Monospace fonts (IBM Plex Mono, Space Mono, JetBrains Mono, Courier) are for ideas that need them: a receipt, a terminal, a ticket printout, a typewritten letter. Widely tracked monospace labels as a kicker are a default move; see [visual-language.md](visual-language.md).
 
 ## Scale and spacing on a 1080 px board
 
@@ -27,7 +29,7 @@ Do not use Inter, Roboto, Arial, or system UI fonts as the design voice.
 | Monumental word | 220 to 400 px | 0.78 to 0.9 | -0.02 to -0.06 em |
 | Headline | 90 to 180 px | 0.9 to 1.0 | -0.02 to -0.04 em |
 | Quote or lead | 32 to 48 px, bold caps | 1.15 to 1.25 | 0 |
-| Small caps label | 18 to 30 px | 1.4 | 0.2 to 0.4 em |
+| Small caps label | 18 to 30 px | 1.4 | 0.05 to 0.2 em |
 | Micro text (texture) | 13 to 16 px | 1.2 | 0, justified |
 
 ## Moves that make type feel designed
@@ -40,7 +42,7 @@ Do not use Inter, Roboto, Arial, or system UI fonts as the design voice.
 - **3D and gloss:** puffy holiday letters with `fx-gloss-depth`; hard 3D with `fx-extrude`.
 - **Rough edges:** brush and stamp edges with `fx-rough` or `fx-rough-strong`; melting bottoms with `fx-melt` on drip fonts.
 - **Motion:** a blurred, smeared word in the background with `fx-motion`.
-- **Vertical labels:** dates, categories, and slogans along the edges with `.vertical` or `.vertical-down`.
+- **Vertical type:** only when it is big and part of the idea (a spine on a book cover, a tall word that fills the side). Small vertical labels along the edge are a default move; see [visual-language.md](visual-language.md).
 - **Prices:** small currency, huge whole number, raised cents (`<small>R$</small>49<sup>,90</sup>`), with a slanted label above.
 
 ## Rules
@@ -48,4 +50,5 @@ Do not use Inter, Roboto, Arial, or system UI fonts as the design voice.
 - **Readable at thumbnail size:** the headline must survive at 25 percent zoom.
 - **Contrast:** every line meets its background with enough contrast; add a scrim or shadow instead of shrinking the type.
 - **Accents and diacritics:** check that the chosen family covers the user's language (Portuguese needs á, ã, ç, é, ê, í, ó, õ, ú).
-- **Two voices first:** add a third only for emotion (script, brush, drip), never as a third neutral sans.
+- **Two voices first:** add a third only for emotion (script, brush, drip), never as a third neutral sans or a monospace label voice.
+- **Pick the display family for the idea:** a magazine needs a masthead face, a chat window its app font, a street poster a brush. Do not reuse the last art's display family.

@@ -8,6 +8,8 @@
 - Text that crosses the artboard edge (`outside`, error) or sits within 40 px of a side (`edge`, warning)
 - Story copy inside the top 210 px or bottom 250 px app chrome (`safe-zone`, warning)
 - Text under a blur filter (`blur-text`, warning); `fx-motion` and `fx-ghost` are exempt
+- Text cut by its shape's clip-path (`shape-clip`, error) or running past the SVG or clipped shape behind it, such as a starburst or badge (`shape-spill`, warning)
+- Default moves that make pieces look alike (`house-style`): letter-spaced monospace labels, small vertical text on a side edge, dot-separated meta lines, a giant faded or outlined word, label pills, offset-shadow cards, faint scattered icons, a near-black field with a radial glow. One is reported as info; two or more as a warning
 - Image load failures
 - Missing font import
 - Mentions of generative image tools

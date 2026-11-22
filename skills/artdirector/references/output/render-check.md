@@ -11,7 +11,7 @@ For each variant id:
 "<skill-dir>/scripts/artdirector" export --id <id> --format png --json
 ```
 
-Open the PNG at the `path` from the export answer and look at the whole board. On Windows use `scripts\artdirector.cmd` with the same arguments. If your agent cannot view images, fix what the audit reports and tell the user the visual check was not done.
+Open the PNG at the `path` from the export answer and look at the whole board. Then zoom into every small object (barcodes, badges, icons, interface buttons) and every edge: that is where construction defects hide. On Windows use `scripts\artdirector.cmd` with the same arguments. If your agent cannot view images, fix what the audit reports and tell the user the visual check was not done.
 
 ## Defects to fix
 
@@ -23,7 +23,10 @@ Fix these, and only these:
 | Story chrome | Copy in the top 210 px or bottom 250 px of a story (audit `safe-zone`) | Move the copy inward; keep image and texture there |
 | Empty or dead band | A flat strip of color under or over the composition, as if the art ended early | Extend the field and the hero to the edge, or move the card so it overlaps the hero |
 | Floating hero | The object stops above a band or hangs in the middle with nothing under it | Ground it or crop it at the frame edge (see [../style/illustration.md](../style/illustration.md)) |
-| Crooked construction | Window rows not straight, uneven gaps, parts rotated by different amounts | Rebuild the repeated parts on one grid |
+| Crooked construction | Window rows not straight, uneven gaps, parts rotated by different amounts, barcode bars of uneven width or angle | Rebuild the repeated parts on one grid; build a barcode as one upright SVG with integer bars, or drop it |
+| Text not fitting its shape | Letters cut by a starburst's points or running past a badge or bubble (audit `shape-clip`, `shape-spill`) | Shrink the text to 70 percent of the shape's inner size, or grow the shape |
+| Stray marks | Strokes, sparkles, or "motion lines" floating near the edge, attached to nothing | Attach them to the object they describe, or delete them |
+| Default moves | Audit `house-style` lists two or more | Delete all but the one that carries meaning; do not replace them with other filler |
 | Collisions | An ornament touching a letter, text over a busy area without contrast | Move the ornament or add a scrim |
 | Blurred type | Text under `filter: blur()` (audit `blur-text`) | Hide it with tape, a sticker, or "?" letters |
 | Missing glyphs | Fallback font on accented letters (á, ã, ç) | Use a family that covers the language |

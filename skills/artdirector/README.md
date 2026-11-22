@@ -100,7 +100,8 @@ The language model writes HTML. The browser paints it. There is no DALL-E, Midjo
 - **Refinement commands:** `bolder`, `quieter`, `typeset`, `colorize`, `layout`, `distill`, `adapt`, `polish`
 - **Quality floor:** every piece is checked against hierarchy, type, and originality rules
 - **Render check:** each variant is audited and rendered once before hand-over, and construction defects are fixed in one pass
-- **Deterministic audit:** size, overflow, fonts, assets, text at or past the edge, story chrome, and blurred text
+- **Deterministic audit:** size, overflow, fonts, assets, text at or past the edge, story chrome, blurred text, and text cut by or spilling out of its shape
+- **Less sameness:** each variant starts from its own idea and a big hero picture, and the audit flags the default moves that make agent-made pieces look alike (tracked monospace labels, side labels, meta lines, ghost numbers, pills, offset-shadow cards, faint icons, near-black with a glow)
 - **Multi-format export:** PNG, JPEG, SVG, PDF, and HTML
 - **Session isolation:** each chat gets its own project under `~/.gti/artdirector/`; nothing is written into your repository
 - **Agent-native CLI:** every command accepts `--json`
@@ -290,7 +291,7 @@ Refinement commands return guidance, quality rules, and techniques that the agen
 
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
-| `audit` | Deterministic checks: size, overflow, fonts, assets, edges, story chrome, blurred text | `--id` |
+| `audit` | Deterministic checks: size, overflow, fonts, assets, edges, story chrome, blurred text, text in shapes, and default moves (`house-style`) | `--id` |
 | `export` | Export the accepted artwork | `--id`, `--format`, `--out` |
 | `effects` | List the effects toolkit, or print one effect with its usage notes | `--id` |
 | `demo` | Run the pipeline check (fills the library templates, no language model) | `--out`, `--no-render` |

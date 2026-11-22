@@ -35,7 +35,7 @@ npm run dev -- help
 | `src/session/` | Per-chat project scope, context resolution, studio scope (every art in a chat), the mood board, and the guidelines that outlive chats |
 | `src/server/` | Local studio HTTP API and the per-project studio lock |
 | `src/renderer/` | ClickClick and Playwright renderer |
-| `src/audit/` | Deterministic rendering checks |
+| `src/audit/` | Deterministic rendering checks, text-in-shape fit (`ShapeFit`), and the default moves that make pieces look alike (`HouseStyle`) |
 | `src/design/` | Quality floor, directions, and formats |
 | `src/techniques/` | Composition technique packs |
 | `src/templates/` | Template catalog, token defaults, image copying, and the effects loader |
@@ -77,6 +77,6 @@ npm run dev -- help
 npm test
 ```
 
-The suites cover the core, formats, templates, session scope, session history and the mood board, guidelines, the studio server (including port fallback and lock reuse), and the skill wrapper and demo workflow.
+The suites cover the core, formats, templates, session scope, session history and the mood board, guidelines, the audit checks, the studio server (including port fallback and lock reuse), and the skill wrapper and demo workflow.
 
 See [../../README.md](../../README.md) for the full repository.

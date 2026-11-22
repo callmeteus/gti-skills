@@ -4,13 +4,13 @@ Structures that produce depth and tension. They are named by how they work, not 
 
 ## Planes
 
-Stack these layers inside `.artboard`, back to front. Every professional piece uses at least three.
+Stack these layers inside `.artboard`, back to front. Every professional piece has a field, a hero, and front type; the back graphic and the finish are there only when the idea needs them. A giant faded word as the back graphic is a default move ([visual-language.md](visual-language.md)).
 
 ```text
-5  finish        grain, light leak, vignette          (fx-grain, fx-scrim-vignette)
-4  front         small type, tags, icons, ornaments
-3  hero          photo, cutout, object, or monumental word
-2  back graphic  giant word, shape, crest, rays, frame
+5  finish        optional: grain, light leak, vignette (fx-grain, fx-scrim-vignette)
+4  front         headline, one fact block, the odd sticker
+3  hero          photo, cutout, mascot, object, or monumental word
+2  back graphic  optional: shape, crest, rays, frame, a crop of the hero
 1  field         color, gradient, paper, smoke, treated photo
 ```
 
@@ -39,7 +39,7 @@ The hero occupies one side and melts into a solid field; the other side holds a 
 
 ### Scrim and headline
 
-Full-bleed photo for the top two thirds, a gradient into a deep solid, then a label pill and a bold headline over the solid.
+Full-bleed photo for the top two thirds, a gradient into a deep solid, then a bold headline over the solid.
 
 - **Use for:** news, announcements, articles, case studies.
 - **Key moves:** the scrim reaches full opacity before the headline starts; the photo is graded toward the solid color.
@@ -64,6 +64,13 @@ Several cut elements overlap with tape, stickers, lace, frames, flowers, and mic
 
 - **Use for:** fashion, beauty, lifestyle, creator brands.
 - **Key moves:** rotate elements a few degrees, keep one clear focal point, use small justified text blocks in the corners as texture.
+
+### Borrowed format
+
+The whole board pretends to be another object: a magazine cover, a chat window, a boarding pass, a receipt, a notification, a ticket, a postcard. The brief's facts take that object's slots (the date is the departure time, the price is the cover price).
+
+- **Use for:** teasers, announcements, nostalgia, humor, anything with a playful idea.
+- **Key moves:** build the object's real parts precisely ([texture-and-ornament.md](texture-and-ornament.md), Precision objects), put the hero inside it (the mascot on the cover, in the chat avatar), and break the object once (the mascot leans out of the window).
 
 ### Object hero
 
