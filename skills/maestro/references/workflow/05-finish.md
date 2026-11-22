@@ -55,6 +55,8 @@ At the end, update what the next run needs:
 - Write health and cooldowns to `~/.gti/maestro/providers.json`. Do not write preferences from failures.
 - Record success and failure counts per model when the harness reports them.
 - Persist a preference only if the user stated a durable choice during the run ("from now on", "always"). Write to the user scope unless the user said project.
+- Save the fields in `run.json` `explicit` to `profiles.<kind>` with `source: run`, unless the user said "just this once". Never overwrite a `source: user` field.
+- Append one line to `~/.gti/maestro/history.jsonl` with the date, project, kind, and `explicit` fields, then apply the repeated-request rule from [../routing/01-preferences.md](../routing/01-preferences.md#repeated-requests). Keep the last 50 lines.
 - Report every preference change with the old value and the new value.
 - Do not promote a single success into a preference. The router can use the stats; the user owns the preference.
 - If the user switched models manually and said "keep this", persist it with the user's words in `note`.

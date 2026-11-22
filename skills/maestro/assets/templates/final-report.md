@@ -46,7 +46,9 @@
 
 | Change | Old | New | Source |
 |---|---|---|---|
-| <role, route, fallback, or avoid> | <old> | <new> | <user words or "unchanged"> |
+| <role, route, fallback, avoid, `defaults.<field>`, or `profiles.<kind>.<field>`> | <old> | <new> | <user words, "run", "repeated 3 times", or "unchanged"> |
+
+Run kind: `<kind>`. Undo any saved setting with `/maestro preferences forget <key>`.
 
 ## Changes
 

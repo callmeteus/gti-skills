@@ -28,8 +28,9 @@ These live outside the run report and are read at intake.
 
 | Scope | Path | Contents |
 |---|---|---|
-| User | `~/.gti/maestro/preferences.json` | Durable roles, fallbacks, routes, avoid |
+| User | `~/.gti/maestro/preferences.json` | Roles, run defaults, run profiles, fallbacks, routes, avoid |
 | Project | `~/.gti/maestro/<project>/preferences.json` | Project overrides |
+| User | `~/.gti/maestro/history.jsonl` | Last 50 runs: kind and the settings the user set, for the repeated-request rule |
 | User | `~/.gti/maestro/providers.json` | Model catalog, limits, health, cooldowns |
 | Project | `~/.gti/maestro/<project>/providers.json` | Project overrides and declared entries |
 | Project | `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in this run, their role, tools, and status |
@@ -88,6 +89,9 @@ Example:
   "id": "run-2026-11-14-001",
   "goal": "Add CSV export to the reports page",
   "class": "complex",
+  "kind": "feature",
+  "profile": {"name": null, "scope": null},
+  "explicit": {"executor": {"provider": "opencode", "model": "deepseek-v4.1-flash"}},
   "phase": "review",
   "done": ["CSV route returns text/csv", "Download action exists", "Reports tests pass"],
   "nonGoals": ["Do not change the PDF export"],

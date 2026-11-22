@@ -19,11 +19,11 @@ Turn the request into a run record before spawning anything. Intake is the only 
 3. **List non-goals.** Name what the run will not touch. This is the main defense against scope creep.
 4. **Classify.** Use the table below. When in doubt, choose simple first; a simple task that grows can be promoted to complex after the scout reports.
 5. **Flag risk.** Mark anything irreversible, outward-facing, secret-bearing, production-facing, or money-related.
-6. **Load preferences.** Read `~/.gti/maestro/preferences.json` and `~/.gti/maestro/<project>/preferences.json`. Resolve the orchestrator and executor roles, with the project overriding the user.
+6. **Detect the run kind and load preferences.** Read `~/.gti/maestro/preferences.json` and `~/.gti/maestro/<project>/preferences.json`. Detect the run kind with [../routing/01-preferences.md](../routing/01-preferences.md#run-kinds), then layer the settings: explicit request, project profile, user profile, project defaults, user defaults. Resolve the orchestrator, executor, adapter, budget, tier, verifier, and skills from that, and record the source of each. Keep the fields the user set explicitly in this request under `run.json` `explicit`, so finish can remember them for the kind.
 7. **Discover the catalog.** Use the harness's own commands from [../routing/02-catalog.md](../routing/02-catalog.md) and refresh when the cache is older than a day. Record provider, model, context, quality, speed, cost, tools, limits, and health.
 8. **Sweep the MCP orchestrators.** Follow [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md). Check session-native tools, the harness MCP inventory, known local servers, and known remote servers. Classify each by tool schema into spawner, coordination, or read-only. Pick one spawner and, when useful, one coordination server. Write `~/.gti/maestro/<project>/orchestrators.json`.
 9. **Choose the tier and the route.** T1 for read-only work, T2 for focused edits, T3 for architecture or hard debugging. Pick the default executor candidate with [../routing/03-router.md](../routing/03-router.md). Do not use T3 by default.
-10. **Set the budget.** Workers, fix rounds, waves, and an optional token cap. The defaults are 12 workers, 2 fix rounds per task, and 6 waves.
+10. **Set the budget.** Workers, fix rounds, waves, and an optional token cap. Take them from the profile or `defaults` when set; otherwise use 12 workers, 2 fix rounds per task, and 6 waves.
 11. **Detect the harness.** Read [../harness/adapters.md](../harness/adapters.md). Record the adapter name, the spawn command or tool, and whether the chat can be resumed.
 12. **Create the ledger.** Write `run.json`, create `workers.jsonl`, `orchestrators.json`, and `decisions.jsonl` in `~/.gti/maestro/<project>/`, outside the repository.
 13. **Print the run header.** Use the interface below. Keep it short.
@@ -85,7 +85,10 @@ Do not ask when:
 
 ## Preferences and provider discovery
 
-Read both preference files before choosing anything. The user scope is `~/.gti/maestro/preferences.json`; the project scope is `~/.gti/maestro/<project>/preferences.json`. Project wins. An explicit request wins over both.
+Read both preference files before choosing anything. The user scope is `~/.gti/maestro/preferences.json`; the project scope is `~/.gti/maestro/<project>/preferences.json`. Project wins. An explicit request wins over both, and a profile for the run kind wins over the plain defaults.
+
+- **Run kind and profile.** Name the kind and the profile fields used. When a profile came from an earlier run (`source: run`), say so once in the header so the user can change it.
+- **Defaults.** Use `defaults` for adapter, budget, tier, verifier, and skills that no profile or request sets.
 
 - **Orchestrator.** Record the preferred planning and review model. The harness owns the model Maestro is running on, so compare when the harness exposes it and say once if they differ. Do not stop the run for a mismatch.
 - **Executor.** Record the default worker model. The router can override it per task, with a reason.
@@ -121,6 +124,7 @@ Print this after intake and again after each wave:
 ```text
 MAESTRO  run-2026-11-14-001  complex
 goal    Add CSV export to the reports page
+profile feature (defaults; no saved profile)
 done    CSV route returns text/csv, header row, tests pass, no UI regressions
 budget  12 workers, 2 fix rounds, 6 waves
 harness paseo (native tools, resumable chats)

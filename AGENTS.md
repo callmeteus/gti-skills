@@ -11,6 +11,14 @@ Every skill MUST also have a `## Autonomous Mode` section in its `SKILL.md`, rig
 ## Output Location Rule
 Everything a skill generates (reports, notes, logs, downloads, renders, exports, measurements, caches, and run state) goes to `~/.gti/<skill-id>/`, usually `~/.gti/<skill-id>/<project>/` where `<project>` is the repository folder name. `GTI_HOME` replaces `~/.gti`. Nothing generated goes into the user's repository, and no skill asks the user to commit, ignore, or exclude a state folder there. Only the changes the user asked for (their code, tests, docs such as `GLOSSARY.md` or ADRs) go into the repository, and a generated file goes there only when the user names that place. Every `SKILL.md` has a `## Output Location` section after Autonomous Mode that says this and names the skill's own folders; script defaults follow it (Python scripts use a `gti_dir()` helper, `packages/python/shared/scripts/lib/gti_home.py` for the shared scripts). `node packages/cli validate` fails when the section is missing.
 
+## GTI Home
+`~/.gti` (or `GTI_HOME`) is the user's global GTI folder, shared by every skill and every project on the machine. Besides generated output, it holds what should survive across runs and projects:
+
+- **User configuration:** defaults, preferences, and saved settings a skill learns from the user, in `~/.gti/<skill-id>/` for the machine and `~/.gti/<skill-id>/<project>/` for one project. Maestro, for example, keeps model roles, run defaults, and per-run-kind profiles in `~/.gti/maestro/preferences.json`.
+- **Shared installs:** tools a skill installs for its own use, such as Playwright browsers, Node or Python tool folders, and caches, in `~/.gti/<skill-id>/tools/` or a shared folder under `~/.gti`, never in the user's repository and never as a project dependency.
+
+A skill that saves configuration reads it at the start of every run, lets the user see and remove each saved value, reports every change it made with the old and new value, and never stores credentials, tokens, or keys there.
+
 ## Repository Layout
 
 ```text

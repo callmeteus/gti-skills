@@ -45,7 +45,8 @@ In this skill:
 
 - Intake asks nothing. Take the recommended reading of an ambiguous request, record the assumption, and continue. Only a missing worker runtime stops the run, and then the report says so.
 - Plan approval is skipped. Choose the safe wave order and the cheapest tier that fits, then record both.
-- Model choice is not a question. Read the preferences, route by the task profile, and record the reason. If the preferred model is cooling or rate-limited, use the next candidate. Persist only an explicit durable preference, never a one-off choice.
+- Model choice is not a question. Read the preferences, route by the task profile, and record the reason. If the preferred model is cooling or rate-limited, use the next candidate. Remember only settings the user stated (in the run kind's profile, or as a durable preference), never a choice Maestro made on its own.
+- The run kind is not a question. Detect it, load its profile, and show it in the run header.
 - The MCP sweep asks nothing. Probe the available servers, classify them by tool schema, and use the best spawner. Record a server that needs OAuth as pending instead of starting a login that waits for the user.
 - Never edit a user-global harness config to add an MCP server. Use a session-scoped config or the CLI adapter, and list the global registration as pending.
 - Worker spawn waits for nobody. Spawn the selected workers, including in parallel, and continue with the ledger while they run.
@@ -55,7 +56,7 @@ In this skill:
 
 ## Output Location
 
-Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/maestro/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The run ledger lives in `~/.gti/maestro/<project>/`, and user preferences and the provider catalog in `~/.gti/maestro/`.
+Everything this skill generates (reports, notes, logs, downloads, renders, measurements, and run state) goes to `~/.gti/maestro/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. The run ledger lives in `~/.gti/maestro/<project>/`, and user preferences (defaults, run profiles, model roles), the run history, and the provider catalog in `~/.gti/maestro/`.
 
 ## What Maestro is
 
@@ -82,7 +83,7 @@ The request text selects the command. `/maestro` is the same as `maestro run`.
 | `/maestro resume` | Continue the first unfinished task in the recorded chats |
 | `/maestro review <task-id>` | Review one recorded task in its chat and update the verdict |
 | `/maestro report` | Write and print the final report from the ledger |
-| `/maestro preferences` | Show, set, or forget model roles, fallbacks, routes, and avoid entries |
+| `/maestro preferences` | Show, set, or forget model roles, run defaults, run profiles, fallbacks, routes, and avoid entries |
 | `/maestro providers` | List discovered providers, models, capabilities, limits, health, and cooldowns |
 | `/maestro orchestrators` | List the detected orchestration MCP servers, their role, tools, and status; add `--refresh` to sweep again |
 
@@ -99,7 +100,7 @@ Maestro run:
 - [ ] 5. Finish: integrate, verify, report, keep the chats
 ```
 
-1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `~/.gti/maestro/<project>/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
+1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the run kind, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences with the defaults and the run kind's profile, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `~/.gti/maestro/<project>/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
 2. **Plan.** Simple work gets one task; complex work gets waves, dependencies, model tiers, and a review gate per wave. Every task gets a routing target, an orchestrator, and a reason. Maestro writes the plan itself. See [references/workflow/02-plan.md](references/workflow/02-plan.md).
 3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `~/.gti/maestro/<project>/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
 4. **Review.** Ask the same chat for evidence, verify it independently, then decide PASS, FIX, REASSIGN, or ESCALATE. Fix rounds go back to the same chat. See [references/workflow/04-review.md](references/workflow/04-review.md).
@@ -174,7 +175,15 @@ An orchestrator that spawns its own workers is still a worker to Maestro. Give i
 
 ## Preferences and model routing
 
-Preferences live outside the run: `~/.gti/maestro/preferences.json` for the machine and `~/.gti/maestro/<project>/preferences.json` for the project. Project beats user, and an explicit request beats both. Maestro reads them at intake, writes them only when the user states a durable choice ("prefer X", "always use Y", "from now on"), and keeps model health separate in `~/.gti/maestro/providers.json`.
+Preferences live in the GTI home, outside the run and the repository: `~/.gti/maestro/preferences.json` for the machine and `~/.gti/maestro/<project>/preferences.json` for the project. Each file holds `defaults` (the settings every run starts from: adapter, budget, tier, verifier), `profiles` (settings per run kind, such as `security` or `frontend`), and the model `roles`, `fallbacks`, `routes`, and `avoid` list. Model health stays separate in `~/.gti/maestro/providers.json`.
+
+At intake Maestro detects the run kind and layers the settings, highest first: the explicit request, the project profile, the user profile, project defaults, user defaults, then the router default. It learns in three ways:
+
+- **Per run:** whatever the user sets for a run ("security run with model XY in harness Z") is used now and saved to that kind's profile, so the next run of the kind starts the same way. "Just this once" is not saved.
+- **Repeated:** a value the user set in the last 3 runs of a kind goes to the profile, and one set in the last 3 runs of any kind goes to `defaults`. The history is `~/.gti/maestro/history.jsonl`.
+- **Durable:** "prefer X", "always use Y", or "from now on" writes the role, route, fallback, or avoid entry.
+
+Every saved setting is reported with its old and new value and can be removed with `/maestro preferences forget <key>`. The schema, run kinds, and commands are in [references/routing/01-preferences.md](references/routing/01-preferences.md).
 
 | Role | Use |
 |---|---|
@@ -220,7 +229,7 @@ The rubric is in [references/quality/review-rubric.md](references/quality/review
 - **Parallel only when safe.** Two tasks in the same wave never edit the same file. Use separate worktrees when they must run at once.
 - **Budget is a hard stop.** Defaults: 12 workers, 2 fix rounds per task, 6 waves, unless the plan sets less.
 - **Gated actions wait.** Deleting, pushing, publishing, deploying, paying, or typing credentials needs explicit permission. In autonomous mode it becomes pending.
-- **Preferences are explicit.** Persist a role, route, fallback, or avoid entry only when the user says it is durable. A one-off choice stays in the run.
+- **Preferences come from the user.** Persist a role, route, fallback, or avoid entry only when the user says it is durable. Settings the user states for a run go to that run kind's profile, unless the user says "just this once". Maestro's own choices are never saved as preferences.
 - **Rate limits are health, not preference.** Cool down the model and fall back; never rewrite the user's preference from a 429.
 - **Record the routing reason.** Every spawn says why this model, and every fallback says which error triggered it.
 - **Never invent a model.** Use discovery or the user's declared ID. Mark unknown capabilities as `unknown`.
@@ -237,7 +246,7 @@ The rubric is in [references/quality/review-rubric.md](references/quality/review
 - No worker changed a file outside its scope without a recorded decision.
 - Every task has a routing reason and every fallback has an attempt record.
 - Every delegated task records the orchestrator and adapter used, and any nested orchestrator returned per-task evidence.
-- Preferences changed only on an explicit durable instruction.
+- Preferences changed only from settings the user stated, the run kind's profile and `history.jsonl` are updated, and every change is in the report.
 - The final report names every chat id, model, change, check, and open item.
 
 ## Resources

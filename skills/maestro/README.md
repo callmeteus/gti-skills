@@ -77,6 +77,7 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 - **Orchestrator, not worker:** Maestro plans, delegates, reviews, and reports; workers produce every deliverable.
 - **Strong planner, cheap workers:** a tier table maps read-only work to the cheapest model, focused edits to a mid tier, and hard work to a strong model used sparingly.
 - **Persistent preferences:** user and project files store the orchestrator, executor, fallbacks, routes, and avoid list, and survive across runs.
+- **Run defaults and profiles:** Maestro detects the run kind (security, frontend, tests, and others), saves the settings the user gave for that kind (model, harness, adapter, budget, tier, skills) to a profile in `~/.gti/maestro/`, and promotes a setting requested in 3 runs in a row to the profile or the defaults.
 - **Provider catalog:** discovers the models the harness can run through Paseo, OpenCode, Kilo, Codex, and other surfaces, and accepts user-declared entries for Cline, Cursor, and hosts without a model list.
 - **Task-aware routing:** chooses a model by context, quality, speed, cost, tools, reasoning, and health, with a recorded reason for every task.
 - **Visible routing:** says each non-obvious choice in one short line, for example a rate-limit fallback or a context trade-off.
@@ -481,10 +482,10 @@ Writes `~/.gti/maestro/<project>/report.md` from the ledger and prints the short
 ### /maestro preferences
 
 ```text
-/maestro preferences [show|set|avoid|forget] ...
+/maestro preferences [show|set|default|profile|avoid|forget] ...
 ```
 
-Reads or writes the durable model choices. User scope is `~/.gti/maestro/preferences.json`; project scope is `~/.gti/maestro/<project>/preferences.json`. Project wins, and an explicit request wins over both.
+Reads or writes the durable model choices, the run defaults, and the run profiles. User scope is `~/.gti/maestro/preferences.json`; project scope is `~/.gti/maestro/<project>/preferences.json`. Project wins, and an explicit request wins over both.
 
 | Subcommand | Action |
 |------------|--------|
@@ -494,9 +495,13 @@ Reads or writes the durable model choices. User scope is `~/.gti/maestro/prefere
 | `set fallback <when> <provider>/<model>` | Add or replace a fallback, for example `rate_limit` |
 | `set route <when> <provider>/<model>` | Add or replace a task route, for example `task=scout` |
 | `avoid <provider>/<model>` | Never route to this model |
-| `forget <key>` | Remove one entry |
+| `default <field> <value>` | Set a run default, for example `adapter paseo-mcp` or `budget.workers 6` |
+| `profile <kind>` | Show one run profile with the source of each field |
+| `profile <kind> <field> <value>` | Set a profile field, for example `security executor codex/gpt-5.5` |
+| `profile <kind> match <word>` | Add a word or skill ID that selects the profile |
+| `forget <key>` | Remove one entry, for example `profiles.security.executor` |
 
-Add `--project` to write to the project scope. Maestro persists a preference only when the user states a durable choice.
+Add `--project` to write to the project scope. Maestro persists a model role, route, fallback, or avoid entry only when the user states a durable choice. Settings the user gives for a run are saved to that run kind's profile unless the user says "just this once", and a setting given in the last 3 runs is promoted to the profile or the defaults. Settings layer as: explicit request, project profile, user profile, project defaults, user defaults.
 
 ### /maestro providers
 
@@ -544,8 +549,9 @@ MCP ORCHESTRATORS  run-2026-11-14-001  updated 15:00
 
 | Path | Contents |
 |------|----------|
-| `~/.gti/maestro/preferences.json` | User roles, fallbacks, routes, and avoid list |
+| `~/.gti/maestro/preferences.json` | User roles, run defaults, run profiles, fallbacks, routes, and avoid list |
 | `~/.gti/maestro/<project>/preferences.json` | Project overrides |
+| `~/.gti/maestro/history.jsonl` | Last 50 runs with their kind and the settings the user gave |
 | `~/.gti/maestro/providers.json` | User model catalog, limits, health, and cooldowns |
 | `~/.gti/maestro/<project>/providers.json` | Project catalog overrides and user-declared models |
 | `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in the run, their role, tools, and status |

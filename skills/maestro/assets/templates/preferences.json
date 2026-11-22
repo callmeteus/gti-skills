@@ -1,6 +1,6 @@
 {
     "_note": "Illustrative values. Replace the provider and model IDs with the IDs returned by discovery or declared by the user. Never store credentials here.",
-    "version": 1,
+    "version": 2,
     "updated": "2026-11-14T15:00:00Z",
     "roles": {
         "orchestrator": {
@@ -12,6 +12,46 @@
             "provider": "opencode",
             "model": "deepseek-v4.1-flash",
             "note": "user preference; illustrative name"
+        }
+    },
+    "defaults": {
+        "adapter": "paseo-mcp",
+        "budget": {
+            "workers": 12,
+            "fixRounds": 2,
+            "waves": 6
+        },
+        "tier": "T2",
+        "verifier": true,
+        "source": "repeated",
+        "note": "asked for the Paseo adapter in 3 runs in a row"
+    },
+    "profiles": {
+        "security": {
+            "match": [
+                "security",
+                "segurança",
+                "audit",
+                "vulnerability",
+                "security-audit"
+            ],
+            "orchestrator": {
+                "provider": "claude",
+                "model": "claude-opus-5.5"
+            },
+            "executor": {
+                "provider": "codex",
+                "model": "gpt-5.5",
+                "note": "asked in run-2026-11-14-002; illustrative name"
+            },
+            "adapter": "codex-cli",
+            "tier": "T3",
+            "skills": [
+                "security-audit"
+            ],
+            "source": "run",
+            "lastRun": "run-2026-11-14-002",
+            "uses": 1
         }
     },
     "fallbacks": [
