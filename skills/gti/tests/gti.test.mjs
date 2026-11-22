@@ -48,11 +48,11 @@ function sourceTreeGo(t, extra = {}) {
         "go.mod": "module github.com/gtihq/ai-mcps\n\ngo 1.25.0\n",
         "go.sum": "github.com/example v1.0.0 h1:abc\n",
         "internal/mcpserver/server.go": "package mcpserver\n",
-        "kabum-mcp/main.go": "package main\nfunc main() {}\n",
-        "kabum-mcp/tools.go": "package main\n",
-        "mercadolivre-mcp/main.go": "package main\nfunc main() {}\n",
-        "mercadolivre-mcp/browser.go": "package main\n",
-        "shopee-mcp/main.go": "package main\nfunc main() {}\n",
+        "mcps/kabum-mcp/main.go": "package main\nfunc main() {}\n",
+        "mcps/kabum-mcp/tools.go": "package main\n",
+        "mcps/mercadolivre-mcp/main.go": "package main\nfunc main() {}\n",
+        "mcps/mercadolivre-mcp/browser.go": "package main\n",
+        "mcps/shopee-mcp/main.go": "package main\nfunc main() {}\n",
         ...extra,
     });
     return { root, commit: "d".repeat(40) };
@@ -75,9 +75,9 @@ test("discovers Go servers from go.mod and main.go, exposing language, runtime a
     const source = sourceTreeGo(t);
     const mcps = discoverMcps(source.root);
     assert.deepEqual(mcps.map((m) => [m.name, m.entry, m.language, m.runtime, m.serverDir, m.binary]), [
-        ["kabum", "main.go", "go", "go", "kabum-mcp", "kabum-mcp"],
-        ["mercadolivre", "main.go", "go", "go", "mercadolivre-mcp", "mercadolivre-mcp"],
-        ["shopee", "main.go", "go", "go", "shopee-mcp", "shopee-mcp"],
+        ["kabum", "main.go", "go", "go", "mcps/kabum-mcp", "kabum-mcp"],
+        ["mercadolivre", "main.go", "go", "go", "mcps/mercadolivre-mcp", "mercadolivre-mcp"],
+        ["shopee", "main.go", "go", "go", "mcps/shopee-mcp", "shopee-mcp"],
     ]);
     assert.equal(mcps[0].source, source.root);
     assert.deepEqual(mcps[0].aliases, ["kabum", "kabum-mcp"]);
@@ -157,7 +157,7 @@ test("sync for Go hashes the module and Go sources, never reads requirements.txt
     const first = syncFiles(kabum, dir, source.commit);
     assert.equal(first.fresh, true);
     assert.equal(first.depsCurrent, false);
-    for (const file of ["go.mod", "go.sum", "internal/mcpserver/server.go", "kabum-mcp/main.go", "kabum-mcp/tools.go"]) {
+    for (const file of ["go.mod", "go.sum", "internal/mcpserver/server.go", "mcps/kabum-mcp/main.go", "mcps/kabum-mcp/tools.go"]) {
         assert.ok(existsSync(join(dir, ...file.split("/"))), file);
     }
     const manifest = JSON.parse(readFileSync(join(dir, ".gti-mcp.json"), "utf8"));
@@ -171,7 +171,7 @@ test("sync for Go hashes the module and Go sources, never reads requirements.txt
     markDepsInstalled(dir);
     assert.equal(syncFiles(kabum, dir, source.commit).depsCurrent, true);
 
-    write(source.root, { "kabum-mcp/tools.go": "package main\n// changed\n" });
+    write(source.root, { "mcps/kabum-mcp/tools.go": "package main\n// changed\n" });
     const changed = syncFiles(kabum, dir, source.commit);
     assert.equal(changed.changed, 1);
     assert.equal(changed.depsCurrent, false);
