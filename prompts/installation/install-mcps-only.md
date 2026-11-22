@@ -1,58 +1,60 @@
 # Install MCPs Only
 
-You are an AI coding agent. Install all MCP servers from the `callmeteus/gti-skills` repository.
+You are an AI coding agent. Install all MCP servers from the `gtihq/ai-mcps` repository.
 
 ## Available MCPs
 
 | MCP | Directory | Description |
 |-----|-----------|-------------|
-| KaBuM! | `mcps/kabum-mcp/` | Search products on KaBuM! with live prices (BRL) |
-| Mercado Livre | `mcps/mercadolivre-mcp/` | Search products on Mercado Livre (Brasil) with live prices |
-| Zoom | `mcps/zoom-mcp/` | Price comparator aggregating KaBuM!, Mercado Livre, Amazon, Magazine Luiza |
-| Twitter/X | `packages/python/twitter-mcp/` | Read and post on X (Twitter) via headless browser |
+| KaBuM! | `kabum-mcp/` | Search products on KaBuM! with live prices (BRL) |
+| Mercado Livre | `mercadolivre-mcp/` | Search products on Mercado Livre (Brasil) with live prices |
+| Zoom | `zoom-mcp/` | Price comparator aggregating KaBuM!, Mercado Livre, Amazon, Magazine Luiza |
+| Twitter/X | `twitter-mcp/` | Read and post on X (Twitter) via headless browser |
+
+Every server is a Go command. All commands belong to one Go module at the repository root (`go.mod` and `go.sum` there, with shared packages in `internal/`), so copy the whole module before building.
 
 ## Steps
 
 1. Clone the repository into a temporary directory:
    ```bash
-   git clone https://github.com/callmeteus/gti-skills.git /tmp/gti-skills
+   git clone https://github.com/gtihq/ai-mcps.git /tmp/ai-mcps
    ```
 
-2. Copy each MCP to your local MCP servers directory and install dependencies:
+2. Copy the whole Go module into a local directory:
    ```bash
-   mkdir -p ~/.config/opencode/mcp-servers
-   cp -r /tmp/gti-skills/mcps/kabum-mcp ~/.config/opencode/mcp-servers/kabum-mcp
-   cp -r /tmp/gti-skills/mcps/mercadolivre-mcp ~/.config/opencode/mcp-servers/mercadolivre-mcp
-   cp -r /tmp/gti-skills/mcps/zoom-mcp ~/.config/opencode/mcp-servers/zoom-mcp
-   cp -r /tmp/gti-skills/packages/python/twitter-mcp ~/.config/opencode/mcp-servers/twitter-mcp
+   mkdir -p ~/.config/opencode/mcp-servers/ai-mcps
+   cp -r /tmp/ai-mcps/. ~/.config/opencode/mcp-servers/ai-mcps/
    ```
 
-3. Install Python dependencies for each:
+3. Build each binary from the module root (Go 1.25 or later):
    ```bash
-   cd ~/.config/opencode/mcp-servers/kabum-mcp && python -m pip install -r requirements.txt
-   cd ~/.config/opencode/mcp-servers/mercadolivre-mcp && python -m pip install -r requirements.txt
-   cd ~/.config/opencode/mcp-servers/zoom-mcp && python -m pip install -r requirements.txt
-   cd ~/.config/opencode/mcp-servers/twitter-mcp && python -m pip install -r requirements.txt && python -m playwright install chromium
+   cd ~/.config/opencode/mcp-servers/ai-mcps
+   go build -o kabum-mcp ./kabum-mcp
+   go build -o mercadolivre-mcp ./mercadolivre-mcp
+   go build -o zoom-mcp ./zoom-mcp
+   go build -o twitter-mcp ./twitter-mcp
    ```
+   On Windows, use `.exe` as the output suffix, for example `go build -o twitter-mcp.exe .\twitter-mcp`. Do not create a Python virtual environment or run pip; the Go toolchain downloads the modules.
 
 4. Register each MCP with your agent (example for OpenCode):
    ```bash
-   opencode mcp add kabum --global -- python ~/.config/opencode/mcp-servers/kabum-mcp/server.py
-   opencode mcp add mercadolivre --global -- python ~/.config/opencode/mcp-servers/mercadolivre-mcp/server.py
-   opencode mcp add zoom --global -- python ~/.config/opencode/mcp-servers/zoom-mcp/server.py
-   opencode mcp add twitter --global -- python ~/.config/opencode/mcp-servers/twitter-mcp/server.py
+   opencode mcp add kabum --global -- ~/.config/opencode/mcp-servers/ai-mcps/kabum-mcp
+   opencode mcp add mercadolivre --global -- ~/.config/opencode/mcp-servers/ai-mcps/mercadolivre-mcp
+   opencode mcp add zoom --global -- ~/.config/opencode/mcp-servers/ai-mcps/zoom-mcp
+   opencode mcp add twitter --global -- ~/.config/opencode/mcp-servers/ai-mcps/twitter-mcp
    ```
 
 5. Clean up:
    ```bash
-   rm -rf /tmp/gti-skills
+   rm -rf /tmp/ai-mcps
    ```
 
 6. Restart your agent session so it picks up the new MCPs.
 
 ## Notes
 
-- Twitter MCP requires a one-time login: `python ~/.config/opencode/mcp-servers/twitter-mcp/login.py`
+- Twitter/X needs a one-time login: `~/.config/opencode/mcp-servers/ai-mcps/twitter-mcp --login`. Mercado Livre has the same helper with `--login`.
+- Mercado Livre, Shopee and Twitter drive a real browser through playwright-go. Google Chrome must be installed; the Go driver follows the usual Go module setup, no pip browser install is needed.
 - Mercado Livre MCP opens a visible browser window (anti-bot detection)
 - Zoom MCP aggregates multiple stores (KaBuM!, Mercado Livre, Amazon, Magazine Luiza)
-- Adapt paths for your agent (Claude Code, Cursor, etc.) as needed
+- Adapt paths for your agent (Claude Code, Cursor, etc.) as needed. If you still find a server with `requirements.txt` and `server.py`, that is a legacy Python server: install its requirements in a virtual environment and register `python <path>/server.py` instead.

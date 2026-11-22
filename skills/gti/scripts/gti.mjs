@@ -12,8 +12,10 @@
  *   mcps install <names|all> [--agents ids|all] [--dry-run] [--skip-deps]
  *                                       Installs and registers MCP servers in agents
  *
+ * MCP servers come from gtihq/ai-mcps, skills from gtihq/ai-skills.
  * Common flags: --source DIR (use a local gti-skills checkout instead of the latest commit),
- * --home DIR (default ~/.gti-skills or GTI_SKILLS_HOME), --user-home DIR (where agent configs live).
+ * --mcps-source DIR (same for a local ai-mcps checkout),
+ * --home DIR (default ~/.gti/skills or GTI_SKILLS_HOME), --user-home DIR (where agent configs live).
  */
 
 import { spawnSync } from "node:child_process";
@@ -23,8 +25,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { AGENTS, MANUAL_AGENTS, entryScript, existingAgents, matchEntries, readConfig, setEntry, writeConfig } from "./core/agents.mjs";
-import { carryState, checkServer, discoverMcps, installDeps, installDir, markDepsInstalled, syncFiles, venvPython } from "./core/mcps.mjs";
-import { cachedSource, ensureLatestSource, gtiHome, stampedCommit } from "./core/source.mjs";
+import { carryState, checkServer, discoverMcps, installDeps, installDir, markDepsInstalled, runtimeCommand, syncFiles } from "./core/mcps.mjs";
+import { McpsSources, cachedSource, ensureLatestSource, gtiHome, mcpsSource, stampedCommit } from "./core/source.mjs";
 
 function parseArgs(argv) {
     const flags = { positional: [], passthrough: [] };
@@ -38,6 +40,7 @@ function parseArgs(argv) {
         else if (value === "--skip-deps") flags.skipDeps = true;
         else if (value === "--check") flags.check = true;
         else if (value === "--source") flags.source = take();
+        else if (value === "--mcps-source") flags.mcpsSource = take();
         else if (value === "--home") flags.home = take();
         else if (value === "--user-home") flags.userHome = take();
         else if (value === "--only") flags.only = take().split(",").map((s) => s.trim()).filter(Boolean);
@@ -62,6 +65,26 @@ async function resolveSource(flags, io) {
         return source;
     } catch (error) {
         const cached = cachedSource(flags.home ?? gtiHome());
+        if (!cached) throw error;
+        io.err(`warning  could not reach GitHub (${error.message}); using the downloaded ${cached.commit.slice(0, 7)}`);
+        return cached;
+    }
+}
+
+// Baixa (ou reaproveita) o repositório gtihq/ai-mcps, onde ficam os servidores MCP
+async function resolveMcpSource(flags, io) {
+    if (flags.mcpsSource) {
+        const root = resolve(flags.mcpsSource);
+        if (!existsSync(root)) throw new Error(`${root} does not exist`);
+        return { root, commit: stampedCommit(root) ?? "local checkout" };
+    }
+    const home = flags.home ?? gtiHome();
+    try {
+        const source = await ensureLatestSource({ home, source: mcpsSource(), kind: McpsSources });
+        io.out(source.downloaded ? `mcps     downloaded ${source.commit.slice(0, 7)}` : `mcps     latest is ${source.commit.slice(0, 7)} (already downloaded)`);
+        return source;
+    } catch (error) {
+        const cached = cachedSource(home, McpsSources);
         if (!cached) throw error;
         io.err(`warning  could not reach GitHub (${error.message}); using the downloaded ${cached.commit.slice(0, 7)}`);
         return cached;
@@ -118,8 +141,8 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
             report.push({ name: mcp.name, status: "not installed" });
             continue;
         }
-        const python = venvPython(dir);
-        const script = join(dir, mcp.entry);
+        const [program, arg] = runtimeCommand(mcp, dir);
+        const script = arg ?? "";
         const line = { name: mcp.name, dir, registrations: [], carried: [] };
 
         if (!dryRun) {
@@ -155,12 +178,12 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
                 line.registrations.push(`${target.config.agent}: ${target.config.error}`);
                 continue;
             }
-            const changed = setEntry(target.config, target.key, python, script);
+            const changed = setEntry(target.config, target.key, program, script);
             if (changed) touched.add(target.config);
             const action = changed ? (target.from ? "repointed" : "added") : "current";
             line.registrations.push(`${target.config.agent}:${target.key} ${dryRun && changed ? `would be ${action}` : action}`);
         }
-        if (mcp.login) line.login = `${python} ${join(dir, "login.py")}`;
+        if (mcp.login) line.login = `${program} ${join(dir, "login.py")}`;
         report.push(line);
     }
 
@@ -179,7 +202,7 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
         if (line.login) io.out(`           one-time login if needed: ${line.login}`);
     }
     for (const backup of backups.filter(Boolean)) io.out(`backup   ${backup}`);
-    if (mode === "install") io.out(`note     register by hand in ${MANUAL_AGENTS.join(", ")}: command <venv python>, argument <server script>, as shown above`);
+    if (mode === "install") io.out(`note     register by hand in ${MANUAL_AGENTS.join(", ")}: command <Go binary or venv python>, argument <server script when Python>, as shown above`);
     return { report, backups: backups.filter(Boolean) };
 }
 
@@ -209,28 +232,26 @@ export async function main(argv, io = { out: (l) => console.log(l), err: (l) => 
 
         if (first === "skills" && second === "update") return skillsUpdate(await resolveSource(flags, io), flags, io);
         if (first === "mcps" && (second === "list" || second === undefined)) {
-            mcpsList(await resolveSource(flags, io), home, userHome, io);
+            mcpsList(await resolveMcpSource(flags, io), home, userHome, io);
             return 0;
         }
         if (first === "mcps" && second === "update") {
-            runMcps({ mode: "update", names: flags.only, source: await resolveSource(flags, io), home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
+            runMcps({ mode: "update", names: flags.only, source: await resolveMcpSource(flags, io), home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
             return 0;
         }
         if (first === "mcps" && second === "install") {
             if (names.length === 0) throw new Error("name the MCP servers to install, or all");
-            runMcps({ mode: "install", names, agents: flags.agents, source: await resolveSource(flags, io), home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
+            runMcps({ mode: "install", names, agents: flags.agents, source: await resolveMcpSource(flags, io), home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
             return 0;
         }
         if (first === "update") {
-            const source = await resolveSource(flags, io);
-            const status = skillsUpdate(source, flags, io);
-            runMcps({ mode: "update", names: flags.only, source, home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
+            const status = skillsUpdate(await resolveSource(flags, io), flags, io);
+            runMcps({ mode: "update", names: flags.only, source: await resolveMcpSource(flags, io), home, userHome, dryRun: flags.dryRun, skipDeps: flags.skipDeps, io });
             return status;
         }
         if (first === "status") {
-            const source = await resolveSource(flags, io);
-            skillsUpdate(source, { ...flags, check: true }, io);
-            mcpsList(source, home, userHome, io);
+            skillsUpdate(await resolveSource(flags, io), { ...flags, check: true }, io);
+            mcpsList(await resolveMcpSource(flags, io), home, userHome, io);
             return 0;
         }
         io.err("Usage: gti.mjs status | update | skills update | mcps list | mcps update | mcps install <names|all>. See the header of this file.");

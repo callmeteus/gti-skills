@@ -39,17 +39,19 @@
 
 Keeping gti-skills current used to mean a clone of the repository on every PC, `git pull`, the CLI's `update`, and hand-edited MCP entries pointing at copies of each server that slowly fell behind. GTI turns that into one request to the agent: `/gti update`.
 
-The skill bundles a small Node.js script. It downloads the latest commit into the same `~/.gti-skills/sources/` folder the CLI uses and runs that CLI's `update` for skills. For MCP servers it keeps one managed copy per server with its own Python environment and points each agent's MCP config at it, backing up the config first.
+The skill bundles a small Node.js script. It downloads the latest commit into the same `~/.gti/skills/sources/` folder the CLI uses and runs that CLI's `update` for skills. For MCP servers it downloads the separate `gtihq/ai-mcps` repository, keeps one managed copy per server, builds its Go binary there (or creates a virtual environment for a legacy Python server) and points each agent's MCP config at it, backing up the config first.
 
 ```text
   /gti update
       │
       v
-  latest commit ──> ~/.gti-skills/sources/<commit>/
+  latest commit ──> ~/.gti/skills/sources/<commit>/
       │
       ├── skills ──> packages/cli update ──> every installed skill, every agent
       │
-      └── mcps ───> ~/.gti-skills/mcps/<name>/  (files, .venv, Chromium, login state)
+  gtihq/ai-mcps ──> ~/.gti/skills/mcps-sources/<commit>/
+      │
+      └── mcps ───> ~/.gti/skills/mcps/<name>/  (Go sources, built binary, login state)
                          │
                          v
                agent configs repointed (backup first)
@@ -58,7 +60,7 @@ The skill bundles a small Node.js script. It downloads the latest commit into th
 | This skill does | This skill does not |
 |-----------------|---------------------|
 | Update installed gti-skills skills in all ten agents | Update skills or MCP servers from other sources |
-| Install and update the gti-skills MCP servers and their Python dependencies | Delete logins, cookies, or browser profiles the servers created |
+| Install and update the gti-skills MCP servers, build their Go binaries or keep legacy Python dependencies | Delete logins, cookies, or browser profiles the servers created |
 | Repoint agent MCP entries to the managed copy, with a backup | Write MCP settings for Cline, Kilo Code, GitHub Copilot, or Muse Code |
 | Work on a PC that has no clone of the repository | Edit or publish skills |
 
@@ -67,7 +69,7 @@ The skill bundles a small Node.js script. It downloads the latest commit into th
 - **One command:** `/gti update` updates skills and MCP servers; `/gti skills update` and `/gti mcps update` do one side; free text such as "atualiza pra mim" works too.
 - **New skills arrive automatically:** update also installs skills that are new in the latest commit for installs that use every pack; a partial install stays as chosen. Use `--no-install-new` to skip this.
 - **No clone needed:** the latest commit is downloaded from GitHub into the CLI's own sources folder and reused by both.
-- **Managed MCP copies:** each server lives in `~/.gti-skills/mcps/<name>/` with its own `.venv`; requirements are reinstalled only when they change, and the needed Chromium build is installed.
+- **Managed MCP copies:** each server lives in `~/.gti/skills/mcps/<name>/`. A Go server is rebuilt with `go build` only when `go.mod`, `go.sum` or a Go source changed; a legacy Python server keeps its `.venv` and gets new requirements or Chromium only when needed.
 - **State kept:** runtime files the servers write are never removed, and when an entry moves from an older copy its login state (for example Shopee cookies and browser profile) is carried over.
 - **Start check:** after an update each server is started once and must answer an MCP `initialize` request; if it does not, agent entries stay on the old copy and the error is shown.
 - **Safe config edits:** OpenCode, Claude Code, Cursor, Kiro, Antigravity, and Codex configs are edited in place, keeping the entry's other settings, with a timestamped backup and an atomic write.
@@ -79,13 +81,14 @@ The skill bundles a small Node.js script. It downloads the latest commit into th
 |------------|---------|---------|:--------------:|
 | Node.js | 18+ | Runs the script and the gti-skills CLI | No |
 | Network access to GitHub | - | Latest commit and source download; `GITHUB_TOKEN` raises the rate limit | No |
-| Python | 3.10+ | MCP servers and their virtual environments | No |
-| MCP dependencies and Chromium | Per server | Installed into each server's `.venv` | Yes |
+| Go | 1.25+ | Builds the MCP servers; checked against `go.mod` | No |
+| Python | 3.10+ | Only for legacy Python MCP servers | No |
+| Go modules and Chromium | Per server | Modules downloaded by `go build`; Chromium only for legacy Python servers that need it | Yes |
 
 | Platform | Notes |
 |----------|-------|
-| Windows | Python is found through the `py -3` launcher, then `python`, then `python3` |
-| macOS and Linux | Python is found as `python3`, then `python` |
+| Windows | Go builds `kabum-mcp.exe`; legacy Python is found through the `py -3` launcher, then `python`, then `python3` |
+| macOS and Linux | Go builds `kabum-mcp`; legacy Python is found as `python3`, then `python` |
 
 ## Installation
 
@@ -131,7 +134,7 @@ Each agent has a short guide in `skills/gti/harnesses/<id>/GUIDE.md` covering in
 /gti atualiza pra mim por favor
 ```
 
-The agent runs `gti.mjs update`: every installed gti-skills skill is updated to the latest commit, any skill that is new in that commit is installed for installs that use every pack, every gti-skills MCP server already in use is refreshed in `~/.gti-skills/mcps/`, agent entries are pointed there with a backup, and the agent tells you what changed and whether to restart or log in.
+The agent runs `gti.mjs update`: every installed gti-skills skill is updated to the latest commit, any skill that is new in that commit is installed for installs that use every pack, every gti-skills MCP server already in use is refreshed in `~/.gti/skills/mcps/`, agent entries are pointed there with a backup, and the agent tells you what changed and whether to restart or log in.
 
 ## Usage
 
@@ -180,13 +183,14 @@ Shows which skills are out of date and where each MCP server is registered.
 
 ```text
   1. Source     GitHub API: latest commit on master
-                ──> ~/.gti-skills/sources/<commit-12>/ (download once, stamp file)
+                ──> ~/.gti/skills/sources/<commit-12>/ (download once, stamp file)
                     no network: fall back to the newest downloaded commit
   2. Skills     node <source>/packages/cli update --install-new
                 (records, untracked installs, missing skills, builds)
-  3. MCPs       discover mcps/* and packages/python/*-mcp in the source
+  3. MCPs       download gtihq/ai-mcps into ~/.gti/skills/mcps-sources/<commit-12>/
+                and discover the <name>-mcp folders at its root
                 for each server already managed or registered:
-                  copy files ──> carry login state from the old copy ──> .venv + pip + Chromium
+                  copy files ──> carry login state from the old copy ──> go build (legacy Python: .venv + pip + Chromium)
                   start check (MCP initialize) ──> on failure, leave agent entries alone
                   repoint matching entries in agent configs ──> backup + atomic write
   4. Report     skills, servers, entries, backups, logins, restart
@@ -217,9 +221,10 @@ node skills/gti/scripts/gti.mjs status
 | `--only` | All | Comma separated servers for `mcps update` |
 | `--agents` | Existing configs | Comma separated agents for `mcps install`, or `all` |
 | `--dry-run` | Off | Show the plan without writing anything |
-| `--skip-deps` | Off | Do not create the venv or install requirements |
+| `--skip-deps` | Off | Do not run `go build` (or create the venv and install requirements for a legacy Python server) |
 | `--source` | Latest commit | Use a local gti-skills checkout instead |
-| `--home` | `~/.gti-skills` or `GTI_SKILLS_HOME` | Where sources and managed servers live |
+| `--mcps-source` | Latest commit | Use a local ai-mcps checkout instead |
+| `--home` | `~/.gti/skills` or `GTI_SKILLS_HOME` | Where sources and managed servers live |
 | `--user-home` | Home folder | Where agent config files are read |
 
 Agent config files written:
@@ -245,32 +250,33 @@ mcp      kabum: files installed, deps installed
 mcp      shopee: files installed, deps installed
            opencode:shopee repointed
            kept login state: .browser-profile, cookies.json
-           one-time login if needed: ~/.gti-skills/mcps/shopee/.venv/Scripts/python.exe ~/.gti-skills/mcps/shopee/login.py
 backup   ~/.config/opencode/opencode.json.gti-backup-2026-11-06T18-40-00-000Z
 ```
 
 ```text
-~/.gti-skills/
+~/.gti/skills/
 ├── sources/<commit-12>/        # latest gti-skills source, shared with the CLI
+├── mcps-sources/<commit-12>/   # latest ai-mcps source (the MCP servers)
 └── mcps/<name>/                # one managed copy per MCP server
-    ├── server.py ...           # files from the source
-    ├── .venv/                  # Python environment
-    ├── .gti-mcp.json           # commit, copied files, requirements hash
+    ├── go.mod, go.sum, <name>-mcp/*.go  # copied Go module and sources
+    ├── <name>-mcp              # built binary (or .exe on Windows)
+    ├── .gti-mcp.json           # commit, copied files, dependency hash
     └── cookies.json ...        # runtime state, never removed
 ```
 
 | Section | Contents |
 |---------|----------|
-| `source` | Commit used and whether it was downloaded |
+| `source` | Skills commit used and whether it was downloaded |
+| `mcps` | MCP repository commit used (`gtihq/ai-mcps`, or `GTI_MCPS_REPO` and `GTI_MCPS_BRANCH`) and whether it was downloaded |
 | `skills` | The CLI update output |
 | `mcp` | Per server: files, dependencies, agent entries, kept state, login hint |
 | `backup` | Every config file backed up before a change |
 
 ## Security
 
-- **Network:** the script calls the GitHub API for the latest commit and its tarball, and pip and the browser installers download server dependencies. `GITHUB_TOKEN` or `GH_TOKEN` is sent only to `api.github.com`.
+- **Network:** the script calls the GitHub API for the latest commit and its tarball, and the Go toolchain downloads modules during `go build`. For a legacy Python server, pip and the browser installers download dependencies instead. `GITHUB_TOKEN` or `GH_TOKEN` is sent only to `api.github.com`.
 - **Tokens and logins:** login state the MCP servers create (cookies, browser profiles, `.env`) stays on this machine; it is copied only from an older install folder into the managed one.
-- **File access:** writes go to `~/.gti-skills/` and to the six agent config files listed above, each backed up first. Tarball paths that leave the target folder are skipped.
+- **File access:** writes go to `~/.gti/skills/` and to the six agent config files listed above, each backed up first. Tarball paths that leave the target folder are skipped.
 
 ## Development
 
@@ -294,9 +300,9 @@ GITHUB_TOKEN=<token> node skills/gti/scripts/gti.mjs update
 </details>
 
 <details>
-<summary><strong>Python 3.10 or later was not found</strong></summary>
+<summary><strong>Go 1.25 or later was not found, or go build failed</strong></summary>
 
-The MCP servers need Python 3.10+. Install it (on Windows, from python.org with the `py` launcher) and run `/gti mcps update` again.
+Go servers are built from one Go module with `go build` inside the managed folder. Install Go 1.25+ from go.dev, check that the reported compiler or module error is fixed, then run `/gti mcps update` again. A legacy Python server instead needs Python 3.10+ (on Windows, from python.org with the `py` launcher).
 
 </details>
 
@@ -330,7 +336,7 @@ node skills/gti/scripts/gti.mjs mcps install kabum
 - MCP entries for Cline, Kilo Code, GitHub Copilot, and Muse Code are not written; the output gives the command and script to add by hand.
 - Config files with comments (JSONC) are not edited; the output says which entry to change.
 - Entries are matched by name (`kabum`, `kabum-mcp`) or by a path through the server's folder; an entry with another name pointing elsewhere is not found.
-- The first MCP update downloads Chromium builds for the browser-based servers and can take several minutes.
+- The first MCP update downloads Go modules and builds every Go server, which can take several minutes; a legacy Python server may also download Chromium.
 - New skills arrive automatically only for installs that use every pack. A partial install stays exactly as chosen; add a new skill with `node packages/cli install --skill <id> --harness <ids>` or complete the install with every pack first.
 - A skill deleted by hand from a full install can be installed again by the next update unless `--no-install-new` is used.
 

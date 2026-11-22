@@ -47,10 +47,11 @@ function entryCommand(kind, entry) {
     return [entry?.command, ...(Array.isArray(entry?.args) ? entry.args : [])].filter(Boolean);
 }
 
-function makeEntry(kind, previous, python, script) {
-    if (kind === "opencode") return { ...previous, type: "local", command: [python, script], enabled: previous?.enabled ?? true };
-    if (kind === "claude") return { type: "stdio", env: {}, ...previous, command: python, args: [script] };
-    return { ...previous, command: python, args: [script] };
+function makeEntry(kind, previous, command, script) {
+    const args = script ? [script] : [];
+    if (kind === "opencode") return { ...previous, type: "local", command: [command, ...args], enabled: previous?.enabled ?? true };
+    if (kind === "claude") return { type: "stdio", env: {}, ...previous, command, args };
+    return { ...previous, command, args };
 }
 
 // ---------- Codex TOML ----------
@@ -100,11 +101,11 @@ function tomlEntries(text) {
     });
 }
 
-function tomlSet(text, key, python, script) {
+function tomlSet(text, key, command, script) {
     const { lines, sections } = tomlSections(text);
     const section = sections.find((s) => s.name === key);
-    const commandLine = `command = ${tomlString(python)}`;
-    const argsLine = `args = [${tomlString(script)}]`;
+    const commandLine = `command = ${tomlString(command)}`;
+    const argsLine = `args = [${script ? tomlString(script) : ""}]`;
     if (!section) {
         const trimmed = text.replace(/\s*$/, "");
         return `${trimmed}${trimmed ? "\n\n" : ""}[mcp_servers.${/^[A-Za-z0-9_-]+$/.test(key) ? key : JSON.stringify(key)}]\n${commandLine}\n${argsLine}\n`;
@@ -140,21 +141,21 @@ export function listEntries(config) {
 /** Entries that belong to an MCP: same key as one of its aliases, or a path through its folder. */
 export function matchEntries(config, mcp) {
     const aliases = mcp.aliases.map((a) => a.toLowerCase());
-    const folder = new RegExp(`[\\\\/]${mcp.folder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\\\/]`, "i");
+    const folder = new RegExp(`[\\\\/]${mcp.folder.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[\\\\/]|$)`, "i");
     return listEntries(config).filter((entry) => aliases.includes(entry.key.toLowerCase()) || entry.command.some((part) => folder.test(String(part))));
 }
 
-/** Sets an entry in memory. Returns true when something changed. */
-export function setEntry(config, key, python, script) {
+/** Sets an entry in memory. Returns true when something changed. A Go binary is the only argument. */
+export function setEntry(config, key, command, script) {
     if (config.kind === "toml") {
-        const next = tomlSet(config.text, key, python, script);
+        const next = tomlSet(config.text, key, command, script);
         const changed = next !== config.text;
         config.text = next;
         return changed;
     }
     const container = jsonContainer(config.kind, config.data, true);
     const before = JSON.stringify(container[key] ?? null);
-    container[key] = makeEntry(config.kind, container[key], python, script);
+    container[key] = makeEntry(config.kind, container[key], command, script);
     return JSON.stringify(container[key]) !== before;
 }
 
@@ -173,7 +174,7 @@ export function writeConfig(config, stamp = new Date().toISOString().replace(/[:
     return backup;
 }
 
-/** Script path an entry runs, the last argument ending in .py. */
+/** Script path an entry runs: a Python file, or a managed Go binary path. */
 export function entryScript(entry) {
-    return [...entry.command].reverse().find((part) => /\.py$/i.test(String(part))) ?? null;
+    return [...entry.command].reverse().find((part) => /\.py$/i.test(String(part)) || /[\\/][A-Za-z0-9_-]+-mcp(\.exe)?$/i.test(String(part))) ?? null;
 }
