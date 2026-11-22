@@ -34,5 +34,5 @@ Run `kilo debug skill` to list the skills Kilo discovered.
 ## Notes
 
 - Folders named skills-<mode>, such as skills-code, load only in that mode.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [Kilo Code](https://kilo.ai/docs/customize/skills) (path source: official).

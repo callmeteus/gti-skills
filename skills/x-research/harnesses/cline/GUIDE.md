@@ -34,5 +34,5 @@ Open the Skills tab in the Cline panel to see and toggle installed skills.
 ## Notes
 
 - The name field must match the folder name exactly.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [Cline](https://docs.cline.bot/customization/skills) (path source: official).

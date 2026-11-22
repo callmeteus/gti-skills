@@ -34,5 +34,5 @@ Ask the agent which skills it has loaded and check that `x-research` is listed.
 ## Notes
 
 - Copilot also reads .claude/skills and .agents/skills. Works in VS Code agent mode, Copilot CLI, and the cloud agent.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [GitHub Copilot](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/create-skills) (path source: official).

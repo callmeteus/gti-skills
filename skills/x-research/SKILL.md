@@ -10,7 +10,7 @@ description: >
   "/x-research", (2) user wants to find replies, mentions, or engagement data,
   (3) user wants to monitor specific accounts or topics.
   NOT for: posting tweets, account management, DMs.
-compatibility: Requires the twitter MCP server from packages/python/twitter-mcp in the gti-skills repository (Python 3.10+, Playwright Chromium) and an X account logged in once with its login.py.
+compatibility: Requires the twitter MCP server from twitter-mcp in the gtihq/ai-mcps repository (Python 3.10+, Playwright Chromium) and an X account logged in once with its login.py.
 ---
 
 # X Research
@@ -39,7 +39,7 @@ Everything this skill generates (reports, notes, logs, downloads, renders, measu
 
 ## Available MCP Tools
 
-All tools are provided by the `twitter` MCP server. If no `twitter_*` tools are available, tell the user the MCP server is not configured (setup: `packages/python/twitter-mcp/README.md` in the gti-skills repository) and use the web search fallback described in [When a Tool Fails](#when-a-tool-fails).
+All tools are provided by the `twitter` MCP server. If no `twitter_*` tools are available, tell the user the MCP server is not configured (setup: `twitter-mcp/README.md` in the gtihq/ai-mcps repository) and use the web search fallback described in [When a Tool Fails](#when-a-tool-fails).
 
 - `twitter_search(query, max_results)`: Search tweets by keyword or hashtag. Results include Views, Likes, Retweets, Replies (comments), and the tweet URL.
 - `twitter_user(username)`: Get a user's profile (bio, followers, following).
@@ -103,7 +103,7 @@ Failed calls return one line that starts with `Error [KIND]:`. Act on the kind, 
 | Kind | What it means | What to do |
 |------|---------------|------------|
 | `RATE_LIMITED` | X answered HTTP 429; the message gives the reset time | Stop all X calls until the reset. Fall back to web search |
-| `LOGIN_REQUIRED` | The browser session is logged out | Ask the user to run `python packages/python/twitter-mcp/login.py` from the gti-skills checkout. Fall back to web search |
+| `LOGIN_REQUIRED` | The browser session is logged out | Ask the user to run `python twitter-mcp/login.py` from the ai-mcps checkout. Fall back to web search |
 | `PROFILE_IN_USE` | Another browser or MCP process holds the profile | Tell the user to close the other process. Fall back to web search |
 | `PAGE_ERROR`, `TIMEOUT` | X failed to render after the MCP's own retries | Make one more call after a pause. If it fails again, treat it as `RATE_LIMITED` |
 | `SELECTOR_CHANGED` | Data arrived but the page layout changed | The MCP needs a code update. Tell the user and fall back to web search |

@@ -34,5 +34,5 @@ Run `muse skills list` to see the skills Muse discovered.
 ## Notes
 
 - Based on one community report: muse skills list scans ~/.agents/skills, ~/.claude/skills, and ~/.codex/skills.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [Muse Code](https://www.withone.ai/blog/muse-code-skills-not-mcp) (path source: community).

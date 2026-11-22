@@ -39,7 +39,7 @@
 
 The X API is paid, and agents that scrape X with a browser tend to fail in confusing ways: X rate limits the account after a burst of page loads, then shows a blank page, and the agent sees only selector timeouts. It then retries with ever simpler queries, which extends the block.
 
-X Research gives the agent a research loop over the `twitter` MCP server in [packages/python/twitter-mcp](../../packages/python/twitter-mcp/README.md). The server keeps one logged-in headless browser and runs calls one at a time. Failures come back as typed errors such as `RATE_LIMITED`, with the reset time. The skill tells the agent to plan a small call budget, run calls one after another, stop after repeated errors, and finish the research with web search while telling the user so.
+X Research gives the agent a research loop over the `twitter` MCP server in [twitter-mcp in gtihq/ai-mcps](https://github.com/gtihq/ai-mcps/tree/master/twitter-mcp). The server keeps one logged-in headless browser and runs calls one at a time. Failures come back as typed errors such as `RATE_LIMITED`, with the reset time. The skill tells the agent to plan a small call budget, run calls one after another, stop after repeated errors, and finish the research with web search while telling the user so.
 
 ```text
   question
@@ -76,7 +76,7 @@ X Research gives the agent a research loop over the `twitter` MCP server in [pac
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| `twitter` MCP server | [packages/python/twitter-mcp](../../packages/python/twitter-mcp/README.md) | The `twitter_*` tools | No |
+| `twitter` MCP server | [twitter-mcp in gtihq/ai-mcps](https://github.com/gtihq/ai-mcps/tree/master/twitter-mcp) | The `twitter_*` tools | No |
 | Python | 3.10+ | Runs the MCP server | No |
 | `mcp`, `playwright`, `httpx` | Latest | MCP server dependencies | No |
 | Playwright Chromium | Matches `playwright` | The browser the server drives | No |
@@ -121,29 +121,29 @@ New-Item -ItemType Directory -Force .claude\skills | Out-Null
 Copy-Item -Recurse skills\x-research .claude\skills\
 ```
 
-Then set up the MCP server, from the repository root. Install its dependencies:
+Then set up the MCP server. It lives in its own repository, so clone [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps) (or let the GTI skill manage it) and run these from that repository root. Install its dependencies:
 
 ```bash
-python -m pip install -r packages/python/twitter-mcp/requirements.txt
+python -m pip install -r twitter-mcp/requirements.txt
 python -m playwright install chromium
 ```
 
 Log in to X once in a visible browser. Run it while no MCP server is running:
 
 ```bash
-python packages/python/twitter-mcp/login.py
+python twitter-mcp/login.py
 ```
 
 Register the server with your agent, using the absolute path of your checkout. In Claude Code:
 
 ```bash
-claude mcp add twitter --scope user -- python /absolute/path/to/gti-skills/packages/python/twitter-mcp/server.py
+claude mcp add twitter --scope user -- python /absolute/path/to/ai-mcps/twitter-mcp/server.py
 ```
 
 In OpenCode:
 
 ```bash
-opencode mcp add twitter --global -- python /absolute/path/to/gti-skills/packages/python/twitter-mcp/server.py
+opencode mcp add twitter --global -- python /absolute/path/to/ai-mcps/twitter-mcp/server.py
 ```
 
 Each agent has a short guide in `skills/x-research/harnesses/<id>/GUIDE.md` covering install paths, how to invoke the skill, and how to confirm it loaded.
@@ -226,7 +226,7 @@ The agent reads a file only when a step needs it.
 | `twitter_status` | Rate-limit state, without contacting X | None |
 | `twitter_feed`, `twitter_notifications`, `twitter_bookmarks` | Logged-in timelines | `max_results` |
 
-The MCP server settings (`TWITTER_MCP_HEADLESS`, `TWITTER_MCP_MIN_INTERVAL`, `TWITTER_MCP_PROFILE`, `TWITTER_MCP_CALL_TIMEOUT`) are documented in the [package README](../../packages/python/twitter-mcp/README.md#environment).
+The MCP server settings (`TWITTER_MCP_HEADLESS`, `TWITTER_MCP_MIN_INTERVAL`, `TWITTER_MCP_PROFILE`, `TWITTER_MCP_CALL_TIMEOUT`) are documented in the [server README](https://github.com/gtihq/ai-mcps/blob/master/twitter-mcp/README.md#environment).
 
 ## Output
 
@@ -267,10 +267,10 @@ X throttled the account after too many page loads in about 15 minutes. Wait for 
 <details>
 <summary><strong>Calls return Error [LOGIN_REQUIRED]</strong></summary>
 
-The X session in the browser profile expired. Stop the agent that runs the MCP server, then log in again.
+The X session in the browser profile expired. Stop the agent that runs the MCP server, then log in again from the ai-mcps checkout.
 
 ```bash
-python packages/python/twitter-mcp/login.py
+python twitter-mcp/login.py
 ```
 
 </details>
@@ -292,7 +292,7 @@ The MCP server is not registered in your agent. Register it as shown in [Install
 <details>
 <summary><strong>Calls return Error [SELECTOR_CHANGED]</strong></summary>
 
-X changed its page layout and the server no longer finds tweets in the page. The selectors in `packages/python/twitter-mcp/tools_read.py` need an update.
+X changed its page layout and the server no longer finds tweets in the page. The selectors in `twitter-mcp/tools_read.py` need an update.
 
 </details>
 
@@ -307,7 +307,7 @@ X changed its page layout and the server no longer finds tweets in the page. The
 
 | Project | License | Used for |
 |---------|---------|----------|
-| [twitter-mcp](https://github.com/Miles0sage/twitter-mcp) | MIT | Base of the MCP server in `packages/python/twitter-mcp` |
+| [twitter-mcp](https://github.com/Miles0sage/twitter-mcp) | MIT | Base of the MCP server in `twitter-mcp` (gtihq/ai-mcps) |
 | [FxEmbed](https://github.com/FxEmbed/FxEmbed) | MIT | Public API for engagement numbers |
 | [x-tweet-fetcher](https://github.com/ythx-101/x-tweet-fetcher) | MIT | Fallback for single tweets and profiles |
 | [x-research-skill](https://github.com/rohunvora/x-research-skill) | Not declared | The original research loop |

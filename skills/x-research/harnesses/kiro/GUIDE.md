@@ -34,5 +34,5 @@ Ask the agent which skills it has loaded and check that `x-research` is listed.
 ## Notes
 
 - Workspace skills take priority over user skills with the same name.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [Kiro](https://kiro.dev/docs/skills/) (path source: official).

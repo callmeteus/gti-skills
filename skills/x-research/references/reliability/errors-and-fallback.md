@@ -43,6 +43,6 @@ Useful web queries:
 | Problem | Fix |
 |---------|-----|
 | `RATE_LIMITED` keeps happening | Run fewer X calls per task, or raise `TWITTER_MCP_MIN_INTERVAL` (seconds between page loads, default 4) in the MCP server environment |
-| `LOGIN_REQUIRED` | Stop the MCP server, run `python packages/python/twitter-mcp/login.py` from the gti-skills checkout, log in, and press Enter |
+| `LOGIN_REQUIRED` | Stop the MCP server, run `python twitter-mcp/login.py` from the ai-mcps checkout, log in, and press Enter |
 | `PROFILE_IN_USE` | Close other agent sessions that run the twitter MCP, or end the leftover Chromium process that uses `~/.twitter-mcp/chrome-profile` |
 | Want to watch the browser | Set `TWITTER_MCP_HEADLESS=0` in the MCP server environment |

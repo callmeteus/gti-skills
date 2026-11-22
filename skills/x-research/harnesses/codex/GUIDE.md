@@ -34,5 +34,5 @@ Ask the agent which skills it has loaded and check that `x-research` is listed.
 ## Notes
 
 - Scan paths come from community guides; /etc/codex/skills is the admin location. Codex configuration lives in ~/.codex.
-- This skill calls the twitter MCP server in packages/python/twitter-mcp. Register that server in this agent and log in once with its login.py before using the skill.
+- This skill calls the twitter MCP server from the gtihq/ai-mcps repository (twitter-mcp). Register that server in this agent and log in once with its login.py before using the skill.
 - Documentation: [Codex](https://developers.openai.com/codex/skills) (path source: community).
