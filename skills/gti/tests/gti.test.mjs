@@ -193,7 +193,7 @@ test("installDeps builds a Go binary with a fake run, without pip or a venv", (t
     installDeps(kabum, dir, { run, platform: "win32" });
     assert.deepEqual(calls.map((c) => c.command), ["go", "go"]);
     assert.deepEqual(calls[0].args, ["version"]);
-    assert.deepEqual(calls[1].args, ["build", "-o", join(dir, "kabum-mcp.exe"), "./kabum-mcp"]);
+    assert.deepEqual(calls[1].args, ["build", "-o", join(dir, "kabum-mcp.exe"), "./mcps/kabum-mcp"]);
     assert.equal(calls[1].options.cwd, dir);
     assert.ok(existsSync(join(dir, "kabum-mcp.exe")));
     assert.ok(!existsSync(join(dir, ".venv")));
