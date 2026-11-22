@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 API = "https://api.openverse.org/v1/images/"
-USER_AGENT = "gti-skills-artdirector/1.0 (+https://github.com/callmeteus/gti-skills)"
+USER_AGENT = "gti-skills-artdirector/1.0 (+https://github.com/gtihq/ai-skills)"
 LICENSES = ("cc0", "pdm", "by", "by-sa")
 ASPECTS = ("tall", "wide", "square")
 
