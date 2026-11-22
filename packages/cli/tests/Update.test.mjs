@@ -145,7 +145,7 @@ describe("source", () => {
     });
 
     it("reads the latest commit and rejects bad answers", async () => {
-        const source = { repo: "callmeteus/gti-skills", branch: "master" };
+        const source = { repo: "gtihq/ai-skills", branch: "master" };
         assert.equal(await fetchLatestCommit(source, { fetch: async () => new Response(Latest) }), Latest);
         await assert.rejects(fetchLatestCommit(source, { fetch: async () => new Response("nope", { status: 404 }) }), /404/);
         await assert.rejects(fetchLatestCommit(source, { fetch: async () => new Response("<html>") }), /unexpected commit/);

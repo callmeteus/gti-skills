@@ -1,6 +1,6 @@
 <div align="center">
 
-# GTI Skills
+# GTI AI Skills
 
 > Production-tested agent skills for ten coding agents
 
@@ -10,7 +10,7 @@
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
-[![GitHub stars](https://img.shields.io/github/stars/callmeteus/gti-skills?style=flat)](https://github.com/callmeteus/gti-skills/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/gtihq/ai-skills?style=flat)](https://github.com/gtihq/ai-skills/stargazers)
 
 [Skill Catalog](#skill-catalog) • [Quick Start](#quick-start) • [Installation](#installation) • [Supported Agents](#supported-agents) • [Contributing](#contributing)
 
@@ -20,7 +20,7 @@
 
 ## Table of Contents
 
-- [What Is GTI Skills?](#what-is-gti-skills)
+- [What Is GTI AI Skills?](#what-is-gti-ai-skills)
 - [Skill Catalog](#skill-catalog)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
@@ -36,11 +36,11 @@
 - [About GTI](#about-gti)
 - [License](#license)
 
-## What Is GTI Skills?
+## What Is GTI AI Skills?
 
 Agent skills are self-contained folders that teach a coding agent how to handle one kind of task: when to activate, what to ask, which tools to run, and what the result must look like. The agent loads a skill only when a request matches its description, so skills add capability without bloating every prompt.
 
-GTI Skills is the collection the [Gio Technology Investments (GTI)](https://github.com/GioTechnologyInvestments) team uses day to day. Every skill in it:
+GTI AI Skills is the collection the [Gio Technology Investments (GTI)](https://github.com/GioTechnologyInvestments) team uses day to day. Every skill in it:
 
 - **Solves one job end to end.** No generic prompt templates. Each skill was extracted from a real, repeated workflow.
 - **Follows the open standard.** Skills use the [Agent Skills](https://agentskills.io/specification) layout, so one source works in every supported agent.
@@ -98,8 +98,8 @@ node packages/cli install --harness all --pack coding,design --scope user
 Requires Node.js 20 or newer. Install a skill into Claude Code for the current project and use it immediately:
 
 ```bash
-git clone https://github.com/callmeteus/gti-skills.git
-cd gti-skills
+git clone https://github.com/gtihq/ai-skills.git
+cd ai-skills
 node packages/cli install --harness claude --skill video-to-markdown --dest /path/to/your/project
 ```
 
@@ -123,9 +123,9 @@ Ready-to-use installation prompts are available in [`prompts/installation/`](pro
 |--------|------|------------------|
 | **Everything** | [`prompts/installation/install-all.md`](prompts/installation/install-all.md) | All skills + all MCP servers from GitHub |
 | **Skills only** | [`prompts/installation/install-skills-only.md`](prompts/installation/install-skills-only.md) | All skills from GitHub |
-| **MCPs only** | [`prompts/installation/install-mcps-only.md`](prompts/installation/install-mcps-only.md) | All MCP servers from GitHub |
+| **MCPs only** | [`prompts/installation/install-mcps-only.md`](prompts/installation/install-mcps-only.md) | All MCP servers from [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps) |
 
-Each prompt is self-contained: it clones from `https://github.com/callmeteus/gti-skills.git`, installs everything, and cleans up. Just paste the prompt into your agent and it will handle the rest.
+Each prompt is self-contained: it clones from `https://github.com/gtihq/ai-skills.git`, installs everything, and cleans up. Just paste the prompt into your agent and it will handle the rest.
 
 ```bash
 node packages/cli install --harness <ids|all> [--skill <ids|all>] [--pack <ids|all>] [--scope project|user] [--dest <dir>] [--dry-run]
@@ -153,7 +153,7 @@ Reinstalling replaces the skill folder. Restart the agent session afterwards so 
 
 ### Updating
 
-There are no releases: the latest commit on `master` is the current version. `install` records every installed folder and the commit it came from in `~/.gti-skills/installs.json`. `update` asks GitHub for the latest commit hash on `master`, downloads that commit as a tarball into `~/.gti-skills/sources/`, builds the code packages the updated skills drive (such as Art Director's), and reinstalls every folder that is older, with the installer from that commit.
+There are no releases: the latest commit on `master` is the current version. `install` records every installed folder and the commit it came from in `~/.gti/skills/installs.json`. `update` asks GitHub for the latest commit hash on `master`, downloads that commit as a tarball into `~/.gti/skills/sources/`, builds the code packages the updated skills drive (such as Art Director's), and reinstalls every folder that is older, with the installer from that commit.
 
 ```bash
 node packages/cli update --check
@@ -172,13 +172,13 @@ Without `--harness`, `update` also picks up skill folders installed before insta
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `GTI_SKILLS_HOME` | `~/.gti-skills` | Install records, update state, and downloaded sources |
-| `GTI_SKILLS_REPO` | `callmeteus/gti-skills` | GitHub repository updates come from |
+| `GTI_SKILLS_HOME` | `~/.gti/skills` | Install records, update state, and downloaded sources |
+| `GTI_SKILLS_REPO` | `gtihq/ai-skills` | GitHub repository updates come from |
 | `GTI_SKILLS_BRANCH` | `master` | Branch whose latest commit is the current version |
 | `GITHUB_TOKEN` or `GH_TOKEN` | Unset | GitHub token for private forks or a higher API rate limit |
 | `GTI_SKILLS_NO_UPDATE_CHECK` | Unset | Set to any value to turn off the daily notice; `CI` also turns it off |
 
-After an update, installed skills that drive a code package point to the package inside `~/.gti-skills/sources/<commit>/`, not to your clone.
+After an update, installed skills that drive a code package point to the package inside `~/.gti/skills/sources/<commit>/`, not to your clone.
 
 Other CLI commands:
 
@@ -385,7 +385,7 @@ node packages/cli build
 ## Repository Layout
 
 ```text
-gti-skills/
+ai-skills/
 ├── AGENTS.md                  # Rules for every skill and package
 ├── README.md                  # This file
 ├── skills/                    # One folder per skill, the source of truth
@@ -418,8 +418,7 @@ gti-skills/
 │   ├── lintapple/             # UI linter shared by Frontend Design Review and Unslop Interface
 │   ├── leakguard/             # Pre-tool guard engine, per-agent hooks, and leak history scanner
 │   └── python/
-│       ├── shared/            # Scripts shared by the video skills
-│       └── twitter-mcp/       # MCP server behind the X Research skill
+│       └── shared/            # Scripts shared by the video skills
 └── .github/workflows/         # CI: validation and tests
 ```
 
@@ -450,7 +449,7 @@ Pull request checklist:
 
 To add a coding agent, add it to [packages/cli/registry/harnesses.json](packages/cli/registry/harnesses.json) and rebuild.
 
-To report a bug or request a skill, [open an issue](https://github.com/callmeteus/gti-skills/issues).
+To report a bug or request a skill, [open an issue](https://github.com/gtihq/ai-skills/issues).
 
 ## Security
 
@@ -458,7 +457,7 @@ Skills run commands on your machine with the permissions of your agent. Read a s
 
 `node packages/cli update` downloads the latest `master` commit from GitHub and runs its installer and `npm ci` for code packages. Run `update --check` first if you want to review the commit before applying it.
 
-Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/callmeteus/gti-skills/security/advisories/new) rather than public issues.
+Report vulnerabilities privately through [GitHub Security Advisories](https://github.com/gtihq/ai-skills/security/advisories/new) rather than public issues.
 
 ## Documentation
 
@@ -467,7 +466,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [AGENTS.md](AGENTS.md) | Rules every skill and package must follow, including the README Standard |
 | [packages/cli/README.md](packages/cli/README.md) | The `list`, `validate`, `build`, `check`, and `install` commands |
 | [packages/python/shared/README.md](packages/python/shared/README.md) | Scripts shared by the video skills |
-| [packages/python/twitter-mcp/README.md](packages/python/twitter-mcp/README.md) | The `twitter` MCP server used by the X Research skill |
+| [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps) | The MCP servers (KaBuM!, Mercado Livre, Shopee, Twitter, Zoom), kept in their own repository |
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
 | [packages/lintapple/README.md](packages/lintapple/README.md) | Vendored lintapple UI linter and the runner shared by the UI skills |
 | [packages/leakguard/README.md](packages/leakguard/README.md) | Leakguard engine, per-agent hooks, CLI flags, and the history scanner |
@@ -527,7 +526,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project |
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
-| X Research | Not declared; the bundled MCP server in [packages/python/twitter-mcp](packages/python/twitter-mcp/LICENSE) is MIT |
+| X Research | Not declared; the `twitter` MCP server in [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps/tree/master/twitter-mcp) is MIT |
 | Video Editor | Not declared |
 | Leak Guard | Not declared |
 

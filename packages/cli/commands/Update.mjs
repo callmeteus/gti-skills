@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
 import { readInstalls, readJson, recordInstalls, stateFolder, writeInstalls, writeJson } from "../core/Installs.mjs";
+import { loadMigrations, pendingMigrations, runMigrations } from "../core/Migrations.mjs";
 import { loadPacks, selectSkills } from "../core/Packs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { discoverSkills } from "../core/Skills.mjs";
@@ -314,6 +315,9 @@ function reinstall(root, targets, folder, io) {
  * --skill, --pack, --scope, and --dest, installs exactly that selection from the latest commit.
  * Flags: --check, --dry-run, --force, --skip-build, --install-new, --no-install-new.
  *
+ * Before anything else it runs the pending migrations from `packages/cli/migrations/`, which move
+ * state left by older versions of the CLI. With --check or --dry-run it only lists them.
+ *
  * @param {Record<string, string | boolean>} flags Command flags
  * @param {{ out: (line: string) => void, err: (line: string) => void }} io Output channels
  * @param {{ cwd?: string, home?: string, stateDir?: string, fetch?: typeof fetch }} [environment] Overrides used by tests
@@ -324,6 +328,25 @@ export async function runUpdate(flags, io, environment = {}) {
     const home = environment.home ?? homedir();
     const folder = stateFolder({ home, stateDir: environment.stateDir });
     const source = updateSource();
+    // As migrations rodam antes de qualquer leitura do estado, pois o estado antigo pode estar em outra pasta
+    const context = { folder, home, defaultFolder: folder === join(home, ".gti", "skills"), out: io.out };
+    const migrations = await loadMigrations();
+
+    // Em --check e --dry-run nada é alterado: só avisa quais migrations rodariam
+    if (flags.check === true || flags["dry-run"] === true) {
+        for (const migration of pendingMigrations(context, migrations)) {
+            io.out(`migrate  ${migration.id} would run: ${migration.description}`);
+        }
+    } else {
+        try {
+            runMigrations(context, migrations);
+        } catch (error) {
+            io.err(`Migration failed: ${error.message}`);
+
+            return 1;
+        }
+    }
+
     let latest;
 
     try {

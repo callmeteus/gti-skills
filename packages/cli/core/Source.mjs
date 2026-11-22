@@ -23,7 +23,7 @@ export function updateSource(root = RepoRoot) {
     const match = /github\.com[/:]([^/]+\/[^/.]+)/.exec(url);
 
     return {
-        repo: process.env.GTI_SKILLS_REPO ?? match?.[1] ?? "callmeteus/gti-skills",
+        repo: process.env.GTI_SKILLS_REPO ?? match?.[1] ?? "gtihq/ai-skills",
         branch: process.env.GTI_SKILLS_BRANCH ?? "master"
     };
 }

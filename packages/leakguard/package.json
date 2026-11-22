@@ -5,7 +5,7 @@
     "description": "Local dependency-free pre-tool guard that blocks secret exfiltration across coding agents.",
     "repository": {
         "type": "git",
-        "url": "https://github.com/callmeteus/gti-skills.git"
+        "url": "https://github.com/gtihq/ai-skills.git"
     },
     "type": "module",
     "engines": {

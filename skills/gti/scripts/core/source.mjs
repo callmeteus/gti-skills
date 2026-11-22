@@ -1,8 +1,9 @@
 /**
- * Latest gti-skills source tree, shared with the gti-skills CLI.
+ * Latest source trees, shared with the gti-skills CLI.
  *
- * Downloads the latest commit of the repository into ~/.gti-skills/sources/<commit-12>/,
- * the same folder and stamp file the CLI's `update` command uses, so both reuse one copy.
+ * Downloads the latest commit of gtihq/ai-skills into ~/.gti/skills/sources/<commit-12>/, the same
+ * folder and stamp file the CLI's `update` command uses, so both reuse one copy. The MCP servers
+ * live in gtihq/ai-mcps and go to ~/.gti/skills/mcps-sources/<commit-12>/.
  * Standard library only; no git or tar needed.
  */
 
@@ -14,12 +15,22 @@ import { gunzipSync } from "node:zlib";
 export const SourceStamp = ".gti-skills-source.json";
 
 export function gtiHome(env = process.env) {
-    return env.GTI_SKILLS_HOME || join(homedir(), ".gti-skills");
+    return env.GTI_SKILLS_HOME || join(homedir(), ".gti", "skills");
 }
 
 export function updateSource(env = process.env) {
-    return { repo: env.GTI_SKILLS_REPO || "callmeteus/gti-skills", branch: env.GTI_SKILLS_BRANCH || "master" };
+    return { repo: env.GTI_SKILLS_REPO || "gtihq/ai-skills", branch: env.GTI_SKILLS_BRANCH || "master" };
 }
+
+// Os servidores MCP vivem em um repositório próprio, separado das skills
+export function mcpsSource(env = process.env) {
+    return { repo: env.GTI_MCPS_REPO || "gtihq/ai-mcps", branch: env.GTI_MCPS_BRANCH || "master" };
+}
+
+// Pastas de download de cada fonte dentro da pasta de estado. O `update` do CLI poda "sources",
+// então o repositório dos MCPs usa outra pasta para não ser apagado junto
+export const SkillsSources = { folder: "sources", marker: join("packages", "cli", "index.mjs") };
+export const McpsSources = { folder: "mcps-sources", marker: null };
 
 function githubHeaders(accept, env = process.env) {
     const headers = { Accept: accept, "User-Agent": "gti-skills-cli", "X-GitHub-Api-Version": "2022-11-28" };
@@ -95,13 +106,13 @@ export function stampedCommit(root) {
 }
 
 /** Newest complete source tree already on disk, or null. */
-export function cachedSource(home = gtiHome()) {
-    const folder = join(home, "sources");
+export function cachedSource(home = gtiHome(), kind = SkillsSources) {
+    const folder = join(home, kind.folder);
     if (!existsSync(folder)) return null;
     for (const entry of readdirSync(folder)) {
         const root = join(folder, entry);
         const commit = stampedCommit(root);
-        if (commit && existsSync(join(root, "packages", "cli", "index.mjs"))) return { root, commit };
+        if (commit && (!kind.marker || existsSync(join(root, kind.marker)))) return { root, commit };
     }
     return null;
 }
@@ -110,9 +121,10 @@ export function cachedSource(home = gtiHome()) {
 export async function ensureLatestSource(options = {}) {
     const home = options.home ?? gtiHome();
     const source = options.source ?? updateSource();
+    const kind = options.kind ?? SkillsSources;
     const request = options.fetch ?? fetch;
     const commit = await fetchLatestCommit(source, { fetch: request });
-    const root = join(home, "sources", commit.slice(0, 12));
+    const root = join(home, kind.folder, commit.slice(0, 12));
     if (stampedCommit(root) === commit) return { root, commit, downloaded: false };
 
     const response = await request(`https://api.github.com/repos/${source.repo}/tarball/${commit}`, {

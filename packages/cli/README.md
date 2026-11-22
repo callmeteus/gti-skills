@@ -38,7 +38,9 @@ From this folder, replace `node packages/cli` with `node .`.
 | `core/Plan.mjs` | Runs validation across all skills |
 | `core/Generated.mjs` | Renders the per-agent guides and other documents generated from the registry |
 | `core/Tree.mjs` | Reads, writes, and compares file trees with LF line endings |
-| `core/Installs.mjs` | Install records and update state in `~/.gti-skills` |
+| `core/Installs.mjs` | Install records and update state in `~/.gti/skills` |
+| `core/Migrations.mjs` | Discovers and runs the migrations, and records the ones that ran in `migrations.json` |
+| `migrations/` | One file per migration, named `NNNN-description.mjs`, run in name order by `update`. `0001-move-state-folder` moves `~/.gti-skills` to `~/.gti/skills` |
 | `core/Source.mjs` | Latest commit lookup, tarball download and extraction, and the commit of a source tree |
 | `registry/harnesses.json` | The ten supported agents and their skill folders |
 | `registry/packs.json` | The skill packs that `--pack` and `skill.json` refer to |
@@ -53,14 +55,14 @@ From this folder, replace `node packages/cli` with `node .`.
 | `build` | Sync shared scripts, regenerate the per-agent guides, and validate |
 | `check` | Exit 1 when synced or generated files are stale; writes nothing |
 | `install --harness <ids\|all>` | Install skills. Flags: `--skill <ids\|all>`, `--pack <ids\|all>`, `--scope project\|user`, `--dest <dir>`, `--dry-run`. Records each installed folder and its commit |
-| `update` | Reinstall outdated installs from the latest `master` commit. `--install-new` also installs skills missing from a full install; a partial install stays as chosen. Flags: `--check`, `--dry-run`, `--force`, `--skip-build`, `--install-new`, `--no-install-new`, and the `install` selection flags |
+| `update` | Run pending migrations, then reinstall outdated installs from the latest `master` commit. `--check` and `--dry-run` only list the pending migrations. `--install-new` also installs skills missing from a full install; a partial install stays as chosen. Flags: `--check`, `--dry-run`, `--force`, `--skip-build`, `--install-new`, `--no-install-new`, and the `install` selection flags |
 
 ## Environment
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `GTI_SKILLS_HOME` | `~/.gti-skills` | Install records, update state, and downloaded sources |
-| `GTI_SKILLS_REPO` | `callmeteus/gti-skills` | GitHub repository that `update` reads |
+| `GTI_SKILLS_HOME` | `~/.gti/skills` | Install records, update state, and downloaded sources |
+| `GTI_SKILLS_REPO` | `gtihq/ai-skills` | GitHub repository that `update` reads |
 | `GTI_SKILLS_BRANCH` | `master` | Branch whose latest commit is the current version |
 | `GITHUB_TOKEN`, `GH_TOKEN` | Unset | Token for private forks or a higher API rate limit |
 | `GTI_SKILLS_NO_UPDATE_CHECK` | Unset | Turns off the daily notice in `list` and `install`; `CI` also turns it off |

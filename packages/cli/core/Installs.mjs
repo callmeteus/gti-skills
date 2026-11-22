@@ -21,7 +21,7 @@ import { dirname, join } from "node:path";
  * @returns {string} Absolute state folder
  */
 export function stateFolder(environment = {}) {
-    return environment.stateDir ?? process.env.GTI_SKILLS_HOME ?? join(environment.home ?? homedir(), ".gti-skills");
+    return environment.stateDir ?? process.env.GTI_SKILLS_HOME ?? join(environment.home ?? homedir(), ".gti", "skills");
 }
 
 /**

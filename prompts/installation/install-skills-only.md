@@ -1,12 +1,12 @@
 # Install Skills Only
 
-You are an AI coding agent. Install all skills from the `callmeteus/gti-skills` repository into the current project.
+You are an AI coding agent. Install all skills from the `gtihq/ai-skills` repository into the current project.
 
 ## Steps
 
 1. Clone the repository into a temporary directory:
    ```bash
-   git clone https://github.com/callmeteus/gti-skills.git /tmp/gti-skills
+   git clone https://github.com/gtihq/ai-skills.git /tmp/gti-skills
    cd /tmp/gti-skills
    ```
 
