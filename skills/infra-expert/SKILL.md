@@ -2,19 +2,20 @@
 name: infra-expert
 description: >-
   Guards infrastructure operations, reviews infrastructure code and AWS
-  accounts, assesses CVEs, writes change plans, and draws infrastructure
-  diagrams. Use when the agent runs, changes, deploys, debugs, or inspects
-  infrastructure (hosts, cloud CLIs, Terraform, Kubernetes, Compose, CI,
-  secret stores, Grafana, model servers, network devices), when the user asks
-  for a review, a change plan, a diagram, or a CVE sweep. Modes: operate
-  (guardrails during any infrastructure work, rolling or zero-downtime
-  changes), review (six-step review and HTML report), cve (assess a CVE or
-  sweep the inventory), plan (write and track a change plan for a multi-target
-  or approval-gated change or a CVE fix), diagram (draw a map, flowchart, or
-  infographic of infrastructure, packages, or a flow). Project-agnostic:
-  project specifics live in the project's committed .gti/infra-expert/ folder;
-  prefer the project MCP, then its CLI, and record CLI fallbacks as MCP gaps.
-  Do not use for application code with no infrastructure involved.
+  accounts, analyzes performance, assesses CVEs, writes change plans, and
+  draws infrastructure diagrams. Use when the agent runs, changes, deploys,
+  debugs, or inspects infrastructure (hosts, cloud CLIs, Terraform,
+  Kubernetes, Compose, CI, secret stores, Grafana, databases, caches, model
+  servers, network devices), or when the user asks for a review, a
+  performance checkup, a change plan, a diagram, or a CVE sweep. Modes:
+  operate (guardrails for any infrastructure work, zero downtime),
+  review (six-step review and HTML report), performance (measure a database,
+  cache, or service read-only, match known slow patterns, write a proactive
+  notice with numbers, cause, and fix), cve (assess a CVE or sweep), plan
+  (approval-gated change plans), diagram (maps and flows).
+  Project specifics live in the project's committed .gti/infra-expert/
+  folder; prefer the project MCP, then its CLI. Do not use for application
+  code with no infrastructure involved.
 license: MIT, see LICENSE
 compatibility: >-
   Git and Python 3.8+, standard library only. The aws area needs the AWS CLI
@@ -53,12 +54,13 @@ In this skill:
 - Operate mode in Autonomous Mode: a state change runs only when the request asked for it, and only through the documented path. A bring-up, deploy, or apply request counts as allowing the commit, push, and pipeline apply it needs, with project gates such as a commit confirmation still applying once; a documentation or code-only request never applies. Anything else, including a method the user named that has no documented path, is listed as pending; see [references/operate/04-change.md](references/operate/04-change.md).
 - Operate mode, backups: delete non-database backups after the change is verified, keep database backups, and list them as pending for the user's decision; see [references/operate/04-change.md](references/operate/04-change.md).
 - Operate mode, secrets: use the canonical manager recorded in `conventions.md`, generate and store values there or on the host side, read only names and metadata, and never ask the user to paste a token in chat; see [references/operate/07-secrets.md](references/operate/07-secrets.md).
+- Performance mode: ask nothing. Take the targets from the request or the inventory and a window of today in UTC, measure only through read-only sources, write each notice, and list every send to another person and every fix as pending. Never run `KEYS`, a full `SCAN` loop, or a load test to measure; see [references/areas/performance.md](references/areas/performance.md).
 - Plan mode: write the plan, check and render it, and list the apply as pending. Never approve your own plan or apply a step that needs a person, a downtime window, or a gated action; see [references/areas/plans.md](references/areas/plans.md).
 - Diagram mode: need no input from the user. Draw from local read-only facts, write the files, report their paths, and open no viewer; see [references/areas/diagrams.md](references/areas/diagrams.md).
 
 ## Output Location
 
-Everything this skill generates (reports, notes, logs, downloads, renders, diagrams, measurements, and run state) goes to `~/.gti/infra-expert/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Scanner output, the AWS snapshot, state exports, the report data, the HTML report, the CVE report and state, and diagrams go to `~/.gti/infra-expert/<project>/`. Diagrams use the `diagrams/` subfolder and stay there unless the user names a place. ADRs, `GLOSSARY.md`, and the agreed IaC changes go into the repository.
+Everything this skill generates (reports, notes, logs, downloads, renders, diagrams, measurements, and run state) goes to `~/.gti/infra-expert/<project>/`, where `<project>` is the repository folder name and `GTI_HOME` replaces `~/.gti`. Create the folder when needed. Never write generated files into the user's repository: only the changes the user asked for (their code, tests, or docs) go there, and a generated file goes there only when the user names that place. Scanner output, the AWS snapshot, state exports, the report data, the HTML report, the CVE report and state, performance notices and their state (`performance/`), and diagrams go to `~/.gti/infra-expert/<project>/`. Diagrams use the `diagrams/` subfolder and stay there unless the user names a place. ADRs, `GLOSSARY.md`, and the agreed IaC changes go into the repository.
 
 The first repository location this skill uses is `.gti/infra-expert/`, the project knowledge folder. It lives at the nearest git root of the repository you work in, never at a parent folder of a workspace that holds several repositories. The project commits and shares it like `GLOSSARY.md` or ADRs; it holds access paths, MCP and CLI notes, host aliases, learnings, MCP gaps, and record pointers, never secret values. The skill reads it before the first remote command and writes there only when the folder already exists or the user asked to create it. Create it with `python3 <skill-dir>/scripts/knowledge/knowledge.py init`.
 
@@ -68,12 +70,13 @@ Local working files of operate mode go to `<nearest git root>/.gti/tmp/<run>/`, 
 
 ## Modes
 
-Pick a mode from the request. Operate, CVE, Plan, and Diagram have their own references; Review is the six-step workflow in this file.
+Pick a mode from the request. Operate, Performance, CVE, Plan, and Diagram have their own references; Review is the six-step workflow in this file.
 
 | Mode | Starts when | Reference |
 |------|-------------|-----------|
 | Operate | The first command that touches infrastructure: a remote host, cloud CLI, deploy, Terraform run, secret store, dashboard, model server, or network device | [references/operate/01-orient.md](references/operate/01-orient.md) to [06-learn.md](references/operate/06-learn.md), [07-secrets.md](references/operate/07-secrets.md), and [references/quality/operate-checklist.md](references/quality/operate-checklist.md) |
 | Review | The user asks to review, organize, clean up, or untangle infrastructure code or an AWS account | The six steps under [Instructions](#instructions) and the areas table below |
+| Performance | The user asks why a database, cache, queue, or service is slow, asks for a performance analysis or checkup, or asks to watch a system and report problems first | [references/areas/performance.md](references/areas/performance.md) and [assets/templates/performance-notice.md](assets/templates/performance-notice.md) |
 | CVE | The user names a CVE or advisory, a vendor plus "recent", or asks for a vulnerability sweep | [references/areas/cve.md](references/areas/cve.md) and the two scripts in [Scripts](#scripts) |
 | Plan | The user asks for a plan, a change spans several targets or needs approvals, or CVE mode finds affected services | [references/areas/plans.md](references/areas/plans.md) and [scripts/plan/plan.py](scripts/plan/plan.py) |
 | Diagram | The user asks for a diagram, flowchart, map, or infographic of infrastructure, packages, or a flow | [references/areas/diagrams.md](references/areas/diagrams.md) and [scripts/diagram/diagram.py](scripts/diagram/diagram.py) |
@@ -97,6 +100,10 @@ Read [references/quality/operate-checklist.md](references/quality/operate-checkl
 
 Runs the six steps under [Instructions](#instructions) and writes an HTML report to `~/.gti/infra-expert/<project>/`. The areas table below narrows the scans; the `cve` area hands off to CVE mode instead of the review workflow. Plain writing rules are in [references/concepts/plain-language.md](references/concepts/plain-language.md).
 
+### Performance
+
+Proactive support for the user's own systems: measure a database, cache, queue, service, or host read-only over one time window, match the measurements against a catalog of known slow patterns (Redis `KEYS` and hot-path `SCAN`, whole-collection reads, missing TTLs, sequential scans, N+1 queries, lock waits, connection churn, slow upstreams, host limits), and write one notice per target that says what users see, what causes it, and what to change, each with numbers from the window. [references/areas/performance.md](references/areas/performance.md) defines the six steps, the read-only sources per system, the pattern catalog, scheduled watching, and the quality bar. Notices go to `~/.gti/infra-expert/<project>/performance/`. Nothing is changed and nothing is sent to anyone; a fix is a separate Operate request or a plan.
+
 ### CVE
 
 Assess one vulnerability from a CVE ID, an advisory URL, or a vendor plus "recent", or sweep the project inventory. [references/areas/cve.md](references/areas/cve.md) defines the eight steps, the status vocabulary, the writing rules, and the automatic mode. Fetch facts with [scripts/cve/cve_lookup.py](scripts/cve/cve_lookup.py) and validate and render the report with [scripts/cve/cve_report.py](scripts/cve/cve_report.py). With `--plan-dir` the report also writes a fix plan in `.gti/infra-expert/plans/` when a service is affected or possible, with every step left pending. The report goes to `~/.gti/infra-expert/<project>/cve/`; per-CVE records follow the project's `.gti/infra-expert/records.md` policy. Nothing is upgraded or restarted.
@@ -115,6 +122,7 @@ Draw a plain diagram when a picture answers faster than a table: a Terraform mod
 - The user asks to review, organize, or clean up infrastructure code: Terraform or OpenTofu stacks, Grafana dashboards and alert rules, Kubernetes manifests, Compose files, CI pipelines.
 - The user asks what is wrong in an AWS account, or to untangle security groups, VPCs, or buckets.
 - The user names a CVE, an advisory, a vendor plus "recent", or asks for a vulnerability sweep.
+- The user says a database, cache, queue, or service is slow, asks for a performance analysis, or asks to keep an eye on a system and flag bad usage patterns before they cause an incident.
 - The user asks for a change plan, a runbook, or an approval-gated change that spans several targets, or CVE mode reports affected services.
 - The user asks for a diagram, a flowchart, a map of hosts or modules, a package dependency view, or a simple infographic of a flow.
 
@@ -150,7 +158,7 @@ Keep what the repository already does well. The model is a way to name problems,
 
 ## Instructions
 
-These six steps are Review mode. For operate work follow the files under [Operate](#operate); for a CVE follow [CVE](#cve); for a plan follow [Plan](#plan); for a diagram follow [Diagram](#diagram). Follow the steps in order. Read a reference file only when its step starts. Nothing in the repository or the cloud account changes during steps 1 to 4.
+These six steps are Review mode. For operate work follow the files under [Operate](#operate); for a performance checkup follow [Performance](#performance); for a CVE follow [CVE](#cve); for a plan follow [Plan](#plan); for a diagram follow [Diagram](#diagram). Follow the steps in order. Read a reference file only when its step starts. Nothing in the repository or the cloud account changes during steps 1 to 4.
 
 1. **Decide the area and scope.** Take the area from the request, detect the stacks in the repository, read the project rules and docs, and find the hot spots with `scripts/explore/hotspots.py`. See [references/workflow/01-scope.md](references/workflow/01-scope.md) and [references/concepts/project-docs.md](references/concepts/project-docs.md).
 2. **Scan.** Run the scanners for the area, all read-only, and write their output to `~/.gti/infra-expert/<project>/`. Read every lead in the code before it becomes a finding. See [references/workflow/02-scan.md](references/workflow/02-scan.md).
@@ -216,6 +224,18 @@ learning. No secret value is printed.
 ```
 
 ```text
+User: Our Redis has latency spikes all day. Can you check what's going on?
+Agent: Reads .gti/infra-expert/ for the cache's access path, fixes the window
+to today in UTC, saves INFO commandstats and SLOWLOG GET 128 in the run
+folder, and finds 2,950 KEYS calls at 5 to 9 per minute, most slower than
+1 s, plus slow SCAN calls with a MATCH pattern. Writes a notice under
+~/.gti/infra-expert/<project>/performance/ with the symptom, the cause and
+its numbers, and three ordered recommendations (remove KEYS, move SCAN off
+the request path, index key names in a Sorted Set scored by expiry). Changes
+nothing and sends nothing.
+```
+
+```text
 User: Is CVE-2026-12345 applicable to us?
 Agent: Reads the project's records.md and hosts.md, fetches OSV and KEV facts
 with cve_lookup.py, reads the vendor advisory and NVD by hand, lists real
@@ -255,7 +275,7 @@ changed on a system and no viewer is opened.
 | Path | Purpose |
 |------|---------|
 | [references/workflow/](references/workflow/01-scope.md) | One file per review step: scope, scan, candidates, report, discuss, change and report |
-| [references/areas/](references/areas/terraform.md) | Rules and checks per area, including [cve.md](references/areas/cve.md), [plans.md](references/areas/plans.md), and [diagrams.md](references/areas/diagrams.md) |
+| [references/areas/](references/areas/terraform.md) | Rules and checks per area, including [performance.md](references/areas/performance.md), [cve.md](references/areas/cve.md), [plans.md](references/areas/plans.md), and [diagrams.md](references/areas/diagrams.md) |
 | [references/concepts/layers.md](references/concepts/layers.md) | Layout model and target folder layouts |
 | [references/concepts/plain-language.md](references/concepts/plain-language.md) | Counting, naming, and the vague claims to avoid |
 | [references/concepts/project-docs.md](references/concepts/project-docs.md) | Project rules, inventories, ADRs, glossary |
@@ -270,6 +290,7 @@ changed on a system and no viewer is opened.
 | [assets/templates/project-knowledge/README.md](assets/templates/project-knowledge/README.md) | Template of the project's committed knowledge folder |
 | [assets/templates/cve-findings.example.json](assets/templates/cve-findings.example.json), [cve-record.md](assets/templates/cve-record.md), [cve-report.md](assets/templates/cve-report.md) | CVE findings and report templates |
 | [assets/templates/report-data.example.json](assets/templates/report-data.example.json) | Example review report data |
+| [assets/templates/performance-notice.md](assets/templates/performance-notice.md) | Performance notice: symptom, cause, recommendations, Not checked |
 | [assets/templates/plan.md](assets/templates/plan.md), [plan.example.md](assets/templates/plan.example.md) | Plan file template and a complete example that passes `check` |
 | [assets/templates/diagram-flow.example.yaml](assets/templates/diagram-flow.example.yaml) | Example input for a flow diagram |
 

@@ -2,9 +2,9 @@
 
 # Infra Expert
 
-> Guardrails, reviews, CVE triage, change plans, and diagrams for infrastructure
+> Guardrails, reviews, performance checkups, CVE triage, plans, and diagrams
 
-**Guards every infrastructure operation, reviews and untangles infrastructure code and AWS accounts, assesses CVEs, writes change plans with approvals, and draws infrastructure diagrams.**
+**Guards every infrastructure operation, reviews and untangles infrastructure code and AWS accounts, finds what makes databases and services slow, assesses CVEs, writes change plans with approvals, and draws infrastructure diagrams.**
 
 [![Format](https://img.shields.io/badge/format-SKILL.md-green.svg)](#overview)
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](#requirements)
@@ -40,7 +40,7 @@
 
 Infrastructure work is not only source code in a repository. It is SSH sessions on hosts, cloud CLIs, deploys, Terraform applies, secret store writes, dashboards, model servers, and network devices. The same drift that makes a repository hard to change makes live work repetitive and risky: access is reinvented every session, identifiers are guessed, the wrong machine is edited, and lessons are lost between sessions. Vulnerabilities need the same discipline: one CVE must be mapped to real versions and conditions in the inventory and reported without anyone changing a running system by accident.
 
-This skill applies automatically to any infrastructure work through five modes. **Operate** adds guardrails from the first command: it reads the project's own knowledge, names the exact target, climbs an access ladder from the project MCP down to the project CLI, measures symptoms, changes only the source of truth, and records learnings and MCP gaps. **Review** does for infrastructure what Improve Codebase Architecture does for application code: read-only scans, a layout model of kinds and layers, three to six candidates in an HTML report, and a change in code so the pipeline applies only what was agreed. **CVE** triages a vulnerability or sweeps the inventory, classifies each service from primary sources and live read-only versions, writes a report and the records the project keeps, and never upgrades anything. **Plan** writes a Markdown change plan in the repository for a change that spans several targets or needs an approval, and applies only approved steps. **Diagram** draws plain Mermaid diagrams of modules, services, packages, hosts, or a flow from read-only inputs. All modes are project-agnostic: the project specifics live in the project's committed `.gti/infra-expert/` folder, and the agent prefers the project MCP before its CLI.
+This skill applies automatically to any infrastructure work through six modes. **Operate** adds guardrails from the first command: it reads the project's own knowledge, names the exact target, climbs an access ladder from the project MCP down to the project CLI, measures symptoms, changes only the source of truth, and records learnings and MCP gaps. **Review** does for infrastructure what Improve Codebase Architecture does for application code: read-only scans, a layout model of kinds and layers, three to six candidates in an HTML report, and a change in code so the pipeline applies only what was agreed. **Performance** works like proactive support from a managed database provider: it measures a database, cache, queue, or service read-only, matches the numbers against known slow patterns (Redis `KEYS` and hot-path `SCAN`, sequential scans, N+1 queries, lock waits, and more), and writes a notice that says what users see, what causes it, and what to change, each with numbers. **CVE** triages a vulnerability or sweeps the inventory, classifies each service from primary sources and live read-only versions, writes a report and the records the project keeps, and never upgrades anything. **Plan** writes a Markdown change plan in the repository for a change that spans several targets or needs an approval, and applies only approved steps. **Diagram** draws plain Mermaid diagrams of modules, services, packages, hosts, or a flow from read-only inputs. All modes are project-agnostic: the project specifics live in the project's committed `.gti/infra-expert/` folder, and the agent prefers the project MCP before its CLI.
 
 ```text
    infrastructure work ──> mode chosen from the request
@@ -49,6 +49,8 @@ This skill applies automatically to any infrastructure work through five modes. 
            │             diagnose + change, records + learn + secrets
            ├── REVIEW    area + hot spots, read-only scans, layout model,
            │             3 to 6 candidates, HTML report, code change
+           ├── PERFORMANCE  read-only metrics + slow logs, pattern catalog,
+           │                notice: symptom, cause, fix, all with numbers
            ├── CVE       CVE ID or sweep, OSV + KEV + advisory, live
            │             version, classify, report + records, never patch
            ├── PLAN      draft in .gti/infra-expert/plans/, approvals per
@@ -66,6 +68,7 @@ This skill applies automatically to any infrastructure work through five modes. 
 | Review Terraform, OpenTofu, Grafana as code, Kubernetes, Compose, and CI | Run `apply`, `destroy`, or state commands that write |
 | Audit an AWS account with describe, list, and get calls only | Change, delete, or create anything in the account |
 | Assess a CVE from primary sources and write a report and records | Upgrade, restart, push, or post a result |
+| Measure a database, cache, or service read-only and write a performance notice with numbers, cause, and fix | Run `KEYS`, a full `SCAN` loop, or a load test against production, or send the notice without being asked |
 | Prefer the project MCP and log every CLI fallback as an MCP gap | Print or store a secret value |
 | Put every application secret in the project's canonical manager and let hosts read with their own identity | Ask the user to paste a token in chat or pass a value as a tool argument |
 | Write a change plan for a multi-target or approval-gated change and apply only approved steps | Apply a step that needs approval, a downtime window, or a gated action without it |
@@ -74,7 +77,7 @@ This skill applies automatically to any infrastructure work through five modes. 
 
 ## Features
 
-- **Five modes:** operate (automatic guardrails during any infrastructure work), review (the six-step review and HTML report), CVE (assess a vulnerability or sweep the inventory), plan (write and track an approval-gated change), and diagram (draw a plain infrastructure, package, or flow diagram).
+- **Six modes:** operate (automatic guardrails during any infrastructure work), review (the six-step review and HTML report), performance (a read-only checkup that writes a proactive notice), CVE (assess a vulnerability or sweep the inventory), plan (write and track an approval-gated change), and diagram (draw a plain infrastructure, package, or flow diagram).
 - **Zero downtime:** every operate change to a running service is planned as rolling or zero-downtime; when no such path exists the agent stops, says what would go down and the options, and asks the user.
 - **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and discovers the provisioning path, closest example, naming, and tags into `conventions.md` so create and deploy requests follow the project's own way. Creates the folder from a template only when asked.
 - **Access ladder:** project MCP tools first, then the project CLI, then a vendor CLI with a documented profile, then raw SSH or HTTP only when the project documents it; every drop is recorded as an MCP gap.
@@ -83,6 +86,7 @@ This skill applies automatically to any infrastructure work through five modes. 
 - **Change plans:** writes a Markdown plan in `.gti/infra-expert/plans/` with ordered steps, backups, verification, rollback, dependencies, and explicit approvals; `plan.py` creates, checks, renders, summarizes, and tracks it, and a CVE fix plan carries the CVE id and report path.
 - **Approval contract:** writing or summarizing a plan applies nothing; a step runs only after the plan or that step is approved, and a step that needs downtime always needs its own approval. Summaries include text, Slack, and Telegram actions.
 - **Plain diagrams:** draws Terraform module graphs, Compose service maps, package dependency graphs, host topologies, and request, deploy, or incident flows as Mermaid source and a self-contained HTML page, with an optional SVG or PNG from `mmdc`.
+- **Performance checkup:** reads what the system already counts (Redis `INFO commandstats` and `SLOWLOG`, PostgreSQL `pg_stat_statements` and `pg_stat_user_tables`, the MySQL slow log, the MongoDB profiler, route latency percentiles, queue depth, host steal and iowait), matches an 11-pattern catalog, and writes one notice per target with the symptom, the cause, ordered recommendations, and Not checked. A scheduled run writes a notice only for a new or worsened finding.
 - **CVE lookup and report:** fetches OSV and CISA KEV facts online or from a saved file, validates findings, sorts CVEs worst first, groups large identical service sets, and renders a Markdown report.
 - **CVE automatic mode:** an explicit opt-in or a scheduled run that asks nothing, queries only inventory components and new IDs, lists upgrades and unread services as pending, and never patches.
 - **Areas:** `general` by default, or `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`, `other`, and `cve`, each with its own checks.
@@ -165,6 +169,7 @@ The agent enters operate mode: it reads the project knowledge folder, names the 
 | Repository or AWS profile | For review | The current git repository; `--profile prod-readonly` for the aws area |
 | Area | For review | `terraform`, `aws`, `grafana`, `kubernetes`, `docker`, `ci`; `general` when none is given |
 | Regions | For review | `us-east-2`; the profile region by default |
+| Performance target | For performance | A database, cache, queue, or service from `.gti/infra-expert/hosts.md`, and a time window; today in UTC by default |
 | CVE input | For CVE | A CVE ID, an advisory URL, a vendor plus "recent", or a sweep request |
 | Plan input | For plan | A multi-target change, a wait for approval, or a CVE fix plan with its report path |
 | Diagram question | For diagram | A diagram, flowchart, map, or infographic of hosts, modules, packages, or a flow |
@@ -175,6 +180,10 @@ The agent enters operate mode: it reads the project knowledge folder, names the 
 
 ```text
 Check the disk space on app-host-02 through the project MCP and fix the unit if it is full.
+```
+
+```text
+Our Redis has latency spikes all day. Check what is causing them and tell me what to change.
 ```
 
 ```text
@@ -452,6 +461,7 @@ Each run writes `<name>.mmd` and `<name>.html`; the HTML loads Mermaid from jsDe
 | `references/areas/aws.md` | Credentials, state comparison, what each finding means, the runbook | aws area |
 | `references/areas/grafana.md` | Datasource UIDs, bases and copies, generated files, deployment | grafana area |
 | `references/areas/other-stacks.md` | Kubernetes, Compose, Ansible, CI, cross-repository ownership | other areas |
+| `references/areas/performance.md` | Read-only sources per system, the slow pattern catalog, quantifying, the notice, scheduled watching, quality bar | Performance mode |
 | `references/areas/cve.md` | Intake, primary sources, mapping, classification, writing rules, automatic mode | CVE mode |
 | `references/areas/plans.md` | Front matter, approvals, apply steps, chat summaries, CVE fix plans | Plan mode |
 | `references/areas/diagrams.md` | Subcommands, read-only inputs, output files, when to hand off | Diagram mode |
@@ -470,6 +480,7 @@ Each run writes `<name>.mmd` and `<name>.html`; the HTML loads Mermaid from jsDe
 | `references/quality/report-checklist.md` | Checks before rendering | Review step 4 |
 | `assets/templates/project-knowledge/README.md` | Template of the project's committed knowledge folder | Operate and CVE |
 | `assets/templates/project-knowledge/conventions.md` | Template for the project's provisioning path, closest examples, naming, tags, and inventories | Operate step 1 |
+| `assets/templates/performance-notice.md` | Performance notice: symptom, cause, recommendations, Not checked | Performance step 5 |
 | `assets/templates/cve-findings.example.json` | Findings JSON shape for `cve_report.py` | CVE step 7 |
 | `assets/templates/cve-record.md` | Fixed per-CVE record shape | CVE step 7 |
 | `assets/templates/cve-report.md` | Markdown report template | CVE step 7 |
@@ -507,6 +518,36 @@ Each candidate card in the review report shows:
 | What the scans found | Totals of confirmed scan findings, when provided |
 | Where the code changes most | Hot spot table from git history, when provided |
 | Details | One card per candidate: problem, change, before and after diagrams, gains, files and resources, how to verify, warning |
+
+### Performance notice
+
+One Markdown notice is written per target to `~/.gti/infra-expert/<project>/performance/<YYYYMMDD>-<target>.md`, from `assets/templates/performance-notice.md`:
+
+```text
+  # Latency spikes on cache-prod
+  Target: cache-prod (managed Redis)   Window: 2026-11-23 00:00 to 18:40 UTC
+  We noticed the slowest calls took 1.8 to 2.7 s between 09:00 and 18:00.
+  Every read issued during one of those calls waits for it.
+
+  What's causing it
+  - KEYS: 2,950 calls in the window, 5 to 9 per minute, 80 percent over 1 s.
+  - SCAN with MATCH: 31,000 calls, 260 of them between 0.5 and 2.2 s.
+
+  What we recommend
+  1. Remove KEYS from the application code.
+  2. Move SCAN off the request path.
+  3. Track key names in a Sorted Set scored by expiry.
+```
+
+| Section | Contents |
+|---------|----------|
+| Header | Target, time window, checked-on date, and the sources read |
+| Symptom | What users of the system see, with numbers, and the ordinary work it delays |
+| What's causing it | One bullet per pattern with count, rate, and duration range, then one sentence of mechanism |
+| What we recommend | Ordered changes naming the exact command, data structure, index, or setting |
+| Not checked | Targets or patterns that could not be measured, and why |
+
+A scheduled run also keeps `performance/state.json` and writes a notice only for a new finding or one that got worse.
 
 ### CVE report
 
@@ -634,6 +675,7 @@ Operate mode also writes local working files to `.gti/tmp/<run>/` at the nearest
 | `python -m unittest discover -s skills/infra-expert/tests` | Runs the script tests, with a fake AWS CLI and offline CVE fixtures |
 | `python3 -m pytest skills/infra-expert/tests -q` | Runs the same tests with pytest |
 | `npm test` | Runs every CLI and Python test in the repository, including these |
+| `cd skills/infra-expert/tests/ai-assisted-sre && python -m pytest -q` | Runs the unit tests of the scenario runner that tests this skill with a real agent in a sandbox; see [its README](../../skills/infra-expert/tests/ai-assisted-sre/README.md) |
 | `node packages/cli build` | Regenerates the agent guides and validates the skill |
 
 ## Troubleshooting
