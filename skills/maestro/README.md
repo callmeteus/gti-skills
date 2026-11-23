@@ -78,6 +78,8 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 - **Strong planner, cheap workers:** a tier table maps read-only work to the cheapest model, focused edits to a mid tier, and hard work to a strong model used sparingly.
 - **Persistent preferences:** user and project files store the orchestrator, executor, fallbacks, routes, and avoid list, and survive across runs.
 - **Run defaults and profiles:** Maestro detects the run kind (security, frontend, tests, and others), saves the settings the user gave for that kind (model, harness, adapter, budget, tier, skills) to a profile in `~/.gti/maestro/`, and promotes a setting requested in 3 runs in a row to the profile or the defaults.
+- **Paseo by MCP, CLI, or API:** reaches the Paseo daemon through its MCP tools, the `paseo` CLI, or the `@getpaseo/client` API, whichever works first, and skips Paseo when none does.
+- **User-chosen worker runtime:** when Paseo, OpenCode, Kilo, Cline, Cursor, Claude Code, and others are all installed, asks once which one runs the workers and remembers the answer.
 - **Provider catalog:** discovers the models the harness can run through Paseo, OpenCode, Kilo, Codex, and other surfaces, and accepts user-declared entries for Cline, Cursor, and hosts without a model list.
 - **Task-aware routing:** chooses a model by context, quality, speed, cost, tools, reasoning, and health, with a recorded reason for every task.
 - **Visible routing:** says each non-obvious choice in one short line, for example a rate-limit fallback or a context trade-off.
@@ -163,7 +165,9 @@ Maestro can drive these worker runtimes even when the skill is installed in a di
 
 | Runtime | Spawn and resume | Notes |
 |---------|------------------|-------|
-| Paseo | `create_agent` then `send_agent_prompt`; CLI `paseo run --no-wait --json` then `paseo send` | Universal: Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP |
+| Paseo | MCP `create_agent` then `send_agent_prompt`; CLI `paseo run --no-wait --json` then `paseo send`; API `@getpaseo/client` `agents.create` then `agents.ref(id).run` | Universal: Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP. Reached through the first of MCP, CLI, or API that works |
+
+When several runtimes are usable, Maestro asks once which one runs the workers, recommends Paseo when it is available, and saves the answer to `defaults.adapter` unless the user says "only this run". In autonomous mode it takes the saved or recommended runtime without asking.
 | Claude / Claude Code | `claude -p --session-id <uuid>` then `claude -p --resume <uuid>` | `--model` selects the model |
 | Codex | `codex exec --json` then `codex exec resume <id>` | `codex debug models` lists models |
 | OpenCode | `opencode run --session <id>` then the same `--session` | `opencode models` lists models |
@@ -279,7 +283,7 @@ The first two commands persist the roles; the third starts a run. The model name
 | Task | Yes | - | What the run must deliver. Plain language is enough. |
 | Class override | No | Maestro decides | Force `simple` or `complex`. |
 | Budget | No | 12 workers, 2 fix rounds, 6 waves | Hard caps for the run. |
-| Adapter | No | Detected | Force a harness adapter, for example `paseo-mcp` or `claude-cli`. |
+| Adapter | No | Saved, asked, or detected | Force a harness adapter, for example `paseo-mcp`, `paseo-cli`, `paseo-api`, or `claude-cli`. |
 | Model or provider | No | Preferences and router | Force a provider/model for this run, or restrict the candidates. |
 | Preference | No | None | "prefer X", "always use Y", or "from now on" writes a durable role, route, fallback, or avoid entry. |
 | Plan only | No | Off | Use `/maestro plan <task>` to write the plan without workers. |

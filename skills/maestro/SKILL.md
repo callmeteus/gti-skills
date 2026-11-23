@@ -47,6 +47,7 @@ In this skill:
 - Plan approval is skipped. Choose the safe wave order and the cheapest tier that fits, then record both.
 - Model choice is not a question. Read the preferences, route by the task profile, and record the reason. If the preferred model is cooling or rate-limited, use the next candidate. Remember only settings the user stated (in the run kind's profile, or as a durable preference), never a choice Maestro made on its own.
 - The run kind is not a question. Detect it, load its profile, and show it in the run header.
+- The final worker path is not a question. Use the saved `adapter` when it is usable; otherwise take the recommended path (Paseo through the first of MCP, CLI, or API that works, then an MCP spawner, native agent tools, then the CLIs), record it, and do not save it as a default.
 - The MCP sweep asks nothing. Probe the available servers, classify them by tool schema, and use the best spawner. Record a server that needs OAuth as pending instead of starting a login that waits for the user.
 - Never edit a user-global harness config to add an MCP server. Use a session-scoped config or the CLI adapter, and list the global registration as pending.
 - Worker spawn waits for nobody. Spawn the selected workers, including in parallel, and continue with the ledger while they run.
@@ -139,9 +140,13 @@ Maestro must know how to spawn and re-enter a chat in the harness it runs in. De
 3. **A worker CLI or ACP host on PATH.** `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `agent` or `cursor-agent`, `hermes`, `agy`, `muse`, and `openagents`. Paseo can launch any provider in its catalog, including Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and other ACP agents. Verify a CLI with `--version` and `--help` before using a flag.
 4. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
+Paseo has three access paths: its MCP tools (`paseo-mcp`), the `paseo` CLI (`paseo-cli`), and the daemon API through `@getpaseo/client` (`paseo-api`). Probe them in that order and use the first that works; when none works, Paseo is not available and is not used.
+
+Detection lists every usable path; the user picks the final one. When a saved `adapter` in the run kind's profile or in `defaults` is usable, use it. When exactly one path is usable, use it. When several are usable and nothing is saved, ask once which runtime should run the workers, recommended first (Paseo when available), and save the answer to `defaults.adapter` unless the user says "only this run". See [Choosing the final path](references/harness/adapters.md#choosing-the-final-path).
+
 The first review always goes to the chat that produced the work. Ask the same chat for evidence and send fixes there. Open a new chat only for a second opinion, a reassignment, or when the recorded chat is no longer available, and record why.
 
-Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has exact spawn, resume, and model flags for Paseo, Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, OpenAgents, ACP providers, and the generic fallback. Read [references/harness/mcp-orchestrators.md](references/harness/mcp-orchestrators.md) before the MCP sweep.
+Read [references/harness/adapters.md](references/harness/adapters.md) before the first spawn. It has exact spawn, resume, and model flags for Paseo (MCP, CLI, and API), Claude and Claude Code, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, Cursor, Antigravity, Muse, OpenAgents, ACP providers, and the generic fallback. Read [references/harness/mcp-orchestrators.md](references/harness/mcp-orchestrators.md) before the MCP sweep.
 
 ## MCP orchestrators
 

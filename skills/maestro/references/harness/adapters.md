@@ -9,11 +9,53 @@ Maestro must spawn workers and re-enter their chats in whatever harness it runs 
 3. **A worker CLI on PATH.** Try in this order: `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `openagents`, `agent`, `cursor-agent`, `hermes`, `agy`, `muse`. Confirm with `--version` and `--help` before using a flag.
 4. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
-If Paseo is installed, prefer it for any provider it lists. It is the shortest path to Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and the ACP catalog.
+If Paseo is installed, prefer it for any provider it lists. It is the shortest path to Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and the ACP catalog. Reach Paseo through the first access path that works, in the order in [Paseo access order](#paseo-access-order): MCP, then CLI, then API.
+
+Detection lists every usable path; it does not pick one by itself when several exist. The user picks the final path, as described in [Choosing the final path](#choosing-the-final-path).
 
 If OpenAgents is installed, separate its two products: `agn` is the Workspace launcher and its MCP server is coordination, while `openagents` is Coder and its CLI can delegate to Claude Code, Codex, OpenCode, and Coder.
 
 Record the chosen adapter in `run.json` and in every worker record.
+
+## Paseo access order
+
+Paseo is one runtime with three access paths. Probe them in this order and use the first one that works. Stop probing at the first success.
+
+| Order | Adapter | Available when | Probe |
+|---|---|---|---|
+| 1 | `paseo-mcp` | The session has the Paseo tools (`create_agent`, `send_agent_prompt`, `list_providers`), injected by Paseo or loaded from the harness MCP config | Call `list_providers`. Success means the daemon answers |
+| 2 | `paseo-cli` | `paseo` is on PATH (`paseo.cmd` on Windows) | `paseo --version`, then `paseo daemon status`; the daemon must be running |
+| 3 | `paseo-api` | Node.js 22 or newer and a reachable daemon WebSocket, with no MCP tools and no CLI | Read the `listen` address from `paseo daemon status` or `PASEO_HOST` (default `127.0.0.1:17000`), then connect with `@getpaseo/client` |
+
+- A path that fails its probe is skipped, with the reason in `decisions.jsonl`. A daemon that is not running fails every path; report it instead of starting the daemon for the user.
+- If no path works, Paseo is not available on this machine. Do not use it, do not install it, and continue with the other runtimes.
+- All three paths reach the same daemon, agents, and catalog. An agent id from one path works on the others, so a run that loses its MCP tools can continue the same chats through the CLI or the API.
+- Never store the daemon password. Read it from `PASEO_PASSWORD` or the host string at run time.
+
+## Choosing the final path
+
+Several runtimes are often installed at once: Paseo, OpenCode, Kilo, Cline, Cursor, Claude Code, Codex, and others. The final path is the one runtime Maestro spawns workers through. Choose it this way:
+
+1. **Detect every usable path.** Run the MCP sweep, check the session's native agent tools, and probe each worker CLI with `--version`. For Paseo, record only the first access path that works. Drop anything that fails its probe.
+2. **Use a saved choice.** If the run kind's profile or `defaults` has an `adapter`, and that adapter is usable now, use it without asking. If it is saved but not usable, say so and ask.
+3. **Ask when more than one is usable.** In interactive mode, ask the user once which final path to use. List only the usable paths, recommended first, with a short note each, for example:
+
+   ```text
+   Which runtime should run the workers?
+   1. Paseo through MCP (recommended: launches Claude, Codex, OpenCode, Kilo, Cline, Cursor, and more, with resumable chats)
+   2. Claude Code CLI
+   3. OpenCode CLI
+   4. Kilo CLI
+   Reply with a number. Say "only this run" if it should not become the default.
+   ```
+
+   Recommend in this order: a saved adapter, Paseo, an MCP spawner, the native agent tools of the session, then the CLIs in the detection order above.
+4. **Use the only one without asking.** When exactly one path is usable, use it and say which one in the run header.
+5. **Stop when none is usable.** Report that Maestro needs a worker runtime. Do not do the work yourself.
+
+Save the answer to `defaults.adapter` with `source: user`, or to the run kind's profile when the user names the kind, unless the user said "only this run". `/maestro preferences forget defaults.adapter` brings the question back.
+
+The final path decides how workers are spawned. The model can still come from another provider when the path supports it: Paseo and OpenAgents Coder launch many providers, while a single-provider CLI such as `codex` runs only its own models. When the router picks a model the final path cannot launch, take the best model the path can launch and say so in one line.
 
 ## Capability matrix
 
@@ -22,6 +64,7 @@ Record the chosen adapter in `run.json` and in every worker record.
 | MCP spawner | Its spawn tool | Its send tool with the same id | Its model tool or parameter | When `send` exists |
 | Paseo MCP tools | `create_agent` | `send_agent_prompt` with the same `agentId` | Profiles, then `list_providers` and `list_models` | Yes |
 | Paseo CLI | `paseo run --no-wait --json` | `paseo send <agentId>` | `--provider` and `--model` | Yes |
+| Paseo API | `client.agents.create({config, cwd, prompt})` | `client.agents.ref(id).run(prompt)` | `config.provider` as `provider/model`, `client.providers.listModels` | Yes |
 | OpenAgents Coder | `openagents coder delegate --to <agent> --task "<brief>" --json` | `openagents coder chat -p "<review>" --session <id> --json` | `--model`, `openagents coder models list` | Yes, with `--session` |
 | OpenAgents Workspace | No spawn tool in the verified MCP build | Not applicable | Workspace agent config | Coordination only |
 | Claude / Claude Code | `claude -p --session-id <uuid>` | `claude -p --resume <uuid>` | `--model` | Yes |
@@ -91,6 +134,54 @@ paseo send <agentId> --prompt-file ~/.gti/maestro/<project>/tasks/w2.1/review-pr
 ```
 
 Discover ids with `paseo ls --json`. Use `--host` for a remote daemon, and `--workspace` or `--new-workspace worktree` for isolation.
+
+Wait for a turn with `paseo wait <agentId> --timeout <seconds>`, read it with `paseo logs <agentId> --tail 20`, and check the provider environment with `paseo provider diagnostic <provider> --json`.
+
+## Paseo API
+
+Use the API only when the session has no Paseo MCP tools and `paseo` is not on PATH, but the daemon is reachable. It is the TypeScript client `@getpaseo/client` over the daemon WebSocket, and it needs Node.js 22 or newer.
+
+Install the client outside the user's repository, in `~/.gti/maestro/tools/paseo-client/`, and run the script from there:
+
+```bash
+npm install --prefix ~/.gti/maestro/tools/paseo-client @getpaseo/client
+```
+
+Spawn, wait, and reuse the same agent:
+
+```ts
+import { createPaseoClient } from "@getpaseo/client";
+
+const client = createPaseoClient({
+  url: "ws://127.0.0.1:17000/ws",
+  password: process.env.PASEO_PASSWORD,
+});
+await client.connect();
+
+// Catalog: installed providers, then the model IDs of one provider
+await client.providers.waitForReady({ cwd: process.cwd() });
+const models = await client.providers.listModels("<provider>", { cwd: process.cwd() });
+
+const agent = await client.agents.create({
+  config: { provider: "<provider>/<model>" },
+  cwd: "<project root>",
+  title: "w2.1 Add the CSV serializer",
+  prompt: "<the brief>",
+});
+const result = await agent.waitForFinish();
+
+// Review or fix in the same chat, in this run or a later one
+const same = client.agents.ref("<agentId>");
+await same.refresh();
+const review = await same.run("<review or fix>");
+
+await client.close();
+```
+
+- Take the URL from the `listen` address of `paseo daemon status`, `PASEO_HOST`, or the user. `127.0.0.1:17000` is only the documented default.
+- `waitForFinish()` returns `idle`, `permission`, `error`, or `timeout`. `permission` means a person must answer in Paseo: record it as pending. `timeout` does not cancel the agent.
+- `close()` leaves the agent running and visible in Paseo. Record the agent id; it is the chat id for every later review.
+- Use provider and model IDs returned by the daemon, never IDs copied from an example.
 
 ## Paseo as the universal adapter
 

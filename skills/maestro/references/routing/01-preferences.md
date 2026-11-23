@@ -90,7 +90,7 @@ The sample names above are illustrative. Replace them with the IDs returned by d
 
 A version 1 file has no `defaults` or `profiles`. Read it as is and add the new keys on the next write.
 
-`provider` is the harness surface that launches the model (`claude`, `codex`, `opencode`, `cline`, and so on), so "model XY in harness Z" is `{"provider": "Z", "model": "XY"}`. `adapter` is how Maestro spawns the worker chat, from [../harness/adapters.md](../harness/adapters.md).
+`provider` is the harness surface that launches the model (`claude`, `codex`, `opencode`, `cline`, and so on), so "model XY in harness Z" is `{"provider": "Z", "model": "XY"}`. `adapter` is how Maestro spawns the worker chat, from [../harness/adapters.md](../harness/adapters.md), for example `paseo-mcp`, `paseo-cli`, `paseo-api`, `claude-cli`, or `opencode-cli`. When several runtimes are usable and none is saved, Maestro asks the user once and writes the answer to `defaults.adapter` with `source: user`.
 
 ## Run kinds
 

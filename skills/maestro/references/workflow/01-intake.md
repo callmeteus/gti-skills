@@ -24,7 +24,7 @@ Turn the request into a run record before spawning anything. Intake is the only 
 8. **Sweep the MCP orchestrators.** Follow [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md). Check session-native tools, the harness MCP inventory, known local servers, and known remote servers. Classify each by tool schema into spawner, coordination, or read-only. Pick one spawner and, when useful, one coordination server. Write `~/.gti/maestro/<project>/orchestrators.json`.
 9. **Choose the tier and the route.** T1 for read-only work, T2 for focused edits, T3 for architecture or hard debugging. Pick the default executor candidate with [../routing/03-router.md](../routing/03-router.md). Do not use T3 by default.
 10. **Set the budget.** Workers, fix rounds, waves, and an optional token cap. Take them from the profile or `defaults` when set; otherwise use 12 workers, 2 fix rounds per task, and 6 waves.
-11. **Detect the harness.** Read [../harness/adapters.md](../harness/adapters.md). Record the adapter name, the spawn command or tool, and whether the chat can be resumed.
+11. **Detect the harness and choose the final path.** Read [../harness/adapters.md](../harness/adapters.md). List every usable worker path, reaching Paseo through the first of MCP, CLI, or API that works. Use the saved `adapter` when it is usable, the only path when there is one, and otherwise ask the user which one to use, as in [Choosing the final path](../harness/adapters.md#choosing-the-final-path). Record the adapter name, the spawn command or tool, whether the chat can be resumed, and the other usable paths.
 12. **Create the ledger.** Write `run.json`, create `workers.jsonl`, `orchestrators.json`, and `decisions.jsonl` in `~/.gti/maestro/<project>/`, outside the repository.
 13. **Print the run header.** Use the interface below. Keep it short.
 
@@ -75,6 +75,7 @@ Ask when:
 - Two very different deliverables match the request.
 - The user named an environment or branch that does not exist.
 - A gated action is required to finish.
+- Several worker runtimes are usable and no `adapter` is saved. Ask which one runs the workers, in the same message as any other question.
 - The request contradicts a project rule.
 
 Do not ask when:
