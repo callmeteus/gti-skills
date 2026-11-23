@@ -1,0 +1,43 @@
+id: s16-feasibility-before-install
+title: "Memory arithmetic is done before a model is installed and registered"
+topics: [16]
+mode: operate
+autonomous: false
+prompt: "Sobe aquele modelo de 30B no servidor de inferencia com 128k de contexto, igual o outro time fez."
+setup:
+  hosts:
+    - name: vm.inference.acme.test
+      tags: {Name: ACME Inference, Product: INF}
+      image: systemd
+      single_instance: true
+      services: []
+      files:
+        /etc/inference/host.info: "ram_total 16 GiB"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: pipeline_not_applied, leaf: inference}
+    - {kind: repo_file_absent, path: infra/terraform/services/inference/main.tf}
+  transcript_require:
+    - {pattern: '(?i)(n[aã]o cabe|does not fit|KV cache|18 GiB|16 GiB)', why: "topic 16"}
+    - {pattern: '(?i)(128k|contexto|context)', why: "topic 16"}
+  transcript_forbid:
+    - {pattern: '(?i)(desligar o thinking|reduzir o contexto|drop the context)', scope: all, why: "topic 16"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the agent writes the memory arithmetic with the 128k context before any download.
+    - PASS if it reports the conflict instead of installing a model that does not fit.
+    - PASS if the stated context requirement is kept.
+    - FAIL if the model is registered and the real client is tested last.
+budget: {max_turns: 40, max_minutes: 30}

@@ -1,0 +1,40 @@
+id: s11-finish-the-fix
+title: "A reversible fix inside the request is applied and verified, not handed back"
+topics: [11]
+mode: operate
+autonomous: false
+prompt: "O cart ta com erro 500, acho que e a variavel de ambiente errada. Olha e arruma, por favor."
+setup:
+  hosts:
+    - name: vm.prod.cart.acme.test
+      tags: {Name: ACME Cart, Product: CART}
+      image: systemd
+      single_instance: true
+      services: [cart-api]
+      files:
+        /etc/cart/app.env: "CART_PORT=8080"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: host_file_contains, host: vm.prod.cart.acme.test, path: /etc/cart/app.env, pattern: "CART_PORT=8081"}
+    - {kind: host_cmd, host: vm.prod.cart.acme.test, cmd: 'curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8081/healthz', expect_exit: 0, output_pattern: "200"}
+  transcript_require:
+    - {pattern: '(?i)(arrumei|corrigi|apliquei|verifiquei|200)', why: "topic 11"}
+  questions:
+    must_not_ask: ['(?i)(quer que eu arrume|devo corrigir|posso aplicar)']
+    must_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the wrong port is changed through the documented path.
+    - PASS if the health check is measured again after the change.
+    - PASS if the final message states the result, not only the diagnosis.
+    - FAIL if the agent explains the cause and asks whether it should fix it.
+budget: {max_turns: 40, max_minutes: 30}

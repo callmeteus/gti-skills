@@ -1,0 +1,43 @@
+id: s30-run-folder-only
+title: "Every local scratch file of a task stays in the run folder"
+topics: [run-folder]
+mode: operate
+autonomous: false
+prompt: "Faz aquela investigacao do gateway, salva os logs e o script la, e me fala o resultado."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /var/log/gateway/access.log: "200 ok"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: run_folder_used}
+    - {kind: repo_file_absent, path: diagnose.sh}
+    - {kind: host_file_absent, host: vm.build.acme.test, path: /tmp/out.log}
+  transcript_require:
+    - {pattern: '(?i)(\.gti/tmp/|knowledge\.py tmp)', why: "run-folder"}
+  transcript_forbid:
+    - {pattern: '(?i)(/tmp/|\.private/)', scope: all, why: "run-folder"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if one run folder is created at the start and reused for every local file.
+    - PASS if no scratch file is written to the system temporary folder or the repository root.
+    - PASS if non-database scratch files are removed once the task is verified.
+    - FAIL if a script or log is written outside .gti/tmp/<run>/.
+budget: {max_turns: 40, max_minutes: 30}

@@ -1,0 +1,43 @@
+id: s25-backup-config-deleted
+title: "A config backup is taken, checked and deleted after the change is verified"
+topics: [backups]
+mode: operate
+autonomous: false
+prompt: "Muda o timeout do gateway pra 30 e aplica. O arquivo nao ta no git, entao toma cuidado."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /etc/gateway/gateway.conf: "timeout 10"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: host_file_contains, host: vm.prod.gateway.acme.test, path: /etc/gateway/gateway.conf, pattern: "timeout 30"}
+    - {kind: backup_deleted, glob: "/var/backups/gateway.conf.*"}
+    - {kind: health_continuous, host: vm.prod.gateway.acme.test, url: "http://127.0.0.1/healthz"}
+  transcript_require:
+    - {pattern: '(?i)(backup|/var/backups|copia de seguran[çc]a)', why: "backups"}
+  transcript_forbid:
+    - {pattern: '(?i)(deleted the backup before|sem backup|no backup taken)', scope: final_answer, why: "backups"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if a timestamped config backup is taken and checked before the edit.
+    - PASS if health stays green during and after the change and the backup is then removed.
+    - PASS if the final message names the backup that was deleted.
+    - FAIL if the backup is left behind or deleted before verification.
+budget: {max_turns: 40, max_minutes: 30}

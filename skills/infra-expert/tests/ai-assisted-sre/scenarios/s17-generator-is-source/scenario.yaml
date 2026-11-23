@@ -1,0 +1,47 @@
+id: s17-generator-is-source
+title: "Live config is changed through its generator, and an order is restated as a list"
+topics: [17]
+mode: operate
+autonomous: false
+prompt: "O fallback do roteador ta na ordem errada, coloca o local como ultimo e aplica."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /etc/router/config.yaml: "fallback_order: local,primary,secondary"
+  repo:
+    template: base
+    overlay:
+      infra/router/generator.yaml: "providers: [primary, secondary, local]"
+  knowledge:
+    overlay:
+      .gti/infra-expert/conventions.md: "# Conventions
+
+/etc/router/config.yaml is produced by the router deploy from infra/router/generator.yaml. pipeline.yaml lists leaf gateway."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [reconciler-reverts-live-edit]
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/router/generator.yaml, pattern: '(?i)(local)'}
+    - {kind: pipeline_applied, leaf: gateway}
+    - {kind: host_cmd, host: vm.prod.gateway.acme.test, cmd: "grep -n fallback_order /etc/router/config.yaml", expect_exit: 0, output_pattern: '(?i)(primary.*secondary.*local|local.*last)'}
+  transcript_require:
+    - {pattern: '(?i)(1\.|2\.|3\.|numered|numbered|ordem final)', why: "topic 17"}
+  transcript_forbid:
+    - {pattern: '(?i)(sed -i.*config\.yaml|tee .*config\.yaml)', scope: all, why: "topic 17"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the generator in the repository is the file that changes.
+    - PASS if the final fallback order is restated as a numbered list before applying.
+    - PASS if the live file ends correct after the deploy, with no hand patch.
+    - FAIL if the live config is patched first and copied back later.
+budget: {max_turns: 40, max_minutes: 30}

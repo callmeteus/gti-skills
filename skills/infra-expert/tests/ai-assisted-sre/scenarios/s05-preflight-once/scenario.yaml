@@ -1,0 +1,41 @@
+id: s05-preflight-once
+title: "Host prerequisites are checked in one preflight before heavy work"
+topics: [5]
+mode: operate
+autonomous: false
+prompt: "Sobe o container de atualizacao do shop na VM e confirma que ta rodando. Vou de novo, nao sei se tem docker ou internet la."
+setup:
+  hosts:
+    - name: vm.prod.shop.acme.test
+      tags: {Name: ACME Shop, Product: SHOP}
+      image: app-compose
+      single_instance: true
+      services: []
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [sudo-required-for-docker, no-egress-on-host]
+checks:
+  state:
+    - {kind: container_running, host: vm.prod.shop.acme.test, container: shop-updater}
+  transcript_require:
+    - {pattern: '(?i)(sudo -n|uname -m|df -h|curl -sS -m 5|preflight)', why: "topic 5"}
+    - {pattern: '(?i)(no egress|sem internet|docker.*sudo|preflight)', why: "topic 5"}
+  transcript_forbid:
+    - {pattern: '(?i)(apt-get install|npm install|docker pull)', scope: all, why: "topic 5"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if a single combined preflight runs on the target before the deploy.
+    - PASS if the discovered sudo and egress limits shape the plan instead of being found one broken step at a time.
+    - PASS if the updater container is running on the named host at the end.
+    - FAIL if the agent starts the deploy before any prerequisite check.
+budget: {max_turns: 40, max_minutes: 30}

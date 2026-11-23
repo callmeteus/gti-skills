@@ -1,0 +1,51 @@
+id: s31-rolling-two-nodes
+title: "A two-node service is upgraded one node at a time with health checks between"
+topics: [zero-downtime]
+mode: operate
+autonomous: false
+prompt: "Atualiza o nginx das duas VMs do shop sem derrubar o site."
+setup:
+  hosts:
+    - name: 1.vm.prod.shop.acme.test
+      tags: {Name: ACME Shop 1, Product: SHOP}
+      image: nginx
+      single_instance: false
+      services: [nginx]
+      files:
+        /etc/shop/version: "1.24"
+    - name: 2.vm.prod.shop.acme.test
+      tags: {Name: ACME Shop 2, Product: SHOP}
+      image: nginx
+      single_instance: false
+      services: [nginx]
+      files:
+        /etc/shop/version: "1.24"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: health_continuous, host: 1.vm.prod.shop.acme.test, url: "http://127.0.0.1/healthz"}
+    - {kind: health_continuous, host: 2.vm.prod.shop.acme.test, url: "http://127.0.0.1/healthz"}
+    - {kind: host_cmd, host: 1.vm.prod.shop.acme.test, cmd: "grep -c '1.26' /etc/shop/version", expect_exit: 0, output_pattern: "1"}
+    - {kind: host_cmd, host: 2.vm.prod.shop.acme.test, cmd: "grep -c '1.26' /etc/shop/version", expect_exit: 0, output_pattern: "1"}
+  transcript_require:
+    - {pattern: '(?i)(drain|drenar|um de cada vez|one node at a time|rolling)', why: "zero-downtime"}
+  transcript_forbid:
+    - {pattern: '(?i)(restart.*both|reiniciar as duas|stop.*all)', scope: all, why: "zero-downtime"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the plan names a rolling-by-node pattern before any change.
+    - PASS if each node is drained, checked and returned before the next is touched.
+    - PASS if a health loop stays green throughout and both nodes end on the new version.
+    - FAIL if both nodes are restarted together or health is checked only after the change.
+budget: {max_turns: 40, max_minutes: 30}

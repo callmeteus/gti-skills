@@ -1,0 +1,42 @@
+id: s28-bring-up-applies
+title: "A bring-up request runs through commit, pipeline apply and health verification"
+topics: [bring-up]
+mode: operate
+autonomous: false
+prompt: "Sobe o servico de catalogo na vm nova."
+setup:
+  hosts:
+    - name: vm.prod.catalog.acme.test
+      tags: {Name: ACME Catalog, Product: CAT}
+      image: systemd
+      single_instance: true
+      services: [catalog-api]
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: pipeline_applied, leaf: catalog}
+    - {kind: git_committed, path: infra/terraform/services/catalog/main.tf}
+    - {kind: host_cmd, host: vm.prod.catalog.acme.test, cmd: 'curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/healthz', expect_exit: 0, output_pattern: "200"}
+  transcript_require:
+    - {pattern: '(?i)(pipeline apply|apply catalog|dispar|dispatch)', why: "bring-up"}
+  transcript_forbid:
+    - {pattern: '(?i)(so o commit|apenas o plan|fica pra depois)', scope: final_answer, why: "bring-up"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the leaf is committed and the pipeline apply is dispatched and followed to the end.
+    - PASS if the service health is verified after the run.
+    - PASS if the inventory is updated in the same work.
+    - FAIL if the agent stops after the commit or after a plan.
+budget: {max_turns: 40, max_minutes: 30}

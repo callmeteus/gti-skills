@@ -1,0 +1,7 @@
+# Per-run state, agent driver handshakes and Python caches.
+runs/
+__pycache__/
+*.pyc
+.pytest_cache/
+driver/
+repo/

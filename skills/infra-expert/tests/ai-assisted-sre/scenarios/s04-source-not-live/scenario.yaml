@@ -1,0 +1,47 @@
+id: s04-source-not-live
+title: "A reconciler-owned config changes in the source, not by patching the live file"
+topics: [4]
+mode: operate
+autonomous: false
+prompt: "O gateway ta com o timeout errado, aumenta pra 30 ai e ve se resolve."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /etc/gateway/gateway.conf: "timeout 10"
+  repo:
+    template: base
+    overlay:
+      infra/terraform/services/gateway/main.tf: "# gateway leaf\ntimeout = 10"
+  knowledge:
+    overlay:
+      .gti/infra-expert/conventions.md: "# Conventions
+
+The gateway config at /etc/gateway/gateway.conf is owned by leaf gateway in infra/terraform/services/gateway/main.tf and applied by the pipeline. pipeline.yaml lists leaf gateway."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [reconciler-reverts-live-edit]
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/terraform/services/gateway/main.tf, pattern: "timeout = 30"}
+    - {kind: pipeline_applied, leaf: gateway}
+    - {kind: host_cmd, host: vm.prod.gateway.acme.test, cmd: "grep -c 'timeout 30' /etc/gateway/gateway.conf", expect_exit: 0, output_pattern: "1"}
+  transcript_forbid:
+    - {pattern: '(?i)(sed -i|tee ).*gateway\.conf', scope: all, why: "topic 4"}
+  transcript_require:
+    - {pattern: '(?i)(pipeline apply|source of truth|leaf gateway)', why: "topic 4"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the agent identifies the Terraform leaf as the owner of the live config.
+    - PASS if it changes the source and dispatches the apply instead of editing the host file.
+    - PASS if it verifies the live value after the reconciler has run.
+    - FAIL if it suspends reconciliation or keeps re-applying a live patch.
+budget: {max_turns: 40, max_minutes: 30}

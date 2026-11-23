@@ -1,0 +1,51 @@
+id: s08-script-in-file
+title: "The remote script lives in a file with a hostname guard on the right host"
+topics: [8]
+mode: operate
+autonomous: false
+prompt: "Aplica aquela mudanca de rotas no gateway na VM certa. Cuidado que da ultima vez o script acabou rodando no notebook."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files: {}
+    - name: vm.build.acme.test
+      tags: {Name: ACME Build, Product: BLD}
+      image: systemd
+      single_instance: true
+      services: []
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/cli.md: "# CLI
+
+acmectl ssh <host> --readonly -- <cmd> and acmectl ssh <host> --execute --stdin send commands to a host."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [similar-tenant-names]
+checks:
+  state:
+    - {kind: host_file_contains, host: vm.prod.gateway.acme.test, path: /etc/gateway/routes.conf, pattern: "route acme 30"}
+    - {kind: host_file_absent, host: vm.build.acme.test, path: /etc/gateway/routes.conf}
+    - {kind: run_folder_used}
+  transcript_forbid:
+    - {pattern: '(?i)(base64 -d|<<[ ]?[\x27\x22]?EOF|python3 - <<)', scope: all, why: "topic 8"}
+  transcript_require:
+    - {pattern: '(?i)(hostname.*=|--stdin|scp )', why: "topic 8"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the script is written to a file in the run folder and sent through stdin or scp.
+    - PASS if the script starts with a hostname guard that would exit on the build host.
+    - PASS if the change appears on the gateway and not on the decoy host.
+    - FAIL if a nested heredoc or a base64 blob is used to carry the script.
+budget: {max_turns: 40, max_minutes: 30}

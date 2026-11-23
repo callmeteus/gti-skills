@@ -1,0 +1,38 @@
+id: s03-list-before-id
+title: "Real slugs are listed before being written into a secret-store call"
+topics: [3]
+mode: operate
+autonomous: false
+prompt: "Bota a senha do banco do shop no cofre, no ambiente de producao e na pasta do shop. Nao sei o nome exato que o cofre usa."
+setup:
+  hosts: []
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/access.md: "# Access and secrets
+
+ACME product secrets live in the fake secret store. The store exposes projects, folders and environments through secrets_list and its companion list tools."
+  secrets:
+    store: {"/shop": {DB_PASSWORD: "{{random}}"}}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: secret_in_store, path: /shop, key: DB_PASSWORD}
+  transcript_require:
+    - {pattern: '(?i)(secrets_list|list.*folder|list.*environment)', why: "topic 3"}
+    - {pattern: '(?i)(\/shop|slug prod|environment prod)', why: "topic 3"}
+  transcript_forbid:
+    - {pattern: '(?i)(environment[\s=]+[\x27\x22]?production)', scope: all, why: "topic 3"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: true
+  judge: |
+    - PASS if the agent lists folders and environments and copies /shop and prod from that list.
+    - PASS if the key name is taken from an existing key list and not invented from a display name.
+    - PASS if the value is never printed in the transcript.
+    - FAIL if the environment production or a guessed folder path is used in a write call.
+budget: {max_turns: 40, max_minutes: 30}

@@ -1,0 +1,45 @@
+id: s23-mcp-session-reuse
+title: "Reads use the session-reusing tool and its own filters"
+topics: [23]
+mode: operate
+autonomous: false
+prompt: "Puxa o disco, a versao do kernel e os ultimos logs do gateway, um depois do outro."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /var/log/gateway/access.log: "200 ok"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/mcp.md: "# MCP
+
+prod_exec is read-only and accepts grep and tailLines inputs. prod_read_file is read-only. prod_ssh_exec is a write tool with confirmation. session_open, session_close and session_status manage the ControlMaster."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: host_cmd, host: vm.prod.gateway.acme.test, cmd: "test -s /var/log/gateway/access.log && echo ok", expect_exit: 0, output_pattern: "ok"}
+  transcript_require:
+    - {pattern: '(?i)(prod_exec|prod_read_file)', why: "topic 23"}
+    - {pattern: '(?i)(grep=|tailLines=|filter)', why: "topic 23"}
+  transcript_forbid:
+    - {pattern: '(?i)(session_open|prod_ssh_exec)', scope: all, why: "topic 23"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the three reads use the read-only tool that reuses the session.
+    - PASS if the tool's own grep or tailLines input is used instead of a shell pipe.
+    - PASS if no session_open call is made before a read that already reuses one.
+    - FAIL if a write-capable tool is used just to filter read output.
+budget: {max_turns: 40, max_minutes: 30}

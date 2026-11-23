@@ -159,6 +159,7 @@ Tests:
 | `npm test` | CLI tests and every Python test |
 | `cd packages/artdirector && npm test` | Art Director engine |
 | `cd packages/leakguard && npm test` | Leakguard engine, detectors, adapters, installer, redaction, and history scanner |
+| `cd skills/infra-expert/tests/ai-assisted-sre && python -m pytest -q` | Infra Expert scenario runner: check evaluators, runner, remote commands, sandbox fakes, and isolation rules; needs `pip install -r requirements.txt` and Linux |
 | `cd packages/lintapple && npm test` | lintapple linter, including the ported upstream pull requests; needs `npx playwright install chromium` |
 
 ## Language

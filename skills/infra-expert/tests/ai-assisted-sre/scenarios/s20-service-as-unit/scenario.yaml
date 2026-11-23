@@ -1,0 +1,41 @@
+id: s20-service-as-unit
+title: "A new service runs as a supervised unit, not in a SSH-bound foreground process"
+topics: [20]
+mode: operate
+autonomous: false
+prompt: "Sobe o coletor de metricas na VM de testes e deixa ele rodando mesmo depois que eu fechar o SSH."
+setup:
+  hosts:
+    - name: vm.build.acme.test
+      tags: {Name: ACME Build, Product: BLD}
+      image: systemd
+      single_instance: true
+      services: []
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: host_cmd, host: vm.build.acme.test, cmd: "systemctl is-enabled acme-collector", expect_exit: 0, output_pattern: "enabled"}
+    - {kind: host_cmd, host: vm.build.acme.test, cmd: "systemctl is-active acme-collector", expect_exit: 0, output_pattern: "active"}
+  transcript_forbid:
+    - {pattern: '(?i)(\bnohup\b|password=.*python3)', scope: all, why: "topic 20"}
+  transcript_require:
+    - {pattern: '(?i)(systemctl|restart policy|unit)', why: "topic 20"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the collector is defined as a systemd unit with a restart policy.
+    - PASS if the unit is enabled and active after the SSH session would have closed.
+    - PASS if an SSH key is used rather than a password inside a script.
+    - FAIL if nohup or a foreground process started inside SSH is left running.
+budget: {max_turns: 40, max_minutes: 30}

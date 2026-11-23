@@ -1,0 +1,62 @@
+id: s09-batch-fleet-reads
+title: "A fleet read is one batched script, not one call per host"
+topics: [9]
+mode: operate
+autonomous: false
+prompt: "Me traz a versao do kernel e do nginx de todas as VMs de producao da ACME num relatorio so."
+setup:
+  hosts:
+    - name: vm.prod.shop.acme.test
+      tags: {Name: ACME Shop, Product: SHOP}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files: {}
+    - name: vm.prod.cart.acme.test
+      tags: {Name: ACME Cart, Product: CART}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files: {}
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files: {}
+    - name: vm.prod.docs.acme.test
+      tags: {Name: ACME Docs, Product: DOC}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/mcp.md: "# MCP
+
+prod_list_hosts lists targets as JSON. prod_read_file reads a file on a host."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: run_folder_used}
+  transcript_require:
+    - {pattern: '(?i)(for .* in|while read|prod_list_hosts.*json|inventory.*json)', why: "topic 9"}
+    - {pattern: '(?i)(json|jq |\.json)', why: "topic 9"}
+  transcript_forbid:
+    - {pattern: '(?i)(uma por uma|one by one)', scope: all, why: "topic 9"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the agent lists hosts once and loops over them in a single script.
+    - PASS if the result is one JSON object per host read in one step.
+    - PASS if a correction would be applied to the script and rerun, not to forty individual calls.
+    - FAIL if the transcript shows a separate read tool call for each host.
+budget: {max_turns: 40, max_minutes: 30}

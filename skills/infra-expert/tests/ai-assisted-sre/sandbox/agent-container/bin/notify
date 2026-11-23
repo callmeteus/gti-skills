@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Fake maintenance notice. Records the notice instead of contacting anyone.
+set -euo pipefail
+message="$*"
+file="${ACME_SANDBOX_ROOT:-/opt/ai-sre-sandbox/runs}/${ACME_SANDBOX_RUN_ID:-local}/notify.log"
+mkdir -p "$(dirname "$file")"
+printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$message" >> "$file"
+echo "notice recorded: $message"

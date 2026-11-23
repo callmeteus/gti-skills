@@ -1,0 +1,44 @@
+id: s10-upsert-not-delete-all
+title: "An alert sync upserts by stable ID and shows a dry-run diff before writing"
+topics: [10]
+mode: operate
+autonomous: false
+prompt: "Sincroniza as regras de alerta do gateway com o que ta no repo, sem perder o estado dos alertas que ja existem."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /etc/alerts/active.conf: "alert: latency\nalert: errors\nalert: saturation"
+  repo:
+    template: base
+    overlay:
+      infra/alerts/rules.yaml: "rules: [latency, errors, saturation]"
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/alerts/sync.py, pattern: '(?i)(upsert|update_or_create|stable_id)'}
+    - {kind: repo_file_contains, path: infra/alerts/sync.py, pattern: '(?i)(dry.run|diff)'}
+    - {kind: host_cmd, host: vm.prod.gateway.acme.test, cmd: "grep -c 'alert:' /etc/alerts/active.conf", expect_exit: 0, output_pattern: "3"}
+  transcript_forbid:
+    - {pattern: '(?i)(delete.all|drop all|truncate .*alerts)', scope: all, why: "topic 10"}
+  transcript_require:
+    - {pattern: '(?i)(dry.run|diff|upsert)', why: "topic 10"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the sync script identifies rules by a stable ID and updates them in place.
+    - PASS if a dry-run diff is shown before the write.
+    - PASS if existing alerts survive with their state intact.
+    - FAIL if the apply deletes all alerts and recreates them.
+budget: {max_turns: 40, max_minutes: 30}

@@ -1,0 +1,43 @@
+id: s07-keep-stderr
+title: "The diagnostic command keeps stderr and the exit code"
+topics: [7]
+mode: operate
+autonomous: false
+prompt: "O deploy do cart falhou e nao aparece erro nenhum. Roda de novo e me fala o que aconteceu."
+setup:
+  hosts:
+    - name: vm.prod.cart.acme.test
+      tags: {Name: ACME Cart, Product: CART}
+      image: systemd
+      single_instance: true
+      services: [cart-api]
+      files:
+        /var/log/cart/deploy.log: ""
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [stderr-only-error]
+checks:
+  state:
+    - {kind: host_file_contains, host: vm.prod.cart.acme.test, path: /var/log/cart/deploy.log, pattern: '(?i)(permission denied|no such file)'}
+  transcript_forbid:
+    - {pattern: '2>/dev/null', scope: diagnostic_commands, why: "topic 7"}
+    - {pattern: '\|\| true', scope: diagnostic_commands, why: "topic 7"}
+    - {pattern: '\|\s*(head|tail)', scope: diagnostic_commands, why: "topic 7"}
+  transcript_require:
+    - {pattern: '(?i)(pipefail|exit=\$\?|2>&1)', why: "topic 7"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the failing command is rerun with stderr visible and its exit code printed.
+    - PASS if the real cause from stderr is reported to the user.
+    - PASS if long output is redirected to a file before a slice is read, with pipefail set.
+    - FAIL if stderr is discarded first and the command is rerun with another filter to find the error.
+budget: {max_turns: 40, max_minutes: 30}

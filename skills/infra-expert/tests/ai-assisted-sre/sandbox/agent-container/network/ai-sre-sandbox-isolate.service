@@ -1,0 +1,17 @@
+# Provided, not installed. The operator installs and enables this unit in the
+# task that brings the sandbox up; this task only writes the file.
+[Unit]
+Description=Isolate the ai-sre-sandbox Docker network from private networks
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=SUBNET=172.31.5.0/24
+# Set to the address the sandbox uses to reach MiniStack on this notebook.
+Environment=MINISTACK_IP=
+ExecStart=/data/ai-assisted-sre/sandbox/agent-container/network/isolate.sh --apply
+
+[Install]
+WantedBy=multi-user.target

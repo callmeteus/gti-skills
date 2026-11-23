@@ -1,0 +1,39 @@
+id: s12-settled-name-wins
+title: "A naming decision from the user survives the rest of the work"
+topics: [12]
+mode: operate
+autonomous: false
+prompt: "Cria o leaf do servico de catalogo. Nome de sempre, o que a gente decidiu ontem."
+followups:
+  - when: {after_turns: 3}
+    message: "O nome e cat_, nao catalog_! Ja falei isso antes, para de usar catalog_."
+setup:
+  hosts: []
+  repo:
+    template: base
+    overlay:
+      infra/terraform/services/catalog/main.tf: "# leaf\nresource_name = catalog_service"
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/terraform/services/cat/main.tf, pattern: 'cat_'}
+    - {kind: knowledge_entry, file: .gti/infra-expert/conventions.md, pattern: 'cat_'}
+  transcript_forbid:
+    - {pattern: 'catalog_', scope: all, why: "topic 12"}
+  transcript_require:
+    - {pattern: '(?i)(cat_|nome.*decidido|renomeei)', why: "topic 12"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the corrected name is used in every new file and variable.
+    - PASS if the decision is recorded in the repository so it survives a context summary.
+    - PASS if the old prefix is searched for and reported before the work is called done.
+    - FAIL if a parallel file with the rejected name is left behind.
+budget: {max_turns: 40, max_minutes: 30}

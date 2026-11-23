@@ -1,0 +1,52 @@
+id: s19-bootstrap-first
+title: "A fleet fix goes into the bootstrap before the existing machines"
+topics: [19]
+mode: operate
+autonomous: false
+prompt: "A VM de agente nova ta sem o tema escuro e sem o RustDesk. Ajusta nela ai, e na outra tambem."
+setup:
+  hosts:
+    - name: agent-a.acme.test
+      tags: {Name: ACME Agent A, Product: AGT}
+      image: systemd
+      single_instance: true
+      services: []
+      files:
+        /etc/agent/theme.conf: "light"
+    - name: agent-b.acme.test
+      tags: {Name: ACME Agent B, Product: AGT}
+      image: systemd
+      single_instance: true
+      services: []
+      files:
+        /etc/agent/theme.conf: "light"
+  repo:
+    template: base
+    overlay:
+      infra/bootstrap/agent-vm.sh: "# bootstrap\ninstall_agent_tools"
+  knowledge:
+    overlay:
+      .gti/infra-expert/conventions.md: "# Conventions
+
+The agent VM bootstrap is infra/bootstrap/agent-vm.sh. agent-a.acme.test and agent-b.acme.test are created from it."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/bootstrap/agent-vm.sh, pattern: '(?i)(dark|rustdesk)'}
+    - {kind: host_cmd, host: agent-a.acme.test, cmd: "grep -c dark /etc/agent/theme.conf", expect_exit: 0, output_pattern: "1"}
+    - {kind: host_cmd, host: agent-b.acme.test, cmd: "grep -c dark /etc/agent/theme.conf", expect_exit: 0, output_pattern: "1"}
+  transcript_require:
+    - {pattern: '(?i)(bootstrap|module|compara|compare)', why: "topic 19"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the fix is written into the bootstrap before it is applied to running VMs.
+    - PASS if both existing VMs end up with the same theme and agent tools.
+    - PASS if a comparison check is added or run to show the machines no longer drift.
+    - FAIL if only the machine in front of the agent is adjusted.
+budget: {max_turns: 40, max_minutes: 30}

@@ -1,0 +1,43 @@
+id: s27-conventions-from-stable-stack
+title: "A bring-up copies the older stable stack and its full tag set"
+topics: [conventions]
+mode: operate
+autonomous: false
+prompt: "Suba o servico de catalogo numa maquina separada, com o padrao de sempre."
+setup:
+  hosts: []
+  repo:
+    template: base
+    overlay:
+      infra/terraform/services/docs/main.tf: "# created today, still being rewritten, not a reference\n"
+      infra/terraform/services/docs/README.md: "new stack created today"
+  knowledge:
+    overlay:
+      .gti/infra-expert/conventions.md: "# Conventions
+
+services/shop and services/cart are stable leaves present in the default branch for months. services/docs was created today in the git history and is still being rewritten."
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/terraform/services/catalog/main.tf, pattern: 'modules/ec2'}
+    - {kind: repo_file_contains, path: infra/terraform/services/catalog/main.tf, pattern: 'Name'}
+    - {kind: repo_file_contains, path: infra/terraform/services/catalog/main.tf, pattern: 'Product'}
+    - {kind: ec2_tag, name: vm.prod.catalog.acme.test, key: Product, value: CAT}
+    - {kind: pipeline_applied, leaf: catalog}
+  transcript_require:
+    - {pattern: '(?i)(shop|cart|est[aá]vel|stable)', why: "conventions"}
+  transcript_forbid:
+    - {pattern: '(?i)(copiei.*docs|from services/docs)', scope: all, why: "conventions"}
+  questions:
+    must_ask: []
+    must_not_ask: ['(?i)(qual (nome|tag|metodo)|which (naming|tags|method))']
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the agent finds the provisioning path and the two older stable leaves on its own.
+    - PASS if it copies the ec2 module call, naming pattern and full tag set from a stable leaf.
+    - PASS if it does not ask the user for a method, naming or tags the repository can answer.
+    - FAIL if it copies the stack created today in the git history.
+budget: {max_turns: 40, max_minutes: 30}

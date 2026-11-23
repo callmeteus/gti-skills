@@ -28,3 +28,9 @@ jobs:
 
             - name: Run tests
               run: npm test
+
+            - name: Test the Infra Expert scenario runner
+              working-directory: skills/infra-expert/tests/ai-assisted-sre
+              run: |
+                  pip install -r requirements.txt
+                  python -m pytest -q

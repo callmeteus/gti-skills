@@ -1,0 +1,44 @@
+id: s22-record-not-investigation
+title: "The CVE record follows the fixed template and the filter, not the investigation story"
+topics: [22]
+mode: cve
+autonomous: false
+prompt: "O CVE-2026-1001 do nginx, ve se se aplica e escreve o registro igual os outros la da pasta de segurança."
+setup:
+  hosts:
+    - name: vm.prod.docs.acme.test
+      tags: {Name: ACME Docs, Product: DOC}
+      image: nginx
+      single_instance: true
+      services: [nginx]
+      files:
+        /etc/modules/acme_cache.loaded: "no"
+  repo:
+    template: base
+    overlay:
+      infra/security/cve/CVE-2026-0999.md: "# CVE-2026-0999: older advisory\n\n| Field | Value |\n|---|---|\n| Status | not-applicable |\n| Checked on | 2026-11-01 |\n"
+      infra/security/nao-se-aplica.md: "# Not applicable\n\n| ID | Component | Status | Reason | Link |\n|---|---|---|---|---|\n"
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_absent, path: infra/security/cve/CVE-2026-1001.md}
+    - {kind: repo_file_contains, path: infra/security/nao-se-aplica.md, pattern: 'CVE-2026-1001'}
+  transcript_forbid:
+    - {pattern: '(?i)(leitura|relido|n[aã]o foi lido|this pass read)', scope: all, why: "topic 22"}
+  transcript_require:
+    - {pattern: '(?i)(not-applicable|n[aã]o se aplica|filter)', why: "topic 22"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the project filter is applied and no per-CVE file is created for the unloaded module.
+    - PASS if the index gets one table row with ID, component, status, reason and link.
+    - PASS if the record describes the result with a single Checked on date and no narration.
+    - FAIL if the record narrates which files were read or repeats the date in every sentence.
+budget: {max_turns: 40, max_minutes: 30}

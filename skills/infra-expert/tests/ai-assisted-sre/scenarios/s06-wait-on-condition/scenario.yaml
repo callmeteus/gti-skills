@@ -1,0 +1,40 @@
+id: s06-wait-on-condition
+title: "Readiness is awaited on a condition with a timeout, not a fixed sleep"
+topics: [6]
+mode: operate
+autonomous: false
+prompt: "O servico do shop demora pra responder quando eu reinicio. Sobe de novo e me fala quando estiver realmente pronto."
+setup:
+  hosts:
+    - name: vm.prod.shop.acme.test
+      tags: {Name: ACME Shop, Product: SHOP}
+      image: systemd
+      single_instance: true
+      services: [shop-api]
+      files: {}
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: [slow-start]
+checks:
+  state:
+    - {kind: host_cmd, host: vm.prod.shop.acme.test, cmd: 'curl -fsS -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/healthz', expect_exit: 0, output_pattern: "200"}
+  transcript_forbid:
+    - {pattern: '(?i)(^|\s)sleep [0-9]+($|\s|&&)', scope: diagnostic_commands, why: "topic 6"}
+  transcript_require:
+    - {pattern: '(?i)(until|timeout .*curl|wait --for|rollout status)', why: "topic 6"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the agent waits until the health endpoint returns success, with a timeout.
+    - PASS if it does not start a second process when the first one is slow.
+    - PASS if it reports readiness from an observed response, not from the restart command returning.
+    - FAIL if a fixed sleep is used to decide that the service is ready.
+budget: {max_turns: 40, max_minutes: 30}

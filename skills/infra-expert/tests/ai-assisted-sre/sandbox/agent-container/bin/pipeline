@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Wrapper so the agent can call `pipeline plan <leaf>` / `pipeline apply <leaf>`.
+set -euo pipefail
+exec python3 -m sandbox.fake_pipeline.cli "$@"
