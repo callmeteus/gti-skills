@@ -5,6 +5,7 @@ Infrastructure changes reach running systems. These rules hold in every mode, in
 ## Operate mode
 
 - Change live state only when the user's request asks for that change. A read-only request stays read-only, and a diagnosis is not a licence to apply an unasked-for fix.
+- A request to look at a target ("go into the nodes and find the high CPU") allows read-only access to it through the documented path. A project rule that gates production changes does not gate that read; do not stop to ask for it. Flushing, restarting, or deleting stays gated.
 - A bring-up, deploy, or apply request authorizes the apply through the project's documented pipeline; a documentation or code-only request does not. Project gates such as a commit confirmation still apply once.
 - Never cause downtime without the user's explicit answer for that change. Plan every change to a running service as rolling or zero-downtime; when no such path exists, stop before changing anything, say what would go down and the options, and ask. In Autonomous Mode, list it as pending instead.
 - Make any allowed change only through the project's documented path: the pipeline or source of truth, an MCP write tool that opens a confirmation, or the project CLI named in its knowledge folder. Do not invent a shortcut when the documented path is unavailable; report the error instead.

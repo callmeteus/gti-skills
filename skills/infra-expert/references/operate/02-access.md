@@ -21,6 +21,9 @@ set -o pipefail
 ```
 
 - Fix a script that fails in the local file and send the corrected file again, by stdin or by `scp` followed by a run command. Do not base64-encode the script into a heredoc inside the write command and resend the whole encoded string on each attempt, because the command becomes unreadable and every retry repeats the same quoting risk. Example: `scp "$RUN/fix.sh" <host>:fix.sh` then `ssh <host> 'bash ~/fix.sh'`.
+- Nothing inside a script sent by stdin may read stdin, because it swallows the rest of the script. Drop `-i` from `docker exec` and `kubectl exec` inside such scripts and redirect `</dev/null` for any command that might read input.
+- Cloud run-command channels (for example SSM `AWS-RunShellScript` and similar agents) run `/bin/sh`, not bash. Bash-only syntax such as `<(...)`, arrays, or `[[ ]]` fails there with `Syntax error`. Send the script as a file and run it with `bash <file>`, or wrap it in `bash -c`.
+- Keep remote scratch files in one dated folder per task (for example `~/.gti-run-<timestamp>/`), never loose in `/tmp` of a production host, and remove the folder when the task is verified.
 - Generate parameter files with a JSON serializer and pass them by `file://` or stdin. Do not build JSON by string concatenation in a shell variable, because escaping changes between the test and the real call.
 - Load secret values from an env file with `set -a; . <file>; set +a`, with unquoted values in the file. Do not pass a value on a command line, because it ends up in shell history and transcripts.
 
@@ -31,6 +34,13 @@ set -o pipefail
 - Change appliance configuration through its API or YAML files, not through its internal state database, because an in-place edit can put the appliance in a restart loop.
 
 Example: install the key, use `ssh app-host-02` afterwards, and define the unit with `Restart=on-failure` before the first start.
+
+## Long remote sequences
+
+- Do not run a sequence of several minutes inside one synchronous remote call, such as a rolling restart with pauses and log polling. The call outlives the tool's time window and turns into polling. Send one step per call with its own check, or start the sequence detached on the host (for example `systemd-run --unit=<name>` writing to a log) and wait on that log with a condition.
+- Do not start background sleep timers to remind yourself to look again; wait on a condition with a timeout, as `03-diagnose.md` says.
+
+Example: "I restarted worker 5, waited for its ready log line and 48 of 48 online, read available memory, and only then sent the call for worker 3."
 
 ## Batch across a fleet
 

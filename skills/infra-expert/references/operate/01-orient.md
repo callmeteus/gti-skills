@@ -54,6 +54,10 @@ Example: "The project MCP returned permission denied for `app-host-02`; I stoppe
 
 Example: "Preflight on `app-host-02`: sudo yes, container runtime needs sudo, x86_64, 12 GiB free, no egress. Subagents: use sudo and plan no downloads." Record a stable fact in `access.md` or the inventory, not only in the chat.
 
+- Before a change on a production host, add `who` and the process manager's list, run as the user that owns the application, to the preflight. Mention other live sessions to the user before acting, and do not read an empty list run as root as "nothing is running".
+- Search the project for a built-in diagnostic before writing a probe: a CLI subcommand such as `debug` or `stats`, an admin endpoint, or a status page. Grep the CLI and scripts folders for the symptom word.
+- Look up facts a provider API answers (endpoints, ports, TLS mode, auth mode, sizes) read-only through the access ladder before asking the user. Ask only for decisions, never for facts you can read.
+
 ## Feasibility before installing
 
 - Write the arithmetic before installing or uploading a model, image, or large artifact. For a model, add quantized weights, KV cache at the context size the client will actually use, and the client's system prompt, then compare with available RAM or VRAM. Do not download first and test with the real client last, because an artifact that does not fit forces the whole change to be reverted.

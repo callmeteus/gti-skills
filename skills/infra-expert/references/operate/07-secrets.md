@@ -46,6 +46,9 @@ Example: "Please set `PAYMENTS_API_TOKEN` at `/<product>/<service>/payments` in 
 - Only the bootstrap credential of that identity lives where the project keeps bootstrap credentials, and it is created and stored through the same code path.
 - A secret change reaches the host through the same path: a new version in the manager and a reload, restart, or deploy through the project's documented method. Do not edit host files to make a change stick.
 
+- After any change to a secret or a connection value, by you or by the user, read the store back (names, versions, and non-secret values) and compare with what the running process uses. When the user says they "pasted" or "set" a value, confirm where: a value written only to a host file disappears at the next deploy, and the next deploy then points the service back at the old target. Report a drift as a blocker for the next deploy and fix the store.
+- A write script for the manager has a dry run by default, a backup at mode 600, a read-back after the write, and a rollback that restores only its own writes.
+
 Example: "The service has a read-only identity scoped to `/<product>/<service>`. At boot its unit calls the manager's agent and exports the values into the process environment. When the key changed, I created a new version in the manager and redeployed through the pipeline; I did not touch the host `.env`."
 
 ## 6. Moving secrets that already sit in a host file
@@ -71,5 +74,6 @@ Example: "Rotating the session signing key would log out every current session. 
 - Prefer the project's MCP for the manager, through the access ladder in `01-orient.md`, to list projects, folders, and key names.
 - List real slugs and environment names before writing them. A label shown as "Production" in a UI may be `prod` in the API. Copy the exact string from a list call, never a guess.
 - Record the slugs, environments, and paths you confirm in `conventions.md` with their source, and log any CLI fallback as an MCP gap in `06-learn.md`.
+- When a vendor CLI fails against a self-hosted manager (for example a 404 on a newer API route), check the server's status or version endpoint and reuse the API routes the project's MCP or client already uses, with the CLI's own session. Record the version mismatch in `cli.md` and as an MCP gap.
 
 Example: "The UI showed 'Production' but the list call returned environment `prod` and project slug `<product>-core`. I used those exact strings in the path and recorded them in `conventions.md` with the list command as the source."

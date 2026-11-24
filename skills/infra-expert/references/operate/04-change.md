@@ -108,6 +108,9 @@ Example: "Old prefix still appears in 3 variables; I renamed those too" instead 
 
 Example: "Unit restarted on `app-host-02`, health check returned 200" or no message at all.
 
+- The same holds for every report that leaves the session: a direct message, an issue, a hand-off note, or a memory entry. Write only facts verified in this session, mark estimates as estimates ("about 3 hours, estimated"), and never state an outcome that has not happened yet. When a fact you sent proves wrong, send the correction at once to everyone who received it and fix the record or memory that holds it.
+- A change the user says they made ("I pasted the env") is not verified until you read it back from the canonical store and from the running process. "Pasted" may mean a host file instead of the manager; see `07-secrets.md`.
+
 ## Finish the job
 
 - Apply the fix and verify it when the fix is inside the request and reversible. A diagnosis alone is not done. Do not stop to hand the obvious next step back to the user, because that leaves the requested work unfinished.
@@ -131,6 +134,21 @@ Example: "This is a rolling replace: drain and health check `web-01`, replace it
 Before running, check the plan for anything that causes downtime: a `replace` or `destroy` in a plan, a single-instance service, a restart with no second instance to take traffic, a migration that locks a table or breaks the old code, a port or DNS switch without an overlap period, or a host reboot. If any step causes downtime and no zero-downtime alternative exists, stop before changing anything. Tell the user what would go down, for how long, and the options: accept a window, add a second instance first, or defer. Then ask what to do. Never decide alone to accept downtime, even when the change was requested.
 
 Example: "This service is a single instance with no load balancer and the upgrade needs a restart. There is no zero-downtime path; the process would be unavailable for about 30 seconds. Options: accept a 30-second window, add a second instance with a load balancer first, or defer. Which do you want?"
+
+### Restarting members of a worker pool
+
+- Before restarting one member of a pool (pm2 cluster workers, queue consumers, replicas behind one service), map each member's role from recent logs: leader or scheduler, batch preparation, payments or other in-flight jobs. Exclude those members and say which ones and why.
+- Read the supervisor's stop and ready settings (`kill_timeout`, `wait_ready`, `listen_timeout`, termination grace period) and tell the user what they mean for this restart, for example why a graceful stop can wait for hours.
+- Restart one member at a time. Wait for its ready signal, then check that the pool is complete, that the metric you wanted to move moved, and that no new error type appeared, before the next member.
+- When an exclusion filter leaves too few candidates, say so and ask, or check which work is really in flight. Never relax a safety filter silently.
+
+Example: "30 of 48 workers handled withdrawals in the last 10 minutes, so the filter leaves 18. I restart the two largest of those 18, one at a time, and do not touch the withdrawal workers unless you say so."
+
+### Keep the old resource as the rollback
+
+- When a change moves an application to a new resource (a cache, a database, a queue, an endpoint), keep the old resource unchanged until the new one is verified over time, and write the rollback as exact steps: the old values to restore in the canonical store, then the restart.
+- Verify a cutover on the client host, per process: the boot log line that names the new target, the process environment, and established connections per destination, with none left on the old one. Check again over the following hours, because a subscriber or a worker can fail later. Restart only the affected process.
+- Before decommissioning the old resource, confirm a period with no application traffic, read its snapshot or backup retention and require a final snapshot when there is none, and list the alarms, dashboards, exporters, and infrastructure code that reference it. Hand the user the delete command unless the request included the deletion. For caches, see [../areas/cache-migration.md](../areas/cache-migration.md).
 
 In Autonomous Mode, never run a step that causes downtime. List it as pending with the options above and continue with the rest of the work.
 
