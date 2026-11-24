@@ -114,8 +114,9 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 | Git | Any recent | Diffs, branches, and worktrees for parallel work | No |
 | Project checks | - | Tests, typecheck, lint, and build used as review evidence | No |
 | Node.js, for the central only | 20 or newer | Runs the local real-time central in `scripts/central` | No |
+| Python, for CLI workers only | 3.8+ | Runs the bundled agent runner in `scripts/agent` | No |
 
-The only bundled script is the central, a dependency-free local Node server. Maestro itself works with the tools the agent already has.
+The bundled scripts are the central, a dependency-free local Node server, and the agent runner, shared with Skill Distill from [packages/python/agent-runner](../../packages/python/agent-runner/README.md). Maestro itself works with the tools the agent already has.
 
 | Platform | Status |
 |----------|--------|
@@ -574,6 +575,21 @@ Starts the local central, or reuses the running one, and prints its URL with the
 | `--open` | Off | Open the fleet view in the browser |
 | `--json` | Off | Print JSON |
 
+### Agent runner
+
+```bash
+python3 scripts/agent/agent_run.py list | spawn | resume | models | smoke [args]
+```
+
+Starts and resumes CLI workers with the flags each harness needs, captures the chat id, keeps the raw log, and writes a result JSON. Synced from [packages/python/agent-runner](../../packages/python/agent-runner/README.md), where every flag is documented.
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `list` | Harnesses on PATH with versions | `--json` |
+| `spawn` | Start a worker | `--harness`, `--model`, `--cwd`, `--prompt-file`, `--result`, `--trace`, `--background`, `--dry-run` |
+| `resume` | Review or fix in the same chat | `--session` plus the spawn flags |
+| `models` | The harness's own model listing | `--harness`, `--provider` |
+
 ### Preference and catalog files
 
 | Path | Contents |
@@ -641,7 +657,8 @@ The full report is written to `~/.gti/maestro/<project>/report.md`:
 | Command | Action |
 |---------|--------|
 | `node packages/cli validate --skill maestro` | Check the skill against the repository rules |
-| `node packages/cli build` | Regenerate the per-agent guides |
+| `node packages/cli build` | Regenerate the per-agent guides and sync the agent runner into `scripts/agent/` |
+| `python -m unittest discover -s packages/python/agent-runner/tests` | Test the agent runner with fake harness CLIs |
 | `node packages/cli check` | Fail when the generated files are stale |
 | `node packages/cli list` | Confirm the skill and its packs are registered |
 
@@ -791,7 +808,8 @@ That is intentional. A check that could not run, a platform that was not tested,
 | [Pi CLI](https://docs.pi.dev/latest/cli), [Hermes ACP](https://hermes-agent.nousresearch.com/docs/user-guide/features/acp), [Cline CLI](https://cline.bot/cli), [Command Code](https://commandcode.ai/docs/skills) | Respective | The spawn, resume, model, and skill paths documented in the adapters |
 | [Claude Code](https://code.claude.com/docs/en/cli-reference), [Codex](https://developers.openai.com/codex/developer-commands), [OpenCode](https://opencode.ai/docs/), [Cursor CLI](https://cursor.com/docs/cli/overview) | Respective | The session, resume, and model flags documented in the adapters |
 | [OpenAgents Workspace](https://openagents.org/docs/en/reference/cli-reference), [OpenAgents Coder](https://openagents.com/docs/coder-scripts) | Apache-2.0 | The `agn mcp-server` coordination tools, `openagents coder delegate`, `--session`, and the hosted MCP servers |
+| [Sybil Solutions: skill-distill](https://github.com/sybil-solutions/skill-distill) | MIT | Session log parsing and the first harness flags in the shared agent runner |
 
 ## License
 
-No license has been declared for this skill yet. See the [root license section](../../README.md#license).
+No license has been declared for this skill yet. See the [root license section](../../README.md#license). The bundled agent runner in `scripts/agent/` is MIT, see `scripts/agent/LICENSE.txt`.

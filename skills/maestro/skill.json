@@ -9,6 +9,10 @@
         {
             "from": "packages/maestro-central/central",
             "to": "scripts/central"
+        },
+        {
+            "from": "packages/python/agent-runner/scripts",
+            "to": "scripts"
         }
     ],
     "harnessNotes": {

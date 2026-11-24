@@ -18,8 +18,9 @@ description: >-
 compatibility: >-
   An agent that can spawn subagents, or a worker CLI on PATH (paseo, claude,
   codex, opencode, kilo, cline, command-code, pi, agent, cursor-agent, hermes,
-  agy, muse), or an MCP client able to load an orchestration server. No scripts
-  are bundled; provider discovery may use the harness's own network access.
+  agy, muse), or an MCP client able to load an orchestration server. CLI
+  workers start through the bundled agent runner in scripts/agent (Python
+  3.8+); provider discovery may use the harness's own network access.
 license: No license declared
 metadata:
   display-name: Maestro
@@ -105,7 +106,7 @@ Maestro run:
 
 1. **Intake.** Restate the goal and done criteria, classify simple or complex, detect the run kind, detect the harness and worker runtime, sweep the orchestration MCP servers, load the user and project preferences with the defaults and the run kind's profile, discover the provider and model catalog, resolve the orchestrator and executor, set the budget, and create `~/.gti/maestro/<project>/`. Ask only blocking questions. See [references/workflow/01-intake.md](references/workflow/01-intake.md).
 2. **Plan.** Simple work gets one task; complex work gets waves, dependencies, model tiers, and a review gate per wave. Every task gets a routing target, an orchestrator, and a reason. Maestro writes the plan itself. See [references/workflow/02-plan.md](references/workflow/02-plan.md).
-3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `~/.gti/maestro/<project>/workers.jsonl`, and fall back to the next candidate on a rate limit. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
+3. **Delegate.** Every task goes to a worker chat with a self-contained brief. Prefer a resumable MCP spawner when one is available. Route to the chosen model, record the chat id, model, adapter, orchestrator, and reason in `~/.gti/maestro/<project>/workers.jsonl`, and fall back to the next candidate on a rate limit. Start and resume CLI workers with `scripts/agent/agent_run.py`, which knows each harness's flags and returns the chat id. Never do the task yourself. See [references/workflow/03-delegate.md](references/workflow/03-delegate.md).
 4. **Review.** Ask the same chat for evidence, verify it independently, then decide PASS, FIX, REASSIGN, or ESCALATE. Fix rounds go back to the same chat. See [references/workflow/04-review.md](references/workflow/04-review.md).
 5. **Finish.** Integrate parallel work with a worker, run an independent verifier for complex runs, write the report, and leave the chats open for follow-up. See [references/workflow/05-finish.md](references/workflow/05-finish.md).
 

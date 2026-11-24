@@ -55,7 +55,7 @@ Record the primary candidate, one fallback, and the reason. The reason is mandat
 1. Read [../harness/mcp-orchestrators.md](../harness/mcp-orchestrators.md) and [../harness/adapters.md](../harness/adapters.md). Pick the spawner first, then the adapter that reaches it.
 2. Write the brief to `~/.gti/maestro/<project>/tasks/<task-id>/brief.md`.
 3. Route the task and record the primary, the fallback, and the reason.
-4. Create the worker chat on the primary through the chosen orchestrator. Capture the id and model.
+4. Create the worker chat on the primary through the chosen orchestrator. For a CLI worker, run `scripts/agent/agent_run.py spawn ... --background --result ~/.gti/maestro/<project>/tasks/<task-id>/spawn.json` (see [../harness/adapters.md](../harness/adapters.md)). Capture the id and model.
 5. Append a record to `~/.gti/maestro/<project>/workers.jsonl` with the orchestrator, provider, model, chat, and routing reason.
 6. Send the brief as the first prompt.
 7. Append an `audit.jsonl` record with the action, chat, model, provider, adapter, and orchestrator.

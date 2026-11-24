@@ -6,7 +6,7 @@ Maestro must spawn workers and re-enter their chats in whatever harness it runs 
 
 1. **An orchestration MCP server.** A server that exposes a spawn tool and a send tool, discovered from the session, the harness MCP config, or a known local or remote server. Classify it with [mcp-orchestrators.md](mcp-orchestrators.md) before using it.
 2. **Native agent tools in the session.** A create-agent tool plus a prompt-agent tool, or a subagent tool that returns a resumable id.
-3. **A worker CLI on PATH.** Try in this order: `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `openagents`, `agent`, `cursor-agent`, `hermes`, `agy`, `muse`. Confirm with `--version` and `--help` before using a flag.
+3. **A worker CLI on PATH.** Run `python3 <skill-dir>/scripts/agent/agent_run.py list` to see which are installed, with versions. Prefer them in this order: `paseo`, `claude`, `codex`, `opencode`, `kilo`, `cline`, `command-code`, `pi`, `openagents`, `cursor`. `hermes`, `agy`, and `muse` are reached through Paseo. Start and resume them with the runner below.
 4. **Nothing.** Stop and report that Maestro needs a worker runtime. Do not do the work yourself.
 
 If Paseo is installed, prefer it for any provider it lists. It is the shortest path to Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and the ACP catalog. Reach Paseo through the first access path that works, in the order in [Paseo access order](#paseo-access-order): MCP, then CLI, then API.
@@ -65,6 +65,32 @@ Several runtimes are often installed at once: Paseo, OpenCode, Kilo, Cline, Curs
 Save the answer to `defaults.adapter` with `source: user`, or to the run kind's profile when the user names the kind, unless the user said "only this run". `/maestro preferences forget defaults.adapter` brings the question back.
 
 The final path decides how workers are spawned. The model can still come from another provider when the path supports it: Paseo and OpenAgents Coder launch many providers, while a single-provider CLI such as `codex` runs only its own models. When the router picks a model the final path cannot launch, take the best model the path can launch and say so in one line.
+
+## The bundled agent runner
+
+Every CLI worker goes through `scripts/agent/agent_run.py` (shared with Skill Distill, source in `packages/python/agent-runner`). Its registry `scripts/agent/harnesses.json` encodes the spawn, resume, model, permission, and isolation flags in this file. The runner checks optional flags against the installed CLI's `--help`, assigns or captures the chat id, keeps the raw log, and writes one result JSON. Use `python` or `py -3` on Windows.
+
+```bash
+# spawn in the background; the result JSON appears when the worker finishes
+python3 <skill-dir>/scripts/agent/agent_run.py spawn --harness claude --model sonnet \
+  --cwd <repo> --prompt-file ~/.gti/maestro/<project>/tasks/w2.1/brief.md \
+  --trace ~/.gti/maestro/<project>/tasks/w2.1/session.jsonl \
+  --result ~/.gti/maestro/<project>/tasks/w2.1/spawn.json --background
+
+# review or fix in the same chat
+python3 <skill-dir>/scripts/agent/agent_run.py resume --harness claude --session <chat id> \
+  --cwd <repo> --prompt-file ~/.gti/maestro/<project>/tasks/w2.1/review-prompt.md \
+  --result ~/.gti/maestro/<project>/tasks/w2.1/review-1.json
+```
+
+- **Chat id:** `session` in the result JSON is the `chat` field of the worker record. Claude Code, Pi, Kilo, and Command Code get an id assigned before the first prompt; Cursor gets one from `agent create-chat`; Codex, OpenCode, Cline, Paseo, and OpenAgents report theirs in the JSON output. `resumable: false` means no id was found: use the written-result review path.
+- **Before a new adapter:** `--dry-run` prints the exact command without running it; record it in `decisions.jsonl`. `dropped_flags` in the result lists optional flags the installed version does not have.
+- **Models:** `agent_run.py models --harness <id>` runs the harness's own listing command from the discovery table below.
+- **Permissions:** `--yolo` skips the worker's permission prompts. Use it only in a worktree or throwaway folder, never on the user's main checkout without their consent. `--isolate` turns off the user's global context where the harness allows it.
+- **Paseo** returns at once with the agent id (`--no-wait`); OpenAgents needs `--agent <name>`. The MCP paths below do not use the runner.
+- **Not in the registry:** a harness the registry does not know runs as `--harness script:<path>` with an adapter script, or by hand with the flags below. Add it to `packages/python/agent-runner/scripts/agent/harnesses.json` when it proves out.
+
+The sections below document each harness for reading and for the MCP paths; the runner applies the same flags.
 
 ## Capability matrix
 
