@@ -6,7 +6,7 @@ import { describe, it } from "node:test";
 import { gzipSync } from "node:zlib";
 
 import { runInstall } from "../commands/Install.mjs";
-import { notifyUpdate, runUpdate } from "../commands/Update.mjs";
+import { buildSteps, notifyUpdate, runUpdate } from "../commands/Update.mjs";
 import { readInstalls, recordInstalls, writeJson } from "../core/Installs.mjs";
 import { RepoRoot } from "../core/Paths.mjs";
 import { extractTarball, fetchLatestCommit } from "../core/Source.mjs";
@@ -298,5 +298,20 @@ describe("update notice", () => {
             throw new Error("offline");
         } });
         assert.deepEqual(io.errors, []);
+    });
+});
+
+describe("buildSteps", () => {
+    it("installs and builds a package that declares a build script", () => {
+        const dir = mkdtempSync(join(tmpdir(), "gti-pkg-"));
+        writeFileSync(join(dir, "package.json"), JSON.stringify({ scripts: { build: "tsc" } }));
+        writeFileSync(join(dir, "package-lock.json"), "{}");
+        assert.deepEqual(buildSteps(dir), [["ci"], ["run", "build"]]);
+    });
+
+    it("only installs a package with no build script", () => {
+        const dir = mkdtempSync(join(tmpdir(), "gti-pkg-"));
+        writeFileSync(join(dir, "package.json"), JSON.stringify({ scripts: { test: "node --test tests/" } }));
+        assert.deepEqual(buildSteps(dir), [["install"]]);
     });
 });

@@ -231,6 +231,24 @@ async function ensureSource(folder, source, commit, io, options) {
 }
 
 /**
+ * The npm steps that prepare one code package: install its dependencies, then run its build script
+ * when it declares one. A package with no build step, such as one that ships plain JavaScript, only installs.
+ *
+ * @param {string} cwd Package folder
+ * @returns {string[][]} npm argument lists, in order
+ */
+export function buildSteps(cwd) {
+    const manifest = readJson(join(cwd, "package.json"), {});
+    const steps = [[existsSync(join(cwd, "package-lock.json")) ? "ci" : "install"]];
+
+    if (manifest.scripts?.build) {
+        steps.push(["run", "build"]);
+    }
+
+    return steps;
+}
+
+/**
  * Installs dependencies and builds the code packages that the updated skills drive.
  *
  * @param {string} root Source tree root
@@ -251,9 +269,8 @@ function buildPackages(root, skillIds, io) {
 
     for (const relative of packages) {
         const cwd = join(root, ...relative.split("/"));
-        const steps = [[existsSync(join(cwd, "package-lock.json")) ? "ci" : "install"], ["run", "build"]];
 
-        for (const args of steps) {
+        for (const args of buildSteps(cwd)) {
             io.out(`build    npm ${args.join(" ")} in ${relative}`);
             // npm is a .cmd file on Windows, which only runs through a shell; the arguments are fixed strings.
             const result = spawnSync(`npm ${args.join(" ")}`, { cwd, shell: true, stdio: "ignore" });
