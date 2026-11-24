@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Maestro Central</title>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/live.css">
+    <link rel="stylesheet" href="/css/map.css">
+    <link rel="stylesheet" href="/css/cluster.css">
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" data-link href="/" aria-label="Maestro central"><span class="brand-icon" data-mark></span><span class="brand-mark">Maestro</span><span class="brand-tag">central</span></a>
+        <nav class="nav">
+            <a data-link href="/">Fleet</a>
+            <a data-link href="/map">Map</a>
+            <a data-link href="/cluster">Cluster</a>
+            <a data-link href="/settings">Settings</a>
+        </nav>
+        <span class="conn" id="conn"><span class="dot"></span><span class="conn-label">connecting</span></span>
+    </header>
+    <div class="hostbar" id="hostbar" hidden></div>
+    <main id="view" aria-live="polite"></main>
+    <div class="tooltip" id="tooltip" hidden></div>
+    <script type="module" src="/js/app.mjs"></script>
+</body>
+</html>

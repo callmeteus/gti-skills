@@ -32,6 +32,15 @@ Paseo is one runtime with three access paths. Probe them in this order and use t
 - All three paths reach the same daemon, agents, and catalog. An agent id from one path works on the others, so a run that loses its MCP tools can continue the same chats through the CLI or the API.
 - Never store the daemon password. Read it from `PASEO_PASSWORD` or the host string at run time.
 
+## Other machines
+
+Paseo and OpenCode can run workers on other machines, so one Maestro run can use a cluster.
+
+- **Paseo:** the daemon keeps connected hosts. List them with `paseo host ls --json` or the `list_hosts` tool, then pass the host's `serverId` to `create_agent`, `send_agent_prompt`, `get_agent_status`, and `get_agent_activity`. Both daemons must allow it in `daemon.remoteAccess`, which is off by default; if it is off, say so and keep the work on this machine. With the CLI, `--host <target>` (or `PASEO_HOST`) points one command at another daemon.
+- **OpenCode:** the other machine runs `opencode serve --hostname <address> --port <port>`, and this machine connects with `--server <url>` on each command (verified on OpenCode 2.3.2; `serve` is not in the subcommand list but `opencode serve --help` documents it).
+
+Record every machine in `~/.gti/maestro/hosts.json` at intake and put its id in each worker record's `host` (see [run-state.md](run-state.md#hostsjson)). Route by machine the same way as by model: drop machines that are offline or cannot launch the chosen provider, prefer the machine the user named, and say in one line when work moves to another machine. Never put a password, token, or key in the registry or in a brief.
+
 ## Choosing the final path
 
 Several runtimes are often installed at once: Paseo, OpenCode, Kilo, Cline, Cursor, Claude Code, Codex, and others. The final path is the one runtime Maestro spawns workers through. Choose it this way:

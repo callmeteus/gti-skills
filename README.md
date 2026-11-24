@@ -417,6 +417,7 @@ ai-skills/
 │   ├── videoeditor/           # Engine behind the Video Editor skill
 │   ├── lintapple/             # UI linter shared by Frontend Design Review and Unslop Interface
 │   ├── leakguard/             # Pre-tool guard engine, per-agent hooks, and leak history scanner
+│   ├── maestro-central/       # Real-time dashboard for Maestro runs
 │   └── python/
 │       └── shared/            # Scripts shared by the video skills
 └── .github/workflows/         # CI: validation and tests
@@ -471,6 +472,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
 | [packages/lintapple/README.md](packages/lintapple/README.md) | Vendored lintapple UI linter and the runner shared by the UI skills |
 | [packages/leakguard/README.md](packages/leakguard/README.md) | Leakguard engine, per-agent hooks, CLI flags, and the history scanner |
+| [packages/maestro-central/README.md](packages/maestro-central/README.md) | Maestro central: local real-time dashboard, its API, and the demo |
 | [packages/artdirector/ARCHITECTURE.md](packages/artdirector/ARCHITECTURE.md) | Art Director design decisions and limitations |
 | [packages/videoeditor/README.md](packages/videoeditor/README.md) | Video Editor engine source and scripts |
 | [packages/videoeditor/ARCHITECTURE.md](packages/videoeditor/ARCHITECTURE.md) | Video Editor design decisions and limitations |

@@ -53,6 +53,7 @@ In this skill:
 - Worker spawn waits for nobody. Spawn the selected workers, including in parallel, and continue with the ledger while they run.
 - Review does not ask the user to judge. Maestro decides PASS, FIX, or REASSIGN. Only a product decision or a gated action becomes a pending item.
 - A stalled worker gets one status prompt in the same chat, then a reassignment. No polling loops and no unchanged retries.
+- The central is not opened. Do not start it or open a browser; the ledger is still written, so the user can run `/maestro central` later.
 - When the budget runs out, stop spawning, finish the current review, and write the report with what is left.
 
 ## Output Location
@@ -86,6 +87,7 @@ The request text selects the command. `/maestro` is the same as `maestro run`.
 | `/maestro report` | Write and print the final report from the ledger |
 | `/maestro preferences` | Show, set, or forget model roles, run defaults, run profiles, fallbacks, routes, and avoid entries |
 | `/maestro providers` | List discovered providers, models, capabilities, limits, health, and cooldowns |
+| `/maestro central` | Start or reuse the real-time central and give the user its URL; see [Central](#central) |
 | `/maestro orchestrators` | List the detected orchestration MCP servers, their role, tools, and status; add `--refresh` to sweep again |
 
 ## Workflow
@@ -129,7 +131,25 @@ Everything lives in `~/.gti/maestro/<project>/` (`<project>` is the repository f
 └── report.md
 ```
 
+The ledger also feeds the central in real time, so write each record when it happens: a worker line at every status change, an audit line at every spawn, prompt, review, fix, and verify, with a one-line `summary` of what was sent or found.
+
 The ledger is the memory. After a context reset or compaction, read `run.json`, `workers.jsonl`, and the last decisions before doing anything else. See [references/harness/run-state.md](references/harness/run-state.md).
+
+## Central
+
+The central is a local page that shows every Maestro run in real time: Maestro in the middle with one card per worker chat (Fleet; hover for a summary, click for the worker's details and history), a task map by project and wave (Map), what is waiting on the user at the top, the run feed and reviews, the machines of the cluster with their workers (Cluster), plus provider health and the saved preferences and run profiles (Settings). With more than one machine, Fleet and Map can be filtered by machine. It reads the ledger, never writes it, and updates the open page the moment a ledger file changes.
+
+```bash
+node <skill-dir>/scripts/central/bin/central.mjs start --open --json
+```
+
+- Run it when the user asks for the central or `/maestro central`, or at the start of an interactive complex run. Give the user the returned `url`; it carries the session token.
+- `start` reuses a running central and answers `reused: true`, so do not open it twice. `status --json` and `stop` manage it, and `demo --open` shows sample runs.
+- It binds to `127.0.0.1` only and needs Node.js 20 or newer, with no dependencies.
+
+## Cluster
+
+Paseo connected hosts and OpenCode servers let one run use workers on other machines. At intake, record each reachable machine in `~/.gti/maestro/hosts.json`, put its id in every worker record's `host`, and route by machine like by model: skip offline machines and machines that cannot launch the chosen provider. Remote Paseo agents need `daemon.remoteAccess` on both daemons. See [Other machines](references/harness/adapters.md#other-machines).
 
 ## Harness detection and worker chats
 

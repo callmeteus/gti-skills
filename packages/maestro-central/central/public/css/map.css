@@ -1,0 +1,260 @@
+/* Dark task map */
+.map-band {
+    background: var(--night);
+    color: #e9e7e1;
+}
+
+.map-page {
+    min-height: calc(100vh - 58px);
+}
+
+.map-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px 32px;
+    padding: 44px 0 18px;
+}
+
+.map-head > div {
+    flex: 1 1 480px;
+}
+
+.map-head h2 {
+    margin: 0 0 6px;
+    font: 400 clamp(24px, 3vw, 34px)/1.2 var(--serif);
+}
+
+.map-head .updated {
+    color: #8f8b82;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: min(380px, 100%);
+    padding: 10px 14px;
+    border: 1px solid #2b313d;
+    border-radius: 10px;
+    background: #10141c;
+}
+
+.search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #e9e7e1;
+}
+
+.search input::placeholder {
+    color: #6f7684;
+}
+
+.search kbd {
+    padding: 0 6px;
+    border: 1px solid #2b313d;
+    border-radius: 4px;
+    color: #8f96a3;
+    font: 11px var(--mono);
+}
+
+.map-stage {
+    position: relative;
+    height: min(680px, 78vh);
+    border: 1px solid #1d222d;
+    border-radius: 14px;
+    background: radial-gradient(ellipse at 50% 40%, #121722 0%, var(--night) 70%);
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+}
+
+.map-stage.is-dragging {
+    cursor: grabbing;
+}
+
+.map-stage > svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.map-hint {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 14px;
+    border: 1px solid #2b313d;
+    border-radius: 999px;
+    background: rgba(16, 20, 28, 0.9);
+    color: #aab0bb;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.map-legend {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    max-width: calc(100% - 200px);
+    padding: 8px 12px;
+    border: 1px solid #2b313d;
+    border-radius: 10px;
+    background: rgba(16, 20, 28, 0.9);
+    color: #aab0bb;
+    font-size: 12px;
+}
+
+.map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.map-legend i {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+.map-tools {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.minimap {
+    width: 150px;
+    height: 96px;
+    border: 1px solid #2b313d;
+    border-radius: 8px;
+    background: rgba(16, 20, 28, 0.92);
+}
+
+.zoom {
+    display: grid;
+    border: 1px solid #2b313d;
+    border-radius: 8px;
+    background: rgba(16, 20, 28, 0.92);
+    overflow: hidden;
+}
+
+.zoom button {
+    width: 34px;
+    height: 32px;
+    border: 0;
+    background: transparent;
+    color: #e9e7e1;
+    cursor: pointer;
+}
+
+.zoom button + button {
+    border-top: 1px solid #2b313d;
+}
+
+.zoom button:hover {
+    background: #1b2130;
+}
+
+.node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.node.is-dim {
+    opacity: 0.15;
+}
+
+.node-ring {
+    fill: none;
+    stroke-width: 1.5;
+    animation: ring 2.2s ease-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@keyframes ring {
+    0% { transform: scale(1); opacity: 0.9; }
+    100% { transform: scale(2.6); opacity: 0; }
+}
+
+.cluster-name {
+    font: 600 11px var(--mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.cluster-meta {
+    fill: #7e8592;
+    font: 10px var(--mono);
+}
+
+.map-foot {
+    padding: 10px 0 40px;
+    color: #6f7684;
+    font-size: 12px;
+    text-align: right;
+}
+
+.tooltip {
+    position: fixed;
+    z-index: 50;
+    max-width: 280px;
+    padding: 8px 11px;
+    border: 1px solid #2b313d;
+    border-radius: 8px;
+    background: #10141c;
+    color: #e9e7e1;
+    font-size: 12px;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.tooltip b {
+    display: block;
+    font: 600 12px var(--mono);
+}
+
+.tooltip span {
+    color: #aab0bb;
+}
+
+.tooltip .tip-row {
+    display: block;
+    margin-top: 2px;
+    font: 11px/1.45 var(--mono);
+}
+
+.tooltip .tip-hint {
+    display: block;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #2b313d;
+    color: #7e8592;
+    font-size: 11px;
+}
+
+@media (max-width: 860px) {
+    .map-stage {
+        height: 460px;
+    }
+    .map-hint,
+    .minimap {
+        display: none;
+    }
+    .map-legend {
+        max-width: calc(100% - 70px);
+    }
+}

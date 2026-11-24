@@ -76,6 +76,7 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 
 - **Orchestrator, not worker:** Maestro plans, delegates, reviews, and reports; workers produce every deliverable.
 - **Strong planner, cheap workers:** a tier table maps read-only work to the cheapest model, focused edits to a mid tier, and hard work to a strong model used sparingly.
+- **Real-time central:** a local page shows every run as it happens: Maestro in the middle with one card per worker chat, a task map by project and wave, the run feed, reviews, pending items, and provider health.
 - **Persistent preferences:** user and project files store the orchestrator, executor, fallbacks, routes, and avoid list, and survive across runs.
 - **Run defaults and profiles:** Maestro detects the run kind (security, frontend, tests, and others), saves the settings the user gave for that kind (model, harness, adapter, budget, tier, skills) to a profile in `~/.gti/maestro/`, and promotes a setting requested in 3 runs in a row to the profile or the defaults.
 - **Paseo by MCP, CLI, or API:** reaches the Paseo daemon through its MCP tools, the `paseo` CLI, or the `@getpaseo/client` API, whichever works first, and skips Paseo when none does.
@@ -112,8 +113,9 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 | MCP client or orchestration server, optional | Any current MCP revision | Spawns or coordinates workers through OpenAgents, Paseo, or another MCP orchestrator | No |
 | Git | Any recent | Diffs, branches, and worktrees for parallel work | No |
 | Project checks | - | Tests, typecheck, lint, and build used as review evidence | No |
+| Node.js, for the central only | 20 or newer | Runs the local real-time central in `scripts/central` | No |
 
-No scripts, Python packages, or network services are bundled. Maestro works with the tools the agent already has.
+The only bundled script is the central, a dependency-free local Node server. Maestro itself works with the tools the agent already has.
 
 | Platform | Status |
 |----------|--------|
@@ -548,6 +550,29 @@ MCP ORCHESTRATORS  run-2026-11-14-001  updated 15:00
     read read_doc  models list_models
   selected: paseo spawner, openagents-workspace coordination
 ```
+
+### /maestro central
+
+```bash
+node <skill-dir>/scripts/central/bin/central.mjs <start|serve|stop|status|demo> [options]
+```
+
+Starts the local central, or reuses the running one, and prints its URL with the session token. The page updates on its own as Maestro writes the ledger. Source and API: [packages/maestro-central](../../packages/maestro-central/README.md).
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `start` | Run the central in the background, or reuse it | `--open`, `--json`, `--port`, `--root` |
+| `serve` | Run the central in the foreground | `--port`, `--root` |
+| `status` | Show whether it runs and its URL | `--json` |
+| `stop` | Stop it | `--root` |
+| `demo` | Write sample runs to `~/.gti/maestro/_demo/` and replay events | `--open`, `--json` |
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--root` | `MAESTRO_HOME`, `GTI_HOME/maestro`, or `~/.gti/maestro` | Ledger folder to read |
+| `--port` | `MAESTRO_CENTRAL_PORT` or `4731` | Preferred port; the next free one is used when it is taken |
+| `--open` | Off | Open the fleet view in the browser |
+| `--json` | Off | Print JSON |
 
 ### Preference and catalog files
 

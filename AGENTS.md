@@ -30,6 +30,7 @@ gti-skills/
 │   ├── artdirector/        # Node and TypeScript: the engine behind the Art Director skill
 │   ├── lintapple/          # Node and TypeScript: UI linter shared by Frontend Design Review and Unslop Interface
 │   ├── leakguard/          # Node: pre-tool guard engine, per-agent hooks, and leak history scanner
+│   ├── maestro-central/    # Node: real-time dashboard for Maestro runs, synced into the Maestro skill
 │   └── python/
 │       └── shared/         # Python scripts shared by several skills
 ├── AGENTS.md
@@ -150,6 +151,7 @@ Never edit these by hand; change the source and rebuild:
 - `harnesses/<agent-id>/GUIDE.md` in every skill (source: the registry and `skill.json`)
 - `scripts/lib`, `scripts/setup`, `scripts/download`, `scripts/transcript`, and `scripts/frames` inside the video skills (source: `packages/python/shared/scripts`)
 - `scripts/lintapple` and `references/lintapple` inside Frontend Design Review and Unslop Interface (source: `packages/lintapple/agent`)
+- `scripts/central` inside Maestro (source: `packages/maestro-central/central`)
 - `references/harnesses/install-locations.md` (source: the registry)
 
 Tests:
@@ -159,6 +161,7 @@ Tests:
 | `npm test` | CLI tests and every Python test |
 | `cd packages/artdirector && npm test` | Art Director engine |
 | `cd packages/leakguard && npm test` | Leakguard engine, detectors, adapters, installer, redaction, and history scanner |
+| `cd packages/maestro-central && npm test` | Maestro central: ledger snapshot, token and Host checks, static paths, and live updates over the event stream (also run by `npm test`) |
 | `cd skills/infra-expert/tests/ai-assisted-sre && python -m pytest -q` | Infra Expert scenario runner: check evaluators, runner, remote commands, sandbox fakes, and isolation rules; needs `pip install -r requirements.txt` and Linux |
 | `cd packages/lintapple && npm test` | lintapple linter, including the ported upstream pull requests; needs `npx playwright install chromium` |
 

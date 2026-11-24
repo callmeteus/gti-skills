@@ -31,11 +31,35 @@ These live outside the run report and are read at intake.
 | User | `~/.gti/maestro/preferences.json` | Roles, run defaults, run profiles, fallbacks, routes, avoid |
 | Project | `~/.gti/maestro/<project>/preferences.json` | Project overrides |
 | User | `~/.gti/maestro/history.jsonl` | Last 50 runs: kind and the settings the user set, for the repeated-request rule |
+| User | `~/.gti/maestro/hosts.json` | The cluster: every machine Maestro can run workers on, see [hosts.json](#hostsjson) |
 | User | `~/.gti/maestro/providers.json` | Model catalog, limits, health, cooldowns |
 | Project | `~/.gti/maestro/<project>/providers.json` | Project overrides and declared entries |
 | Project | `~/.gti/maestro/<project>/orchestrators.json` | MCP servers found in this run, their role, tools, and status |
 
 `MAESTRO_HOME` replaces `~/.gti/maestro` when set. They contain no credentials, only provider and model IDs plus health.
+
+## hosts.json
+
+The cluster registry, one file for the machine at `~/.gti/maestro/hosts.json`. Maestro rewrites it at intake from what it can reach: Paseo connected hosts (`paseo host ls --json` or the `list_hosts` tool) and OpenCode servers the user named (`opencode --server <url>`). This machine is always in the cluster, as the entry with `self: true`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `updated` | string | ISO timestamp of the last refresh |
+| `hosts[].id` | string | Stable id: Paseo `serverId` or registration id, `local` for this machine, or the label |
+| `hosts[].label` | string | Name shown in the central |
+| `hosts[].self` | boolean | True for this machine |
+| `hosts[].via` | string | `local`, `paseo`, or `opencode` |
+| `hosts[].address` | string | Connection target without credentials, for example `ssh://deploy@build-box` |
+| `hosts[].status` | string | `online`, `offline`, `disabled`, or `unknown` |
+| `hosts[].lastSeen` | string | ISO timestamp of the last successful contact |
+| `hosts[].providers` | string[] | Provider ids that machine can launch |
+| `hosts[].meta` | object | Short labels, for example the Paseo host metadata |
+
+```json
+{"version":1,"updated":"2026-11-23T15:00:00Z","hosts":[{"id":"local","label":"studio-desktop","self":true,"via":"local","status":"online","providers":["claude","codex"]},{"id":"srv_build","label":"build-box","via":"paseo","address":"ssh://deploy@build-box","status":"online","lastSeen":"2026-11-23T14:59:40Z","providers":["codex"]}]}
+```
+
+Never store a password, token, or key in this file: no `password=` in an address, no auth headers. Every worker record names its machine in `host` (omit it for this machine).
 
 ## orchestrators.json
 
@@ -125,6 +149,7 @@ One JSON object per line, appended when a worker is spawned and updated in place
 | `routing` | Why this model was chosen |
 | `attempts` | Every provider/model attempt with its result and cooldown |
 | `adapter` | Adapter name from `adapters.md` |
+| `host` | Id of the machine the worker runs on, from `hosts.json`; omitted for this machine |
 | `orchestrator` | MCP spawner or adapter that owns the chat, or `null` |
 | `chat` | Chat or session id, or null |
 | `resumable` | Whether the chat can be prompted again |
@@ -156,6 +181,8 @@ Append-only. Every spawn, prompt, review, fix, verification, and report.
 {"ts":"2026-11-14T15:05:00Z","action":"spawn","worker":"w2.1","chat":"agent_123","provider":"opencode","model":"deepseek-v4.1-flash","result":"started"}
 {"ts":"2026-11-14T15:21:00Z","action":"review","worker":"w2.1","chat":"agent_123","result":"FIX","tokens":null,"costUsd":null}
 ```
+
+Add `summary`, one line of what was sent or found, to every prompt, review, fix, and verify record. The central shows it in the run feed; without it the feed falls back to a generic line.
 
 Record tokens and cost only when the harness reports them. Otherwise use null. Do not estimate without saying so.
 
