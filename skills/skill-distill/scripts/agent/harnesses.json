@@ -1,0 +1,511 @@
+{
+    "about": "How agent_run.py starts and resumes each coding-agent CLI headless. Placeholders: {model} {provider} {session} {cwd} {trace_dir} {title} {agent}. Optional flags (yolo, isolate) are checked against the help output before use and dropped when missing. status: verified = checked against the CLI's help on the version shown; tested = run end to end (smoke test or upstream); documented = from the CLI docs, not run here.",
+    "harnesses": {
+        "claude": {
+            "name": "Claude Code",
+            "bin": [
+                "claude"
+            ],
+            "status": "tested (2.1)",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--verbose"
+            ],
+            "resume": [
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--verbose",
+                "--resume",
+                "{session}"
+            ],
+            "session": {
+                "assign": "uuid",
+                "flag": [
+                    "--session-id",
+                    "{session}"
+                ],
+                "keys": [
+                    "session_id"
+                ]
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "yolo": [
+                "--dangerously-skip-permissions"
+            ],
+            "isolate": [
+                "--safe-mode"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "notes": "An open model needs ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN for an Anthropic-compatible server, passed with --env. --safe-mode turns off CLAUDE.md, skills, plugins, hooks, and MCP servers; admin policy still applies."
+        },
+        "codex": {
+            "name": "Codex CLI",
+            "bin": [
+                "codex"
+            ],
+            "status": "tested upstream",
+            "help": [
+                "exec",
+                "--help"
+            ],
+            "spawn": [
+                "exec",
+                "--json",
+                "--skip-git-repo-check"
+            ],
+            "resume": [
+                "exec",
+                "resume",
+                "{session}"
+            ],
+            "resume_flags": [],
+            "session": {
+                "assign": null,
+                "keys": [
+                    "thread_id",
+                    "session_id"
+                ]
+            },
+            "model": [
+                "-m",
+                "{model}"
+            ],
+            "yolo": [
+                "--dangerously-bypass-approvals-and-sandbox"
+            ],
+            "isolate": [
+                "--ignore-user-config",
+                "--ignore-rules"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "models": [
+                "debug",
+                "models"
+            ],
+            "notes": "A local OpenAI-compatible server goes in --extra-args: -c model_provider=local -c model_providers.local.name=local -c model_providers.local.base_url=http://<host>:8000/v1"
+        },
+        "opencode": {
+            "name": "OpenCode",
+            "bin": [
+                "opencode"
+            ],
+            "status": "verified (2.2)",
+            "help": [
+                "run",
+                "--help"
+            ],
+            "spawn": [
+                "run",
+                "--format",
+                "json"
+            ],
+            "resume": [
+                "run",
+                "--format",
+                "json",
+                "--session",
+                "{session}"
+            ],
+            "session": {
+                "assign": null,
+                "flag": [
+                    "--session",
+                    "{session}"
+                ],
+                "keys": [
+                    "sessionID",
+                    "sessionId",
+                    "session_id"
+                ]
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "title": [
+                "--title",
+                "{title}"
+            ],
+            "yolo": [
+                "--auto"
+            ],
+            "isolate": [],
+            "prompt": "arg",
+            "log": "stdout",
+            "models": [
+                "models"
+            ],
+            "notes": "--session continues a session or creates it. extract_session.py has no parser for the JSON log yet."
+        },
+        "kilo": {
+            "name": "Kilo Code",
+            "bin": [
+                "kilo"
+            ],
+            "status": "documented",
+            "help": [
+                "run",
+                "--help"
+            ],
+            "spawn": [
+                "run"
+            ],
+            "resume": [
+                "run",
+                "--session",
+                "{session}"
+            ],
+            "session": {
+                "assign": "name",
+                "flag": [
+                    "--session",
+                    "{session}"
+                ],
+                "keys": []
+            },
+            "model": [
+                "-m",
+                "{model}"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "models": [
+                "models",
+                "--verbose"
+            ]
+        },
+        "pi": {
+            "name": "Pi",
+            "bin": [
+                "pi"
+            ],
+            "status": "documented",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "--print"
+            ],
+            "resume": [
+                "--print",
+                "--session",
+                "{session}"
+            ],
+            "session": {
+                "assign": "name",
+                "flag": [
+                    "--session-id",
+                    "{session}"
+                ],
+                "keys": []
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "isolate": [
+                "--no-skills"
+            ],
+            "prompt": "arg",
+            "log": {
+                "session_dir": [
+                    "--session-dir",
+                    "{trace_dir}/sessions"
+                ]
+            },
+            "models": [
+                "--list-models"
+            ],
+            "notes": "Model ids are provider/id with an optional :thinking suffix."
+        },
+        "omp": {
+            "name": "oh-my-pi",
+            "bin": [
+                "omp"
+            ],
+            "status": "tested upstream",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "-p",
+                "--cwd",
+                "{cwd}",
+                "--no-title"
+            ],
+            "resume": null,
+            "session": {
+                "assign": null,
+                "keys": []
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "yolo": [
+                "--auto-approve"
+            ],
+            "isolate": [
+                "--no-context-files",
+                "--no-rules",
+                "--no-skills"
+            ],
+            "prompt": "arg",
+            "log": {
+                "session_dir": [
+                    "--session-dir",
+                    "{trace_dir}/sessions"
+                ]
+            },
+            "notes": "Model ids are provider/id from ~/.omp/agent/models.yml. No documented resume."
+        },
+        "cline": {
+            "name": "Cline CLI",
+            "bin": [
+                "cline"
+            ],
+            "status": "documented",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "--json"
+            ],
+            "resume": [
+                "--json",
+                "--id",
+                "{session}"
+            ],
+            "session": {
+                "assign": null,
+                "keys": [
+                    "session_id",
+                    "sessionId",
+                    "taskId",
+                    "task_id"
+                ]
+            },
+            "model": [
+                "-m",
+                "{model}"
+            ],
+            "provider": [
+                "-P",
+                "{provider}"
+            ],
+            "yolo": [
+                "--auto-approve",
+                "true"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "notes": "Auto-approves tools by default; prefer a worktree. When the id is not in the output, read it from cline history."
+        },
+        "command-code": {
+            "name": "Command Code",
+            "bin": [
+                "command-code"
+            ],
+            "status": "documented",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "-p",
+                "--output-format",
+                "json"
+            ],
+            "resume": [
+                "-p",
+                "-r",
+                "{session}"
+            ],
+            "session": {
+                "assign": "name",
+                "flag": [
+                    "-n",
+                    "{session}"
+                ],
+                "keys": []
+            },
+            "model": [
+                "-m",
+                "{model}"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "models": [
+                "--list-models"
+            ]
+        },
+        "cursor": {
+            "name": "Cursor CLI",
+            "bin": [
+                "agent",
+                "cursor-agent"
+            ],
+            "status": "verified (2026.11)",
+            "help": [
+                "--help"
+            ],
+            "spawn": [
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--trust"
+            ],
+            "resume": [
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--trust",
+                "--resume",
+                "{session}"
+            ],
+            "session": {
+                "assign": "command",
+                "create": [
+                    "create-chat"
+                ],
+                "flag": [
+                    "--resume",
+                    "{session}"
+                ],
+                "keys": [
+                    "session_id",
+                    "chatId",
+                    "chat_id"
+                ]
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "yolo": [
+                "--force"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "notes": "create-chat makes the chat id before the first prompt, so every spawn is resumable. --trust skips the workspace trust prompt in headless runs."
+        },
+        "paseo": {
+            "name": "Paseo CLI",
+            "bin": [
+                "paseo"
+            ],
+            "status": "verified (0.13)",
+            "help": [
+                "run",
+                "--help"
+            ],
+            "spawn": [
+                "run",
+                "--no-wait",
+                "--json",
+                "--cwd",
+                "{cwd}"
+            ],
+            "resume": [
+                "send",
+                "{session}",
+                "--no-wait",
+                "--json"
+            ],
+            "resume_prompt": {
+                "file_flag": "--prompt-file"
+            },
+            "session": {
+                "assign": null,
+                "keys": [
+                    "id",
+                    "agentId",
+                    "agent_id"
+                ]
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "provider": [
+                "--provider",
+                "{provider}"
+            ],
+            "title": [
+                "--title",
+                "{title}"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "async": true,
+            "models": [
+                "provider",
+                "models",
+                "{provider}",
+                "--json"
+            ],
+            "notes": "Returns at once with the agent id; the agent keeps running in the Paseo daemon. --provider takes provider or provider/model. List providers with paseo provider ls --json."
+        },
+        "openagents": {
+            "name": "OpenAgents Coder",
+            "bin": [
+                "openagents"
+            ],
+            "status": "documented",
+            "help": [
+                "coder",
+                "--help"
+            ],
+            "spawn": [
+                "coder",
+                "delegate",
+                "--json",
+                "--to",
+                "{agent}"
+            ],
+            "spawn_prompt": {
+                "flag": "--task"
+            },
+            "resume": [
+                "coder",
+                "chat",
+                "--json",
+                "--session",
+                "{session}"
+            ],
+            "resume_prompt": {
+                "flag": "-p"
+            },
+            "session": {
+                "assign": null,
+                "keys": [
+                    "session_id",
+                    "sessionId",
+                    "session"
+                ]
+            },
+            "model": [
+                "--model",
+                "{model}"
+            ],
+            "prompt": "arg",
+            "log": "stdout",
+            "models": [
+                "coder",
+                "models",
+                "list"
+            ],
+            "notes": "--agent names the agent Coder delegates to, for example codex."
+        }
+    }
+}

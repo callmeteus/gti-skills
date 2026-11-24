@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-22-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-23-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -61,7 +61,7 @@ GTI AI Skills is the collection the [Gio Technology Investments (GTI)](https://g
 | **Frontend Design Review** | design, coding | Reviews frontend work against the design system and three quality pillars with ranked issues and an accessibility grade, or builds distinctive interfaces from a committed direction; calls Unslop Interface in both modes. | None | [README](skills/frontend-design-review/README.md) |
 | **Gestures** | coding, design | Builds drags, swipes, sheets, and hold-to-confirm that track the finger 1:1 and stay interruptible, in plain JavaScript or any framework, with a dependency-free gesture module and a recipe per framework. Adapted from Emil Kowalski's skill. | A browser with Pointer Events | [README](skills/gestures/README.md) |
 | **GTI** | coding, personal | Keeps gti-skills current with one command (`/gti update`): updates every installed gti-skills skill from the latest GitHub commit, installs skills that are new in that commit for the packs already in use, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at, with backups. Works without a clone. | Node 18+, Python 3.10+ for MCP servers | [README](skills/gti/README.md) |
-| **Maestro** | coding, personal | Orchestrates a request as delegated tasks: plans on the strongest model, remembers the user's model preferences, discovers the providers and models the harness can run, routes each task by context, speed, cost, and health, probes orchestration MCP servers such as OpenAgents, spawns cheaper workers, reuses their chats for review and fixes, falls back on rate limits, and never does the work itself. Detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and other ACP harnesses. | A harness with subagents, a worker CLI on PATH, or an MCP orchestration server; Git | [README](skills/maestro/README.md) |
+| **Maestro** | coding, personal | Orchestrates a request as delegated tasks: plans on the strongest model, remembers the user's model preferences, discovers the providers and models the harness can run, routes each task by context, speed, cost, and health, probes orchestration MCP servers such as OpenAgents, spawns cheaper workers, reuses their chats for review and fixes, falls back on rate limits, and never does the work itself. Detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and other ACP harnesses. | A harness with subagents, a worker CLI on PATH (with Python 3.8+), or an MCP orchestration server; Git | [README](skills/maestro/README.md) |
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Fast CI** | coding, infra | Makes CI as fast as possible without letting it lie: audits the last 150 runs on any CI (GitHub Actions, Forgejo, Gitea, Woodpecker, GitLab, Jenkins, Kubernetes and K3s runners, or manual scripts) split into waiting, setup, and running, then lands small measured changes (warm runners, baked images, seeded caches, fast tools, time-balanced shards, proven test selection, hooks, budgets) until PRs get results in under a minute while the full suite still gates main, and checks rollback scripts, rollback jobs, and migrations with timed rollback drills. | Python 3.8+ | [README](skills/fast-ci/README.md) |
@@ -73,6 +73,7 @@ GTI AI Skills is the collection the [Gio Technology Investments (GTI)](https://g
 | **Weight Space Programming** | coding, research | Reads, fixes, and writes neural network weights by reasoning about what each layer computes, with no training: infers a checkpoint's task, removes failure directions with minimal edits, and hand-builds small networks, under a forward-pass budget and held-out evaluation. | Python 3.9+, numpy; PyTorch optional | [README](skills/weight-space-programming/README.md) |
 | **Improve Codebase Architecture** | coding | Finds refactors that make a codebase easier to change and test, starting where git history shows the most change, and presents them in an HTML report with before and after diagrams written in everyday coding terms. Adapted from Matt Pocock's skill. | Git, Python 3.8+ | [README](skills/improve-codebase-architecture/README.md) |
 | **Untangle Codebase** | coding | Runs one long refactor of a whole codebase or area: lists every hidden link, needless link, surplus piece, and special case, redesigns from today's requirements, and fixes everything one verified commit at a time, with an import graph, co-change history, a code skeleton, and a special-case count to measure progress. Adapted from Caldo's skill. | Git, Python 3.8+, a test command | [README](skills/untangle-codebase/README.md) |
+| **Skill Distill** | coding | Turns a good coding-agent session into a skill that an open-weight or local model can follow: writes the skill, runs the student three times in tmux on fresh copies of the starting state, fixes the skill at the first divergence, and repeats until the student matches and the user accepts. Adapted from Sybil Solutions' skill. | Python 3.10+, git, tmux, a student harness (omp, pi, Codex, Claude Code, or opencode) | [README](skills/skill-distill/README.md) |
 | **Infra Expert** | infra, coding | Guards every infrastructure operation (SSH on hosts, cloud CLIs, Terraform, Kubernetes, Compose, CI, secret stores, Grafana, model servers, network devices), reviews infrastructure code and AWS accounts, finds what makes databases, caches, and services slow and writes a proactive notice with the numbers and the fix, assesses CVEs, writes change plans with approvals, and draws infrastructure diagrams. Project specifics live in the project's committed `.gti/infra-expert/` folder. | Git, Python 3.8+; AWS CLI v2 for the aws area | [README](skills/infra-expert/README.md) |
 
 ### Packs
@@ -81,7 +82,7 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Skill Distill, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `infra` | Infrastructure as code, cloud accounts, and observability as code | Fast CI, Infra Expert, Leak Guard |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | LLM Fine Tuning, SEO Growth, Video to Markdown, Weight Space Programming, X Research |
@@ -259,8 +260,9 @@ Notes:
 | LLM Fine Tuning | No | 3.9+; recipe 3.11+ with tinker-cookbook | No | Inference endpoint for probes; recipe: Tinker, Hugging Face, optional W&B and Modal |
 | Weight Space Programming | No | 3.9+ with numpy; PyTorch optional | No | No |
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
-| Maestro | No | No | No | Optional: remote MCP servers such as OpenAgents; worker commands use the host's own tools |
+| Maestro | No | 3.8+ for CLI workers (agent runner) | No | Optional: remote MCP servers such as OpenAgents; worker commands use the host's own tools |
 | Untangle Codebase | No | 3.8+ | No | No |
+| Skill Distill | No | 3.10+; Playwright and Pillow for web results | No | Only what the student harness does, such as calls to its model server |
 | Infra Expert | No | 3.8+ | No | AWS APIs through the AWS CLI in the aws area, read-only; Mermaid from jsDelivr when viewing the report |
 
 | Platform | Status |
@@ -402,6 +404,7 @@ ai-skills/
 │   ├── maestro/
 │   ├── security-audit/
 │   ├── seo-growth/
+│   ├── skill-distill/
 │   ├── untangle-codebase/
 │   ├── unslop-interface/
 │   ├── ux-psychology-review/
@@ -419,7 +422,8 @@ ai-skills/
 │   ├── leakguard/             # Pre-tool guard engine, per-agent hooks, and leak history scanner
 │   ├── maestro-central/       # Real-time dashboard for Maestro runs
 │   └── python/
-│       └── shared/            # Scripts shared by the video skills
+│       ├── shared/            # Scripts shared by the video skills
+│       └── agent-runner/      # Starts and resumes external coding agents for Skill Distill and Maestro
 └── .github/workflows/         # CI: validation and tests
 ```
 
@@ -467,6 +471,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [AGENTS.md](AGENTS.md) | Rules every skill and package must follow, including the README Standard |
 | [packages/cli/README.md](packages/cli/README.md) | The `list`, `validate`, `build`, `check`, and `install` commands |
 | [packages/python/shared/README.md](packages/python/shared/README.md) | Scripts shared by the video skills |
+| [packages/python/agent-runner/README.md](packages/python/agent-runner/README.md) | Starting, resuming, and recording external coding agents in any harness |
 | [skills/infra-expert/tests/ai-assisted-sre/README.md](skills/infra-expert/tests/ai-assisted-sre/README.md) | Infra Expert scenario runner: sandbox and checks that test the skill with a real agent |
 | [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps) | The MCP servers (KaBuM!, Mercado Livre, Shopee, Twitter, Zoom), kept in their own repository |
 | [packages/artdirector/README.md](packages/artdirector/README.md) | Art Director engine source and scripts |
@@ -497,6 +502,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
 | [skills/maestro/README.md](skills/maestro/README.md) | Orchestrating tasks across cheap workers with review gates and reusable chats |
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
+| [skills/skill-distill/README.md](skills/skill-distill/README.md) | Distilling a good session into a tested skill for an open-weight model |
 | [skills/infra-expert/README.md](skills/infra-expert/README.md) | Reviewing and untangling infrastructure code and AWS accounts |
 | [skills/leak-guard/README.md](skills/leak-guard/README.md) | Installing the pre-tool guard, scanning local history, and rotating exposed credentials |
 
@@ -526,8 +532,9 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | LLM Fine Tuning | MIT, see [LICENSE](skills/llm-fine-tuning/LICENSE); Inkling 2 Small recipe adapted from drost-ai/finetune-inkling-2-small |
 | Weight Space Programming | Not declared |
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
-| Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project |
+| Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project; the bundled [agent runner](packages/python/agent-runner/LICENSE) is MIT |
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
+| Skill Distill | MIT, see [LICENSE](skills/skill-distill/LICENSE); adapted from Sybil Solutions' skill-distill |
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
 | X Research | Not declared; the `twitter` MCP server in [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps/tree/master/twitter-mcp) is MIT |
 | Video Editor | Not declared |

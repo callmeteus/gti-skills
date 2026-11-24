@@ -1,0 +1,18 @@
+{
+    "id": "skill-distill",
+    "displayName": "Skill Distill",
+    "packs": [
+        "coding"
+    ],
+    "shared": [
+        {
+            "from": "packages/python/agent-runner/scripts",
+            "to": "scripts"
+        }
+    ],
+    "harnessNotes": {
+        "*": "Skill Distill needs Python 3.10+, git, bash, and tmux, plus the student harness CLI on PATH; run scripts/setup/doctor.py first. On Windows, run it inside WSL.",
+        "claude": "As the teacher, pass --reference claude to init: it finds the newest Claude Code session of the reference folder in ~/.claude/projects.",
+        "codex": "As the teacher, pass --reference codex to init: it finds the newest Codex rollout of the reference folder in ~/.codex/sessions."
+    }
+}

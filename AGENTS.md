@@ -32,7 +32,8 @@ gti-skills/
 │   ├── leakguard/          # Node: pre-tool guard engine, per-agent hooks, and leak history scanner
 │   ├── maestro-central/    # Node: real-time dashboard for Maestro runs, synced into the Maestro skill
 │   └── python/
-│       └── shared/         # Python scripts shared by several skills
+│       ├── shared/         # Python scripts shared by several skills
+│       └── agent-runner/   # Python: starts and resumes external coding agents, shared by Skill Distill and Maestro
 ├── AGENTS.md
 └── README.md
 ```
@@ -152,6 +153,7 @@ Never edit these by hand; change the source and rebuild:
 - `scripts/lib`, `scripts/setup`, `scripts/download`, `scripts/transcript`, and `scripts/frames` inside the video skills (source: `packages/python/shared/scripts`)
 - `scripts/lintapple` and `references/lintapple` inside Frontend Design Review and Unslop Interface (source: `packages/lintapple/agent`)
 - `scripts/central` inside Maestro (source: `packages/maestro-central/central`)
+- `scripts/agent` inside Skill Distill and Maestro (source: `packages/python/agent-runner/scripts`)
 - `references/harnesses/install-locations.md` (source: the registry)
 
 Tests:
@@ -206,6 +208,7 @@ Current skills:
 | `video-editor` | Video Editor |
 | `fast-ci` | Fast CI |
 | `leak-guard` | Leak Guard |
+| `skill-distill` | Skill Distill |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 
