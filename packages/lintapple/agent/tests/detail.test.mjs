@@ -53,6 +53,13 @@ describe("detail page probe", { skip: browser ? false : "Chromium for Playwright
         assert.ok(!(await probe("empty-copy-clean.html")).some((finding) => finding.rule === "inconsistent-empty-copy"));
     });
 
+    it("finds a text field whose allowed values are listed under it, and leaves a select alone", async () => {
+        const enums = (await probe("enum-field.html")).filter((finding) => finding.rule === "enum-as-text");
+        assert.equal(enums.length, 1);
+        assert.match(enums[0].actual, /play_pause · next · previous · volume_up/);
+        assert.match(enums[0].items[0].selector, /input#key/);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

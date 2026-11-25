@@ -25,7 +25,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Back or cancel is always available; deep flows have breadcrumbs
 - [ ] Creating an item opens a modal from one "+ New" primary button in the page header; no create form sits open on the page (no `open-create-form`)
 - [ ] Every list has an empty state with the create button, not a bare header row (no `empty-list-without-message`)
-- [ ] Form labels sit above their fields, fixed choices are selects, settings are fields and not raw JSON (no `ragged-form-labels` or `raw-json-field`)
+- [ ] Form labels sit above their fields, fixed choices are selects, settings are fields and not raw JSON, and no text field lists its allowed values under it (no `ragged-form-labels`, `raw-json-field`, or `enum-as-text`)
 - [ ] Every control has a label, and no select has a single option (no `unexplained-control`)
 - [ ] Every empty state on a page follows one pattern, such as "Nenhum resultado" and "Nenhuma atualização" (no `inconsistent-empty-copy`)
 - [ ] On desktop, every clickable element changes on hover and shows the pointer cursor (no `no-hover-state` or `no-pointer-cursor`)

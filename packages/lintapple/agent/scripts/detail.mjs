@@ -2,7 +2,8 @@
  * Detail page tells for the layout probe: status actions (complete, cancel, archive) left as
  * separate buttons, controls stacked under the page title instead of on its right, notes that
  * explain how the page refreshes, the same value repeated in several cards, and values cut
- * with an ellipsis and no way to read them in full.
+ * with an ellipsis and no way to read them in full, empty states written in different
+ * patterns, and text fields whose allowed values are listed under them instead of a select.
  *
  * `measureDetail` runs in the page through Playwright, so it keeps no outside references.
  * probe.mjs merges its findings into the probe report.
@@ -193,6 +194,30 @@ export function measureDetail(options = {}) {
         if (Math.max(...lengths) - Math.min(...lengths) >= 3) problems.push(`lengths from ${Math.min(...lengths)} to ${Math.max(...lengths)} words`);
         if (problems.length) add("inconsistent-empty-copy", empties.slice(0, 4).map((entry) => entry.el), `${empties.length} empty states are written differently: ${problems.join("; ")} (${empties.slice(0, 3).map((entry) => `"${entry.text.slice(0, 40)}"`).join(", ")})`, "one pattern for every empty state, such as \"Nenhum resultado\" and \"Nenhuma atualização\"", "Write every empty state with the same pattern: \"No <things>\" (\"Nenhum resultado\", \"Nenhuma atualização\"), the same punctuation, and no narration of who would have done it (\"publicada pelo agente\"). Add a second line only to say what to do next. Use the same pattern across the product, and the same for loading (\"Carregando…\") and error text.");
     }
+
+    // A free text field for a value from a fixed list, with the list written as help text
+    // ("play_pause · next · previous"), and raw identifiers shown to the user.
+    const fields = [...document.querySelectorAll("input:not([type]), input[type=text], input[type=search], textarea")].filter((field) => shown(field) && !(ignore && field.closest(ignore)));
+    const enums = [];
+    for (const field of fields) {
+        const near = [];
+        for (let node = field.nextElementSibling, steps = 0; node && steps < 2; node = node.nextElementSibling, steps++) near.push(node);
+        const described = field.getAttribute("aria-describedby");
+        if (described) for (const id of described.split(/\s+/)) if (document.getElementById(id)) near.push(document.getElementById(id));
+        const parentNext = field.parentElement?.nextElementSibling;
+        if (parentNext) near.push(parentNext);
+        for (const hint of near) {
+            const text = (hint.innerText ?? "").trim();
+            if (!text || text.length > 200 || hint.querySelector("input, select, textarea, button")) continue;
+            const values = text.split(/\s*(?:·|\||,|\/|•|;)\s*/).map((value) => value.trim()).filter(Boolean);
+            const identifiers = values.filter((value) => /^[a-z0-9]+([_.-][a-z0-9]+)*$/i.test(value) && value.length <= 32);
+            if (values.length >= 3 && identifiers.length === values.length && values.some((value) => /[_.-]/.test(value) || /^[a-z]/.test(value))) {
+                enums.push({ field, hint, values });
+                break;
+            }
+        }
+    }
+    if (enums.length) add("enum-as-text", enums.slice(0, 3).flatMap((entry) => [entry.field, entry.hint]), `${enums.length} text field(s) take a value from a fixed list written under them (${enums.slice(0, 2).map((entry) => entry.values.slice(0, 4).join(" · ")).join("; ")})`, "a select (or radio buttons for up to four values) with readable labels", "Replace the text field with a select whose options are the allowed values with readable labels (\"Tocar ou pausar\", \"Próxima faixa\", \"Volume +\"), keeping the identifiers as option values only. Use radio buttons or a segmented control for two to four values. Remove the list of values from the help text, and never show snake_case identifiers to the user.");
 
     return findings;
 }

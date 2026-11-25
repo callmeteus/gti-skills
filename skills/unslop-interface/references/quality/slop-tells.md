@@ -129,6 +129,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | A table with only its header row when there is no data, and no empty state | Admin panels | 07 |
 | Labels beside their fields, so every field starts at a different edge | Admin panels | 07 |
 | Free text boxes for fixed choices (driver, channel, status) | Admin panels | 07 |
+| A text field for a fixed value, with the allowed identifiers listed under it ("play_pause · next · previous") | Admin panels | 07 |
 | A raw JSON text box for settings | Admin panels | 07 |
 | An unlabeled select next to the page title ("Even7"), or a select with one option | Admin panels | 07 |
 | A "Refresh" button on a page that reloads after each change | Admin panels | 07 |
