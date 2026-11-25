@@ -47,6 +47,12 @@ describe("detail page probe", { skip: browser ? false : "Chromium for Playwright
         }
     });
 
+    it("finds empty states written in different patterns, and accepts one pattern", async () => {
+        const slop = (await probe("empty-copy.html")).find((finding) => finding.rule === "inconsistent-empty-copy");
+        assert.match(slop?.actual ?? "", /2 openings \("sem", "nenhum"\); lengths from 3 to 6 words/);
+        assert.ok(!(await probe("empty-copy-clean.html")).some((finding) => finding.rule === "inconsistent-empty-copy"));
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

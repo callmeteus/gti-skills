@@ -90,6 +90,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Metadata joined with middle dots everywhere ("A · B · C") | Anthropic frontend-design | 05 |
 | Vague verbs ("Submit", "Continue") and one action with several names (delete, remove, trash) | Junaid-PK frontend-design | 05 |
 | Errors that apologize or say "Something went wrong" with no way to recover | Anthropic frontend-design | 05 |
+| Empty states written differently on one page ("Sem resultado registrado." next to "Nenhuma atualização publicada pelo agente ainda.") | Admin panels | 05 |
 
 ## Data display
 

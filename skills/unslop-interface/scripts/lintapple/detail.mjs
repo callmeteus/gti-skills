@@ -162,5 +162,37 @@ export function measureDetail(options = {}) {
     });
     if (cut.length) add("truncated-without-tooltip", cut.slice(0, 4), `${cut.length} value(s) are cut with an ellipsis and cannot be read in full`, "values that fit, wrap, or show the full text on hover and focus", "Give the value room (a wider column, the value under its label instead of beside it) or let it wrap. When it must be cut, such as a long ID, cut the middle (\"288f2f…41b3\"), show the full text in a tooltip, and add a copy button.");
 
+    // Empty states on one page written in different patterns: "Sem resultado registrado." next
+    // to "Nenhuma atualização publicada pelo agente ainda." should both read "Nenhum ...".
+    const openings = [
+        ["nenhum", /^nenhum[as]?\b/i],
+        ["sem", /^sem\b/i],
+        ["não há", /^(não|nao) (há|ha|existe|existem)\b/i],
+        ["ainda não", /^ainda (não|nao)\b/i],
+        ["vazio", /^(vazio|vazia|lista vazia)\b/i],
+        ["no", /^no\b/i],
+        ["nothing", /^nothing\b/i],
+        ["there is no", /^there (is|are) no\b/i],
+        ["not ... yet", /^(not|none) .*yet\b/i],
+        ["empty", /^empty\b/i],
+    ];
+    const empties = [...document.querySelectorAll("p, span, div, li, td, small")].map((el) => {
+        if ((ignore && el.closest(ignore)) || !shown(el) || el.closest("button, a, label, option, select, [role=tooltip], nav")) return null;
+        const text = ownText(el);
+        if (!text || text.length > 90) return null;
+        const opening = openings.find(([, pattern]) => pattern.test(text));
+        return opening ? { el, text, opening: opening[0], words: text.split(/\s+/).length, period: /\.$/.test(text) } : null;
+    }).filter(Boolean);
+    if (empties.length >= 2) {
+        const kinds = new Set(empties.map((entry) => entry.opening));
+        const periods = new Set(empties.map((entry) => entry.period));
+        const lengths = empties.map((entry) => entry.words);
+        const problems = [];
+        if (kinds.size > 1) problems.push(`${kinds.size} openings (${[...kinds].map((kind) => `"${kind}"`).join(", ")})`);
+        if (periods.size > 1) problems.push("some end with a period and some do not");
+        if (Math.max(...lengths) - Math.min(...lengths) >= 3) problems.push(`lengths from ${Math.min(...lengths)} to ${Math.max(...lengths)} words`);
+        if (problems.length) add("inconsistent-empty-copy", empties.slice(0, 4).map((entry) => entry.el), `${empties.length} empty states are written differently: ${problems.join("; ")} (${empties.slice(0, 3).map((entry) => `"${entry.text.slice(0, 40)}"`).join(", ")})`, "one pattern for every empty state, such as \"Nenhum resultado\" and \"Nenhuma atualização\"", "Write every empty state with the same pattern: \"No <things>\" (\"Nenhum resultado\", \"Nenhuma atualização\"), the same punctuation, and no narration of who would have done it (\"publicada pelo agente\"). Add a second line only to say what to do next. Use the same pattern across the product, and the same for loading (\"Carregando…\") and error text.");
+    }
+
     return findings;
 }

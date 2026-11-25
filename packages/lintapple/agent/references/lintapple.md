@@ -77,6 +77,7 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `icon-source` | Three or more small icons (32px or less) drawn as inline SVG or image files, with no icon library on the page. A suggestion for the report: the agent names a library and the user decides |
 | `no-hover-state` | On a desktop viewport (1024px or more), clickable elements with no `:hover` rule that applies to them or to something inside them, including rules on a hovered parent. Style sheets from another origin cannot be read; the finding says so |
 | `no-pointer-cursor` | On a desktop viewport, clickable elements (other than selects and labels) whose cursor is not `pointer` |
+| `inconsistent-empty-copy` | Two or more empty-state messages on one page ("Sem ...", "Nenhum ...", "No ...", "Nothing ...") with different openings, mixed trailing periods, or lengths 3 or more words apart |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |

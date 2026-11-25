@@ -60,12 +60,14 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 19. Drop the generated-page chrome. Set each heading in one color and style: no single word in another color, italic, or gradient (`accent-word`). Remove the arrow at the end of button and link text (`arrow-suffix`). Use numbered markers (01, 02, 03) only for real sequences such as steps or a timeline. Do not join metadata with middle dots by default (`A · B · C`); use separate labeled values or one plain sentence.
 20. Name each action by what happens, and keep the name through the flow. "Save changes", not "Submit"; a "Publish" button produces a "Published" toast; one operation is never "delete" in one place and "remove" in another. Name things by what users manage ("Notifications"), not by how the system is built ("Webhook config").
 21. Write errors and empty states as directions. An error says what happened and how to fix it, without apologizing and without vague text ("Something went wrong"). An empty screen invites the first action. Each label, help text, and message does one job.
+22. Write every empty state with one pattern. Pick one and use it across the product: "No <things>" ("Nenhum resultado", "Nenhuma atualização"), the same punctuation (none on a one-line message), and no narration of who would have done it or when ("publicada pelo agente ainda", "registrado"). Do not mix "Sem resultado registrado." with "Nenhuma atualização publicada pelo agente ainda." on one page. Add a second line only to say what to do next. Give loading ("Carregando…") and error messages one pattern each too. The probe reports `inconsistent-empty-copy` when the empty states on a page use different openings, punctuation, or lengths.
 
 ## Check
 
 - No exclamation marks, emoji, or tracked caps remain in the UI copy.
 - No heading accents one word, and no button or link ends with an arrow; the probe reports no `accent-word` or `arrow-suffix`.
 - Every action keeps one name through the flow, and errors say how to recover.
+- Every empty state follows one pattern ("Nenhum resultado", "Nenhuma atualização"); the probe reports no `inconsistent-empty-copy`.
 - No heading or short label leaves one word alone on its last line (no `lonely-word`).
 - Copy uses `…`, locale formats, and short active sentences with no stacked nouns.
 - Every trend value says what it is compared to.
