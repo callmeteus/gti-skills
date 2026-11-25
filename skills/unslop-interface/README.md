@@ -67,7 +67,8 @@ Unslop Interface gives an agent a fixed order of eight passes, a checklist of th
 
 - **Ordered passes:** spacing, corner radius, color, icons and alignment, typography and copy, data display, actions and structure, and states and feel, each in its own reference file.
 - **Taste files:** `~/.gti/unslop-interface/taste.md` and a per-project file list what the user bans and what to keep; bans become extra tells and keeps are never changed.
-- **Native and Rust interfaces:** egui, iced, Slint, and gpui get the same passes, measured with screenshots, layout overlays, and a source scan that reads `.rs` and `.slint` colors.
+- **Native and Rust interfaces:** egui, iced, Slint, and gpui get the same passes, measured with screenshots and an edge table of every section, layout overlays, and source scans that read `.rs` and `.slint` colors, frames sized to their content, language buttons, and split settings.
+- **Settings pages:** sections of one width on one grid, label and control rows, language lists as selects, a choice and the setup of its option in one component (a wizard when the setup takes steps), each control in one place, and no roadmap notes in the copy.
 - **Suggestions, not changes:** an icon library (Lucide, Phosphor, Font Awesome, Noto Emoji) is suggested in the report when the icons are hand-drawn; the skill never adds a dependency.
 - **Shallow and full scope:** shallow fixes the screen you name with all its states; full maps every page from the routes in the source and a crawl of the running app (`crawl.mjs`), then reviews each page and state with a coverage table.
 - **Before and after diff:** `snapshot.mjs` lists what changed per element ("radius 6 -> 14") with screenshots of both states.
@@ -229,7 +230,7 @@ node skills/unslop-interface/scripts/unslop/unslop.mjs check ~/.gti/unslop-inter
 | Command | Purpose | Key flags |
 |---------|---------|-----------|
 | `start` | Reads the request: a number of passes is a number of full rounds of all eight passes, and named passes limit the run only with "only" or "just". Lists the screens in scope and writes `run.json` | `--request`, `--rounds`, `--since <git ref>`, `--paths <files or folders>`, `--repo` |
-| `scan` | Lists candidate tells in the source by pass, with file and line: narration, restated status, repeated values, raw IDs, enums, and JSON, empty rows and counters, equal card grids, copy buttons everywhere, cut off paths, native controls next to the project's own, destructive actions not in danger style, refresh on live pages, disabled controls with no reason, async actions with no busy state, gradients, tracked caps, and emoji. Writes `scan.json` next to the run | `--run [run.json]`, files or folders, `--json` |
+| `scan` | Lists candidate tells in the source by pass, with file and line: narration, restated status, repeated values, raw IDs, enums, and JSON, empty rows and counters, equal card grids, copy buttons everywhere, cut off paths, native controls next to the project's own, destructive actions not in danger style, refresh on live pages, disabled controls with no reason, async actions with no busy state, gradients, tracked caps, and emoji; in native `.rs` and `.slint` screens, frames sized to their content, language options as buttons, and an option that is also another section's title; and developer or roadmap copy, also in translation files under `locales/`, `i18n/`, or `lang/`. Writes `scan.json` next to the run | `--run [run.json]`, files or folders, `--json` |
 | `strings` | Prints every visible string and rendered value of one screen in order, with how often each repeats | `--json` |
 | `check` | Fails (exit 1) when the report has no coverage section, misses a screen in scope, a round, or a pass, skips a pass with no reason or because of the number in the request, or skips a pass that still has scan candidates | `--run <run.json>` |
 
@@ -272,7 +273,7 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `enum-as-text`, `unexplained-control`, `icon-column`, `toolbar-center`, `create-as-item`, `user-as-text`, `icon-source` (suggestion), `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `inconsistent-empty-copy`, `repeated-heading`, `lonely-word`, `transition-all`, `no-hover-state`, `no-pointer-cursor`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `enum-as-text`, `unexplained-control`, `ragged-stack`, `language-as-buttons`, `option-apart-from-settings`, `icon-column`, `toolbar-center`, `create-as-item`, `user-as-text`, `icon-source` (suggestion), `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `inconsistent-empty-copy`, `repeated-heading`, `lonely-word`, `transition-all`, `no-hover-state`, `no-pointer-cursor`, `off-token-color`.
 
 ### scripts/lintapple/snapshot.mjs
 
@@ -434,9 +435,9 @@ The icons pass uses the project's icon library first and asks before adding a de
 - The Damir Sokolovsky clip is silent. The pass order and measurements come from the frames; the reasons and general rules are written for this skill.
 - Reviews from a screenshot cannot see hover, focus, loading, or responsive states.
 - lintapple measures only a running page, and measures layout gaps, alignment, and radii only on elements marked with `data-ui-*` attributes or policy selectors.
-- The skill polishes look and copy, not flows, conversion, or accessibility.
+- The skill polishes look, copy, and grouping (it may merge settings split across a page into one component or a wizard), not conversion or accessibility.
 - Chart changes depend on the data the screen actually has; the agent cannot invent a new series.
-- `unslop.mjs scan` reads Vue, Svelte, JSX, TSX, Astro, and HTML templates with patterns, not a parser: its findings are candidates to confirm on the screen, and it cannot see values that are equal only at runtime.
+- `unslop.mjs scan` reads Vue, Svelte, JSX, TSX, Astro, HTML, Slint, and Rust UI files (only those that use a UI toolkit) with patterns, not a parser: its findings are candidates to confirm on the screen, and it cannot see values that are equal only at runtime.
 
 ## Acknowledgements
 

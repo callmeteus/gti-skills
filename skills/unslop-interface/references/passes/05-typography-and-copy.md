@@ -62,6 +62,7 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 21. Write errors and empty states as directions. An error says what happened and how to fix it, without apologizing and without vague text ("Something went wrong"). An empty screen invites the first action. Each label, help text, and message does one job.
 22. Write every empty state with one pattern. Pick one and use it across the product: "No <things>" ("Nenhum resultado", "Nenhuma atualização"), the same punctuation (none on a one-line message), and no narration of who would have done it or when ("publicada pelo agente ainda", "registrado"). Do not mix "Sem resultado registrado." with "Nenhuma atualização publicada pelo agente ainda." on one page. Add a second line only to say what to do next. Give loading ("Carregando…") and error messages one pattern each too. The probe reports `inconsistent-empty-copy` when the empty states on a page use different openings, punctuation, or lengths.
 23. Show labels, not codes. An enum value from the API (`private`, `offline`, `stdio`, `queued`) is mapped to a label in the UI language (`Privado`, `Offline`, `Local`, `Na fila`) in one shared map, and an emoji is rendered as the emoji, never as its shortcode (`:fox_face:`).
+24. Keep developer and roadmap notes out of the UI. Text about how the app is built or what ships later ("Dispositivos entram por adaptadores. Adaptadores USB e Stream Deck Mobile chegam em um marco posterior.", "coming in a later milestone", "not implemented yet") is a note for the team, and it often contradicts the screen: Stream Deck Mobile is promised for later on a page where it can already be chosen and paired. Remove it. A feature that does not work yet is hidden, or shown disabled with a short reason ("Em breve") on the control itself. An About section holds the name, the version, the license, and links, not the architecture. The source scan reports `roadmap-copy`, in the screens and in the translation files.
 
 ## Check
 
@@ -81,3 +82,4 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 - No number that updates in place shifts sideways while it changes.
 - Paragraphs read without cramped or floating lines, and no decorative ligatures appear in body text.
 - No raw enum value or emoji shortcode appears as text.
+- No text describes how the app is built or what ships in a later milestone, and the scan reports no `roadmap-copy`.

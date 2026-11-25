@@ -12,9 +12,9 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, extname, join, relative, resolve } from "node:path";
-import { PASSES, UI_EXTENSIONS, extractStrings, readRequest, scanText } from "./rules.mjs";
+import { PASSES, UI_EXTENSIONS, extractStrings, isNativeUiSource, isStringFile, readRequest, scanText } from "./rules.mjs";
 
-const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".git", ".next", ".nuxt", ".svelte-kit", "coverage", "static", "public", "vendor"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".git", ".next", ".nuxt", ".svelte-kit", "coverage", "static", "public", "vendor", "target"]);
 const SCREEN_DIR = /(^|\/)(views|pages|routes|screens|app)\//;
 
 function parseArgs(argv) {
@@ -54,7 +54,10 @@ export function outDir(project) {
 }
 
 function isUiFile(path) {
-    return UI_EXTENSIONS.includes(extname(path)) && !/\.(spec|test|stories)\./.test(path);
+    if (/\.(spec|test|stories)\./.test(path)) return false;
+    if (isStringFile(path)) return true;
+    if (!UI_EXTENSIONS.includes(extname(path))) return false;
+    return extname(path) !== ".rs" || isNativeUiSource(readFileSync(path, "utf8"));
 }
 
 function walk(path, out = []) {
@@ -80,7 +83,12 @@ function changedFiles(root, since) {
         .filter((f) => existsSync(f) && isUiFile(f));
 }
 
+// Native apps keep screens in ui/ or panels/ folders, or in files named after the screen.
+const NATIVE_SCREEN = /(^|\/)(ui|gui|panels?|screens?|views?|pages?)\/|(settings|view|page|screen|panel|window)s?\.(rs|slint)$/;
+
 function screenKind(path) {
+    if (isStringFile(path)) return "strings";
+    if (/\.(rs|slint)$/.test(path)) return NATIVE_SCREEN.test(path) ? "screen" : "component";
     return SCREEN_DIR.test(path) ? "screen" : "component";
 }
 
@@ -135,6 +143,9 @@ function cmdStart(args) {
     for (const s of screens.filter((s) => s.kind === "screen")) console.log(`  ${s.path}`);
     const components = screens.filter((s) => s.kind === "component");
     if (components.length) console.log(`Components (${components.length}): ${components.map((s) => s.path).join(", ")}`);
+    const strings = screens.filter((s) => s.kind === "strings");
+    if (strings.length) console.log(`String files (${strings.length}, copy rules only): ${strings.map((s) => s.path).join(", ")}`);
+    if (screens.some((s) => /\.(rs|slint)$/.test(s.path))) console.log("Native UI in scope: the probe and lintapple cannot measure it. Build the edge table from screenshots (references/stacks/native-ui.md).");
     if (!screens.length) console.log("No UI files in scope: pass --paths or --since, or check the repository.");
     console.log(`\nWrote ${join(dir, "run.json")}`);
     console.log("Next: scan --run, then strings <file> for every screen, then the passes, then check <report.md>.");

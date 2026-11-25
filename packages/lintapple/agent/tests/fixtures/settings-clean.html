@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; background: #0b0d12; color: #ddd; }
+  main { padding: 24px; display: grid; gap: 16px; max-width: 720px; }
+  .group { background: #161922; border: 1px solid #2a2f3a; border-radius: 12px; }
+  .row { display: grid; grid-template-columns: 1fr 240px; align-items: center; gap: 16px; padding: 12px 16px; }
+  .row + .row { border-top: 1px solid #2a2f3a; }
+  h2 { font-size: 15px; margin: 0; }
+  select, input { width: 100%; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Configurações</h1>
+    <section class="group" aria-labelledby="device">
+      <div class="row"><h2 id="device">Dispositivo</h2><span>Stream Deck Mobile · pareado <button>Alterar</button></span></div>
+    </section>
+    <section class="group">
+      <div class="row"><label for="lang">Idioma</label><select id="lang"><option>English</option><option selected>Português (Brasil)</option></select></div>
+      <div class="row"><label for="bright">Brilho padrão</label><input id="bright" type="range"></div>
+    </section>
+    <section class="group">
+      <div class="row"><span>Pasta de dados</span><button>Abrir pasta</button></div>
+    </section>
+  </main>
+</body>
+</html>

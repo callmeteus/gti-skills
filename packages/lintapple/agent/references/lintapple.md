@@ -78,6 +78,9 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `no-hover-state` | On a desktop viewport (1024px or more), clickable elements with no `:hover` rule that applies to them or to something inside them, including rules on a hovered parent. Style sheets from another origin cannot be read; the finding says so |
 | `no-pointer-cursor` | On a desktop viewport, clickable elements (other than selects and labels) whose cursor is not `pointer` |
 | `inconsistent-empty-copy` | Two or more empty-state messages on one page ("Sem ...", "Nenhum ...", "No ...", "Nothing ...") with different openings, mixed trailing periods, or lengths 3 or more words apart |
+| `ragged-stack` | Three or more boxed sections (a border, a fill, or a shadow) stacked in one column on one left edge whose widths differ by more than 24px, because each takes the width of its content |
+| `language-as-buttons` | Two or more buttons, radios, tabs, or links in one group labeled with language names ("English", "Português (Brasil)") and no select or combobox in that group |
+| `option-apart-from-settings` | An option of a choice (a toggle button, radio, tab, or select option) whose text is also the heading of a separate section on the page, as "Device: [Stream Deck Mobile]" above a "Stream Deck Mobile" card |
 | `enum-as-text` | A text field followed by help text that lists three or more identifiers ("play_pause · next · previous") as its allowed values |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |

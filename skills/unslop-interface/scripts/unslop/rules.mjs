@@ -13,13 +13,28 @@ export const PASSES = [
     { n: 8, id: "states", name: "States and feel" },
 ];
 
-export const UI_EXTENSIONS = [".vue", ".svelte", ".tsx", ".jsx", ".html", ".astro"];
+export const UI_EXTENSIONS = [".vue", ".svelte", ".tsx", ".jsx", ".html", ".astro", ".rs", ".slint"];
+// Translation and string files: scanned with the copy rules only, and only inside a locale folder.
+export const STRING_EXTENSIONS = [".json", ".ftl", ".po", ".yaml", ".yml", ".toml", ".properties"];
+export const STRING_DIR = /(^|[\/])(locales?|i18n|l10n|lang|langs|translations|messages)[\/]/;
+// A Rust file is UI only when it draws with a UI toolkit; the rest of a Rust repository is not scanned.
+const NATIVE_UI = /\b(egui|eframe|iced|slint|gpui|dioxus|leptos|makepad|floem|xilem|druid)::|\bui\.(label|button|heading|horizontal|vertical|group|add)\(|slint::slint!/;
+
+export function isNativeUiSource(text) {
+    return NATIVE_UI.test(text);
+}
+
+export function isStringFile(file) {
+    return STRING_EXTENSIONS.some((ext) => file.endsWith(ext)) && STRING_DIR.test(file);
+}
 
 const ENUM_FIELDS = "status|state|visibility|role|kind|type|transport|provider|scope|author_type|subject_type|severity|priority";
 const ID_FIELDS = "id|uuid|[a-z]+_id|[a-z]+Id|[a-z]+_by|sha|commit_sha|hash";
 const DESTRUCTIVE = /^(apagar|excluir|remover|desconectar|revogar|delete|remove|disconnect|revoke|destroy|drop)\b/i;
 const REFRESH = /^(atualizar|recarregar|refresh|reload)$/i;
 const LIVE_DATA = /useCollabEvents|useEvents|EventSource|WebSocket|setInterval|onSnapshot|subscribe\(|poll/;
+
+const LANGUAGE_MESSAGE = "Language picked from buttons: use one labeled select (a ComboBox in egui, a pick_list in iced, a ComboBox in Slint) listing each language by its own name";
 
 // Line rules: [id, pass, regex, message]. A regex runs on one line of the template or UI source.
 const LINE_RULES = [
@@ -29,13 +44,15 @@ const LINE_RULES = [
     ["exclamation", 5, /[\p{L}]!+(?=["'`<]|\s*<)/u, "Exclamation mark in UI copy"],
     ["emoji-in-ui", 4, /\p{Extended_Pictographic}/u, "Emoji in the interface: use the icon set, unless the taste file keeps it"],
     ["transition-all", 8, /\btransition-all\b|transition:\s*all\b/, "transition: all: animate only transform and opacity"],
-    ["dash-placeholder", 6, /(\|\||\?\?)\s*["'`](—|–|-|N\/A|n\/a)["'`]/, "A dash for an empty value: leave the row out on detail views"],
+    ["dash-placeholder", 6, /((\|\||\?\?)\s*|unwrap_or\(\s*)["'`](—|–|-|N\/A|n\/a)["'`]/, "A dash for an empty value: leave the row out on detail views"],
     ["id-fallback", 6, new RegExp(`\\.(name|title|label)\\s*(\\|\\||\\?\\?)\\s*[\\w.?]+\\.(${ID_FIELDS})\\b`), "Falls back to a raw ID when the name is missing: show the name or nothing"],
     ["raw-id-shown", 6, new RegExp(`\\{\\{\\s*[\\w.?]+\\.(${ID_FIELDS})\\s*\\}\\}`), "Raw ID rendered as text: show the name, keep the ID in a tooltip or copy action"],
     ["raw-enum-shown", 5, new RegExp(`\\{\\{\\s*[\\w.?]+\\.(${ENUM_FIELDS})\\s*\\}\\}`), "Raw enum value rendered as text (\"private\", \"offline\"): map it to a label in the UI language"],
     ["raw-json-shown", 6, /\{\{\s*JSON\.stringify\(/, "Raw JSON rendered as content: show the fields as label and value pairs"],
     ["narrating-caption", 5, /\b(sub|hint|subtitle|caption|description|helper|help)\s*:\s*["'`][\p{Lu}][^"'`]*\s[^"'`]*\s[^"'`]*["'`]/u, "Caption sentence in UI data: cut it when it only narrates the label next to it"],
     ["truncated-path", 7, /^(?!.*\btitle=).*(\btruncate\b.*\b(path|worktree|url|dir|repo|sha|commit|code-chip|font-mono)\b|\b(path|worktree|url|dir|repo|code-chip|font-mono)\b.*\btruncate\b)/, "Path, URL, or code value cut off with no full value on hover: wrap it or show the full value"],
+    ["roadmap-copy", 5, /^(?!\s*(\/\/|\/\*|\*|#|<!--|--)).*(["'`>=]|:\s)[^"'`<]*\b(coming soon|em breve|marco posterior|pr[oó]xim[oa] (marco|vers[aã]o|release)|(later|future|next) (milestone|release|version)|milestones?|roadmap|not (yet )?(implemented|supported|available)|n[aã]o (est[aá] )?implementad[oa]|ainda n[aã]o (est[aá] )?(dispon[ií]vel|implementad[oa]|suportad[oa])|chega(m|r[aã]o)? (em|n[ao]) (um |uma |o |a )?(marco|vers[aã]o|release))\b/i, "Developer or roadmap copy in the UI (milestones, \"coming in a later release\"): say what the user can do now, and hide what does not work yet"],
+    ["language-as-buttons", 7, /<(button|Button|UiButton|ToggleGroupItem|SegmentedControl|Tab|Chip)\b[^\n]*\b(locale|lang|language|idioma)\b|\b(Button|ToggleButton)\s*\{[^\n]*\b(English|Portugu[eê]s|Espa[nñ]ol)\b/i, LANGUAGE_MESSAGE],
     ["image-url-field", 7, /(avatar|foto|photo|image|imagem|logo)[^<>]{0,40}\b(url|URL)\b|\b(url|URL)\b[^<>]{0,40}(avatar|foto|photo|image|imagem|logo)/, "Image chosen by URL: offer an upload"],
 ];
 
@@ -82,6 +99,15 @@ export function scanText(file, text, context = {}) {
     const add = (rule, pass, line, message, excerpt = "") =>
         findings.push({ file, line, rule, pass, message, excerpt: excerpt.trim().slice(0, 140) });
 
+    if (isStringFile(file)) {
+        text.split("\n").forEach((raw, i) => {
+            for (const [id, pass, re, message] of LINE_RULES) {
+                if (pass === 5 && re.test(raw)) add(id, pass, i + 1, message, raw);
+            }
+        });
+        return findings;
+    }
+
     const [tStart, tEnd] = templateRange(file, text);
     const lines = text.split("\n");
     lines.forEach((raw, i) => {
@@ -92,6 +118,29 @@ export function scanText(file, text, context = {}) {
             findings.splice(findings.findIndex((f) => f.line === i + 1 && f.rule === "narrating-caption"), 1);
         }
     });
+
+    if (file.endsWith(".rs")) {
+        // egui frames and iced containers take the width of their content unless told otherwise,
+        // so stacked sections end at different right edges.
+        const frames = [...text.matchAll(/\bui\.group\(|\bFrame::(group|none|new|default|canvas)\(|\bcontainer\(/g)];
+        const loose = frames.filter((f) => !/set_(min_|max_)?width|available_width|available_size|desired_width|exact_width|\.width\(|Length::Fill|\bFill\b|top_down_justified|Grid::new|columns\(/.test(text.slice(f.index, f.index + 600)));
+        // Language options drawn as selectable buttons, outside a ComboBox or pick list.
+        const langOption = /\b(selectable_value|selectable_label|radio_value|toggle_value|radio)\s*\([^\n]*(\b(Lang|Language|Locale|Idioma)::|"(English|Portugu[eê]s[^"]*|Espa[nñ]ol|Fran[cç]ais|Deutsch)")/g;
+        const options = [...text.matchAll(langOption)].filter((m) => !/ComboBox|show_ui|pick_list|menu_button|PickList/.test(text.slice(Math.max(0, m.index - 500), m.index)));
+        if (options.length >= 2) add("language-as-buttons", 7, lineOf(text, options[0].index), LANGUAGE_MESSAGE, options[0][0]);
+        // An option of a choice that is also the title of another section: the choice and its setup are apart.
+        const optionLabels = [...text.matchAll(/\b(selectable_value|selectable_label|radio_value|radio)\s*\([^\n]*"([^"]+)"\s*\)/g)].map((m) => ({ label: m[2], index: m.index }));
+        const titles = [...text.matchAll(/\b(heading|strong|RichText::new)\(\s*"([^"]+)"\s*\)(\.strong\(\)|\.heading\(\))?/g)].filter((m) => m[1] !== "RichText::new" || m[3]).map((m) => ({ label: m[2], index: m.index }));
+        for (const option of optionLabels) {
+            const title = titles.find((t) => t.label.toLowerCase() === option.label.toLowerCase());
+            if (!title) continue;
+            add("option-apart-from-settings", 7, lineOf(text, title.index), `"${option.label}" is an option on line ${lineOf(text, option.index)} and the title of its own section here: put the setup of the chosen option under the choice, in one component (a wizard when it takes steps)`, option.label);
+            break;
+        }
+        if (loose.length >= 2) {
+            add("shrink-wrapped-frame", 1, lineOf(text, loose[0].index), `${loose.length} frames or containers sized to their content: stacked sections end at different widths; give every section the column width`, loose.map((f) => f[0]).join(" "));
+        }
+    }
 
     const template = text.slice(tStart, tEnd);
     const offset = (index) => lineOf(text, tStart + index);
@@ -166,7 +215,52 @@ export function scanText(file, text, context = {}) {
 }
 
 // Visible strings and rendered values of one screen, for the inventory sheet.
+const STRING_LINE = [
+    /^\s*[\w.-]+\s*=\s*(.+?)\s*$/, // ftl, properties
+    /^\s*"?[\w.-]+"?\s*:\s*"(.+)",?\s*$/, // json
+    /^\s*[\w.-]+:\s*["']?(.+?)["']?\s*$/, // yaml
+    /^\s*[\w.-]+\s*=\s*"(.+)"\s*$/, // toml
+    /^msgstr\s+"(.+)"\s*$/, // po
+];
+
+function nativeStrings(file, text) {
+    const entries = [];
+    const skip = /^\s*(\/\/|\*|use\s|#\[|#!\[|mod\s|extern\s)|include_(bytes|str)!|env!|log::|tracing::|println!|eprintln!|debug!|info!|warn!|error!|\.expect\(|panic!|anyhow!|bail!|import\s/;
+    text.split("\n").forEach((raw, i) => {
+        if (skip.test(raw)) return;
+        for (const m of raw.matchAll(/"((?:[^"\\]|\\.)*)"/g)) {
+            const value = m[1].trim();
+            if (/\p{L}/u.test(value) && (/\s/.test(value) || /^[\p{Lu}]/u.test(value) || /[^\x00-\x7f]/.test(value))) entries.push({ kind: "text", value, line: i + 1 });
+        }
+    });
+    return entries;
+}
+
+function fileStrings(text) {
+    const entries = [];
+    text.split("\n").forEach((raw, i) => {
+        if (/^\s*(#|\/\/|[{}\[\]],?\s*$)/.test(raw)) return;
+        for (const re of STRING_LINE) {
+            const m = raw.match(re);
+            if (m && /\p{L}/u.test(m[1])) {
+                entries.push({ kind: "text", value: m[1].trim(), line: i + 1 });
+                return;
+            }
+        }
+    });
+    return entries;
+}
+
+function withRepeats(entries) {
+    const key = (e) => `${e.kind === "value" ? "v" : "t"}:${e.value.toLowerCase()}`;
+    const seen = new Map();
+    for (const e of entries) seen.set(key(e), (seen.get(key(e)) ?? 0) + 1);
+    return entries.sort((a, b) => a.line - b.line).map((e) => ({ ...e, repeats: seen.get(key(e)) }));
+}
+
 export function extractStrings(file, text) {
+    if (isStringFile(file)) return withRepeats(fileStrings(text));
+    if (file.endsWith(".rs") || file.endsWith(".slint")) return withRepeats(nativeStrings(file, text));
     const [tStart, tEnd] = templateRange(file, text);
     const template = text.slice(tStart, tEnd);
     const entries = [];
@@ -189,11 +283,7 @@ export function extractStrings(file, text) {
     while ((m = scriptLit.exec(script))) {
         entries.push({ kind: `script ${m[1]}`, value: m[2].trim(), line: lineOf(text, m.index) });
     }
-    const seen = new Map();
-    for (const e of entries) seen.set(`${e.kind === "value" ? "v" : "t"}:${e.value.toLowerCase()}`, (seen.get(`${e.kind === "value" ? "v" : "t"}:${e.value.toLowerCase()}`) ?? 0) + 1);
-    return entries
-        .sort((a, b) => a.line - b.line)
-        .map((e) => ({ ...e, repeats: seen.get(`${e.kind === "value" ? "v" : "t"}:${e.value.toLowerCase()}`) }));
+    return withRepeats(entries);
 }
 
 // Rounds and named passes from the user's words.

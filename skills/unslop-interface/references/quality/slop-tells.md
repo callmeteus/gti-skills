@@ -1,6 +1,6 @@
 # Slop tells
 
-Use this list twice: to inventory the screen before the first pass, and to check it after the last one. `node <skill-dir>/scripts/unslop/unslop.mjs scan` finds many of these rows in the source and prints the pass for each. Every row seen in the source "before" frame is marked **Source**; rows from the clips by Nexvyn and Emil Kowalski are marked **Source (Nexvyn clip)** and **Source (Kowalski clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip; rows marked **Admin panels** and **Detail pages** come from screens built by agents.
+Use this list twice: to inventory the screen before the first pass, and to check it after the last one. `node <skill-dir>/scripts/unslop/unslop.mjs scan` finds many of these rows in the source and prints the pass for each. Every row seen in the source "before" frame is marked **Source**; rows from the clips by Nexvyn and Emil Kowalski are marked **Source (Nexvyn clip)** and **Source (Kowalski clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip; rows marked **Admin panels**, **Detail pages**, and **Settings pages** come from screens built by agents.
 
 ## Spacing and layout
 
@@ -17,6 +17,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | A map or large panel with a wide gap above and a tight gap below (a paragraph margin added to the parent gap) | Common | 01 |
 | Cards of one component whose parts drift: the price sits lower in one card because its tag row wrapped | Common | 01 |
 | Instances of one component in a row with different widths or heights | Common | 01 |
+| Sections stacked in one column, each the width of its own content, so the right edges zigzag (312, 220, 880, 235px), with one stretched to the window | Settings pages | 01 |
+| Settings with the label, help, and control stacked in a box per setting instead of label and control rows on one grid | Settings pages | 01, 07 |
 
 ## Shape
 
@@ -96,6 +98,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | One value shown twice under different labels ("Ref de origem: master" and "Branch: master") | Detail pages | 05 |
 | Raw enum values as labels, often in another language than the UI ("private", "offline", "stdio" in a Portuguese screen) | Admin panels | 05 |
 | An emoji shown as its shortcode text (":fox_face:") | Admin panels | 05 |
+| Developer or roadmap notes in the UI ("Dispositivos entram por adaptadores... chegam em um marco posterior"), often contradicting what the screen already offers | Settings pages | 05 |
 
 ## Data display
 
@@ -165,6 +168,11 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Two inputs that exclude each other (a photo or an emoji) with nothing saying only one applies | Admin panels | 07 |
 | An image chosen by typing its URL where people expect an upload | Admin panels | 07 |
 | A value people must copy (an address, a port, a code) with no copy button, or shown incomplete | Admin panels | 07 |
+| A choice in one section and the setup of one of its options in another ("Dispositivo: Stream Deck Mobile" above a "Stream Deck Mobile" pairing card) instead of one component, or a wizard when the setup takes steps | Settings pages | 07 |
+| A language (or country, time zone, device) picked from a row of buttons instead of a select | Settings pages | 07 |
+| The same control in the sidebar and on the settings page (an unlabeled slider next to "Brilho padrão", "Parear celular" and "Parear um celular") | Settings pages | 07 |
+| Selected nav items, profiles, segments, and options in the same saturated fill as the primary button, so six things look like the main action | Settings pages | 07 |
+| A slider or field stretched across the whole window, with its value on a line below it | Settings pages | 07 |
 | Saving a form leaves the page, with no message that it saved | Admin panels | 08 |
 
 ## States and feel

@@ -61,6 +61,35 @@ test("the scan stays quiet on a clean screen", () => {
     assert.deepEqual(scanText("Clean.vue", clean), []);
 });
 
+test("the scan reads native egui screens and locale files", () => {
+    const native = join(here, "fixtures", "native");
+    const settings = join(native, "src", "ui", "settings.rs");
+    const found = rules(scanText(settings, readFileSync(settings, "utf8")));
+    for (const rule of ["shrink-wrapped-frame", "language-as-buttons", "option-apart-from-settings", "roadmap-copy"]) {
+        assert.ok(found.has(rule), `missing ${rule}`);
+    }
+    const locale = join(native, "locales", "en.json");
+    assert.deepEqual([...rules(scanText(locale, readFileSync(locale, "utf8")))], ["roadmap-copy"]);
+    const clean = join(native, "src", "ui", "settings_clean.rs");
+    assert.deepEqual(scanText(clean, readFileSync(clean, "utf8")), []);
+});
+
+test("start lists native screens and locale files, and leaves non-UI Rust out", () => {
+    const home = mkdtempSync(join(tmpdir(), "unslop-"));
+    const native = join(here, "fixtures", "native");
+    const out = execFileSync("node", [cli, "start", "--repo", native, "--paths", native], { env: { ...process.env, GTI_HOME: home }, encoding: "utf8" });
+    assert.match(out, /src\/ui\/settings\.rs/);
+    assert.match(out, /String files \(1, copy rules only\): .*locales\/en\.json/);
+    assert.match(out, /Native UI in scope/);
+    assert.doesNotMatch(out, /protocol\.rs/);
+});
+
+test("strings lists the literals of a native screen with their repeats", () => {
+    const out = execFileSync("node", [cli, "strings", join(here, "fixtures", "native", "src", "ui", "settings.rs")], { encoding: "utf8" });
+    assert.match(out, /Stream Deck Mobile {2}x2/);
+    assert.doesNotMatch(out, /eframe/);
+});
+
 const fullReport = (rounds, rows) => `# Unslop report: orders
 
 ## Coverage

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; background: #0b0d12; color: #ddd; }
+  main { padding: 24px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .card { background: #161922; border: 1px solid #2a2f3a; border-radius: 12px; padding: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 6px; }
+  .wide { align-self: stretch; }
+  .seg { display: flex; gap: 6px; }
+  .seg button { border-radius: 999px; border: 1px solid #333; background: none; color: inherit; padding: 6px 10px; }
+  .seg button[aria-pressed=true] { background: #6b7cff; color: #fff; }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Configurações</h1>
+    <section class="card">
+      <h2>Dispositivo</h2>
+      <p>Qual deck o MultiDeck controla. Trocar reinicia a conexão.</p>
+      <div class="seg">
+        <button aria-pressed="true">Stream Deck Mobile</button>
+        <button aria-pressed="false">Deck virtual</button>
+        <button aria-pressed="false">Deck USB</button>
+      </div>
+    </section>
+    <section class="card">
+      <h2>Idioma</h2>
+      <p>Aplica imediatamente.</p>
+      <div class="seg">
+        <button aria-pressed="false">English</button>
+        <button aria-pressed="true">Português (Brasil)</button>
+      </div>
+    </section>
+    <section class="card wide">
+      <h2>Brilho padrão</h2>
+      <input type="range" aria-label="Brilho padrão" style="width: 100%">
+    </section>
+    <section class="card">
+      <h2>Stream Deck Mobile</h2>
+      <p>Pareie seu celular e escolha qual endereço de rede ele usa.</p>
+      <button>Parear um celular</button>
+    </section>
+  </main>
+</body>
+</html>

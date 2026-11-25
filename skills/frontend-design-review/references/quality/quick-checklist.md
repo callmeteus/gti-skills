@@ -27,6 +27,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Every list has an empty state with the create button, not a bare header row (no `empty-list-without-message`)
 - [ ] Form labels sit above their fields, fixed choices are selects, settings are fields and not raw JSON, and no text field lists its allowed values under it (no `ragged-form-labels`, `raw-json-field`, or `enum-as-text`)
 - [ ] Every control has a label, and no select has a single option (no `unexplained-control`)
+- [ ] A settings page is one grid: every section the same width, labels on the left and controls on the right edge, the language as a select, and each choice with the setup of its chosen option under it, as a wizard when it takes steps (no `ragged-stack`, `language-as-buttons`, or `option-apart-from-settings`)
 - [ ] Every empty state on a page follows one pattern, such as "Nenhum resultado" and "Nenhuma atualização" (no `inconsistent-empty-copy`)
 - [ ] On desktop, every clickable element changes on hover and shows the pointer cursor (no `no-hover-state` or `no-pointer-cursor`)
 - [ ] Lists add items from a "+" button in their header, and the user is an avatar with an icon sign-out (no `create-as-item` or `user-as-text`)

@@ -17,6 +17,8 @@
  * App shell tells (create rows styled as items, the user as text, hand-drawn icons) come
  * from chrome.mjs; icon-source is a suggestion for the report, not a fix.
  * Missing hover states and pointer cursors on desktop come from hover.mjs.
+ * Settings page tells (boxed sections of different widths in one column, a language picker
+ * built as buttons, an option set up in a separate section) come from settings.mjs.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -43,6 +45,7 @@ import { measureChrome } from "./chrome.mjs";
 import { measureDashboard } from "./dashboard.mjs";
 import { measureDetail } from "./detail.mjs";
 import { measureHover } from "./hover.mjs";
+import { measureSettings } from "./settings.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -958,6 +961,7 @@ export async function main(argv) {
             result.findings.push(...await page.evaluate(measureDetail, { ignore: options.ignore }));
             result.findings.push(...await page.evaluate(measureChrome, { ignore: options.ignore }));
             result.findings.push(...await page.evaluate(measureHover, { ignore: options.ignore }));
+            result.findings.push(...await page.evaluate(measureSettings, { ignore: options.ignore }));
             results.push(result);
             await page.close();
         }
