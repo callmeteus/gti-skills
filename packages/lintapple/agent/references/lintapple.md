@@ -61,6 +61,11 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `repeated-heading` | Two headings with the same text, a heading that restates the heading above it ("Auctions" over "Auction for attendees"), short text under a heading that only repeats its words (an "Attendees only" tag), or an eyebrow right above a heading that only repeats it ("MENSAGENS" over "Mensagens SMS"). Card titles in a grid of items are not compared with the page heading |
 | `icon-column` | In one list of three or more rows with an icon and a label (sidebar, menu, tab list), icons that start off the common icon line, labels that start off the common label line, or section headers that do not start on the icon line |
 | `toolbar-center` | Two or more controls in one flex row whose vertical centers differ by more than 1.5px |
+| `kpi-without-context` | KPI cards (a number of 24px or more in one of three or more sibling cards) with no comparison, target, trend line, or progress bar |
+| `too-many-kpis` | More than seven KPI cards in the first viewport |
+| `chart-without-labels` | An SVG chart of 240 by 120px or more, with three or more marks, no text inside it, and no number next to it where axis labels would be. Canvas charts are not measured |
+| `arrow-suffix` | Two or more links or buttons whose text ends with an arrow (→, ->) |
+| `accent-word` | An h1 or h2 with one word or phrase in another color, italic, or gradient text |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |

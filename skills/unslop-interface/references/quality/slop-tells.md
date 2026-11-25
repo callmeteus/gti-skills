@@ -83,6 +83,12 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Three dots instead of `…`, hand-built date and money formats | Common | 05 |
 | A section heading that repeats the page title ("Auctions" over "Auction for attendees"), and tags that repeat the heading again ("Attendees only") | Common | 05 |
 | Helper text that narrates the interface: what each control does, how the feature works inside, what it is not | Common | 05 |
+| One word of a heading in another color, italic, or gradient | Anthropic frontend-design | 05 |
+| An arrow (→) appended to button and link text | Anthropic frontend-design | 05 |
+| Numbered markers (01 / 02 / 03) on content that is not a sequence | Anthropic frontend-design | 05 |
+| Metadata joined with middle dots everywhere ("A · B · C") | Anthropic frontend-design | 05 |
+| Vague verbs ("Submit", "Continue") and one action with several names (delete, remove, trash) | Junaid-PK frontend-design | 05 |
+| Errors that apologize or say "Something went wrong" with no way to recover | Anthropic frontend-design | 05 |
 
 ## Data display
 
@@ -92,6 +98,15 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Chart whose colors do not relate to anything else on the screen | Source | 06 |
 | Clip-art illustration (emoji credit card) in a stat card | Source | 06 |
 | Scrolling table whose header row scrolls out of view | Source (Kowalski clip) | 06 |
+| A row of equal cards with big numbers and no comparison, target, or trend | wshobson kpi-dashboard-design | 06 |
+| More than seven headline KPIs, vanity metrics such as total page views | wshobson kpi-dashboard-design | 06 |
+| A dashboard titled "Dashboard" or "Overview" with no period and no question | wshobson kpi-dashboard-design | 06 |
+| 3D charts, a gauge for every KPI, or a pie with more than five slices | ui-ux-pro-max, kpi-dashboard-design | 06 |
+| A chart type picked for variety (a donut for a trend, a line for categories) | ui-ux-pro-max | 06 |
+| Red and green as the only cue for good and bad | ui-ux-pro-max, kpi-dashboard-design | 06 |
+| No date range, no last update time, and no way to see how a number is calculated | wshobson kpi-dashboard-design | 06 |
+| A big number with a small label and a gradient accent as the default hero | Anthropic frontend-design | 06 |
+| Records people compare (invoices, users) shown as a grid of cards instead of a table | Junaid-PK frontend-design | 06 |
 
 ## Actions and structure
 
@@ -116,6 +131,9 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | An unlabeled select next to the page title ("Even7"), or a select with one option | Admin panels | 07 |
 | A "Refresh" button on a page that reloads after each change | Admin panels | 07 |
 | Eyebrow, page title, and card title that repeat one word ("MENSAGENS", "Mensagens SMS", "Mensagens") | Admin panels | 07 |
+| Every block cut into identical rounded cards with the same soft shadow | Anthropic frontend-design | 07 |
+| A short form in a mostly empty side panel | Junaid-PK frontend-design | 07 |
+| An endless scroll on a page people work in, with no count and no stopping point | Junaid-PK frontend-design | 07 |
 
 ## States and feel
 
@@ -130,4 +148,5 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | A verification code typed digit by digit into separate boxes with no `one-time-code` autofill | Common | 08 |
 | `transition: all`, or motion that ignores `prefers-reduced-motion` | Common | 08 |
 | Controls with no hover or `:focus-visible` state, or `outline: none` with no replacement | Common | 08 |
+| Fade-and-slide-up entrances on every section, hover lifts on every card | Anthropic frontend-design | 08 |
 

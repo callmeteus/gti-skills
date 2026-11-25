@@ -10,7 +10,8 @@
  * different space above and below, and admin screen tells: empty tables with no empty
  * state, create forms left open, labels beside fields, raw JSON fields, and controls with
  * no label or a single option, icons, labels, and section headers off their guide lines,
- * and toolbar controls off one center line.
+ * and toolbar controls off one center line. Dashboard tells (KPI cards with no comparison,
+ * too many KPIs, unlabeled charts, arrow suffixes, accented words) come from dashboard.mjs.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -32,6 +33,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import { measureDashboard } from "./dashboard.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -942,7 +945,9 @@ export async function main(argv) {
             }
             if (options.ready) await page.waitForSelector(options.ready);
             await page.evaluate(() => document.fonts?.ready);
-            results.push(await page.evaluate(measurePage, { near: options.near, lane: options.lane, ignore: options.ignore }));
+            const result = await page.evaluate(measurePage, { near: options.near, lane: options.lane, ignore: options.ignore });
+            result.findings.push(...await page.evaluate(measureDashboard, { ignore: options.ignore }));
+            results.push(result);
             await page.close();
         }
     } catch (error) {

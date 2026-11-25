@@ -172,7 +172,7 @@ Run only the color and typography passes on components/StatsCard.vue.
           │
   6. Type and copy  calm weights, sentence case, numbers with context, tabular figures
           │
-  7. Data display   labeled axes, colors that match a key
+  7. Data display   labeled axes, colors that match a key, dashboards with context
           │
   8. Actions        one primary per view, forms out of list items
           │
@@ -194,7 +194,7 @@ Each file holds the goal, the before and after from the source, steps, and a che
 | `references/passes/03-color.md` | Color and effects | Gradients, glow, and tinted glass removed |
 | `references/passes/04-icons.md` | Icons and alignment | Emoji replaced by a line icon set, fixed inset and gap, actions given affordance |
 | `references/passes/05-typography-and-copy.md` | Typography and copy | Caps, exclamation marks, filler headers, and redundant page taglines removed; tabular figures for changing numbers; body leading and ligatures |
-| `references/passes/06-data-display.md` | Data display | Axes, units, colors tied to a legend, sticky table headers |
+| `references/passes/06-data-display.md` | Data display and dashboards | Axes, units, colors tied to a legend, sticky table headers, tables for compared records, and dashboards: four to six KPIs with context, chart choice by data, date range, and states |
 | `references/passes/08-states-and-feel.md` | States and feel | Skeletons and image placeholders, optimistic updates, undo instead of confirm, motion, gestures, autofill, hover and focus |
 | `references/passes/07-actions-and-structure.md` | Actions and structure | One primary per view, forms moved out of list items, advanced options folded in, state actions only in their state |
 | `references/quality/slop-tells.md` | Checklist | Every tell mapped to its pass |
@@ -241,7 +241,7 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
 
 ### scripts/lintapple/snapshot.mjs
 
@@ -395,6 +395,10 @@ The icons pass uses the project's icon library first and asks before adding a de
 | [Murat Alpay: ui-diff](https://x.com/imuratalpay/status/2123745913063477684) | Standard X post terms | The idea behind the before and after snapshot diff |
 | [Felipe Basurto: unslop-ui taste lists](https://x.com/fildotai/status/2123812865207632371) | Standard X post terms | The taste file format and the false tells to avoid |
 | [Why is AI-generated language so hard to understand? (arXiv 2610.29162)](https://arxiv.org/abs/2610.29162), shared by [Dan Korchinski](https://x.com/DanKorchinski/status/2123725394503406002) | arXiv terms | The plain sentence rules in the copy pass |
+| [nextlevelbuilder: ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | MIT | The chart selection table and the chart accessibility rules |
+| [Anthropic: frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Apache 2.0 | The generated-page tells (accented heading words, arrow suffixes, numbered markers, the identical card kit, entrance animations) and the copy rules on action names and errors |
+| [Junaid-PK: frontend-design](https://github.com/Junaid-PK/frontend-design-skill) | Apache 2.0 | Tables over cards for compared records, modal over an empty side panel, stopping points for long lists, and "remove before you add" |
+| [wshobson: kpi-dashboard-design](https://github.com/wshobson/agents/tree/main/plugins/business-analytics/skills/kpi-dashboard-design) | MIT | The dashboard rules: one question, four to six KPIs, context on every number, summary to detail, and methodology on the card |
 | [Pritam Paul: /gridlines](https://x.com/pritamux/status/2124157134212673722) | Standard X post terms | The guide line rules: one icon line and one label line, headers on the icon edge, toolbars on one center line, fix the container and not one item |
 | [Dionisselamii: five skills that kill AI slop](https://x.com/Dionisselamii/status/2123871446913229285) | Standard X post terms | Pointer to the Vercel guidelines; the other linked skills were not readable |
 | [Emil Kowalski: a vocabulary for agents](https://x.com/emilkowalski/status/2115425807388619022), from [AI for UI](https://aiforui.dev/) | Standard X post terms | Affordance, leading, ligature, and sticky header rules, and the vocabulary file |

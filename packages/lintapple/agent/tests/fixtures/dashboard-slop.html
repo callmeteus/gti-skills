@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; padding: 24px; width: 1200px; }
+  .kpis { display: flex; gap: 12px; flex-wrap: wrap; }
+  .kpi { border: 1px solid #ccc; border-radius: 8px; padding: 12px; width: 120px; }
+  .value { font-size: 28px; line-height: 36px; }
+  .accent { color: #e4572e; }
+</style>
+</head>
+<body>
+  <h1>Revenue <span class="accent">overview</span></h1>
+  <div class="kpis" id="slop">
+    <div class="kpi"><div class="label">Revenue</div><div class="value">$2.4M</div></div>
+    <div class="kpi"><div class="label">Profit</div><div class="value">$450K</div></div>
+    <div class="kpi"><div class="label">Customers</div><div class="value">12,450</div></div>
+    <div class="kpi"><div class="label">NPS</div><div class="value">72</div></div>
+    <div class="kpi"><div class="label">Churn</div><div class="value">4.2%</div></div>
+    <div class="kpi"><div class="label">ARPU</div><div class="value">$193</div></div>
+    <div class="kpi"><div class="label">CAC</div><div class="value">$450</div></div>
+    <div class="kpi"><div class="label">LTV</div><div class="value">$2,700</div></div>
+    <div class="kpi"><div class="label">Tickets</div><div class="value">318</div></div>
+  </div>
+  <svg id="bars" width="400" height="200" viewBox="0 0 400 200"><rect x="20" y="120" width="30" height="60"/><rect x="70" y="90" width="30" height="90"/><rect x="120" y="140" width="30" height="40"/><rect x="170" y="60" width="30" height="120"/><rect x="220" y="100" width="30" height="80"/><rect x="270" y="80" width="30" height="100"/></svg>
+  <p><a href="#">View report →</a> <a href="#">See all customers →</a></p>
+</body>
+</html>

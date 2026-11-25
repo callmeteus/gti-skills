@@ -40,7 +40,7 @@ Write one block per pass that changed something. Skip passes with no tells.
 - **After:**
 - **Files:**
 
-### 6. Data display
+### 6. Data display and dashboards
 
 - **Before:**
 - **After:**

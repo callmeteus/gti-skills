@@ -57,10 +57,15 @@ The Emil Kowalski clip also shows a paragraph at a line height of `1.20`, marked
 16. Balance line breaks. A heading or short label that wraps must not leave one word alone on its last line. Set `text-wrap: balance` on headings and short labels and `text-wrap: pretty` on paragraphs; never insert manual `<br>` for it. The probe reports these as `lonely-word`.
 17. Use real typography marks. An ellipsis is `…`, not three dots; loading labels end with it ("Saving…", "Loading…"). Keep a unit with its number and a shortcut with its key using a non-breaking space (`10&nbsp;MB`, `⌘&nbsp;K`). Format dates, times, and money with the locale (`Intl.DateTimeFormat`, `Intl.NumberFormat`), not hand-built strings.
 18. Write plain sentences. AI copy is hard to read for measurable reasons; fix each one. Break stacked nouns ("account permission settings panel" becomes "permissions for this account"). Give human verbs to people, not to things ("The dashboard wants to know your goal" becomes "What is your goal?"). Keep the subject next to its verb and the sentence short. Prefer common words over rare phrasing. Use the active voice and second person, give counts as numerals ("8 deployments"), name buttons for what they do ("Save API key", not "Continue"), and make every error say what to do next.
+19. Drop the generated-page chrome. Set each heading in one color and style: no single word in another color, italic, or gradient (`accent-word`). Remove the arrow at the end of button and link text (`arrow-suffix`). Use numbered markers (01, 02, 03) only for real sequences such as steps or a timeline. Do not join metadata with middle dots by default (`A · B · C`); use separate labeled values or one plain sentence.
+20. Name each action by what happens, and keep the name through the flow. "Save changes", not "Submit"; a "Publish" button produces a "Published" toast; one operation is never "delete" in one place and "remove" in another. Name things by what users manage ("Notifications"), not by how the system is built ("Webhook config").
+21. Write errors and empty states as directions. An error says what happened and how to fix it, without apologizing and without vague text ("Something went wrong"). An empty screen invites the first action. Each label, help text, and message does one job.
 
 ## Check
 
 - No exclamation marks, emoji, or tracked caps remain in the UI copy.
+- No heading accents one word, and no button or link ends with an arrow; the probe reports no `accent-word` or `arrow-suffix`.
+- Every action keeps one name through the flow, and errors say how to recover.
 - No heading or short label leaves one word alone on its last line (no `lonely-word`).
 - Copy uses `…`, locale formats, and short active sentences with no stacked nouns.
 - Every trend value says what it is compared to.
