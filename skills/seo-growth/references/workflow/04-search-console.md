@@ -45,7 +45,7 @@ It matches queries of 8 or more words. Change `7` to `5` for 6+ words. Questions
 
 ### 2. Page-2 queries (positions 8 to 20)
 
-Pages that rank just below the top results move fastest. For each query with real impressions:
+Pages that rank just below the top results move fastest. Start with positions 8 to 15, which are one push from page one. For each query with real impressions:
 
 1. Compare the ranking page with the current top 5 results: what do they cover that this page does not? Add those sections with original detail.
 2. Answer the query in the first 40 words.
@@ -56,6 +56,10 @@ Pages that rank just below the top results move fastest. For each query with rea
 ### 3. High impressions, low CTR
 
 Rows ranking on page 1 (position 10 or better) with CTR under the floor (default 2%) are a title and description problem. Rewrite the title (keyword first, specific benefit, 50 to 60 characters) and the meta description (step 3). Do not change the page's topic.
+
+## Brand searches
+
+Branded queries show whether launches, posts, and mentions reach people. In Search Console, add a Query filter with Custom (regex) set to the brand and its common misspellings, for example `acme|acmme|acme\.io`. Record branded impressions and clicks in `state.md` before and 2 to 4 weeks after each launch. Switch the filter to "Doesn't match regex" to see only non-brand queries, which is where SEO growth shows.
 
 ## Pages report
 

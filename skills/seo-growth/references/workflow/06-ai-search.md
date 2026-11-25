@@ -27,7 +27,8 @@ To protect expensive data routes from scrapers, rate-limit or block by path, and
 
 - `Organization` schema with `name`, `url`, `logo`, and `sameAs` links to official profiles.
 - `Product` with `Offer`, or `SoftwareApplication` with `offers`, on the pricing page, matching the visible prices.
-- An `llms.txt` at the site root: a short Markdown summary of what the product is, who it is for, pricing, and links to the key pages. Generate it from the same data source as the pages (a route handler in frameworks that have them) so it never goes stale. It is a convention, not a ranking factor; keep it short and true.
+- An `llms.txt` at the site root: a short Markdown summary of what the product is, who it is for, pricing, and links to the key pages. Generate it from the same data source as the pages (a route handler in frameworks that have them) so it never goes stale. It is a convention, not a ranking factor; keep it short and true. Follow the format at llmstxt.org: an H1 with the name, a one-line blockquote summary, then H2 sections that list links with a short description each (`https://platform.claude.com/llms.txt` is a large real example).
+- An About page that says in plain words who the company is, what the product does, and who it is for, with the same facts as the schema. AI answers lean on it to describe the brand.
 
 ## Be the page AI cites
 
@@ -38,6 +39,8 @@ AI answers cite pages that answer a buyer's prompt directly and with proof.
 3. Put the direct answer in the first 40 words of the section, with a specific number, name, or example.
 4. Keep facts consistent everywhere (pricing page, docs, schema, `llms.txt`, third-party profiles). Conflicting facts lower the chance of being cited.
 5. Earn mentions on pages AI tools already cite for the topic (listicles, review sites, community threads). That is authority work for the user (step 7).
+6. For the most valuable prompt, pick one Google AI Overview or AI answer and record the sources it cites every day for a week. Note what they share (format, data, freshness, length) and plan a page that covers those patterns better than the cited sources.
+7. Track which brands AI answers name for the category prompts ("what is the best <category> tool for <audience>"), not only Google rank. Record the named brands and cited pages in `state.md` each month. When an answer names a competitor, it is drawing from pages that mention them; list those pages as targets for step 7.
 
 ## Done when
 

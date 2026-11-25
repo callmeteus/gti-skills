@@ -61,3 +61,9 @@ Mark every item in the report as done, failing, not applicable, or not checked. 
 | 38 | Buyer prompts mapped, with a page for each | 6 |
 | 39 | High-quality backlinks earned, no paid or schemed links | 7 |
 | 40 | Google Business Profile for local businesses | 3, 7 |
+| 41 | Branded search tracked before and after each launch | 4 |
+| 42 | New pages match the format of the top results; keywords with platform-dominated results deprioritized | 5 |
+| 43 | About page says who, what, and for whom in plain words | 6 |
+| 44 | AI answers for category prompts tracked: brands named and pages cited | 6 |
+| 45 | Official profiles (GitHub, Crunchbase, G2, Capterra, Product Hunt) filled with consistent facts and listed in `sameAs` | 7 |
+| 46 | Cross-posted articles carry a canonical link to the original | 7 |

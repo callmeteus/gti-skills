@@ -18,6 +18,7 @@ List the 5 to 15 pages that drive revenue or signups: home, pricing, signup, mai
 - Country and language of the buyers. Titles, page copy, and keyword research use that language.
 - Locales the site ships, if any (step 2 checks whether each one earns its place).
 - Main competitors (3 is enough). Ask once if they are not obvious from the site.
+- Optional: a competitor's funnel. Find the `GTM-XXXXXX` ID in their page source, open `https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXX`, and search for `__awct`: the Google Ads conversion names it lists (for example registration, trial, first payment) show which steps they pay to drive, so which pages and keywords matter to them.
 
 ## Keyword map
 

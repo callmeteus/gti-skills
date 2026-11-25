@@ -9,6 +9,9 @@ Apply the content rules (`references/quality/content-rules.md`, linked from step
 - Prefer keywords with buying intent and low difficulty over high-volume informational ones. With Ahrefs, Semrush, or DataForSEO exports, filter for high volume and low keyword difficulty (KD), then sort by traffic value (CPC times volume). A CPC of 3 USD or more with 300+ monthly searches is a strong candidate; a CPC under 0.50 USD rarely pays back.
 - Group keywords into one page by SERP overlap: if two keywords share 3 or more of the same top-10 URLs, they belong on one page. With 2 shared URLs, check the page types. With 0 or 1, they need separate pages.
 - Check the keyword map first. Never create a page for a keyword another page already targets; improve that page instead.
+- Match the format of the top 3 results: a listicle, a tool, a guide, or a comparison. A guide rarely ranks where every top result is a tool.
+- Deprioritize keywords whose top 10 is mostly large third-party platforms (Reddit, Quora, LinkedIn, Medium, YouTube, major news sites). A new page rarely displaces them; for those keywords, getting mentioned on the ranking pages is the move (step 7).
+- Mine community threads for questions: search `site:reddit.com <the buyer's problem>` to find threads that already rank. Their questions and objections, in the buyer's own words, are input for the page. Write a better, original answer on the site; never copy the thread.
 
 ## Page types
 
@@ -53,6 +56,8 @@ Pages generated from data (cities, integrations, templates, comparisons) work on
 
 Updating a slipping page is usually faster than building a new one: compare it with the current top 10, rewrite the weak sections, and update `dateModified`. Old page-2 pages (step 4) come first.
 
+Check the positions of the keyword map pages every week (Search Console or the user's rank tracker) and put any page that slips on the refresh list in `state.md`.
+
 ## Done when
 
-Each new page has a primary keyword in the keyword map, matches the SERP intent, passes the content rules, has schema, and has at least 3 internal links pointing to it.
+Each new page has a primary keyword in the keyword map, matches the SERP intent and format, passes the content rules, has schema, and has at least 3 internal links pointing to it, added in the same change that publishes it.
