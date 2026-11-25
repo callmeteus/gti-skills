@@ -3,7 +3,9 @@ Windows Update leftovers, hibernation, restore points, WSL and Docker disks, and
 
 from __future__ import annotations
 
+import codecs
 import glob
+import ntpath
 import os
 import re
 import string
@@ -13,8 +15,8 @@ from pathlib import Path
 
 from cleanup import fsutil
 from cleanup.drives import Drive, classify, root_names
-from cleanup.model import REPORT, SETTING, UNINSTALL, Finding, parse_human
-from platforms.base import Command, Platform, Target
+from cleanup.model import SETTING, Finding, parse_human
+from platforms.base import Command, Platform, Target, unused_program
 from platforms.linux import DockerProbe
 
 try:
@@ -32,10 +34,14 @@ UNINSTALL_KEYS = (
     ("HKLM", r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
     ("HKCU", r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
 )
-SKIP_PROGRAMS = re.compile(r"(visual c\+\+|\.net (framework|runtime|desktop)|windows sdk|windows software development|"
-                           r"microsoft edge|webview2|update health|windows pc health|directx|vcredist|redistributable|"
-                           r"driver|chipset|intel\(r\)|realtek|nvidia (graphics|physx|hd audio)|amd software|"
-                           r"microsoft update|security update|hotfix)", re.I)
+# Not programs a person opens: runtimes, updates, drivers, services, and parts other software needs.
+SKIP_PROGRAMS = re.compile(
+    r"(visual c\+\+|visual basic|runtime|redistributable|vcredist|\.net|windows sdk|software development kit|\bsdk\b|"
+    r"\bKB\d{6,}\b|update for|security update|hotfix|microsoft update|update health|pc health|webview2|microsoft edge|"
+    r"directx|driver|chipset|intel\(r\)|realtek|nvidia|amd software|physx|gameinput|xbox|maintenance service|"
+    r"fonts|^vs_|visual studio installer|tools for office|service center|authorization manager|license|"
+    r"vanguard|anti-?cheat|battleye|npcap|winfsp|google drive|password manager|senhas do google|"
+    r"helper|bootstrapper|launcher service)", re.I)
 
 
 def reg_values(hive, path):
@@ -120,6 +126,8 @@ def ps(command):
 
 class Windows(Platform):
     name = "windows"
+    program_usage_hint = ("Run the scan from an elevated prompt so Windows Prefetch can be read; without it only programs "
+                          "opened from Start or Explorer have a date. Plugins (VST, AAX) never have one.")
 
     def __init__(self):
         super().__init__()
@@ -385,16 +393,15 @@ class Windows(Platform):
 
     # Programs ----------------------------------------------------------------------------------
     def programs(self, ctx):
-        days = ctx.pref("unused_program_days")
         prefetch = prefetch_times()
+        assist = userassist_times()
         entries = []
         for hive, path in UNINSTALL_KEYS:
             for sub in reg_subkeys(hive, path):
                 values = reg_values(hive, f"{path}\\{sub}")
                 name = str(values.get("DisplayName", "")).strip()
                 if not name or values.get("SystemComponent") == 1 or values.get("ParentKeyName") \
-                        or str(values.get("ReleaseType", "")).lower() in ("update", "hotfix", "security update") \
-                        or SKIP_PROGRAMS.search(name):
+                        or str(values.get("ReleaseType", "")).lower() in ("update", "hotfix", "security update"):
                     continue
                 entries.append((hive, values))
 
@@ -407,32 +414,21 @@ class Windows(Platform):
             if not size and location and os.path.isdir(location):
                 size = fsutil.tree(location).size
             exes = program_exes(location, icon)
-            last, source = None, ""
-            hits = [prefetch[e] for e in exes if e in prefetch]
-            if hits:
-                last, source = max(hits), "Windows Prefetch"
-            elif prefetch:
-                installed = install_date(values.get("InstallDate"))
-                if installed and time.time() - installed > 30 * 86400:
-                    last, source = installed, "never seen in Prefetch since install"
-            idle = int((time.time() - last) / 86400) if last else None
-            if idle is not None and idle < days:
+            hits = [(prefetch[e], "Windows Prefetch") for e in exes if e in prefetch]
+            hits += [(assist[e], "opened from Start or Explorer (UserAssist)") for e in exes if e in assist]
+            last, source = max(hits) if hits else (None, "")
+            uninstall = str(values.get("UninstallString") or values.get("QuietUninstallString") or "").strip()
+            if not uninstall:
                 return None
-            uninstall = values.get("QuietUninstallString") or values.get("UninstallString") or ""
-            return Finding(
-                category="programs", title=name, action=UNINSTALL, level="aggressive" if idle is not None else "yolo",
-                size=size, command=str(uninstall), shell=True, admin=hive == "HKLM",
-                reason=f"Last used about {idle} days ago ({source})." if idle is not None else
-                "No reliable last-use date (run elevated so Prefetch can be read).",
-                risk="Settings and data of the program may be removed with it.",
-                restore="Install it again from its source.",
+            return unused_program(
+                ctx, name, size, last, source, uac_launch(uninstall), shell=True,
+                risk="Settings and data of the program may be removed with it. Windows may ask for permission (UAC): "
+                     "the user approves it in the dialog, never the agent.",
                 details={"publisher": values.get("Publisher"), "version": values.get("DisplayVersion"),
-                         "location": location, "idle_days": idle, "source": source})
+                         "location": location, "uninstall_string": uninstall, "system_part": bool(SKIP_PROGRAMS.search(name))})
 
         with ThreadPoolExecutor(max_workers=ctx.jobs) as pool:
             found = [f for f in pool.map(inspect, entries) if f]
-        if not prefetch:
-            ctx.note("Windows Prefetch was not readable (needs an elevated prompt); program last-use dates are unknown.")
         return found
 
 
@@ -448,6 +444,35 @@ def prefetch_times():
     return times
 
 
+def uac_launch(command):
+    """Runs an uninstaller through `start /wait`, which uses ShellExecute: an uninstaller that needs admin rights
+    shows the Windows permission dialog (UAC) to the user instead of failing, and the call waits for it to finish."""
+    return f'start "" /wait {command}'
+
+
+def userassist_times():
+    """EXE name (upper case) -> last time it was opened from Start or Explorer. Readable without admin rights."""
+    base = r"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"
+    times = {}
+    for guid in reg_subkeys("HKCU", base):
+        for name, data in reg_values("HKCU", f"{base}\\{guid}\\Count").items():
+            exe, when = parse_userassist(name, data)
+            if exe and when:
+                times[exe] = max(times.get(exe, 0), when)
+    return times
+
+
+def parse_userassist(name, data):
+    """A UserAssist value: ROT13 path as the name, last run FILETIME at bytes 60-68 of the 72-byte data."""
+    path = codecs.decode(str(name), "rot13")
+    if not path.lower().endswith(".exe") or not isinstance(data, (bytes, bytearray)) or len(data) < 68:
+        return None, None
+    filetime = int.from_bytes(bytes(data[60:68]), "little")
+    if not filetime:
+        return None, None
+    return ntpath.basename(path).upper(), filetime / 1e7 - 11644473600
+
+
 def program_exes(location, icon):
     names = set()
     if icon.lower().endswith(".exe"):
@@ -459,13 +484,6 @@ def program_exes(location, icon):
                 if not re.search(r"(unins|uninst|setup|update|crash|helper|install)", base, re.I):
                     names.add(base)
     return names
-
-
-def install_date(value):
-    try:
-        return time.mktime(time.strptime(str(value), "%Y%m%d"))
-    except (TypeError, ValueError):
-        return None
 
 
 def winsxs_estimate(ctx):

@@ -30,9 +30,8 @@ def choose(findings, level, ids=(), categories=(), exclude_ids=(), auto=False, r
             continue
         if f.manual:
             skipped.append((f, "manual step: the user does it where the command says"))
-        elif not within(f.level, level):
-            if f.id in ids:  # asked for by id: say why it did not run; otherwise it is simply out of scope
-                skipped.append((f, f"level {f.level} is above the chosen level {level}"))
+        elif not within(f.level, level) and f.id not in ids:
+            pass  # out of scope for this level; an id the user named is their choice and ignores the level
         elif f.action in SYSTEM_ACTIONS and (auto or not allow_system or f.id not in ids):
             skipped.append((f, "system setting or uninstall: only by its id, with --allow-system-changes, never in automatic mode"))
         elif auto and not f.auto:
@@ -160,7 +159,9 @@ def execute(chosen, guard, manifest_path, jobs=4, exclude_paths=()):
 
 def run_command(f, guard, log):
     """Commands run one at a time; freed space is the change in free space on their drive."""
-    target = f.paths[0] if f.paths else (f.drive + os.sep if f.drive and f.drive.endswith(":") else f.drive or os.sep)
+    target = f.drive + os.sep if f.drive and f.drive.endswith(":") else (f.drive or os.path.abspath(os.sep))
+    if f.paths and os.path.exists(f.paths[0]):
+        target = f.paths[0]
     before = fsutil.disk_usage(target)["free"]
     started = time.time()
     try:

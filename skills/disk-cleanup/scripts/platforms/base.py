@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from cleanup import fsutil
-from cleanup.model import DEFAULT_PREFERENCES
+from cleanup.model import DEFAULT_PREFERENCES, UNINSTALL, Finding
 
 
 @dataclass
@@ -57,6 +58,8 @@ class Context:
     jobs: int
     notes: list = field(default_factory=list)
     home: Path = field(default_factory=Path.home)
+    unknown_programs: list = field(default_factory=list)  # (name, size) with no reliable last-use date
+    all_programs: bool = False   # list every installed program (for an uninstall the user asked for by name)
 
     def pref(self, key):
         return self.prefs.get(key, DEFAULT_PREFERENCES.get(key))
@@ -78,8 +81,36 @@ class Context:
         self.notes.append(text)
 
 
+def unused_program(ctx, name, size, last, source, uninstall, admin=False, shell=False, paths=(), details=None,
+                   risk="Settings and data of the program may be removed with it.",
+                   restore="Install it again from its source.", now=None):
+    """A program is listed as unused only with a real last-use date older than `unused_program_days`.
+    No date means unknown, never unused: it is counted for a note and left out of the list.
+    With ctx.all_programs, every program is returned, so the user can remove one by name."""
+    if ctx.all_programs:
+        idle = int(((now or time.time()) - last) / 86400) if last else None
+        return Finding(
+            category="programs", title=name, action=UNINSTALL, level="safe", size=size, command=uninstall,
+            shell=shell, admin=admin, paths=list(paths),
+            reason=f"Last used about {idle} days ago ({source})." if idle is not None else "Last use unknown.",
+            risk=risk, restore=restore, details={**(details or {}), "idle_days": idle, "source": source})
+    if (details or {}).get("system_part"):
+        return None
+    if not last:
+        ctx.unknown_programs.append((name, size))
+        return None
+    idle = int(((now or time.time()) - last) / 86400)
+    if idle < ctx.pref("unused_program_days") or size <= 0:
+        return None
+    return Finding(
+        category="programs", title=name, action=UNINSTALL, level="aggressive", size=size, command=uninstall,
+        shell=shell, admin=admin, paths=list(paths), reason=f"Last used about {idle} days ago ({source}).",
+        risk=risk, restore=restore, details={**(details or {}), "idle_days": idle, "source": source})
+
+
 class Platform:
     name = "base"
+    program_usage_hint = ""
 
     def __init__(self):
         self.home = Path.home()

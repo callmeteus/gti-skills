@@ -11,8 +11,8 @@ from pathlib import Path
 
 from cleanup import fsutil
 from cleanup.drives import Drive, classify, root_names
-from cleanup.model import REPORT, SETTING, UNINSTALL, Finding, parse_human
-from platforms.base import Command, Platform, Target
+from cleanup.model import REPORT, SETTING, Finding, parse_human
+from platforms.base import Command, Platform, Target, unused_program
 from platforms.linux import DockerProbe, unknown_size
 
 # Caches that hold state, not just downloads: never emptied as part of "all of ~/Library/Caches".
@@ -33,6 +33,7 @@ def parse_df(text):
 
 class MacOS(Platform):
     name = "macos"
+    program_usage_hint = "Spotlight has no last-opened date for apps it never indexed."
 
     def list_drives(self):
         out = fsutil.run(["df", "-kP"], timeout=30) or ""
@@ -216,25 +217,17 @@ class MacOS(Platform):
 
     # Programs ----------------------------------------------------------------------------------
     def programs(self, ctx):
-        days = ctx.pref("unused_program_days")
         apps = glob.glob("/Applications/*.app") + glob.glob(str(self.home / "Applications/*.app"))
 
         def inspect(app):
             if is_apple_app(app):
                 return None
-            last = last_used(app)
-            idle = int((time.time() - last) / 86400) if last else None
-            if idle is not None and idle < days:
-                return None
             size = fsutil.tree(app).size
-            name = os.path.basename(app)[:-4]
-            return Finding(
-                category="programs", title=name, action=UNINSTALL, level="aggressive" if idle is not None else "yolo",
-                size=size, paths=[app], command=["mv", app, str(self.home / ".Trash")],
-                admin=app.startswith("/Applications"),
-                reason=f"Last opened about {idle} days ago (Spotlight)." if idle is not None else "Spotlight has no last-opened date.",
+            return unused_program(
+                ctx, os.path.basename(app)[:-4], size, last_used(app), "Spotlight last opened date",
+                ["mv", app, str(self.home / ".Trash")], paths=[app],
                 risk="Leftover data stays in ~/Library/Application Support and ~/Library/Containers; remove it separately.",
-                restore="Install it again from the App Store or its website.", details={"idle_days": idle})
+                restore="Install it again from the App Store or its website.")
 
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=ctx.jobs) as pool:

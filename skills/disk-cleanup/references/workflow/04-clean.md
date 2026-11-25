@@ -39,6 +39,24 @@ python3 <skill-dir>/scripts/disk_cleanup.py clean --auto --level safe --run-comm
 
 A path that fails a check is skipped and logged with the reason. A file in use is skipped and reported; nothing is forced.
 
+## Ids and levels
+
+`--level` limits what `--categories` and `--auto` pick. An id in `--ids` is the user's explicit choice and runs whatever its level.
+
+## Programs the user names
+
+```bash
+python3 <skill-dir>/scripts/disk_cleanup.py programs --search steam
+python3 <skill-dir>/scripts/disk_cleanup.py uninstall "Gunfire Reborn" SideQuest
+python3 <skill-dir>/scripts/disk_cleanup.py uninstall "Gunfire Reborn" SideQuest --apply
+```
+
+`programs` lists every installed program with its size and days since last use (`?` when unknown). `uninstall` matches each name against every installed program, accents and case ignored: an exact name, else the one program that contains it, else the one that has all its words. A name with no match or several matches is reported with the closest names; ask the user which one. It runs the uninstallers one at a time and then checks which programs are really gone, because uninstallers often exit with odd codes.
+
+- **Windows:** the uninstaller runs through `start /wait`, so one that needs admin rights shows the permission dialog (UAC) instead of failing. The user answers it; the agent never does. Steam games open Steam's own confirmation.
+- **Linux:** `apt-get remove` and `snap remove` need root: they are printed as commands for the user to run with their own `sudo`.
+- **macOS:** the app is moved to the Trash; its data in `~/Library` stays.
+
 ## Commands, settings, and uninstalls
 
 - **Commands** run one at a time, after the file deletions, and the freed space is measured as the change in free space on their drive.

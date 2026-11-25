@@ -6,6 +6,7 @@
   python3 disk_cleanup.py scan --auto
   python3 disk_cleanup.py clean --ids a1b2c3d4e5 f6a7b8c9d0 --level aggressive --apply
   python3 disk_cleanup.py clean --auto --level safe --run-commands --apply
+  python3 disk_cleanup.py uninstall "Gunfire Reborn" SideQuest --apply
   python3 disk_cleanup.py prefs show
 
 Everything generated goes to ~/.gti/disk-cleanup/<machine>/ (GTI_HOME replaces ~/.gti). Standard library only.
@@ -14,6 +15,7 @@ Everything generated goes to ~/.gti/disk-cleanup/<machine>/ (GTI_HOME replaces ~
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import platform as pyplatform
@@ -24,9 +26,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from cleanup import fsutil, scanners  # noqa: E402
-from cleanup.clean import MAX_SCAN_AGE_HOURS, Guard, choose, execute, load_scan, scan_age_hours  # noqa: E402
+from cleanup.clean import (MAX_SCAN_AGE_HOURS, Guard, choose, execute, load_scan, run_command,  # noqa: E402
+                           scan_age_hours)
 from cleanup.drives import select  # noqa: E402
-from cleanup.model import CATEGORIES, DEFAULT_PREFERENCES, human, parse_level  # noqa: E402
+from cleanup.model import CATEGORIES, DEFAULT_PREFERENCES, human, normalize, parse_level  # noqa: E402
 from cleanup.report import clean_markdown, reclaimable, scan_markdown  # noqa: E402
 from common.gti import gti_dir, machine_name, read_json, stamp, write_json  # noqa: E402
 from platforms import current  # noqa: E402
@@ -104,6 +107,10 @@ def cmd_scan(args):
     excluded = [d for d in drives if d.excluded]
     for d in excluded:
         ctx.note(f"Drive {d.id} ({d.label or d.root}) was ignored: {d.exclude_reason}.")
+    if ctx.unknown_programs:
+        size = sum(size for _, size in ctx.unknown_programs)
+        ctx.note(f"{len(ctx.unknown_programs)} installed programs ({human(size)}) have no reliable last-use date, so they "
+                 f"are not listed as unused. {platform.program_usage_hint}".strip())
     if not ctx.elevated:
         ctx.note("Not running elevated: items marked admin can only be measured where readable and are listed as pending.")
     du = fsutil.du_tool()
@@ -193,6 +200,98 @@ def drive_roots(drives, ids):
     return {d.id: d.root for d in drives if d.id in set(ids)}
 
 
+# programs and uninstall --------------------------------------------------------------------------
+
+def installed(args):
+    prefs, _ = load_prefs()
+    ctx = Context(level="yolo", prefs=prefs, drives=[], selected=[], elevated=fsutil.is_elevated(),
+                  jobs=args.jobs or min(16, (os.cpu_count() or 4) * 2), all_programs=True)
+    platform = current()
+    return platform, [f for f in platform.programs(ctx) if f]
+
+
+def match_programs(programs, names):
+    """Each name must point at exactly one installed program: an exact name, else the one program whose name
+    contains it, else the one whose name has all its words. Returns (chosen, [(name, problem)])."""
+    chosen, problems = [], []
+    for name in names:
+        key = normalize(name)
+        words = key.split()
+        found = [p for p in programs if normalize(p.title) == key] \
+            or [p for p in programs if key in normalize(p.title)] \
+            or [p for p in programs if all(w in normalize(p.title).split() for w in words)]
+        if len(found) == 1:
+            if found[0] not in chosen:
+                chosen.append(found[0])
+        elif found:
+            problems.append((name, "matches several programs, name one: " + "; ".join(p.title for p in found[:8])))
+        else:
+            close = difflib.get_close_matches(key, [normalize(p.title) for p in programs], n=3, cutoff=0.5)
+            titles = [p.title for p in programs if normalize(p.title) in close]
+            problems.append((name, "not installed" + (f"; closest: {'; '.join(titles)}" if titles else "")))
+    return chosen, problems
+
+
+def cmd_programs(args):
+    _, programs = installed(args)
+    if args.search:
+        key = normalize(args.search)
+        programs = [p for p in programs if key in normalize(p.title)]
+    programs.sort(key=lambda p: -p.size)
+    if args.json:
+        out(json.dumps([p.to_dict() for p in programs], indent=2, ensure_ascii=False, default=str))
+        return 0
+    for p in programs:
+        idle = p.details.get("idle_days")
+        out(f"{human(p.size):>10}  {'?' if idle is None else str(idle) + ' d':>7}  {p.title}")
+    out(f"{len(programs)} programs. The second column is days since last use (? = unknown).")
+    return 0
+
+
+def cmd_uninstall(args):
+    platform, programs = installed(args)
+    chosen, problems = match_programs(programs, args.names)
+    for name, problem in problems:
+        out(f"  {name}: {problem}")
+    if not chosen:
+        out("Nothing to uninstall.")
+        return 1
+    elevated = fsutil.is_elevated()
+    ready = []
+    for p in chosen:
+        command = p.command if isinstance(p.command, str) else " ".join(p.command)
+        if p.admin and not elevated:
+            out(f"  pending  {p.title} ({human(p.size)}): needs root; run it yourself: sudo {command}")
+            continue
+        ready.append(p)
+        out(f"  {'uninstall' if args.apply else 'would uninstall'}  {p.title} ({human(p.size)}): {command}")
+    if not args.apply or not ready:
+        if not args.apply:
+            out("Dry run: nothing was removed. Add --apply to uninstall.")
+        return 0
+    out("Uninstalling one at a time. If an uninstaller opens a window or Windows asks for permission, answer it there.")
+    folder = gti_dir(machine_name(), "cleanups", stamp())
+    manifest = folder / "manifest.jsonl"
+    with open(manifest, "a", encoding="utf-8") as handle:
+        def log(entry):
+            entry["time"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+            handle.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
+            handle.flush()
+        results = [run_command(p, None, log) for p in ready]
+    _, after = installed(args)
+    still = {normalize(p.title) for p in after}
+    rows = []
+    for p, result in zip(ready, results):
+        gone = normalize(p.title) not in still
+        rows.append({"title": p.title, "size": p.size, "removed": gone, "problems": result["problems"]})
+        out(f"  {'removed' if gone else 'STILL INSTALLED'}  {p.title}" + ("" if gone else
+            f" ({'; '.join(result['problems']) or 'the uninstaller was cancelled or failed'})"))
+    write_json(folder / "uninstall.json", {"machine": machine_name(), "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                           "results": rows, "not_found": problems})
+    out(f"Log: {manifest}")
+    return 0 if all(r["removed"] for r in rows) else 1
+
+
 # prefs -------------------------------------------------------------------------------------------
 
 def cmd_prefs(args):
@@ -268,6 +367,18 @@ def main(argv=None):
     p.add_argument("--jobs", type=int)
     p.add_argument("--apply", action="store_true", help="Really delete. Without it, only print what would happen")
     p.set_defaults(fn=cmd_clean)
+
+    p = sub.add_parser("programs", help="List every installed program with its size and days since last use")
+    p.add_argument("--search", help="Only names that contain this text")
+    p.add_argument("--json", action="store_true")
+    p.add_argument("--jobs", type=int)
+    p.set_defaults(fn=cmd_programs)
+
+    p = sub.add_parser("uninstall", help="Uninstall the programs the user named (dry run without --apply)")
+    p.add_argument("names", nargs="+", help="Program names as the user said them; each must match one program")
+    p.add_argument("--apply", action="store_true", help="Really uninstall")
+    p.add_argument("--jobs", type=int)
+    p.set_defaults(fn=cmd_uninstall)
 
     p = sub.add_parser("prefs", help="Show or change saved preferences")
     p.add_argument("action", choices=("show", "set", "unset", "reset"))

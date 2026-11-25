@@ -10,7 +10,7 @@ From `report.md`, show:
 2. The table of reclaimable space per category and level.
 3. The biggest findings at the chosen level, with id, size, and risk.
 4. Settings that waste space, each with what it frees and what the user gives up.
-5. Programs not used, with size and last use.
+5. Programs not used, with size, last use, and where the date came from. Never call a program unused without that date; the notes say how many programs had none.
 6. The largest files and the space per folder, for the user to judge (never deleted by the skill).
 
 Keep it short. One table per group, biggest first, ids in code format so the user can name them.

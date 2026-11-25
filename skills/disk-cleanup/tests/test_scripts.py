@@ -25,7 +25,8 @@ from cleanup.model import DEFAULT_PREFERENCES, Finding, parse_human, parse_level
 from platforms.base import Context, Platform  # noqa: E402
 from platforms.linux import group_drives, parse_mountinfo  # noqa: E402
 from platforms.macos import parse_df  # noqa: E402
-from platforms.windows import parse_shadow_storage  # noqa: E402
+from platforms.base import unused_program  # noqa: E402
+from platforms.windows import SKIP_PROGRAMS, parse_shadow_storage, parse_userassist, uac_launch  # noqa: E402
 
 DAY = 86400
 
@@ -270,10 +271,15 @@ class CleanTests(unittest.TestCase):
         self.assertEqual([f.title for f in chosen], ["a"])
         reasons = {f.title: r for f, r in skipped}
         self.assertNotIn("b", reasons)  # above the level: out of scope, not pending
-        self.assertIn("above", choose([yolo], "aggressive", ids=[yolo.id])[1][0][1])
         self.assertIn("explicit yes", reasons["c"])
         self.assertIn("never in automatic mode", reasons["d"])
         self.assertIn("administrator", reasons["e"])
+
+    def test_an_id_the_user_named_runs_whatever_its_level(self):
+        yolo = self.finding(title="y", level="yolo")
+        chosen, skipped = choose([yolo], "safe", ids=[yolo.id])
+        self.assertEqual(chosen, [yolo])
+        self.assertEqual(choose([yolo], "safe", categories=["caches"])[0], [])
 
     def test_a_setting_runs_only_by_id_with_the_system_flag(self):
         setting = self.finding(action="setting", category="config", command=["x"])
@@ -329,6 +335,72 @@ class CleanTests(unittest.TestCase):
         self.assertIn("changed", problems["b"][0])
         lines = [json.loads(line) for line in manifest.read_text().splitlines()]
         self.assertTrue(any(line.get("path") == copy and line["action"] == "delete" for line in lines))
+
+
+class ProgramTests(unittest.TestCase):
+    def test_a_program_without_a_last_use_date_is_never_called_unused(self):
+        ctx = context(Path(tempfile.gettempdir()))
+        self.assertIsNone(unused_program(ctx, "FL Studio", 2 * 1024 ** 3, None, "", "uninstall.exe"))
+        self.assertEqual(ctx.unknown_programs, [("FL Studio", 2 * 1024 ** 3)])
+
+    def test_only_a_real_old_date_lists_a_program(self):
+        ctx = context(Path(tempfile.gettempdir()))
+        now = time.time()
+        old = unused_program(ctx, "Old Game", 10 ** 9, now - 400 * DAY, "Windows Prefetch", "u.exe", now=now)
+        recent = unused_program(ctx, "Daily App", 10 ** 9, now - 3 * DAY, "Windows Prefetch", "u.exe", now=now)
+        empty = unused_program(ctx, "Stub", 0, now - 400 * DAY, "Windows Prefetch", "u.exe", now=now)
+        self.assertEqual((old.level, old.details["idle_days"], old.auto), ("aggressive", 400, False))
+        self.assertIsNone(recent)
+        self.assertIsNone(empty)
+
+    def test_runtimes_updates_drivers_and_sync_clients_are_not_programs(self):
+        for name in ("Microsoft Windows Desktop Runtime 10.0.2 (x64)", "Update for x64-based Windows Systems (KB5001716)",
+                     "NVIDIA Software do sistema PhysX 9.23.1019", "Google Drive", "Gerenciador de Senhas do Google",
+                     "Microsoft Visual Basic/C++ Runtime (x86)", "Riot Vanguard", "Microsoft GameInput", "vs_CoreEditorFonts"):
+            self.assertTrue(SKIP_PROGRAMS.search(name), name)
+        for name in ("FL Studio 2025", "League of Legends", "Docker Desktop", "REAPER (x64)", "Cities: Skylines"):
+            self.assertFalse(SKIP_PROGRAMS.search(name), name)
+
+    def test_userassist_value_gives_the_exe_and_its_last_run(self):
+        import codecs
+        name = codecs.encode("{6D809377-6AF0-444B-8957-A3773F02200E}\\Image-Line\\FL Studio 2025\\FL64.exe", "rot13")
+        when = 1_760_000_000
+        filetime = int((when + 11644473600) * 1e7)
+        data = bytes(60) + filetime.to_bytes(8, "little") + bytes(4)
+        exe, seen = parse_userassist(name, data)
+        self.assertEqual(exe, "FL64.EXE")
+        self.assertAlmostEqual(seen, when, delta=1)
+        self.assertEqual(parse_userassist(codecs.encode("Microsoft.Windows.Explorer", "rot13"), data), (None, None))
+
+
+class UninstallTests(unittest.TestCase):
+    def programs(self, *names):
+        return [Finding(category="programs", title=n, action="uninstall", level="safe", command=["x"]) for n in names]
+
+    def test_names_match_one_program_ignoring_case_accents_and_versions(self):
+        import disk_cleanup
+        progs = self.programs("Immersed Agent", "Gunfire Reborn", "SideQuest 0.10.42", "Insomnia", "Touché")
+        chosen, problems = disk_cleanup.match_programs(progs, ["immersed agent", "SIDEQUEST", "touche", "gunfire"])
+        self.assertEqual([p.title for p in chosen], ["Immersed Agent", "SideQuest 0.10.42", "Touché", "Gunfire Reborn"])
+        self.assertEqual(problems, [])
+
+    def test_an_ambiguous_or_missing_name_is_reported_not_guessed(self):
+        import disk_cleanup
+        progs = self.programs("FL Studio 2025", "FL Studio 2026", "Insomnia")
+        chosen, problems = disk_cleanup.match_programs(progs, ["fl studio", "insomnai"])
+        self.assertEqual(chosen, [])
+        self.assertIn("several", problems[0][1])
+        self.assertIn("Insomnia", problems[1][1])
+
+    def test_all_programs_mode_lists_programs_with_no_date_and_system_parts(self):
+        ctx = context(Path(tempfile.gettempdir()))
+        ctx.all_programs = True
+        found = unused_program(ctx, "Immersed Agent", 10 ** 8, None, "", "u.exe", details={"system_part": True})
+        self.assertEqual(found.title, "Immersed Agent")
+        self.assertEqual(ctx.unknown_programs, [])
+
+    def test_windows_uninstallers_start_through_shell_execute_for_uac(self):
+        self.assertEqual(uac_launch('MsiExec.exe /X{ABC}'), 'start "" /wait MsiExec.exe /X{ABC}')
 
 
 class PrefsTests(unittest.TestCase):

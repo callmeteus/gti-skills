@@ -11,8 +11,8 @@ from pathlib import Path
 
 from cleanup import fsutil
 from cleanup.drives import CLOUD_FSTYPES, NETWORK_FSTYPES, Drive, classify, root_names
-from cleanup.model import REPORT, SETTING, UNINSTALL, Finding, parse_human
-from platforms.base import Command, Platform, Target
+from cleanup.model import REPORT, SETTING, Finding, parse_human
+from platforms.base import Command, Platform, Target, unused_program
 
 REAL_FSTYPES = {
     "ext2", "ext3", "ext4", "xfs", "btrfs", "zfs", "f2fs", "ntfs", "ntfs3", "fuseblk", "vfat", "exfat",
@@ -72,6 +72,7 @@ def group_drives(mounts, labels=None, removable=None):
 
 class Linux(Platform):
     name = "linux"
+    program_usage_hint = "Access times are missing on noatime mounts."
 
     def list_drives(self):
         try:
@@ -338,7 +339,6 @@ class Linux(Platform):
 
     # Programs ----------------------------------------------------------------------------------
     def programs(self, ctx):
-        days = ctx.pref("unused_program_days")
         found = []
         out = fsutil.run(["flatpak", "list", "--app", "--columns=application,name,size"], timeout=30)
         for line in (out or "").splitlines():
@@ -347,8 +347,8 @@ class Linux(Platform):
                 continue
             app, name, size = parts[0], parts[1], parse_human(parts[2])
             last = fsutil.newest_mtime(self.home / ".var/app" / app)
-            found.append(program(name, size, last, "~/.var/app data", ["flatpak", "uninstall", "-y", app], days,
-                                 "flatpak"))
+            found.append(unused_program(ctx, name, size, last, "last change in ~/.var/app",
+                                        ["flatpak", "uninstall", "-y", app], details={"kind": "flatpak"}))
         out = fsutil.run(["snap", "list"], timeout=30)
         for line in (out or "").splitlines()[1:]:
             parts = line.split()
@@ -358,14 +358,15 @@ class Linux(Platform):
             snap_file = Path(f"/var/lib/snapd/snaps/{parts[0]}_{parts[2]}.snap")
             size = snap_file.stat().st_size if snap_file.exists() else 0
             last = fsutil.newest_mtime(self.home / "snap" / parts[0])
-            found.append(program(parts[0], size, last, "~/snap data", ["snap", "remove", parts[0]], days, "snap"))
+            found.append(unused_program(ctx, parts[0], size, last, "last change in ~/snap",
+                                        ["snap", "remove", parts[0]], admin=True, details={"kind": "snap"}))
         for image in [*glob.glob(str(self.home / "Applications/*.AppImage")), *glob.glob(str(self.home / "*.AppImage")),
                       *glob.glob(str(self.home / ".local/bin/*.AppImage"))]:
             st = fsutil.lstat(image)
             if st:
-                found.append(program(os.path.basename(image), st.st_size, st.st_atime, "file access time",
-                                     ["rm", image], days, "AppImage"))
-        found += apt_programs(days)
+                found.append(unused_program(ctx, os.path.basename(image), st.st_size, st.st_atime, "file access time",
+                                            ["rm", image], paths=[image], details={"kind": "AppImage"}))
+        found += apt_programs(ctx)
         return [f for f in found if f]
 
 
@@ -373,20 +374,7 @@ SNAP_DISABLED = ("LANG=C snap list --all | awk '/disabled/{print $1, $3}' | "
                  "while read name rev; do snap remove \"$name\" --revision=\"$rev\"; done")
 
 
-def program(name, size, last, source, uninstall, days, kind):
-    idle = int((time.time() - last) / 86400) if last else None
-    if idle is not None and idle < days:
-        return None
-    return Finding(
-        category="programs", title=name, action=UNINSTALL, level="aggressive" if idle is not None else "yolo",
-        size=size, command=uninstall, admin=kind in ("deb", "snap"),
-        reason=f"Last used about {idle} days ago ({source})." if idle is not None else
-        "No reliable last-use date; installed a long time ago or never opened.",
-        risk="Settings and data of the program may be removed with it.",
-        restore="Install it again from its source.", details={"kind": kind, "idle_days": idle, "source": source})
-
-
-def apt_programs(days):
+def apt_programs(ctx):
     """Manually installed packages that ship a desktop launcher: libraries and kernels are not programs."""
     if not fsutil.run_exists("dpkg-query") or not fsutil.run_exists("apt-mark"):
         return []
@@ -411,8 +399,8 @@ def apt_programs(days):
                 continue
             if os.path.isfile(path) and os.access(path, os.X_OK):
                 last = max(last, st.st_atime)
-        found.append(program(name, size, last or None, "access time of its programs (approximate, needs relatime)",
-                             ["apt-get", "remove", "--purge", "-y", name], days, "deb"))
+        found.append(unused_program(ctx, name, size, last or None, "access time of its programs (approximate, needs relatime)",
+                                    ["apt-get", "remove", "--purge", "-y", name], admin=True, details={"kind": "deb"}))
     return found
 
 

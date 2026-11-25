@@ -84,7 +84,8 @@ Disk Cleanup gives the agent one script that lists the drives, excludes Google D
 - **Safe duplicates:** size, then the first and last 64 KiB, then the whole file with BLAKE2b; only user content, never inside repositories, program folders, or SDKs; the original kept by location and name; copies in backup folders kept unless the level is yolo.
 - **Honest sizes:** allocated bytes, hardlinks counted once, build folders sized from single-link files so pnpm and Bun stores are not overcounted, estimates marked as estimates.
 - **Settings that waste space:** journald and Docker logs with no limit, core dumps, hibernation and page files, restore points, search indexes, WSL and Docker disks that never shrink, snap retention, Storage Sense.
-- **Unused programs:** Prefetch on Windows, Spotlight on macOS, Flatpak, snap, AppImage, and packages with a launcher on Linux.
+- **Uninstall by name:** `uninstall "Gunfire Reborn" SideQuest` finds each program among everything installed, whatever its level or last use, runs the uninstallers one at a time (Windows shows its own permission dialog), and checks that each one is gone.
+- **Unused programs:** listed only with a real last-use date older than 180 days: Prefetch and UserAssist on Windows, Spotlight on macOS, Flatpak, snap, AppImage, and packages with a launcher on Linux. A program with no reliable date is never called unused; runtimes, updates, drivers, and sync clients are never listed.
 - **Guarded cleaner:** every path checked again for links, protected folders, keys and credentials, cloud folders, excluded drives, and user exclusions; duplicates hashed again; every deletion in a manifest.
 - **Automatic mode:** off by default; system drive only; only findings marked auto at the level; settings, uninstalls, volumes, and phone backups always stay pending.
 - **Preferences:** saved level, automatic mode, exclusions, and age thresholds in `~/.gti/disk-cleanup/preferences.json`, each change shown with its old and new value.
@@ -233,7 +234,7 @@ python3 scripts/disk_cleanup.py clean [--scan PATH] [--level L] [--ids ...] [--c
 |----------|---------|-------------|
 | `--scan` | `latest` | Scan to clean from; refused when older than 24 hours |
 | `--level` | saved, else `safe` | Highest level acted on |
-| `--ids` | none | Findings the user approved |
+| `--ids` | none | Findings the user approved; an id runs whatever its level |
 | `--categories` | none | Every finding of these categories within the level |
 | `--exclude-ids` | none | Findings to keep |
 | `--exclude-paths` | none | Paths to keep in this run |
@@ -243,6 +244,28 @@ python3 scripts/disk_cleanup.py clean [--scan PATH] [--level L] [--ids ...] [--c
 | `--allow-old-scan` | off | Accept a scan older than 24 hours |
 | `--jobs` | 4 | Parallel deletions |
 | `--apply` | off | Delete; without it, a dry run |
+
+### disk_cleanup.py programs
+
+```bash
+python3 scripts/disk_cleanup.py programs [--search TEXT] [--json]
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--search` | none | Only programs whose name contains this text |
+| `--json` | off | Print the programs as JSON |
+
+### disk_cleanup.py uninstall
+
+```bash
+python3 scripts/disk_cleanup.py uninstall NAME [NAME ...] [--apply]
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `NAME` | required | Program names as the user said them; each must match exactly one installed program |
+| `--apply` | off | Run the uninstallers; without it, a dry run. Afterwards, checks which programs are really gone |
 
 ### disk_cleanup.py prefs
 
@@ -356,9 +379,9 @@ Files change, so the cleaner refuses scans older than 24 hours. Scan again, or p
 </details>
 
 <details>
-<summary><strong>Program last-use dates are unknown on Windows</strong></summary>
+<summary><strong>Few or no programs are listed as unused</strong></summary>
 
-Prefetch needs an elevated prompt. Without it, programs are listed at yolo with "no reliable last-use date". Scan from an elevated terminal.
+A program is listed only when its last use is known. On Windows, Prefetch needs an elevated prompt; without it only programs opened from Start or Explorer (UserAssist) have a date, and audio plugins never have one. The report's notes count the programs left out. Scan from an elevated terminal for more dates.
 
 </details>
 

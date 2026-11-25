@@ -1,6 +1,6 @@
 # Levels
 
-A level includes every level below it. The scan finds all levels at once; the level decides what `clean` may act on. Settings and uninstalls are listed at a level but never applied without the user's yes for that item.
+A level includes every level below it. Levels choose what `--categories` and automatic mode take in bulk; an id the user picks, or a program the user names, runs whatever its level. A program is listed only when its last use is known and older than `unused_program_days`; a program with no reliable date is never called unused at any level, only counted in the report's notes. The scan finds all levels at once; the level decides what `clean` may act on. Settings and uninstalls are listed at a level but never applied without the user's yes for that item.
 
 | Category | safe (seguro) | aggressive (agressivo) | yolo (não ligo) |
 |----------|---------------|------------------------|-----------------|
@@ -13,7 +13,7 @@ A level includes every level below it. The scan finds all levels at once; the le
 | Dev | Dangling Docker images, Xcode DerivedData, unavailable simulators | Build output in projects untouched for 90 days, Docker build cache, device support files, simulator caches | Build output in active projects, every unused Docker image and stopped container, Xcode archives, Docker volumes (never automatic) |
 | System | APT, DNF, Zypper, Pacman (last 2 versions) caches, unused Flatpak runtimes, snapd cache, Delivery Optimization cache, component store cleanup, Nix garbage | Old kernels and unused packages, disabled snap revisions, Windows Update downloads, upgrade leftovers, Time Machine local snapshots, Windows.old (manual) | Whole Pacman cache, old Nix generations, component store reset, Windows Installer patch cache, phone backups (never automatic) |
 | Config | journald with no limit, Docker logs with no limit, core dumps over 1 GB, Storage Sense off, Homebrew never cleaning | Reduced hibernation file, restore points over 10%, search index over 2 GB, WSL and Docker disks that never shrink, snap keeping over 2 revisions, runaway logs, Baloo or Tracker over 1 GB, Docker Desktop disk image | Hibernation off, page file larger than needed, swap file larger than needed, CompactOS and reserved storage (only under 15% free), hibernation image on a desktop Mac |
-| Programs | | Not used for 180 days, with a reliable last-use date | No reliable last-use date |
+| Programs | | Not used for 180 days, by a real last-use date | |
 | Large | Report only, at every level | | |
 
 ## What "auto" means

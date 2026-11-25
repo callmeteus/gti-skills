@@ -35,7 +35,8 @@ In this skill:
 - **Which level (step 3):** the saved `level` preference, else `safe`.
 - **What to delete (step 5):** nothing, unless automatic mode is on (see below). Without automatic mode, the scan and the report are the result, and every deletion is listed as pending with its id and the exact `clean` command.
 - **With automatic mode on:** run `clean --auto --run-commands --apply` at the chosen level. It deletes only findings marked `auto` within that level, on the system drive.
-- **Settings, uninstalls, Docker volumes, phone backups, and duplicates in backup folders (step 5):** never in this mode. List them as pending with their commands.
+- **Programs the user named in the request:** uninstall them with `uninstall "<name>" --apply`; a name that matches no program or several is reported, not guessed.
+- **Settings, uninstalls the user did not name, Docker volumes, phone backups, and duplicates in backup folders (step 5):** never in this mode. List them as pending with their commands.
 - **Items that need administrator or root rights:** never ask for a password and never elevate. List them as pending with the command to run in an elevated prompt.
 - **Reports:** write them; do not open them.
 
@@ -78,7 +79,7 @@ Do not use this skill for backups, recovering deleted files, resizing or partiti
 | `aggressive` | agressivo | Safe, plus: the trash, duplicates, old installers and extracted archives in Downloads, build output in projects untouched for 90 days, developer tool caches, Docker build cache, journald above 200 MB, old kernels, disabled snap revisions, Windows Update downloads and upgrade leftovers, Time Machine local snapshots |
 | `yolo` | não ligo | Aggressive, plus: build output in active projects, every unused Docker image and stopped container, every app cache in `~/Library/Caches` on macOS, Maven and model caches, installers older than 7 days and archives older than 30, Xcode archives, the Windows Installer patch cache |
 
-A level includes everything below it. Full matrix, with the settings and programs each level lists: [references/rules/levels.md](references/rules/levels.md).
+A level includes everything below it. Levels choose what the skill offers in bulk; they never block what the user names. An item the user picks by id, or a program the user names, is done whatever its level. Full matrix, with the settings and programs each level lists: [references/rules/levels.md](references/rules/levels.md).
 
 Never deleted at any level: anything in Google Drive, OneDrive, Dropbox, iCloud, or other cloud-synced folders; keys, credentials, and wallets; documents, photos, and videos (only duplicate copies, with the original kept); the only copy of anything; anything behind a link or junction. Read [references/rules/guardrails.md](references/rules/guardrails.md) before the first cleanup.
 
@@ -131,6 +132,16 @@ Run the script with `python3` on macOS and Linux and `python` or `py -3` on Wind
 
    Every path is checked again right before it is deleted, duplicates are hashed again, and each deletion is logged. Read [references/workflow/04-clean.md](references/workflow/04-clean.md).
 
+   **When the user names programs to remove,** do not look for them among the scan's unused programs: the scan lists only programs with a known old last use. Uninstall by name, from every installed program, whatever the level:
+
+   ```bash
+   python3 <skill-dir>/scripts/disk_cleanup.py programs --search insomnia
+   python3 <skill-dir>/scripts/disk_cleanup.py uninstall "Immersed Agent" "Gunfire Reborn" SideQuest Insomnia
+   python3 <skill-dir>/scripts/disk_cleanup.py uninstall "Immersed Agent" "Gunfire Reborn" SideQuest Insomnia --apply
+   ```
+
+   On Windows the uninstaller may show its own window or the Windows permission dialog (UAC): tell the user to answer it there; never approve it for them. The command checks afterwards which programs are really gone.
+
 7. **Report.** Give free space before and after per drive, what was freed per category, what is pending (admin, settings, uninstalls, manual steps) with exact commands, and what was not verified. Use [assets/templates/cleanup-report.md](assets/templates/cleanup-report.md). Read [references/workflow/05-report.md](references/workflow/05-report.md).
 
 Before reporting, go through [references/quality/checklist.md](references/quality/checklist.md).
@@ -164,7 +175,7 @@ hashing both copies again.
 
 | Path | Purpose |
 |------|---------|
-| `scripts/disk_cleanup.py` | The command line: `drives`, `scan`, `clean`, `prefs` |
+| `scripts/disk_cleanup.py` | The command line: `drives`, `scan`, `clean`, `programs`, `uninstall`, `prefs` |
 | `scripts/cleanup/` | Levels and findings, the parallel scanners, the cleaner and its guard, reports, file system helpers |
 | `scripts/platforms/` | One module per operating system: drives, cloud folders, targets, commands, settings, programs |
 | `references/workflow/` | One file per step: setup and drives, scan, review, clean, report |

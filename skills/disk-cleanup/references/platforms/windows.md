@@ -22,7 +22,7 @@ Google Drive for desktop mounts a virtual drive, `G:` by default but any free le
 
 ## Admin
 
-Items marked `admin` need an elevated prompt (Run as administrator). The skill never elevates; when the user wants them, they open an elevated terminal and run the agent there, or run the commands shown in the report. Without elevation, Prefetch is unreadable and program last-use dates are unknown.
+Items marked `admin` need an elevated prompt (Run as administrator). The skill never elevates; when the user wants them, they open an elevated terminal and run the agent there, or run the commands shown in the report. Without elevation, Prefetch is unreadable, so only programs opened from Start or Explorer have a last-use date; the others are left out of the unused list, not put in it.
 
 ## What is checked
 
@@ -34,7 +34,7 @@ Items marked `admin` need an elevated prompt (Run as administrator). The skill n
 | Trash | `Clear-RecycleBin -DriveLetter <X> -Force` for each chosen drive |
 | System | Delivery Optimization cache, `SoftwareDistribution\Download`, `$Windows.~BT`, `$Windows.~WS`, `$GetCurrent`, `ESD\Download`, `Dism /StartComponentCleanup` (and `/ResetBase` at yolo), `Installer\$PatchCache$` at yolo, Windows.old (manual) |
 | Config | `hiberfil.sys` (`powercfg /h /type reduced` or `/h off`), page file far above RAM, restore point storage over 10% (`vssadmin resize shadowstorage`), Windows Search index over 2 GB, Storage Sense off, WSL and Docker `.vhdx` over 10 GB, CompactOS and reserved storage when under 15% free |
-| Programs | Uninstall registry keys (HKLM, WOW6432Node, HKCU), last use from Prefetch, size from `EstimatedSize` |
+| Programs | Uninstall registry keys (HKLM, WOW6432Node, HKCU); last use from Prefetch (elevated) and UserAssist (programs opened from Start or Explorer, no admin needed); size from `EstimatedSize`. Listed only with a real last-use date; runtimes, updates, drivers, anti-cheat, sync clients, and plugins without a date are never listed |
 
 ## Manual steps
 
