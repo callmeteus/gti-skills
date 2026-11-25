@@ -76,9 +76,9 @@ Pick the mode from the request, then follow its steps in order. Read a reference
 ### Mode A: write tests for new or changed code
 
 1. **Discover.** Find the test runner, existing helpers, fixtures, containers, and conventions, and the public surface of the code (exported functions, HTTP routes, CLI commands, UI). See [references/workflow/01-discover.md](references/workflow/01-discover.md).
-2. **Choose the level.** For each behavior, pick the highest level that stays fast and deterministic: user flow, API or integration, or unit for pure logic. See [references/workflow/02-choose-level.md](references/workflow/02-choose-level.md).
-3. **Write the tests.** Follow the eight rules below. For dependencies read [references/rules/dependencies.md](references/rules/dependencies.md); for UI flows read [references/rules/user-flows.md](references/rules/user-flows.md).
-4. **Prove they catch bugs.** Run them, break the code on purpose, and confirm they fail; then run mutation and property-based tests. In JavaScript and TypeScript this always means Stryker and fast-check, run from outside the project with [references/tools/js-tools.md](references/tools/js-tools.md). See [references/workflow/04-verify.md](references/workflow/04-verify.md).
+2. **List the cases and choose the level.** For each public method or route, list the cases its test type must cover (every outcome, every dependency failing, repeats, bound edges, settings) with [references/rules/test-types.md](references/rules/test-types.md). Test each outcome once at the highest level that stays fast and deterministic, and each further case of a decision where it is decided, usually a pure function. See [references/workflow/02-choose-level.md](references/workflow/02-choose-level.md).
+3. **Write the tests.** Follow the eight rules below and the rules, names, and assertions of each test type. For dependencies and fakes read [references/rules/dependencies.md](references/rules/dependencies.md); for UI flows read [references/rules/user-flows.md](references/rules/user-flows.md).
+4. **Prove they catch bugs.** Run them, break the code on purpose, and confirm they fail; then run mutation and property-based tests. In JavaScript and TypeScript this always means Stryker and fast-check, run from outside the project with [references/tools/js-tools.md](references/tools/js-tools.md). Tick every listed case against a named test, run the tests shuffled and alone, and keep each within its type's time budget ([references/quality/speed.md](references/quality/speed.md)). See [references/workflow/04-verify.md](references/workflow/04-verify.md).
 5. **Report** with [assets/templates/test-report.md](assets/templates/test-report.md).
 
 ### Mode B: fix a bug
@@ -90,9 +90,9 @@ Pick the mode from the request, then follow its steps in order. Read a reference
 
 ### Mode C: audit or prune a suite
 
-1. **Discover** as in Mode A, and measure the suite: test count, runtime, mock count, and flaky tests if CI history is available.
-2. **Classify** every test file with [references/quality/anti-patterns.md](references/quality/anti-patterns.md) and the audit steps in [references/workflow/05-audit-and-prune.md](references/workflow/05-audit-and-prune.md): keep, rewrite at a higher level, merge, or delete.
-3. **Replace before deleting.** Write the higher-level test that covers the behavior first, then propose the deletion. Delete only with the user's approval.
+1. **Discover** as in Mode A, and measure the suite: test count, CPU time and time per test and file ([references/quality/speed.md](references/quality/speed.md)), mock count, and flaky tests if CI history is available.
+2. **Classify** every test file with [references/quality/anti-patterns.md](references/quality/anti-patterns.md) and the audit steps in [references/workflow/05-audit-and-prune.md](references/workflow/05-audit-and-prune.md): keep, rewrite at a higher level, merge, or delete. Give every test above the pure-function level a verdict: stays (what only its level proves), moves (to a faster level), or removed (the test that already proves it).
+3. **Replace before deleting.** Write the test that covers the behavior first, prove it with a break that it catches, then propose the deletion. Delete only with the user's approval. A bug found on the way is pinned as it behaves today, with a skipped test for the right behavior, and reported.
 4. **Report** the plan or the changes with the template.
 
 ## The eight rules
@@ -139,8 +139,8 @@ before deleting the 88 files.
 | Path | Purpose |
 |------|---------|
 | `references/workflow/` | One file per step: discover, choose the level, reproduce a bug, verify, audit and prune |
-| `references/rules/` | Dependencies (mocks, fakes, Testcontainers) and user flows (Playwright) |
-| `references/quality/` | Anti-patterns used to review new tests and classify old ones |
+| `references/rules/` | Test types (cases, rules, names, assertions, budgets), dependencies (mocks, contract-tested fakes, Testcontainers), and user flows (Playwright) |
+| `references/quality/` | Anti-patterns used to review new tests and classify old ones, and suite speed (budgets, measuring, fixes) |
 | `references/tools/js-tools.md` | Installing and running Stryker and fast-check from outside the project |
 | `scripts/tools/js-tools.mjs` | Installs Stryker and fast-check into the tools folder and runs them against a project |
 | `assets/templates/` | The report structure |
@@ -153,3 +153,4 @@ The skill works the same in every coding agent. If you need install paths, how t
 
 - The eight rules come from a post by Daniel Moka. The audit mode answers the post it quotes, in which Sherwood Callaway reports deleting about 800k lines of unit tests from a monorepo on the hypotheses that unit tests lock in slop code, slow down agents and CI, and waste tokens. Those hypotheses were not yet confirmed when the post was written, so this skill prunes only after replacing coverage, never by bulk deletion.
 - Unit tests stay valuable for pure logic with many cases: parsers, calculations, state machines. The rules target tests that mirror structure, not unit tests as such.
+- The case lists per test type, the verdicts and proof for moving tests down, contract-tested fakes, whole-value and shape assertions, the speed budgets, and the pin-and-skip handling of bugs found while restructuring are adapted from the refactor-tests skill by Marek Kirejczyk (MIT).

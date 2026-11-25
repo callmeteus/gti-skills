@@ -56,9 +56,16 @@ When a property finds a counterexample, keep it as a plain example-based test wi
 
 In JavaScript and TypeScript, write each property in the project's work folder inside the tools folder and run it with the `property` command (see `references/tools/js-tools.md`). The property file is a probe and stays outside the project; what lands in the project is the literal example test for each counterexample. Only when the project already depends on `fast-check` may property tests live in its suite.
 
+## 4. Shuffled, alone, and within budget
+
+- Run the tests in scope shuffled and one at a time; both pass. Commands per runner are in `references/quality/speed.md`.
+- Tick every case on the type's list in `references/rules/test-types.md` against a named test.
+- Time the tests in scope. A test over its type's budget gets a named cause and a fix, or is listed in the report with both.
+
 ## Check
 
 - Each new test was seen failing at least once.
+- Every case on the type's list has a test, and the tests pass shuffled and alone.
 - Surviving mutants in the changed scope are killed or explained.
 - In JavaScript and TypeScript, Stryker ran on the changed scope and at least one fast-check property was run for each piece of logic with a rule worth stating.
 - The project has no new dependency, lockfile change, config file, or report from the tools (`git status` shows only the tests you meant to add).

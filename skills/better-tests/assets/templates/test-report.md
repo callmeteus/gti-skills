@@ -12,6 +12,10 @@
 |----------|-------|------|
 | <user-visible statement> | <user flow, API, unit> | <file and test name> |
 
+| Method or route | Case | Test |
+|-----------------|------|------|
+| <OrderService.placeOrder> | <payments down> | <file and `it` name, or "gap"> |
+
 ## Bug reproduction
 
 Write this section only in bug-fix mode.
@@ -33,6 +37,21 @@ Write this section only in bug-fix mode.
 - **Seen failing:** <how each new test was broken on purpose>
 - **Mutation testing:** <tool, scope, score, surviving mutants and what was done>
 - **Property-based testing:** <properties added and any counterexample found>
+- **Shuffled and alone:** <commands and results>
+
+## Test speed
+
+| Metric | Before | After |
+|--------|-------:|------:|
+| Suite CPU time | | |
+| Tests | | |
+
+| Test type | Tests | Total | Avg per test | Budget | Over budget |
+|-----------|------:|------:|-------------:|-------:|------------:|
+| <Pure functions> | | | | 5 ms | |
+
+- **Still over budget:** <test or file, time, cause, the change that would fix it>
+- **Bugs pinned:** <the pinned test and the skipped test named for each bug found while restructuring>
 
 ## Audit
 
@@ -49,6 +68,10 @@ Write this section only in audit mode.
 | File | Class | Reason | Status |
 |------|-------|--------|--------|
 | <path> | <keep, rewrite higher, merge, delete, fix flake> | <anti-pattern> | <proposed, approved, done> |
+
+| Test | Verdict | Covered by, or what only its level proves | Proof |
+|------|---------|--------------------------------------------|-------|
+| <file and test name> | <stays, moves, removed> | <test, or reason> | <the break and the test that failed> |
 
 ## Not covered
 

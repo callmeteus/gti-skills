@@ -69,9 +69,12 @@ Better Tests gives an agent eight rules and a workflow in three modes: write tes
 
 - **Eight rules:** avoid mocks, Testcontainers for integration, couple to public APIs, failing test before a fix, no logic in tests, mutation and property-based testing, Playwright for user flows, and user-visible assertions.
 - **Three modes:** write tests, fix a bug, and audit or prune a suite, each with its own steps.
-- **Level selection:** a table and signals for choosing user flow, API, or unit level per behavior.
+- **Level selection:** a table and signals for choosing user flow, API, or unit level per behavior: each outcome once at the highest level, and each further case of a decision where it is decided.
+- **Case lists per test type:** pure functions, services on fakes, repository round trips, and routes each have the cases they must cover, their rules, their test names, and their assertions, so a missing case is a visible gap.
+- **Contract-tested fakes:** a fake implements the app's own interface and passes the same tests as the real implementation.
+- **Speed budgets:** a time budget per test type, suite CPU time capped at 25% over the baseline, measuring commands per runner, and fixes in a fixed order that never trade away coverage or isolation.
 - **Proof of value:** every new test is seen failing, and mutation testing finds assertions that are missing.
-- **Safe pruning:** replacement tests first, seeded bugs to compare, deletion only with approval, before and after numbers.
+- **Safe pruning:** replacement tests first, seeded bugs to compare, a verdict and a proof for every test moved or removed, bugs found on the way pinned and reported, deletion only with approval, before and after numbers.
 - **Anti-pattern checklist:** used to review new tests and classify existing ones.
 - **Mandatory Stryker and fast-check, outside the project:** in JavaScript and TypeScript projects, `js-tools.mjs` installs both into `~/.gti/better-tests/tools/node` and runs them against the project from there, so the project gains no dependency, config, report, or temp folder.
 - **Language agnostic:** tool tables for JavaScript, TypeScript, Python, Java, Go, Rust, C#, and PHP.
@@ -174,13 +177,13 @@ Run mutation testing on src/pricing and add the missing tests.
 ```text
   1. Discover        runner, helpers, containers, public surface
           │
-  2. Choose level    user flow, API or integration, unit for pure logic
+  2. Choose level    cases per test type; each outcome high, each case where decided
           │
   3. Write           eight rules; failing test first for a bug
           │
-  4. Verify          break on purpose, mutation, property-based
+  4. Verify          break on purpose, mutation, property-based, shuffled, budgets
           │
-  5. Audit (opt.)    classify, replace, delete with approval
+  5. Audit (opt.)    classify, verdicts with proof, delete with approval
           │
   6. Report          behaviors, dependencies, verification, numbers
 ```
@@ -198,9 +201,11 @@ The agent reads a file only when a step needs it.
 | `references/workflow/03-reproduce-bug.md` | Failing test before a fix | Fix a bug |
 | `references/workflow/04-verify.md` | Break on purpose, mutation and property-based tools per language | Write tests, fix a bug |
 | `references/workflow/05-audit-and-prune.md` | Measuring, classifying, and pruning a suite | Audit |
-| `references/rules/dependencies.md` | Mocks, fakes, Testcontainers, time, and randomness | Write tests, audit |
+| `references/rules/test-types.md` | Cases, rules, names, assertions, and time budgets for pure functions, services, repositories, and routes | Write tests, audit |
+| `references/rules/dependencies.md` | Mocks, contract-tested fakes, Testcontainers, time, and randomness | Write tests, audit |
 | `references/rules/user-flows.md` | Playwright and the Playwright MCP server | Write tests |
-| `references/quality/anti-patterns.md` | Checklist mapped to the eight rules | Review and audit |
+| `references/quality/anti-patterns.md` | Checklist mapped to the eight rules and the speed budgets | Review and audit |
+| `references/quality/speed.md` | Where each cost belongs, measuring per runner, fixes, and the speed report | Verify, audit |
 | `references/tools/js-tools.md` | Stryker and fast-check from the tools folder outside the project | Discover, verify |
 
 ### js-tools.mjs
@@ -352,6 +357,7 @@ The audit mode only proposes deletions after writing replacement tests. Review t
 |---------|---------|----------|
 | [Daniel Moka: 8 tips to make your AI agents write better tests](https://x.com/dmokafa/status/2114977298122244116) | Standard X post terms | Source of the eight rules |
 | [Sherwood Callaway: deleting 800k lines of unit tests](https://x.com/shcallaway/status/2106142042405453879) | Standard X post terms | Motivation for the audit and prune mode |
+| [Marek Kirejczyk: refactor-tests skill](https://github.com/marekkirejczyk/skills) | MIT | Case lists per test type, verdicts and proof for moving tests down, contract-tested fakes, assertions, speed budgets |
 
 ## License
 

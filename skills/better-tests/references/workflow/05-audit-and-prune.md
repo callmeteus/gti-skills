@@ -12,6 +12,7 @@ Record, before any change:
 - Number of mocks, spies, and stubs (search for `jest.mock`, `vi.mock`, `mock.patch`, `Mockito`, `gomock`, `Substitute.For`, and similar).
 - Flaky tests, if CI history is available.
 - Mutation score of the main modules, when a tool is available.
+- Suite CPU time and the time per test and file, with [../quality/speed.md](../quality/speed.md).
 
 ## Classify each test file
 
@@ -25,12 +26,46 @@ Record, before any change:
 
 Use [../quality/anti-patterns.md](../quality/anti-patterns.md) for the signs.
 
+## Give every slow test a verdict
+
+For each test above the pure-function level, try the fastest level that can prove what it checks, using the table in [02-choose-level.md](02-choose-level.md), and write a one-line verdict in the working notes:
+
+- **Stays:** what only this level proves.
+- **Moves:** to which level, and the test that replaces it.
+- **Removed:** the faster or equal test that already proves every assertion it makes. Remove duplicates slowest first. Search every test that exercises the code, but change only tests in scope, and report a duplicate outside the scope with the test that covers it.
+
+A test moves or goes only after a proof, one check per thing it asserted:
+
+1. Name the faster test that covers it, writing that test first when it does not exist.
+2. Break that behavior in the code, and confirm a remaining test fails.
+3. Revert the break.
+
+With no failing test, the verdict is "stays" until a faster test fails on that break.
+
+## Bugs found while restructuring
+
+Restructuring tests keeps behavior: every caller sees the same answers, errors, writes, and calls. Work in small steps, each followed by the suite; a step that turns a test red changed behavior, so undo it and take a smaller one.
+
+A bug found on the way is outside the change. Leave the code as it behaves today, pin that behavior with a test named for it, and next to it write the test for the right behavior, skipped and named for the bug. The fix then only has to unskip one test and delete the other. Report the bug.
+
+```ts
+it("a negative amount (today: £-5)", () => {
+  expect(formatPounds(-500)).toEqual("£-5");
+});
+
+it.skip("a negative amount (bug: should read -£5)", () => {
+  expect(formatPounds(-500)).toEqual("-£5");
+});
+```
+
+When the user asked for the fix, use Mode B instead: the red test comes first and the code changes.
+
 ## Prune safely
 
 1. **Seed bugs.** Pick a handful of realistic defects in the area (or use mutation testing) and note which tests catch them.
 2. **Replace before deleting.** Write the higher-level tests first and show they catch the same seeded bugs.
 3. **Propose the deletion** as a list of files with their class and reason. Delete only after the user approves.
-4. **Measure again** and report the before and after: tests, runtime, mocks, mutation score.
+4. **Measure again** and report the before and after: tests, CPU time, mocks, mutation score, and the time per test type. The tests in scope pass shuffled and one at a time.
 
 ## Rules
 
@@ -40,6 +75,6 @@ Use [../quality/anti-patterns.md](../quality/anti-patterns.md) for the signs.
 
 ## Check
 
-- Every test file in scope has a class.
-- Deletions are approved and covered by replacement tests.
+- Every test file in scope has a class, and every test above the pure-function level has a verdict.
+- Deletions are approved and covered by replacement tests, each proven by a break that a remaining test catches.
 - The report shows before and after numbers.

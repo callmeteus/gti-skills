@@ -1,6 +1,6 @@
 # Test anti-patterns
 
-Use this list to review every test you write and to classify existing tests in an audit. The rule column points to the eight rules in `SKILL.md`.
+Use this list to review every test you write and to classify existing tests in an audit. The rule column points to the eight rules in `SKILL.md`, or to the speed budgets in `references/quality/speed.md`.
 
 ## Coupled to structure
 
@@ -36,6 +36,10 @@ Use this list to review every test you write and to classify existing tests in a
 |--------------|------|-----|
 | Asserts only "no error" or "is defined" | 8 | Assert the value the user gets |
 | Asserts a status code but not the body or stored state | 8 | Assert the observable result too |
+| Picks a few fields out of a response or row | 8 | Compare the whole value with `toEqual` |
+| `expect.any(String)` for a generated ID or token | 8 | Match its shape: a UUID or hex pattern |
+| Unrelated values packed into one array or object to assert at once | 8 | One assertion per thing checked, in the order a reader asks |
+| A case on the type's list with no test | 6 | Add the test; see `references/rules/test-types.md` |
 | Never seen failing | 6 | Break the code on purpose; run mutation testing |
 | Many example tests for an input space, none on the edges | 6 | Add a property test |
 
@@ -47,6 +51,17 @@ Use this list to review every test you write and to classify existing tests in a
 | Depends on test order or shared mutable data | 2 | Isolated data per test |
 | Depends on the real clock, timezone, or network | 1 | Inject the clock, pin the timezone, stub third parties |
 | CSS or XPath selectors in UI tests | 7 | Role, label, and text locators |
+| Passes in order but fails shuffled or alone | 2 | Isolated data and fresh fakes per test; warm-up in `beforeAll` |
+| A fake no shared test checks against the real implementation | 1 | Run the real implementation's tests against the fake too |
+
+## Slow
+
+| Anti-pattern | Rule | Fix |
+|--------------|------|-----|
+| Migrations or app start per test or per file | Speed | Once per run, then a snapshot or template database; see `references/quality/speed.md` |
+| Every reason for one status tested through the whole app | Speed | One route test per status; the other reasons as pure-function tests |
+| A test timeout or CI limit raised to make a slow test pass | Speed | Find the cause and fix it; keep the limits |
+| Fixed sleeps, slow polling, or real retry backoff | Speed | Polling assertions with a short interval; delays as settings the tests lower |
 
 ## Bug-fix process
 
@@ -62,4 +77,4 @@ Use this list to review every test you write and to classify existing tests in a
 |--------------|------|-----|
 | Tests added to raise line coverage | 6 | Measure bugs caught with mutation testing |
 | Tests for getters, constants, or framework behavior | 8 | Delete |
-| Duplicate tests at several levels for one behavior | 3 | Keep the highest one that is fast enough |
+| Duplicate tests at several levels for one behavior | 3 | Keep one test per outcome at the highest level, and each further case where it is decided; remove the rest after the proof in `references/workflow/05-audit-and-prune.md` |
