@@ -1,0 +1,11 @@
+{
+    "id": "disk-cleanup",
+    "displayName": "Disk Cleanup",
+    "packs": [
+        "personal",
+        "coding"
+    ],
+    "harnessNotes": {
+        "*": "Disk Cleanup needs Python 3.8+ and runs on Windows, Linux, and macOS; run the agent's terminal as Administrator or under your own sudo only if you want admin-only items cleaned."
+    }
+}

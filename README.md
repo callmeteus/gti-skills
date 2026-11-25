@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-23-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-24-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -74,6 +74,7 @@ GTI AI Skills is the collection the [Gio Technology Investments (GTI)](https://g
 | **Improve Codebase Architecture** | coding | Finds refactors that make a codebase easier to change and test, starting where git history shows the most change, and presents them in an HTML report with before and after diagrams written in everyday coding terms. Adapted from Matt Pocock's skill. | Git, Python 3.8+ | [README](skills/improve-codebase-architecture/README.md) |
 | **Untangle Codebase** | coding | Runs one long refactor of a whole codebase or area: lists every hidden link, needless link, surplus piece, and special case, redesigns from today's requirements, and fixes everything one verified commit at a time, with an import graph, co-change history, a code skeleton, and a special-case count to measure progress. Adapted from Caldo's skill. | Git, Python 3.8+, a test command | [README](skills/untangle-codebase/README.md) |
 | **Skill Distill** | coding | Turns a good coding-agent session into a skill that an open-weight or local model can follow: writes the skill, runs the student three times in tmux on fresh copies of the starting state, fixes the skill at the first divergence, and repeats until the student matches and the user accepts. Adapted from Sybil Solutions' skill. | Python 3.10+, git, tmux, a student harness (omp, pi, Codex, Claude Code, or opencode) | [README](skills/skill-distill/README.md) |
+| **Disk Cleanup** | personal, coding | Frees disk space on Windows, Linux, and macOS: scans the chosen drives in parallel for temp files, caches, logs, trash, duplicates, old downloads, build output, Docker and package manager leftovers, system leftovers, settings that waste space, and unused programs, then deletes what the user picks at one of three levels (safe, aggressive, yolo). Never touches Google Drive or other cloud mounts; automatic mode is off by default and cleans only the system drive. | Python 3.8+ | [README](skills/disk-cleanup/README.md) |
 | **Infra Expert** | infra, coding | Guards every infrastructure operation (SSH on hosts, cloud CLIs, Terraform, Kubernetes, Compose, CI, secret stores, Grafana, model servers, network devices), reviews infrastructure code and AWS accounts, finds what makes databases, caches, and services slow and writes a proactive notice with the numbers and the fix, assesses CVEs, writes change plans with approvals, and draws infrastructure diagrams. Project specifics live in the project's committed `.gti/infra-expert/` folder. | Git, Python 3.8+; AWS CLI v2 for the aws area | [README](skills/infra-expert/README.md) |
 
 ### Packs
@@ -82,13 +83,13 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Skill Distill, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Disk Cleanup, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Skill Distill, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `infra` | Infrastructure as code, cloud accounts, and observability as code | Fast CI, Infra Expert, Leak Guard |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | LLM Fine Tuning, SEO Growth, Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | Video Editor, X Research |
 | `art` | Graphic design, illustration, and visual artwork | Art Director, Video Editor |
-| `personal` | Personal productivity, notes, and everyday tasks | GTI, Maestro |
+| `personal` | Personal productivity, notes, and everyday tasks | Disk Cleanup, GTI, Maestro |
 
 ```bash
 node packages/cli install --harness all --pack coding,design --scope user
@@ -263,6 +264,7 @@ Notes:
 | Maestro | No | 3.8+ for CLI workers (agent runner) | No | Optional: remote MCP servers such as OpenAgents; worker commands use the host's own tools |
 | Untangle Codebase | No | 3.8+ | No | No |
 | Skill Distill | No | 3.10+; Playwright and Pillow for web results | No | Only what the student harness does, such as calls to its model server |
+| Disk Cleanup | No | 3.8+ | No | No; scans and cleans local drives only |
 | Infra Expert | No | 3.8+ | No | AWS APIs through the AWS CLI in the aws area, read-only; Mermaid from jsDelivr when viewing the report |
 
 | Platform | Status |
@@ -393,6 +395,7 @@ ai-skills/
 ├── skills/                    # One folder per skill, the source of truth
 │   ├── artdirector/
 │   ├── better-tests/
+│   ├── disk-cleanup/
 │   ├── fast-ci/
 │   ├── frontend-design-review/
 │   ├── gestures/
@@ -504,6 +507,7 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
 | [skills/skill-distill/README.md](skills/skill-distill/README.md) | Distilling a good session into a tested skill for an open-weight model |
 | [skills/infra-expert/README.md](skills/infra-expert/README.md) | Reviewing and untangling infrastructure code and AWS accounts |
+| [skills/disk-cleanup/README.md](skills/disk-cleanup/README.md) | Freeing disk space by level on Windows, Linux, and macOS without touching Google Drive |
 | [skills/leak-guard/README.md](skills/leak-guard/README.md) | Installing the pre-tool guard, scanning local history, and rotating exposed credentials |
 
 ## About GTI
@@ -538,6 +542,7 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
 | X Research | Not declared; the `twitter` MCP server in [gtihq/ai-mcps](https://github.com/gtihq/ai-mcps/tree/master/twitter-mcp) is MIT |
 | Video Editor | Not declared |
+| Disk Cleanup | Not declared |
 | Leak Guard | Not declared |
 
 Until a root license is added, contact the maintainers before redistributing skills without a declared license.

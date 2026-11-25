@@ -209,6 +209,7 @@ Current skills:
 | `fast-ci` | Fast CI |
 | `leak-guard` | Leak Guard |
 | `skill-distill` | Skill Distill |
+| `disk-cleanup` | Disk Cleanup |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 
