@@ -134,6 +134,12 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Every block cut into identical rounded cards with the same soft shadow | Anthropic frontend-design | 07 |
 | A short form in a mostly empty side panel | Junaid-PK frontend-design | 07 |
 | An endless scroll on a page people work in, with no count and no stopping point | Junaid-PK frontend-design | 07 |
+| Status, refresh, and actions in a row under the title, with the title row empty on the right | Admin panels | 07 |
+| "Complete" and "Cancel" as two big buttons instead of one "Actions" menu | Admin panels | 07 |
+| A line at the bottom explaining how the page refreshes | Admin panels | 07 |
+| Result, updates, and log as stacked cards, each empty, instead of tabs | Admin panels | 07 |
+| The same value (agent, runner) in two or three cards, and the status said three ways | Admin panels | 07 |
+| Values cut with an ellipsis and no tooltip, empty fields shown as a dash placeholder | Admin panels | 07 |
 
 ## States and feel
 
@@ -149,4 +155,5 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | `transition: all`, or motion that ignores `prefers-reduced-motion` | Common | 08 |
 | Controls with no hover or `:focus-visible` state, or `outline: none` with no replacement | Common | 08 |
 | Fade-and-slide-up entrances on every section, hover lifts on every card | Anthropic frontend-design | 08 |
+| A refresh button with no busy state while it loads | Admin panels | 08 |
 

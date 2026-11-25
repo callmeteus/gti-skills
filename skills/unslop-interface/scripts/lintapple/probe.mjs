@@ -12,6 +12,8 @@
  * no label or a single option, icons, labels, and section headers off their guide lines,
  * and toolbar controls off one center line. Dashboard tells (KPI cards with no comparison,
  * too many KPIs, unlabeled charts, arrow suffixes, accented words) come from dashboard.mjs.
+ * Detail page tells (status actions apart, controls under the title, refresh notes,
+ * repeated values, stacked empty panels, cut values) come from detail.mjs.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -35,6 +37,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { measureDashboard } from "./dashboard.mjs";
+import { measureDetail } from "./detail.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -947,6 +950,7 @@ export async function main(argv) {
             await page.evaluate(() => document.fonts?.ready);
             const result = await page.evaluate(measurePage, { near: options.near, lane: options.lane, ignore: options.ignore });
             result.findings.push(...await page.evaluate(measureDashboard, { ignore: options.ignore }));
+            result.findings.push(...await page.evaluate(measureDetail, { ignore: options.ignore }));
             results.push(result);
             await page.close();
         }

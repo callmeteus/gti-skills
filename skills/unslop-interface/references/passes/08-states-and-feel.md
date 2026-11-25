@@ -26,9 +26,10 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 5. **Motion that explains.** Animate only `transform` and `opacity`, and name the properties (never `transition: all`). Use a shared element transition (the View Transitions API, or the framework's equivalent) when a tapped item opens into its own screen. Keep every animation interruptible and honor `prefers-reduced-motion` with a reduced or no-motion variant. Remove fade-and-slide-up entrances on every section, hover lifts on every card, and looping decoration: motion that nobody triggered is allowed once per page, for the one thing the reader must notice. Ask what each animation tells the user, and remove it when the answer is nothing.
 6. **Gestures people expect.** Sheets and drawers close with a drag down, toasts and cards dismiss with a swipe, and each gesture also has a button and a keyboard path. Build them with the Gestures skill when it is installed.
 7. **Forms that fill themselves.** Give inputs the right `type`, `inputmode`, `autocomplete`, and `name` (`one-time-code` for verification codes, `email`, `tel`, `postal-code`). Never block paste. Labels are clickable. Errors appear inline next to the field and say how to fix it, and the first error gets focus on submit.
-8. **Visible feedback.** Every interactive element has a hover state and a visible `:focus-visible` ring; never remove the outline without a replacement. Loading labels end with an ellipsis ("Saving…"). Async messages (toasts, validation) are announced with `aria-live="polite"`.
-9. **Every state exists.** Check the empty state, the loading state, the error state, a very long value, and a very short one. A screen that only works with ideal data is not finished.
-10. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and lintapple reports focus, label, and target size problems.
+8. **Busy controls show it.** A refresh button spins its icon while the request runs, sets `aria-busy="true"`, ignores clicks until it ends, and keeps its width. Any button that starts a request shows the same busy state. A "Live" indicator pulses only when an update arrives, not forever, and its tooltip says when it last updated.
+9. **Visible feedback.** Every interactive element has a hover state and a visible `:focus-visible` ring; never remove the outline without a replacement. Loading labels end with an ellipsis ("Saving…"). Async messages (toasts, validation) are announced with `aria-live="polite"`.
+10. **Every state exists.** Check the empty state, the loading state, the error state, a very long value, and a very short one. A screen that only works with ideal data is not finished.
+11. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and lintapple reports focus, label, and target size problems.
 
 ## Check
 
@@ -39,4 +40,5 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 - Sheets and drawers close with a drag as well as a button.
 - Inputs have the right type, `inputmode`, and `autocomplete`; verification codes use `one-time-code`.
 - Every interactive element has hover and `:focus-visible` states.
+- A refresh or any request button shows a busy state (spinning icon, `aria-busy`) until the request ends.
 - Empty, loading, error, long, and short states all render.

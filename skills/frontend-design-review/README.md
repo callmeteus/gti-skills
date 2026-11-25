@@ -249,7 +249,29 @@ node skills/frontend-design-review/scripts/lintapple/probe.mjs http://localhost:
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+
+### scripts/lintapple/crawl.mjs
+
+Maps every page of the running app for full scope: follows the links each rendered page shows, groups URLs into route patterns, visits one sample per pattern, and lists the states to review on each page. Shared with Frontend Design Review and synced from `packages/lintapple/agent`.
+
+```bash
+node skills/frontend-design-review/scripts/lintapple/crawl.mjs http://localhost:3000
+node skills/frontend-design-review/scripts/lintapple/crawl.mjs http://localhost:3000/admin --storage-state ~/.gti/lintapple/<project>/admin-state.json --max 300
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<url>` | Required | The first page; the crawl stays on its origin |
+| `--max N` | `200` | Most route patterns to visit |
+| `--depth N` | `6` | Most link hops from the first page |
+| `--storage-state FILE` | None | Playwright storage state for pages behind a login |
+| `--include REGEX` | None | Visit only URLs that match |
+| `--exclude REGEX` | None | Skip URLs that match |
+| `--keep-query` | Off | Treat URLs with different query strings as different pages |
+| `--out DIR` | `~/.gti/lintapple/<project>` | Folder for `pages.md` and `pages.json` |
+| `--project` | Current folder | Folder whose `node_modules/playwright` is used first |
+| `--json` | Off | Print the result as JSON |
 
 ### scripts/lintapple/tokens.mjs
 

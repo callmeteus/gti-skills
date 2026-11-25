@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; padding: 24px; width: 800px; }
+  .card { border: 1px solid #ccc; border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .kv { display: flex; justify-content: space-between; gap: 8px; }
+  .kv span:last-child { max-width: 110px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .note { font-size: 12px; }
+</style>
+</head>
+<body>
+  <a href="#">Todas as tarefas</a>
+  <h1>Pentest multi-agent 25/11</h1>
+  <div class="row" id="actions">
+    <span class="badge">ao vivo</span>
+    <button>Atualizar</button>
+    <button>Concluir</button>
+    <button>Cancelar</button>
+  </div>
+  <div class="card">
+    <span class="badge">Na fila</span> <span>paseo-pentest-local</span>
+    <p>Aguardando um runner livre para começar.</p>
+  </div>
+  <div class="grid">
+    <div class="card" id="exec">
+      <h3>Execução</h3>
+      <div class="kv"><span>Agente</span><span>paseo-pentest-coordinator</span></div>
+      <div class="kv"><span>Runner</span><span>paseo-pentest-local</span></div>
+    </div>
+    <div class="card"><h3>Código</h3><div>even7-sre</div></div>
+    <div class="card" id="integrations">
+      <h3>Integrações</h3>
+      <div>paseo-pentest-coordinator</div>
+      <div>paseo-pentest-local</div>
+    </div>
+  </div>
+  <section class="card" id="result"><h2>Resultado</h2><p>Aguardando o resultado da execução…</p></section>
+  <section class="card" id="updates"><h2>Atualizações da tarefa</h2><p>Nenhuma atualização publicada pelo agente ainda.</p></section>
+  <p class="note">Atualização automática por eventos do painel e a cada 5 segundos.</p>
+</body>
+</html>

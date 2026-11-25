@@ -32,6 +32,18 @@ These come from admin screens built by an agent (SMS destinations, routes, and m
 | Refresh | An "Atualizar" button next to the title | Removed: the list reloads after each change. A quiet icon button with a tooltip only when data changes from outside |
 | Page names | Eyebrow "MENSAGENS", title "Mensagens SMS", card title "Mensagens" | Title "Mensagens SMS" alone; the one card on the page has no title of its own |
 
+These come from a task detail page in an admin panel (a queued agent run).
+
+| Element | Before | After |
+|---------|--------|-------|
+| Page header | Title on its own line, then a row under it with "ao vivo", "Atualizar", a filled "Concluir", and a red "Cancelar" | One row: title on the left; on the right the "Ao vivo" indicator, a refresh icon button, and one "Ações" menu |
+| Status actions | "Concluir" and "Cancelar" as two large buttons | Items of the "Ações" menu, with "Cancelar" last, set apart, in the danger color |
+| Refresh note | "Atualização automática por eventos do painel e a cada 5 segundos." at the bottom of the page | The tooltip of "Ao vivo", with the last update time |
+| Output panels | A "Resultado" card waiting and an "Atualizações da tarefa" card with "Nenhuma atualização", stacked | One panel with two tabs, "Atualizações 0" and "Resultado", showing one waiting state |
+| Facts | Agent and runner named in the "Execução" card and again in the "Integrações" card, and the runner a third time in the status card | Each fact once, in one card; the two cards merged |
+| Long values | "paseo-pentest-coordin..." and "288f2fd2d2f41b..." cut with no way to read them | Values under their labels with room to fit; a long ID cut in the middle with a tooltip and a copy button |
+| Status | "Na fila" badge, "Aguardando um runner livre" text, and a three-step stepper all saying the same thing | The badge and one line; the stepper only once the run has more than one step to show |
+
 ## Steps
 
 1. Count the primary actions on the view. Keep one filled primary for the main task, two at most. Repeated actions on list items become secondary (outline or plain) buttons; actions used rarely move into an overflow menu or the item's detail.
@@ -53,7 +65,13 @@ These come from admin screens built by an agent (SMS destinations, routes, and m
 17. Use a centered modal for a short, focused form, not a side panel that is mostly empty. A side panel fits a long form or a detail the user reads next to the list.
 18. Use cards only when grouping means something. Do not cut every block into identical rounded cards with the same shadow; sections, dividers, and space group content without a box.
 19. Give long lists a stopping point: pagination or a "Load more" button, with the total count, instead of an endless scroll on a page people work in.
-20. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list), `competing-primaries` (more than two filled, saturated buttons in the first viewport), `repeated-item-text` (text every item repeats), `filters-outweigh-items` (more filter chips or links than items; a row of selects does not count), `duplicate-filter` (the same idea in two filter groups, or a filter that repeats the sections), `filter-link-in-item` (links in items that repeat the filter options), `empty-list-without-message` (a table with only its header row), `open-create-form` (a creation form always open on a page that lists the items), `ragged-form-labels` (labels beside their fields, so the fields start at different edges), `raw-json-field` (raw JSON typed into a text box), and `unexplained-control` (a select or input with no label, or a select with one option). `repeated-heading` also reports an eyebrow that repeats the title. These findings are fixed, not explained.
+20. Make the page header one row. The title sits on the left; its status ("Live", "Queued"), a refresh icon button, and the item's actions sit on the right of the same row, centered on the title's line. Metadata such as the ID goes under the title in small muted text. Do not stack status and buttons in a second row under the title while the title row is empty on the right.
+21. Group status actions in one menu. Two or more actions that change the item's status (complete, cancel, archive, approve, reject, delete) go into one "Actions" menu button at the right of the title. The destructive one is last, set apart, in the danger color, and asks for confirmation or offers undo. Keep a separate button only for the one next step most people take.
+22. Put explanations of behavior in a tooltip. A note on how the page refreshes or what a status means ("Updates on every change and every 5 seconds") is the tooltip of the indicator it explains, never a line at the bottom of the page.
+23. Turn stacked views of one output into tabs. Panels that show different views of the same item's output (result, updates, log, history, comments) become tabs of one panel, with a count on each tab and the tab that has content open first. Several empty boxes stacked down the page are one empty state in one tab.
+24. Show each fact once. The same value (an agent, a runner, a repository) in two cards means the cards overlap: keep it in the card that owns it and merge cards that hold the same facts. Say the status once too: a badge, a sentence, and a stepper that all say "queued" are one badge and one line.
+25. Let values fit. Put a long value under its label instead of beside it, or give the column room. When a value must be cut (a long ID), cut the middle, show the full value in a tooltip, and add a copy button. Hide a field with no value instead of showing a dash as a placeholder.
+26. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `repeated-form` (fields inside the items of one list), `competing-primaries` (more than two filled, saturated buttons in the first viewport), `repeated-item-text` (text every item repeats), `filters-outweigh-items` (more filter chips or links than items; a row of selects does not count), `duplicate-filter` (the same idea in two filter groups, or a filter that repeats the sections), `filter-link-in-item` (links in items that repeat the filter options), `empty-list-without-message` (a table with only its header row), `open-create-form` (a creation form always open on a page that lists the items), `ragged-form-labels` (labels beside their fields, so the fields start at different edges), `raw-json-field` (raw JSON typed into a text box), and `unexplained-control` (a select or input with no label, or a select with one option). `repeated-heading` also reports an eyebrow that repeats the title. On detail pages it also reports `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`. These findings are fixed, not explained.
 
 ## Check
 
@@ -70,3 +88,5 @@ These come from admin screens built by an agent (SMS destinations, routes, and m
 - Labels sit above their fields, fixed choices are selects, and settings are fields, not JSON; the probe reports no `ragged-form-labels` or `raw-json-field`.
 - Every control has a label and every select has a choice; the probe reports no `unexplained-control`.
 - The eyebrow, page title, and card titles name different things.
+- The page header is one row with the status, refresh, and actions on the right; status actions share one menu; the probe reports no `header-controls-below-title` or `status-actions-apart`.
+- Behavior notes are tooltips, views of one output are tabs, each fact appears once, and long values can be read; the probe reports no `behavior-footnote`, `stacked-output-panels`, `repeated-value`, or `truncated-without-tooltip`.

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; padding: 24px; width: 800px; }
+  .head { display: flex; justify-content: space-between; align-items: center; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .card { border: 1px solid #ccc; border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .meta { font-size: 12px; }
+</style>
+</head>
+<body>
+  <a href="#">Todas as tarefas</a>
+  <div class="head">
+    <h1>Pentest multi-agent 25/11</h1>
+    <div class="row">
+      <span class="badge" title="Atualiza a cada mudança e a cada 5 segundos">Ao vivo</span>
+      <button aria-label="Atualizar">↻</button>
+      <button aria-haspopup="menu">Ações</button>
+    </div>
+  </div>
+  <p class="meta">ID ac027a63-8a27-42aa-8c9b-b010b97e1276</p>
+  <div class="card" id="run">
+    <h3>Execução</h3>
+    <p>Na fila no runner paseo-pentest-local. Começa quando ele estiver livre.</p>
+    <div>Agente paseo-pentest-coordinator</div>
+    <div>Repositório even7-sre</div>
+  </div>
+  <section class="card" id="output">
+    <div role="tablist"><button role="tab" aria-selected="true">Resultado</button><button role="tab">Atualizações 0</button></div>
+    <p>O resultado aparece aqui quando a execução terminar.</p>
+  </section>
+</body>
+</html>

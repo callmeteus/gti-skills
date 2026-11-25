@@ -66,6 +66,12 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `chart-without-labels` | An SVG chart of 240 by 120px or more, with three or more marks, no text inside it, and no number next to it where axis labels would be. Canvas charts are not measured |
 | `arrow-suffix` | Two or more links or buttons whose text ends with an arrow (→, ->) |
 | `accent-word` | An h1 or h2 with one word or phrase in another color, italic, or gradient text |
+| `status-actions-apart` | Two or more buttons near the page title that change the item's status (complete, cancel, archive, approve, reject, delete) |
+| `header-controls-below-title` | Two or more status or action controls in a row under the page title while 240px or more to the right of the title is empty |
+| `behavior-footnote` | Page text that explains how the page refreshes ("a cada 5 segundos", "updates automatically") instead of a tooltip |
+| `repeated-value` | The same value of 8 to 60 characters in two or more cards. A value in the same kind of block in cards of one repeated component (a list) does not count |
+| `stacked-output-panels` | Two or more stacked panels with headings that are empty or waiting ("Aguardando", "Nenhuma", "No ... yet") |
+| `truncated-without-tooltip` | Text cut with `text-overflow: ellipsis` and no `title`, `aria-label`, or tooltip on it or its parents |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |
@@ -82,6 +88,10 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `--json` | Print every finding as JSON |
 
 Each finding lists the elements with their position, the measured value, and a fix. The probe measures geometry; it does not know intent. Treat a finding as a defect unless the offset is a deliberate step on the spacing scale or the design system defines it, and say which. The edge checks compare only boxes in one page region (header, nav, main, footer, aside) and within 400px of each other, and they skip items of wrapping rows, so a header link and a footer logo never count as a near miss. Exit codes: `0` no findings, `1` findings, `2` the probe did not finish. A page that answers HTTP 400 or higher is not measured and exits `2`: an error page is not the interface, so fix the error first.
+
+## Map every page
+
+For a full review, map the app first: `node <skill-dir>/scripts/lintapple/crawl.mjs <url>` follows the links each rendered page shows, groups URLs into route patterns (`/tasks/:id`), visits one sample per pattern, and writes `pages.md` and `pages.json` to `~/.gti/lintapple/<project>/`. It stays on the start origin, never follows sign-out or delete links, and never submits a form. Options: `--max N` (default 200 patterns), `--depth N` (default 6), `--storage-state FILE` (a Playwright storage state for pages behind a login), `--include REGEX`, `--exclude REGEX`, `--keep-query` (treat query strings as different pages), `--out DIR`, `--json`. Each row lists the states to review on that page: tabs, dialogs, menus, forms, and tables. Combine it with the routes read from the source, because a crawl misses pages no link points to.
 
 ## Compare before and after
 
