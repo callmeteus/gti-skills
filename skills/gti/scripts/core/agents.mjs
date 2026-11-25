@@ -47,6 +47,16 @@ function entryCommand(kind, entry) {
     return [entry?.command, ...(Array.isArray(entry?.args) ? entry.args : [])].filter(Boolean);
 }
 
+const REMOTE_TYPES = ["remote", "http", "sse", "streamable-http", "streamablehttp"];
+
+/** URL of an entry that talks to a server over the network instead of starting a local command, or null. */
+function entryRemote(kind, entry) {
+    const url = entry?.url ?? entry?.serverUrl ?? entry?.httpUrl ?? null;
+    const typed = REMOTE_TYPES.includes(String(entry?.type ?? "").toLowerCase());
+    if (typed || (url && entryCommand(kind, entry).length === 0)) return url ?? String(entry.type);
+    return null;
+}
+
 function makeEntry(kind, previous, command, script) {
     const args = script ? [script] : [];
     if (kind === "opencode") return { ...previous, type: "local", command: [command, ...args], enabled: previous?.enabled ?? true };
@@ -92,12 +102,14 @@ function tomlEntries(text) {
     return sections.map((section) => {
         let command = null;
         let args = [];
+        let url = null;
         for (let index = section.start + 1; index < section.end; index++) {
-            const match = lines[index].match(/^\s*(command|args)\s*=\s*(.+)$/);
+            const match = lines[index].match(/^\s*(command|args|url)\s*=\s*(.+)$/);
             if (match?.[1] === "command") command = tomlValue(match[2]);
             if (match?.[1] === "args") args = tomlValue(match[2]);
+            if (match?.[1] === "url") url = tomlValue(match[2]);
         }
-        return { key: section.name, command: [command, ...args].filter(Boolean) };
+        return { key: section.name, command: [command, ...args].filter(Boolean), remote: url && !command ? url : null };
     });
 }
 
@@ -130,12 +142,15 @@ export function readConfig(agent, home) {
     }
 }
 
-/** Every MCP entry in the config, as { key, command: [program, ...args] }. */
+/**
+ * Every MCP entry in the config, as { key, command: [program, ...args], remote }.
+ * `remote` is the URL (or remote type) of an entry that does not start a local command, else null.
+ */
 export function listEntries(config) {
     if (!config || config.error) return [];
     if (config.kind === "toml") return tomlEntries(config.text);
     const container = jsonContainer(config.kind, config.data, false) ?? {};
-    return Object.entries(container).map(([key, entry]) => ({ key, command: entryCommand(config.kind, entry) }));
+    return Object.entries(container).map(([key, entry]) => ({ key, command: entryCommand(config.kind, entry), remote: entryRemote(config.kind, entry) }));
 }
 
 /** Entries that belong to an MCP: same key as one of its aliases, or a path through its folder. */

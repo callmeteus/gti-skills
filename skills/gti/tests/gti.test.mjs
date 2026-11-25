@@ -249,7 +249,7 @@ test("reads and updates OpenCode mcp.servers, Claude, Cursor, and Codex entries"
     assert.equal(matchEntries(readConfig("cursor", home), kabum).length, 0);
 
     const codex = readConfig("codex", home);
-    assert.deepEqual(listEntries(codex), [{ key: "kabum", command: ["python", "C:\\old\\kabum-mcp\\server.py"] }]);
+    assert.deepEqual(listEntries(codex), [{ key: "kabum", command: ["python", "C:\\old\\kabum-mcp\\server.py"], remote: null }]);
     setEntry(codex, "kabum", "C:\\new\\py.exe", "C:\\new\\server.py");
     assert.match(codex.text, /\[mcp_servers\.kabum\]\ncommand = 'C:\\new\\py\.exe'\nargs = \['C:\\new\\server\.py'\]\nstartup_timeout_sec = 30\n\n\[other\]/);
     setEntry(codex, "zoom", "/p", "/s.py");
@@ -280,6 +280,33 @@ test("mcps update repoints existing registrations, carries state, backs up confi
     const again = runMcps({ mode: "update", source, home, userHome, io: quiet, deps: (mcp) => installed.push(mcp.name) , check: ok });
     assert.equal(again.backups.length, 0);
     assert.equal(again.report[1].registrations[0], "opencode:shopee current");
+});
+
+test("mcps update and install never touch entries that point at a remote server", (t) => {
+    const source = sourceTree(t);
+    const home = temp(t);
+    const userHome = temp(t);
+    const gateway = "http://gateway.test:12008/v0/groups/kabum/mcp";
+    const files = {
+        ".config/opencode/opencode.json": JSON.stringify({ mcp: { servers: { kabum: { type: "remote", url: gateway, enabled: true } } } }),
+        ".claude.json": JSON.stringify({ mcpServers: { kabum: { type: "http", url: gateway, headers: { Authorization: "Bearer x" } } } }),
+        ".cursor/mcp.json": JSON.stringify({ mcpServers: { kabum: { url: gateway } } }),
+        ".codex/config.toml": `[mcp_servers.kabum]\nurl = "${gateway}"\n`,
+    };
+    write(userHome, files);
+    const lines = [];
+    const io = { out: (l) => lines.push(l), err: () => {} };
+
+    const { report, backups } = runMcps({ mode: "update", source, home, userHome, io, deps: () => {}, check: ok });
+    assert.match(report[0].status, /^not installed locally; remote entries kept: /);
+    assert.ok(!existsSync(join(home, "mcps", "kabum")));
+    assert.equal(backups.length, 0);
+
+    const install = runMcps({ mode: "install", names: ["kabum"], agents: "all", source, home, userHome, io, deps: () => {}, check: ok });
+    for (const [path, text] of Object.entries(files)) assert.equal(readFileSync(join(userHome, path), "utf8"), text, path);
+    assert.equal(install.backups.length, 0);
+    assert.ok(install.report[0].registrations.includes(`claude:kabum kept, points at ${gateway}`));
+    assert.ok(install.report[0].registrations.includes(`codex:kabum kept, points at ${gateway}`));
 });
 
 test("a server that fails to start keeps the agent entries on the old copy", (t) => {

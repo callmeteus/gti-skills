@@ -136,9 +136,12 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
     for (const mcp of selected) {
         const dir = installDir(home, mcp);
         const managed = existsSync(join(dir, ".gti-mcp.json"));
-        const matches = Object.values(configs).flatMap((config) => matchEntries(config, mcp).map((entry) => ({ config, entry })));
+        const found = Object.values(configs).flatMap((config) => matchEntries(config, mcp).map((entry) => ({ config, entry })));
+        // Entries that reach the server over the network (a gateway or another host) are not ours to repoint.
+        const remote = found.filter(({ entry }) => entry.remote);
+        const matches = found.filter(({ entry }) => !entry.remote);
         if (mode === "update" && !managed && matches.length === 0) {
-            report.push({ name: mcp.name, status: "not installed" });
+            report.push({ name: mcp.name, status: remote.length ? `not installed locally; remote entries kept: ${remote.map(({ config, entry }) => `${config.agent}:${entry.key} -> ${entry.remote}`).join(", ")}` : "not installed" });
             continue;
         }
         const [program, arg] = runtimeCommand(mcp, dir);
@@ -168,9 +171,11 @@ export function runMcps({ mode, names, agents, source, home, userHome, dryRun, s
         }
 
         const targets = matches.map(({ config, entry }) => ({ config, key: entry.key, from: entryScript(entry) }));
+        for (const { config, entry } of remote) line.registrations.push(`${config.agent}:${entry.key} kept, points at ${entry.remote}`);
         for (const agent of installAgents) {
             const config = configs[agent] ?? (configs[agent] = { agent, file: AGENTS[agent].path(userHome), kind: AGENTS[agent].kind, data: {}, text: "" });
             if (config.error) continue;
+            if (remote.some((r) => r.config === config)) continue;
             if (!targets.some((t) => t.config === config)) targets.push({ config, key: mcp.name, from: null });
         }
         for (const target of line.failed ? [] : targets) {
@@ -213,7 +218,7 @@ function mcpsList(source, home, userHome, io) {
         const managed = existsSync(join(dir, ".gti-mcp.json"));
         const regs = Object.values(configs).flatMap((config) => matchEntries(config, mcp).map((entry) => {
             const script = entryScript(entry) ?? "";
-            const where = script && resolve(script).startsWith(resolve(dir)) ? "managed" : script || entry.command.join(" ");
+            const where = entry.remote ? `remote ${entry.remote}` : script && resolve(script).startsWith(resolve(dir)) ? "managed" : script || entry.command.join(" ");
             return `${config.agent}:${entry.key} -> ${where}`;
         }));
         io.out(`mcp      ${mcp.name} (${mcp.folder}): ${managed ? `managed at ${dir}` : "not managed"}`);
