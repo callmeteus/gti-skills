@@ -31,7 +31,7 @@ node <skill-dir>/scripts/tools/js-tools.mjs stryker --project . --mutate "src/or
 |--------|---------|---------|
 | `--project` | Required | Project root |
 | `--mutate` | Required, repeatable | Files to mutate. Scope it to the changed code |
-| `--runner` | Detected from `package.json` | `vitest`, `jest`, `mocha`, or `command` |
+| `--runner` | Detected from `package.json` | `vitest`, `jest`, `mocha`, or `command`. Prefer the detected runner; use `command` only when it fails |
 | `--test-command` | `npm test` | Test command for the `command` runner |
 | `--concurrency` | Stryker default | Number of parallel test runner processes |
 | `--tools-dir` | `~/.gti/better-tests/tools/node` | Tools folder |
@@ -41,6 +41,11 @@ How it stays out of the project:
 - Stryker runs with the project as its working directory, so it uses the project's own test runner, config, and `node_modules`.
 - The Stryker config is written to the work folder and passed by path. Reports (`mutation.html`, `mutation.json`) and the sandbox copy (`stryker-tmp`, removed after the run) go to the work folder too.
 - The script compares `git status` before and after the run and adds a `warning` when the project changed. Test runners may still update their own caches under `node_modules` (for example `node_modules/.vite`), which is ignored by git in a normal project.
+
+Run time and progress:
+
+- **Prefer the project's runner over `command`.** The Vitest, Jest, and Mocha runners know which tests cover each mutant, run only those tests, and mark uncovered mutants `NoCoverage`. The `command` runner runs the whole test command once per mutant and reports uncovered mutants as `Survived`, so it is several times slower and its score is lower than the truth. On one Vitest project with 467 mutants, the `command` runner took 14 minutes and the `vitest` runner 4.
+- **Progress shows every 10 seconds** as a `Mutation testing N% ... tested` line. A run that prints these lines is working, not hung. Run Stryker in the background when the scope has hundreds of mutants, and narrow `--mutate` to the changed files first.
 
 The last lines of output are a JSON summary: runner, scope, counts by mutant status, the mutation score, and the report paths. Open `mutation.html` to read each surviving mutant, then kill it with an assertion in the project's tests or record why it is equivalent.
 
@@ -84,6 +89,7 @@ Property files are probes and stay in the work folder. If the project already li
 |---------|------------|
 | `npm install` fails | Report the error and stop the verify step. Never install into the project instead. |
 | Stryker cannot find the test runner | Pass `--runner command --test-command "<the project's test command>"`. |
+| The run seems stuck | Look for the `Mutation testing N%` progress lines. If they advance, wait, or stop and narrow `--mutate`. If `--runner command` was used on a Vitest, Jest, or Mocha project, drop it. |
 | A path alias such as `@/` does not resolve in a property file | Import the module by its real relative path through `importPrefix`. |
 | The project uses ESM-only packages that `tsx` cannot load | Write the property file as `.mjs` and import the built output, or run the property inside the project's runner only if `fast-check` is already a dependency. |
 | The `warning` field appears | Run `git status` in the project, explain what changed, and restore anything the tools wrote. |

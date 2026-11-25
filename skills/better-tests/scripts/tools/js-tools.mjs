@@ -106,7 +106,9 @@ export function strykerConfig({ runner, mutate, work, testCommand, concurrency }
     const config = {
         testRunner: runner,
         mutate,
-        reporters: ["clear-text", "json", "html"],
+        // progress-append-only prints a line every 10 seconds even without a TTY; the default
+        // progress bar draws nothing when an agent captures the output, so a long run looks hung.
+        reporters: ["progress-append-only", "clear-text", "json", "html"],
         htmlReporter: { fileName: join(work, "mutation.html") },
         jsonReporter: { fileName: join(work, "mutation.json") },
         tempDirName: join(work, "stryker-tmp"),
@@ -187,6 +189,10 @@ function runStryker(options, toolsDir) {
     requireInstalled(toolsDir);
     const runner = options.runner || detectRunner(project);
     if (!RUNNERS.includes(runner)) throw new Error(`--runner must be one of ${RUNNERS.join(", ")}`);
+    const detected = detectRunner(project);
+    if (runner === "command" && detected !== "command") {
+        console.error(`Note: the command runner has no coverage analysis, so it runs the whole test command once per mutant and reports uncovered mutants as Survived. The ${detected} runner was detected for this project and is usually several times faster; drop --runner to use it.`);
+    }
 
     const work = workDir(toolsDir, project);
     mkdirSync(work, { recursive: true });

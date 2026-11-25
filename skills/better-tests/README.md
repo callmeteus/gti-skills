@@ -304,6 +304,13 @@ node skills/better-tests/scripts/tools/js-tools.mjs stryker --project . --mutate
 </details>
 
 <details>
+<summary><strong>Mutation testing seems stuck</strong></summary>
+
+A large scope can take many minutes, and Stryker prints a `Mutation testing N%` line every 10 seconds while it works. The `command` runner is the usual cause of a slow run: it runs the whole test command once per mutant, while the Vitest, Jest, and Mocha runners run only the tests that cover each mutant. Drop `--runner command` when the project uses one of those runners, and narrow `--mutate` to the changed files.
+
+</details>
+
+<details>
 <summary><strong>The agent does not see the skill</strong></summary>
 
 Restart the agent session after installing, and confirm the folder is in the path your agent reads (see the table in [Installation](#installation)).

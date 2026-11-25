@@ -65,6 +65,7 @@ test("writes every Stryker output into the work folder, never the project", () =
     }
     assert.equal(config.inPlace, false);
     assert.equal(config.incremental, false);
+    assert.ok(config.reporters.includes("progress-append-only"), "progress must show without a TTY");
     assert.deepEqual(strykerConfig({ runner: "command", mutate: ["x"], work, testCommand: "npm run test:unit" }).commandRunner, { command: "npm run test:unit" });
 });
 
