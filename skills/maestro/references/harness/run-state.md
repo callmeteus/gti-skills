@@ -153,6 +153,7 @@ One JSON object per line, appended when a worker is spawned and updated in place
 | `orchestrator` | MCP spawner or adapter that owns the chat, or `null` |
 | `chat` | Chat or session id, or null |
 | `resumable` | Whether the chat can be prompted again |
+| `ephemeral` | True for a Paseo ephemeral agent: archived after its first result, so `resumable` is false and the result is in `tasks/<id>/result.md` |
 | `status` | `spawned`, `running`, `done`, `blocked`, `failed`, `cancelled` |
 | `verdict` | `PASS`, `FIX`, `REASSIGN`, `ESCALATE`, or null |
 | `rounds` | Fix rounds used |

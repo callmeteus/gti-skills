@@ -168,7 +168,7 @@ Maestro can drive these worker runtimes even when the skill is installed in a di
 
 | Runtime | Spawn and resume | Notes |
 |---------|------------------|-------|
-| Paseo | MCP `create_agent` then `send_agent_prompt`; CLI `paseo run --no-wait --json` then `paseo send`; API `@getpaseo/client` `agents.create` then `agents.ref(id).run` | Universal: Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP. Reached through the first of MCP, CLI, or API that works |
+| Paseo | MCP `create_agent` then `send_agent_prompt`; CLI `paseo run --no-wait --json` then `paseo send`; API `@getpaseo/client` `agents.create` then `agents.ref(id).run` | Universal: Claude, Codex, OpenCode, Pi, Cline, Cursor, Kilo, Hermes, Antigravity, Muse, and ACP. Reached through the first of MCP, CLI, or API that works. Workers are spawned quiet (`notifyUser: false`, `--no-notify`), and one-shot work can run ephemeral (`ephemeral: true`, `--ephemeral`) on hosts that support it |
 
 When several runtimes are usable, Maestro asks once which one runs the workers, recommends Paseo when it is available, and saves the answer to `defaults.adapter` unless the user says "only this run". In autonomous mode it takes the saved or recommended runtime without asking.
 | Claude / Claude Code | `claude -p --session-id <uuid>` then `claude -p --resume <uuid>` | `--model` selects the model |

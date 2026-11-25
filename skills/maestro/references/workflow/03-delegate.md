@@ -95,6 +95,7 @@ Send the spawns together, then track them in the ledger. If the harness supports
 ## Waiting
 
 - Use the harness notification when it exists (Paseo `notifyOnFinish`, Claude Code background sessions, native agent tools).
+- On Paseo, spawn workers quiet (`notifyUser: false` or `--no-notify`) so only Maestro is woken, and use `ephemeral: true` (`--ephemeral`) only for one-shot tasks that need no review in the same chat. See [Quiet and ephemeral Paseo workers](../harness/adapters.md#quiet-and-ephemeral-paseo-workers).
 - Do not run a polling loop. One status check is allowed after a long silence.
 - While workers run, Maestro can prepare the next brief, update the plan, or review a finished task. It cannot do their work.
 

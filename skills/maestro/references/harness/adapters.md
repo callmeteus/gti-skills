@@ -98,7 +98,8 @@ The sections below document each harness for reading and for the MCP paths; the 
 |---|---|---|---|---|
 | MCP spawner | Its spawn tool | Its send tool with the same id | Its model tool or parameter | When `send` exists |
 | Paseo MCP tools | `create_agent` | `send_agent_prompt` with the same `agentId` | Profiles, then `list_providers` and `list_models` | Yes |
-| Paseo CLI | `paseo run --no-wait --json` | `paseo send <agentId>` | `--provider` and `--model` | Yes |
+| Paseo CLI | `paseo run --no-wait --no-notify --json` | `paseo send <agentId>` | `--provider` and `--model` | Yes |
+| Paseo ephemeral | `create_agent({ephemeral: true})` or `paseo run --ephemeral` | Not possible: it archives itself after its result | Same as the Paseo rows | No |
 | Paseo API | `client.agents.create({config, cwd, prompt})` | `client.agents.ref(id).run(prompt)` | `config.provider` as `provider/model`, `client.providers.listModels` | Yes |
 | OpenAgents Coder | `openagents coder delegate --to <agent> --task "<brief>" --json` | `openagents coder chat -p "<review>" --session <id> --json` | `--model`, `openagents coder models list` | Yes, with `--session` |
 | OpenAgents Workspace | No spawn tool in the verified MCP build | Not applicable | Workspace agent config | Coordination only |
@@ -129,11 +130,12 @@ create_agent({
   provider: "<provider>/<model>",
   initialPrompt: "<the brief>",
   workspaceId: "<optional>",
-  notifyOnFinish: true
+  notifyOnFinish: true,
+  notifyUser: false
 })
 ```
 
-It returns `agentId` and `workspaceId`. Record both.
+It returns `agentId` and `workspaceId`. Record both. `notifyUser: false` keeps the worker from pinging the user while `notifyOnFinish` still wakes Maestro; see [Quiet and ephemeral Paseo workers](#quiet-and-ephemeral-paseo-workers).
 
 Reuse:
 
@@ -141,7 +143,7 @@ Reuse:
 send_agent_prompt({ agentId: "<agentId>", prompt: "<review or fix>" })
 ```
 
-Check progress with `get_agent_status` or `get_agent_activity`. Cancel a stalled turn with `cancel_agent`, and keep the agent for a follow-up. Do not detach or archive it.
+Check progress with `get_agent_status` or `get_agent_activity`. Cancel a stalled turn with `cancel_agent`, and keep the agent for a follow-up. Do not detach or archive it; only an ephemeral agent archives itself.
 
 Model selection:
 
@@ -157,7 +159,7 @@ Paseo defaults `notifyOnFinish` to true for agent-scoped calls. Finish the turn 
 Spawn without waiting:
 
 ```bash
-paseo run --no-wait --json --title "w2.1 Add the CSV serializer" --provider <provider> --model <model> "<brief>"
+paseo run --no-wait --no-notify --json --title "w2.1 Add the CSV serializer" --provider <provider> --model <model> "<brief>"
 ```
 
 The JSON result contains the agent id. Record it.
@@ -171,6 +173,42 @@ paseo send <agentId> --prompt-file ~/.gti/maestro/<project>/tasks/w2.1/review-pr
 Discover ids with `paseo ls --json`. Use `--host` for a remote daemon, and `--workspace` or `--new-workspace worktree` for isolation.
 
 Wait for a turn with `paseo wait <agentId> --timeout <seconds>`, read it with `paseo logs <agentId> --tail 20`, and check the provider environment with `paseo provider diagnostic <provider> --json`.
+
+## Quiet and ephemeral Paseo workers
+
+Paseo has two spawn options that fit Maestro. Both work on the MCP tool and the CLI, and both follow `serverId` to another machine.
+
+| Option | MCP `create_agent` | CLI (`paseo run` and `paseo agent run`) | What it does |
+|---|---|---|---|
+| Quiet | `notifyUser: false` | `--no-notify` | No push and no unread mark for the user. `notifyOnFinish` to the calling agent still fires, so Maestro is still woken |
+| Ephemeral | `ephemeral: true` | `--ephemeral` | An internal agent: not persisted, not listed, never notifies. It runs the task, delivers the result through the usual paths, and archives itself at its first terminal event |
+
+### Quiet is the default for workers
+
+Spawn every worker with `notifyUser: false` (`--no-notify`). The user follows the run through Maestro and the central, not one notification per worker. Leave notifications on only when the user asks to be pinged by a worker, or when the worker is expected to stop for the user's own permission answer.
+
+### Ephemeral is for one-shot work only
+
+An ephemeral agent cannot be prompted again: it is gone after its first result. Maestro's review goes back to the chat that did the work, so use `ephemeral: true` only for a task that needs no review round in that chat:
+
+- Use it for a read-only scout, an inventory, a catalog or health probe, a classification, a summary, or an independent second opinion whose answer Maestro verifies on its own.
+- Never use it for a build, a fix, an integration, or any task that may need a fix round. Those stay normal, resumable agents.
+
+For an ephemeral worker:
+
+1. Write the brief so the whole result arrives in one turn, in the output contract.
+2. Spawn it and get the result in the same step: on the CLI, run `paseo run --ephemeral --json ...` in the foreground (no `--no-wait`), which waits and returns the result; on MCP, keep `notifyOnFinish: true` and read the result when Maestro is woken.
+3. Save the result to `~/.gti/maestro/<project>/tasks/<id>/result.md` at once, because the chat will not be there later.
+4. Record the worker with `ephemeral: true` and `resumable: false`. It still goes into `workers.jsonl` and `audit.jsonl`, so the central shows it even though Paseo does not list it.
+5. If the answer is not good enough, do not try to reach the same chat. Reassign: spawn a new worker (ephemeral again only if the task is still one-shot) from the brief and the saved result.
+
+### Check support before use
+
+Both options are recent and gated per host. Before the first spawn on a host:
+
+- Read the host's `server_info` features: `agentNotificationControl` allows `notifyUser`, and `ephemeralAgents` allows `ephemeral`. On the CLI, confirm that `paseo run --help` lists `--no-notify` and `--ephemeral`.
+- A host without the feature answers with an error that asks to update the host. Do not retry the same call. Spawn again without that option: drop `notifyUser` (the user will see notifications, which is acceptable), and replace `ephemeral` with a normal agent spawned with `notifyUser: false` when that is supported. Record the fallback in `decisions.jsonl` and say it in one line.
+- Never upgrade a host yourself. A host that needs an update is a pending item for the user.
 
 ## Paseo API
 
@@ -226,7 +264,7 @@ Use it this way:
 
 1. `list_providers` to get the exact provider id and availability.
 2. `list_models({provider})` to get the model ids and capabilities.
-3. `create_agent({title, provider: "<id>", initialPrompt, notifyOnFinish: true})`.
+3. `create_agent({title, provider: "<id>", initialPrompt, notifyOnFinish: true, notifyUser: false})`, adding `ephemeral: true` only for one-shot work.
 4. `send_agent_prompt({agentId, prompt})` for the review and every fix.
 5. `get_agent_activity` or `get_agent_status` for progress, and `cancel_agent` for a stall.
 

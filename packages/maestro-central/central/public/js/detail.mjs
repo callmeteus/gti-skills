@@ -123,7 +123,7 @@ function modalHtml(project, worker) {
             ${row("Runtime", esc(worker.adapter || ""))}
             ${row("Orchestrator", esc(worker.orchestrator || ""))}
             ${row("Chat", worker.chat ? `<code>${esc(worker.chat)}</code>` : "")}
-            ${row("Resumable", worker.resumable === undefined ? "" : worker.resumable ? "yes" : "no")}
+            ${row("Resumable", worker.ephemeral ? "no, ephemeral: archived after its result" : worker.resumable === undefined ? "" : worker.resumable ? "yes" : "no")}
             ${row("Why this model", esc(worker.routing || ""))}
             ${row("Notes", esc(worker.notes || ""))}
             ${row("Files", files)}
