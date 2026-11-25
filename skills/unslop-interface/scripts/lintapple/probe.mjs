@@ -16,6 +16,7 @@
  * repeated values, stacked empty panels, cut values) come from detail.mjs.
  * App shell tells (create rows styled as items, the user as text, hand-drawn icons) come
  * from chrome.mjs; icon-source is a suggestion for the report, not a fix.
+ * Missing hover states and pointer cursors on desktop come from hover.mjs.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -41,6 +42,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { measureChrome } from "./chrome.mjs";
 import { measureDashboard } from "./dashboard.mjs";
 import { measureDetail } from "./detail.mjs";
+import { measureHover } from "./hover.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -955,6 +957,7 @@ export async function main(argv) {
             result.findings.push(...await page.evaluate(measureDashboard, { ignore: options.ignore }));
             result.findings.push(...await page.evaluate(measureDetail, { ignore: options.ignore }));
             result.findings.push(...await page.evaluate(measureChrome, { ignore: options.ignore }));
+            result.findings.push(...await page.evaluate(measureHover, { ignore: options.ignore }));
             results.push(result);
             await page.close();
         }

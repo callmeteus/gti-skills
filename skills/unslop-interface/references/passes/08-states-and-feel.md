@@ -27,9 +27,10 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 6. **Gestures people expect.** Sheets and drawers close with a drag down, toasts and cards dismiss with a swipe, and each gesture also has a button and a keyboard path. Build them with the Gestures skill when it is installed.
 7. **Forms that fill themselves.** Give inputs the right `type`, `inputmode`, `autocomplete`, and `name` (`one-time-code` for verification codes, `email`, `tel`, `postal-code`). Never block paste. Labels are clickable. Errors appear inline next to the field and say how to fix it, and the first error gets focus on submit.
 8. **Busy controls show it.** A refresh button spins its icon while the request runs, sets `aria-busy="true"`, ignores clicks until it ends, and keeps its width. Any button that starts a request shows the same busy state. A "Live" indicator pulses only when an update arrives, not forever, and its tooltip says when it last updated.
-9. **Visible feedback.** Every interactive element has a hover state and a visible `:focus-visible` ring; never remove the outline without a replacement. Loading labels end with an ellipsis ("Saving…"). Async messages (toasts, validation) are announced with `aria-live="polite"`.
-10. **Every state exists.** Check the empty state, the loading state, the error state, a very long value, and a very short one. A screen that only works with ideal data is not finished.
-11. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and lintapple reports focus, label, and target size problems.
+9. **Every action answers the pointer on desktop.** On desktop, every clickable element (button, link, tab, menu item, clickable card or row) changes visibly on hover, or the action reads as dead: a background tint, a border or outline, a shadow or small elevation, an underline on text links, or a soft glow on a dark surface. Pick one hover treatment per kind of element and put it in the shared component, inside `@media (hover: hover)` so touch screens do not keep it, with a short transition on the changed properties only. Every clickable element also gets `cursor: pointer`, and a disabled one `cursor: not-allowed`, set once in the base styles. Hover is extra feedback, never the only sign that something can be clicked. In a native toolkit, use its hover response (egui `Response::hovered` and `on_hover_cursor(CursorIcon::PointingHand)`, iced `mouse_area` with `.interaction(mouse::Interaction::Pointer)`, Slint `TouchArea` with `has-hover` and `mouse-cursor: pointer`).
+10. **Visible feedback.** Every interactive element has a hover state and a visible `:focus-visible` ring; never remove the outline without a replacement. Loading labels end with an ellipsis ("Saving…"). Async messages (toasts, validation) are announced with `aria-live="polite"`.
+11. **Every state exists.** Check the empty state, the loading state, the error state, a very long value, and a very short one. A screen that only works with ideal data is not finished.
+12. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and on a desktop viewport `no-hover-state`, `no-pointer-cursor` (clickable elements with no hover rule, or with the arrow cursor),, and lintapple reports focus, label, and target size problems.
 
 ## Check
 
@@ -39,6 +40,7 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 - No `transition: all`; motion uses `transform` and `opacity` and respects `prefers-reduced-motion`.
 - Sheets and drawers close with a drag as well as a button.
 - Inputs have the right type, `inputmode`, and `autocomplete`; verification codes use `one-time-code`.
+- On desktop, every clickable element changes on hover and shows the pointer cursor; the probe reports no `no-hover-state` or `no-pointer-cursor`.
 - Every interactive element has hover and `:focus-visible` states.
 - A refresh or any request button shows a busy state (spinning icon, `aria-busy`) until the request ends.
 - Empty, loading, error, long, and short states all render.

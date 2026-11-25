@@ -27,6 +27,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Every list has an empty state with the create button, not a bare header row (no `empty-list-without-message`)
 - [ ] Form labels sit above their fields, fixed choices are selects, settings are fields and not raw JSON (no `ragged-form-labels` or `raw-json-field`)
 - [ ] Every control has a label, and no select has a single option (no `unexplained-control`)
+- [ ] On desktop, every clickable element changes on hover and shows the pointer cursor (no `no-hover-state` or `no-pointer-cursor`)
 - [ ] Lists add items from a "+" button in their header, and the user is an avatar with an icon sign-out (no `create-as-item` or `user-as-text`)
 - [ ] Hand-drawn icons get a suggestion for one icon library in the report, not a silent swap (`icon-source`)
 - [ ] A detail page has one header row (title left; status, refresh, and an Actions menu right), behavior notes in tooltips, views of one output in tabs, each fact once, and readable long values (no `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`)

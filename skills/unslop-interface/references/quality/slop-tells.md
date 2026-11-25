@@ -159,4 +159,6 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Controls with no hover or `:focus-visible` state, or `outline: none` with no replacement | Common | 08 |
 | Fade-and-slide-up entrances on every section, hover lifts on every card | Anthropic frontend-design | 08 |
 | A refresh button with no busy state while it loads | Admin panels | 08 |
+| Buttons, links, and clickable cards that change nothing on hover, so the action feels dead on desktop | Common | 08 |
+| Clickable elements that keep the arrow cursor | Common | 08 |
 
