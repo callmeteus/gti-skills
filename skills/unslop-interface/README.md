@@ -75,15 +75,16 @@ Unslop Interface gives an agent a fixed order of eight passes, a checklist of th
 - **Tells checklist:** one table of tells, each mapped to the pass that fixes it, used before and after the work.
 - **Keeps the information:** every number, item, and action stays; only decoration and filler go.
 - **Precise vocabulary:** the report names each fix with its UI term (affordance, leading, tabular numbers, sticky positioning).
-- **Report template:** before and after per pass, changed files, new tokens, and tells kept on purpose.
+- **Report template:** the screens and passes covered, before and after per pass, changed files, new tokens, and tells kept on purpose.
 - **Measured before and after (added):** when the app runs, the bundled lintapple linter measures gaps, insets, radii, contrast, fonts, type sizes, tabular numbers, and banned copy in Chromium; findings join the inventory under the pass that fixes them, and the report shows counts before and after. Shared with Frontend Design Review through `packages/lintapple`.
+- **Own CLI:** `scripts/unslop/unslop.mjs` turns "5 passes" into five full rounds, lists every screen in scope, scans templates for tells a class grep misses, and fails a report that skips a screen, a round, or a pass.
 - **Works without tools:** from source code, a screenshot, or both; lintapple is used only when the app can run.
 
 ## Requirements
 
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
-| Node.js | 22+ | Runs lintapple, the measured UI checks (optional) | No |
+| Node.js | 22+ | Runs the skill's CLI (`scripts/unslop/unslop.mjs`) and lintapple, the measured UI checks | No |
 | lintapple | 0.1.24, from `packages/lintapple` | Measured checks of the rendered page; built on install and update, or run with `npx` | Yes |
 | Chromium for Playwright | Matches lintapple's Playwright | Browser lintapple drives; the runner prints the install command when it is missing | No |
 
@@ -143,7 +144,7 @@ The agent lists the tells it finds, runs the eight passes in order on the compon
 |-------|:--------:|---------|
 | Interface | Yes | A component file such as `Dashboard.tsx`, a page's HTML and CSS, or a screenshot |
 | Design tokens | No | The project's spacing scale, radius, colors, font, and icon library |
-| Scope | No | Only some passes ("just spacing and color"), or report without editing code |
+| Scope | No | Only some passes ("just spacing and color"), a number of full rounds ("5 passes" runs all eight passes five times), or report without editing code |
 | Theme | No | Keep light or dark; the skill keeps the current theme by default |
 
 ### Examples
@@ -160,10 +161,16 @@ De-slop this settings screen. Screenshot only, give me the exact changes.
 Run only the color and typography passes on components/StatsCard.vue.
 ```
 
+```text
+Unslop the new task screens in 3 passes.
+```
+
 ## How It Works
 
 ```text
-  1. Inventory      list every tell, note existing tokens
+  0. Start         unslop.mjs start: rounds, passes, and screens from the request
+          │
+  1. Inventory      unslop.mjs scan and strings, then list every tell, note existing tokens
           │
   2. Spacing        one scale, shared content edges
           │
@@ -181,7 +188,10 @@ Run only the color and typography passes on components/StatsCard.vue.
           │
   9. States         skeletons, optimistic updates, undo, motion, focus
           │
- 10. Verify         re-check the inventory, diff the snapshots, write the report
+ 10. Verify         re-check the inventory, diff the snapshots, write the report,
+                    unslop.mjs check until it passes
+          │
+  repeat 2 to 10 for every round the request asked for
 ```
 
 ## Reference
@@ -204,6 +214,24 @@ Each file holds the goal, the before and after from the source, steps, and a che
 | `references/quality/vocabulary.md` | Vocabulary | Precise UI terms to name each fix in the report |
 | `references/quality/taste.md` | Taste files | Format and use of the user's Ban and Keep lists |
 | `references/lintapple/lintapple.md` | Measured checks | Running lintapple, adapting its policy, reading findings (shared with Frontend Design Review) |
+
+### scripts/unslop/unslop.mjs
+
+The skill's own CLI. It plans the run from the user's words, inventories the screens from source, and checks that the report covers every screen, round, and pass. It needs only Node.js and writes its run state to `~/.gti/unslop-interface/<project>/`.
+
+```bash
+node skills/unslop-interface/scripts/unslop/unslop.mjs start --repo . --request "unslop the new screens in 5 passes" --since origin/master
+node skills/unslop-interface/scripts/unslop/unslop.mjs scan --run
+node skills/unslop-interface/scripts/unslop/unslop.mjs strings src/views/TaskDetailView.vue
+node skills/unslop-interface/scripts/unslop/unslop.mjs check ~/.gti/unslop-interface/<project>/report.md
+```
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `start` | Reads the request: a number of passes is a number of full rounds of all eight passes, and named passes limit the run only with "only" or "just". Lists the screens in scope and writes `run.json` | `--request`, `--rounds`, `--since <git ref>`, `--paths <files or folders>`, `--repo` |
+| `scan` | Lists candidate tells in the source by pass, with file and line: narration, restated status, repeated values, raw IDs, enums, and JSON, empty rows and counters, equal card grids, copy buttons everywhere, cut off paths, native controls next to the project's own, destructive actions not in danger style, refresh on live pages, disabled controls with no reason, async actions with no busy state, gradients, tracked caps, and emoji. Writes `scan.json` next to the run | `--run [run.json]`, files or folders, `--json` |
+| `strings` | Prints every visible string and rendered value of one screen in order, with how often each repeats | `--json` |
+| `check` | Fails (exit 1) when the report has no coverage section, misses a screen in scope, a round, or a pass, skips a pass with no reason or because of the number in the request, or skips a pass that still has scan candidates | `--run <run.json>` |
 
 ### scripts/lintapple/run.mjs
 
@@ -341,6 +369,7 @@ node packages/cli build
 | Section | Contents |
 |---------|----------|
 | Inventory | Source, reused tokens, and the tells found |
+| Coverage | Every screen in scope, the rounds run, and each of the eight passes with the reason when it was skipped |
 | Passes | One block per pass that changed something: before, after, files |
 | Tokens introduced | New tokens with their values and use |
 | Kept on purpose | Tells left in place and why |
@@ -407,6 +436,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 - lintapple measures only a running page, and measures layout gaps, alignment, and radii only on elements marked with `data-ui-*` attributes or policy selectors.
 - The skill polishes look and copy, not flows, conversion, or accessibility.
 - Chart changes depend on the data the screen actually has; the agent cannot invent a new series.
+- `unslop.mjs scan` reads Vue, Svelte, JSX, TSX, Astro, and HTML templates with patterns, not a parser: its findings are candidates to confirm on the screen, and it cannot see values that are equal only at runtime.
 
 ## Acknowledgements
 

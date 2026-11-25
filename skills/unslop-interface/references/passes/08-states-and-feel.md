@@ -30,7 +30,8 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 9. **Every action answers the pointer on desktop.** On desktop, every clickable element (button, link, tab, menu item, clickable card or row) changes visibly on hover, or the action reads as dead: a background tint, a border or outline, a shadow or small elevation, an underline on text links, or a soft glow on a dark surface. Pick one hover treatment per kind of element and put it in the shared component, inside `@media (hover: hover)` so touch screens do not keep it, with a short transition on the changed properties only. Every clickable element also gets `cursor: pointer`, and a disabled one `cursor: not-allowed`, set once in the base styles. Hover is extra feedback, never the only sign that something can be clicked. In a native toolkit, use its hover response (egui `Response::hovered` and `on_hover_cursor(CursorIcon::PointingHand)`, iced `mouse_area` with `.interaction(mouse::Interaction::Pointer)`, Slint `TouchArea` with `has-hover` and `mouse-cursor: pointer`).
 10. **Visible feedback.** Every interactive element has a hover state and a visible `:focus-visible` ring; never remove the outline without a replacement. Loading labels end with an ellipsis ("Saving…"). Async messages (toasts, validation) are announced with `aria-live="polite"`.
 11. **Every state exists.** Check the empty state, the loading state, the error state, a very long value, and a very short one. A screen that only works with ideal data is not finished.
-12. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and on a desktop viewport `no-hover-state`, `no-pointer-cursor` (clickable elements with no hover rule, or with the arrow cursor),, and lintapple reports focus, label, and target size problems.
+12. **Busy and done.** A button that starts slow work (generate, save, connect, retry) disables itself and shows progress in its label ("Generating…") until the work ends. Every action that changes data ends with a short confirmation toast, and saving a form keeps the user on the page with that toast instead of navigating away.
+13. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `transition-all`, and on a desktop viewport `no-hover-state`, `no-pointer-cursor` (clickable elements with no hover rule, or with the arrow cursor),, and lintapple reports focus, label, and target size problems.
 
 ## Check
 
@@ -44,3 +45,4 @@ The interface feels native: it answers a tap at once, shows the shape of what is
 - Every interactive element has hover and `:focus-visible` states.
 - A refresh or any request button shows a busy state (spinning icon, `aria-busy`) until the request ends.
 - Empty, loading, error, long, and short states all render.
+- Every slow action shows that it is running, every change ends with a toast, and saving keeps the user on the page.

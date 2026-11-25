@@ -4,11 +4,29 @@
 
 - **Source:** <code files, screenshot, or both>
 - **Existing tokens reused:** <spacing scale, radius, colors, font, icon set, or "none">
-- **Tells found:** <short list from the slop tells checklist>
+- **Tells found:** <short list from the slop tells checklist, per screen>
+
+## Coverage
+
+- **Screens:** <every route or view in scope, and whether each was inventoried from the rendered screen or from its template>
+- **Rounds:** <how many full rounds of the eight passes ran, and the number the user asked for>
+
+| Pass | Ran | Reason when skipped |
+|------|-----|---------------------|
+| 1. Spacing | | |
+| 2. Corner radius | | |
+| 3. Color and effects | | |
+| 4. Icons and alignment | | |
+| 5. Typography and copy | | |
+| 6. Data display | | |
+| 7. Actions and structure | | |
+| 8. States and feel | | |
+
+A pass is skipped only when the inventory found none of its tells; a number of passes in the request is a number of rounds, never a reason to skip passes 6 to 8.
 
 ## Passes
 
-Write one block per pass that changed something. Skip passes with no tells.
+Write one block per pass that changed something. Passes with no tells are listed under Coverage, not here.
 
 ### 1. Spacing
 
@@ -46,9 +64,21 @@ Write one block per pass that changed something. Skip passes with no tells.
 - **After:**
 - **Files:**
 
+### 7. Actions and structure
+
+- **Before:**
+- **After:**
+- **Files:**
+
+### 8. States and feel
+
+- **Before:**
+- **After:**
+- **Files:**
+
 ## Measured checks (lintapple)
 
-Skip when the app could not run; say why.
+Skip only when the app could not run, even locally with a test user from the project's seed or fixtures; say what you tried.
 
 | Rule | Before | After |
 |------|-------:|------:|

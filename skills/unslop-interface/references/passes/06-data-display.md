@@ -23,6 +23,9 @@ Charts, tables, and illustrations that carry information and tie into the rest o
 8. In a table that scrolls inside its container, make the header row sticky (`position: sticky; top: 0` with a background) so the column names stay visible. The Emil Kowalski clip shows an invoice table (Invoice, Customer, Amount) whose header scrolls away without it.
 9. Do not show an empty value as a number. An auction with no bids shows its starting bid (`Starting bid R$ 50,00`) or `No bids yet`, not `Current bid R$ 0,00` above `No bids yet`. A zero is data only when zero is a real measured value.
 10. Use a table for records people compare (invoices, users, orders, messages), not a grid of cards. Cards fit items people browse one at a time; a table fits values read across rows and sorted by column. Right-align numbers, keep one row height, and move rare row actions into an overflow menu.
+11. Show names, not IDs. A person, agent, or resource appears by its name (`Requested by Gio`), with the ID in a tooltip or a copy action when people need it. A raw hash or UUID (`Requested by 288f2fd2d2f41bda…`) is shown only when no name exists.
+12. Leave out fields with no value. On a detail view, a label with a dash or `None` (`Jira -`) is a row of noise; hide it, or show one line that lets the user add the value when adding it is the point.
+13. Show data as fields, not JSON. A record's data in a table cell, list item, or card is a few label and value pairs; raw JSON appears only behind a "View JSON" disclosure for people who need it. A list item's secondary line holds facts people compare (owner, date, state), not IDs.
 
 ## Dashboards
 
@@ -30,11 +33,11 @@ A generated dashboard is a row of equal cards with big numbers, a decorative cha
 
 ### Steps
 
-11. Name the dashboard's one question and its reader (an executive checking the month, a team watching live service health, a product manager reading retention). The title says the scope and period ("Revenue, November"), not "Dashboard" or "Overview".
-12. Keep four to six headline KPIs, chosen for that question. A KPI is specific, measurable, and tied to a decision; drop vanity numbers (total page views, total sign-ups since launch) and move the rest to a detail view, a tab, or a table below. More than seven equal cards has no headline.
-13. Give every KPI context. Each number carries its period and at least one comparison: a delta against the previous period ("+8% vs October"), a target ("72 of 100"), or a small trend line. Color the delta by what is good for that metric (churn going up is bad, cost going down is good), and add a sign or arrow so color is never the only cue. Use one precision per row, compact units (`$2.4M`, `12.4k`), and tabular figures.
-14. Lay the page out from summary to detail: the headline KPIs, then the trend that explains them, then breakdowns (by product, region, channel), then the detail table. Each KPI links to the view that explains it, and filters on the page apply to every chart.
-15. Pick the chart for the data, not for variety:
+14. Name the dashboard's one question and its reader (an executive checking the month, a team watching live service health, a product manager reading retention). The title says the scope and period ("Revenue, November"), not "Dashboard" or "Overview".
+15. Keep four to six headline KPIs, chosen for that question. A KPI is specific, measurable, and tied to a decision; drop vanity numbers (total page views, total sign-ups since launch) and move the rest to a detail view, a tab, or a table below. More than seven equal cards has no headline.
+16. Give every KPI context. Each number carries its period and at least one comparison: a delta against the previous period ("+8% vs October"), a target ("72 of 100"), or a small trend line. Color the delta by what is good for that metric (churn going up is bad, cost going down is good), and add a sign or arrow so color is never the only cue. Use one precision per row, compact units (`$2.4M`, `12.4k`), and tabular figures.
+17. Lay the page out from summary to detail: the headline KPIs, then the trend that explains them, then breakdowns (by product, region, channel), then the detail table. Each KPI links to the view that explains it, and filters on the page apply to every chart.
+18. Pick the chart for the data, not for variety:
 
 | Data | Chart | Not when |
 |------|-------|----------|
@@ -47,12 +50,12 @@ A generated dashboard is a row of equal cards with big numbers, a decorative cha
 | Activity by hour and day | Heat map | Readers need exact values, or color is the only cue |
 
     Never use 3D charts, gauges for every KPI, or a pie with more than five slices.
-16. Make every chart readable on its own: value and time labels with units, a legend or direct labels for more than one series, a tooltip with the exact value, and patterns, labels, or shapes in addition to color. Keep one accent for the series that matters and gray for context.
-17. Show where the numbers come from. Put the date range control in the page header with the active range visible, add "Updated 10:42" (and "Live" with a pause control for real-time data), and give each KPI a short "How it is calculated" note in a tooltip or the detail view. Two cards that disagree (MRR on the dashboard against MRR in finance) are a bug in the definition, not a design issue: name the formula.
-18. Design the dashboard's states: a skeleton in the shape of each chart while it loads, "No data for this period" with a way to change the range instead of empty axes, and an error per chart with "Retry" instead of a blank page.
-19. Keep alerts actionable. A short alert list says what crossed which threshold and when ("Churn 5.4%, above the 5% limit, 10:40"), with a link to the cause. Do not show an alert for every metric that moved.
-20. Do not decorate the numbers. No gradient accent behind a big number, no icon in a colored circle on every card, no identical cards with the same shadow for every kind of content. Let the headline numbers be the largest text on the page and keep everything around them quiet.
-21. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `kpi-without-context` (KPI cards with a number and no comparison, target, or trend), `too-many-kpis` (more than seven KPI cards in the first viewport), and `chart-without-labels` (an SVG chart with no axis values or labels). These findings are fixed, not explained. Charts drawn on a canvas are not measured; check them in the screenshot.
+19. Make every chart readable on its own: value and time labels with units, a legend or direct labels for more than one series, a tooltip with the exact value, and patterns, labels, or shapes in addition to color. Keep one accent for the series that matters and gray for context.
+20. Show where the numbers come from. Put the date range control in the page header with the active range visible, add "Updated 10:42" (and "Live" with a pause control for real-time data), and give each KPI a short "How it is calculated" note in a tooltip or the detail view. Two cards that disagree (MRR on the dashboard against MRR in finance) are a bug in the definition, not a design issue: name the formula.
+21. Design the dashboard's states: a skeleton in the shape of each chart while it loads, "No data for this period" with a way to change the range instead of empty axes, and an error per chart with "Retry" instead of a blank page.
+22. Keep alerts actionable. A short alert list says what crossed which threshold and when ("Churn 5.4%, above the 5% limit, 10:40"), with a link to the cause. Do not show an alert for every metric that moved.
+23. Do not decorate the numbers. No gradient accent behind a big number, no icon in a colored circle on every card, no identical cards with the same shadow for every kind of content. Let the headline numbers be the largest text on the page and keep everything around them quiet.
+24. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `kpi-without-context` (KPI cards with a number and no comparison, target, or trend), `too-many-kpis` (more than seven KPI cards in the first viewport), and `chart-without-labels` (an SVG chart with no axis values or labels). These findings are fixed, not explained. Charts drawn on a canvas are not measured; check them in the screenshot.
 
 ## Check
 
@@ -68,3 +71,5 @@ A generated dashboard is a row of equal cards with big numbers, a decorative cha
 - Every chart has labels, units, and a key; the probe reports no `chart-without-labels`.
 - The date range, the last update, and how each KPI is calculated are visible.
 - Loading, no data, and error states exist for every chart.
+- People and resources appear by name, and no detail view shows a row with only a dash.
+- No table cell, list item, or card shows raw JSON or an ID as its secondary line.

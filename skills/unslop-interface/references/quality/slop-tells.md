@@ -1,6 +1,6 @@
 # Slop tells
 
-Use this list twice: to inventory the screen before the first pass, and to check it after the last one. Every row seen in the source "before" frame is marked **Source**; rows from the clips by Nexvyn and Emil Kowalski are marked **Source (Nexvyn clip)** and **Source (Kowalski clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip.
+Use this list twice: to inventory the screen before the first pass, and to check it after the last one. `node <skill-dir>/scripts/unslop/unslop.mjs scan` finds many of these rows in the source and prints the pass for each. Every row seen in the source "before" frame is marked **Source**; rows from the clips by Nexvyn and Emil Kowalski are marked **Source (Nexvyn clip)** and **Source (Kowalski clip)**. Rows marked **Common** are frequent in generated UIs but not shown in the source clip; rows marked **Admin panels** and **Detail pages** come from screens built by agents.
 
 ## Spacing and layout
 
@@ -91,6 +91,11 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Vague verbs ("Submit", "Continue") and one action with several names (delete, remove, trash) | Junaid-PK frontend-design | 05 |
 | Errors that apologize or say "Something went wrong" with no way to recover | Anthropic frontend-design | 05 |
 | Empty states written differently on one page ("Sem resultado registrado." next to "Nenhuma atualização publicada pelo agente ainda.") | Admin panels | 05 |
+| A status said three times: a badge ("Concluída"), a sentence that restates it ("A tarefa terminou com sucesso."), and a stepper with every step checked | Detail pages | 05 |
+| Captions under stepper or timeline steps that narrate what each step means ("Tarefa registrada no painel", "Runner alocado para o trabalho") | Detail pages | 05 |
+| One value shown twice under different labels ("Ref de origem: master" and "Branch: master") | Detail pages | 05 |
+| Raw enum values as labels, often in another language than the UI ("private", "offline", "stdio" in a Portuguese screen) | Admin panels | 05 |
+| An emoji shown as its shortcode text (":fox_face:") | Admin panels | 05 |
 
 ## Data display
 
@@ -109,6 +114,10 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | No date range, no last update time, and no way to see how a number is calculated | wshobson kpi-dashboard-design | 06 |
 | A big number with a small label and a gradient accent as the default hero | Anthropic frontend-design | 06 |
 | Records people compare (invoices, users) shown as a grid of cards instead of a table | Junaid-PK frontend-design | 06 |
+| A raw ID or hash where a name exists ("Solicitada por 288f2fd2d2f41bda…") | Detail pages | 06 |
+| A label with a dash for a field that has no value ("Jira -") | Detail pages | 06 |
+| Raw JSON as the content of a table cell, list item, or card | Admin panels | 06 |
+| IDs as the secondary line of list items ("private · 0babb766-e17a…", "agent · 3265cf22…") | Admin panels | 06 |
 
 ## Actions and structure
 
@@ -145,6 +154,18 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Values cut with an ellipsis and no tooltip, empty fields shown as a dash placeholder | Admin panels | 07 |
 | A "New ..." row styled as one more item at the end of the list it adds to | Admin panels | 07 |
 | The user as a text name and a text "Sign out" row, with no avatar | Admin panels | 07 |
+| The same entity in several cards of one detail page (agent and runner in the header, in an "Execution" card, and again in an "Integrations" card) | Detail pages | 07 |
+| A row of equal cards that each hold two or three label and value pairs, where one list of details would do | Detail pages | 07 |
+| Every value in a boxed monospace field with its own copy button, and long paths cut off with no way to read them | Detail pages | 07 |
+| An empty section that takes a full card: heading, a "0" counter, and "No updates" | Detail pages | 07 |
+| A native checkbox, select, or input next to the project's own component for it | Admin panels | 07 |
+| Delete, remove, disconnect, and revoke buttons in different styles across pages, some not red | Admin panels | 07 |
+| The same action twice on one page (a header button and an empty state button) with different enabled states | Admin panels | 07 |
+| A disabled control with no reason shown ("Use photo" greyed out with no hint) | Admin panels | 07 |
+| Two inputs that exclude each other (a photo or an emoji) with nothing saying only one applies | Admin panels | 07 |
+| An image chosen by typing its URL where people expect an upload | Admin panels | 07 |
+| A value people must copy (an address, a port, a code) with no copy button, or shown incomplete | Admin panels | 07 |
+| Saving a form leaves the page, with no message that it saved | Admin panels | 08 |
 
 ## States and feel
 
@@ -163,4 +184,6 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | A refresh button with no busy state while it loads | Admin panels | 08 |
 | Buttons, links, and clickable cards that change nothing on hover, so the action feels dead on desktop | Common | 08 |
 | Clickable elements that keep the arrow cursor | Common | 08 |
+| A button that starts slow work (generate, save, connect) and shows nothing while it runs | Admin panels | 08 |
+| Actions that change data with no confirmation toast | Admin panels | 08 |
 
