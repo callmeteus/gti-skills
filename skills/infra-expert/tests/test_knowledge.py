@@ -1,4 +1,5 @@
 import datetime
+import os
 import subprocess
 import sys
 import tempfile
@@ -9,11 +10,14 @@ SKILL = Path(__file__).resolve().parents[1]
 SCRIPT = SKILL / "scripts" / "knowledge" / "knowledge.py"
 TEMPLATE = SKILL / "assets" / "templates" / "project-knowledge"
 FILES = ["README.md", "conventions.md", "access.md", "mcp.md", "cli.md", "hosts.md", "learnings.md", "mcp-gaps.md", "records.md"]
+# Every run writes its home copy here, never into the real ~/.gti.
+GTI_HOME = Path(tempfile.mkdtemp())
 
 
-def run(*args):
-    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)],
-                          capture_output=True, text=True, encoding="utf-8")
+def run(*args, cwd=None):
+    env = dict(os.environ, GTI_HOME=str(GTI_HOME))
+    return subprocess.run([sys.executable, str(SCRIPT), *map(str, args)], cwd=None if cwd is None else str(cwd),
+                          capture_output=True, text=True, encoding="utf-8", env=env)
 
 
 def initialized():
@@ -161,6 +165,43 @@ class AppendTest(unittest.TestCase):
         result = run("learn", "--dir", missing, "--area", "access", "--what", "x", "--rule", "y")
         self.assertEqual(result.returncode, 2)
         self.assertIn("not found", result.stderr)
+
+    def test_learn_also_writes_the_copy_in_gti_home(self):
+        project = self.folder.parent.parent.name
+        result = run("learn", "--dir", self.folder, "--area", "access",
+                     "--what", "Home copy", "--rule", "Keep both copies")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        home = GTI_HOME / "infra-expert" / project / "learnings.md"
+        self.assertIn("- What: Home copy", home.read_text(encoding="utf-8"))
+        self.assertIn("- What: Home copy", (self.folder / "learnings.md").read_text(encoding="utf-8"))
+        self.assertEqual(result.stdout.split(), [str(self.folder / "learnings.md"), str(home)])
+
+
+class LearnTargetsTest(unittest.TestCase):
+    def test_learn_in_a_repository_without_the_folder_creates_only_learnings(self):
+        root = Path(tempfile.mkdtemp())
+        (root / ".git").mkdir()
+        sub = root / "infra"
+        sub.mkdir()
+        result = run("learn", "--area", "diagnose", "--what", "Slow names",
+                     "--rule", "Check proxy peers first", cwd=sub)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folder = root / ".gti" / "infra-expert"
+        self.assertEqual(sorted(path.name for path in folder.iterdir()), ["learnings.md"])
+        text = (folder / "learnings.md").read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("# Learnings"))
+        self.assertIn("- Rule: Check proxy peers first", text)
+        home = GTI_HOME / "infra-expert" / root.name / "learnings.md"
+        self.assertIn("- Rule: Check proxy peers first", home.read_text(encoding="utf-8"))
+
+    def test_learn_outside_a_repository_writes_only_the_home_copy(self):
+        start = Path(tempfile.mkdtemp())
+        result = run("learn", "--area", "access", "--what", "No repo",
+                     "--rule", "Home only", cwd=start)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((start / ".gti").exists())
+        home = GTI_HOME / "infra-expert" / start.name / "learnings.md"
+        self.assertIn("- Rule: Home only", home.read_text(encoding="utf-8"))
 
 
 class CheckTest(unittest.TestCase):

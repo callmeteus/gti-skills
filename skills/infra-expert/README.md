@@ -360,7 +360,7 @@ python3 scripts/knowledge/knowledge.py learn --area access --what "A read opened
 | `find` | Print the knowledge folder at the nearest git root, or nothing when absent | `--start` (default `.`) |
 | `init` | Copy the project template into `<root>/.gti/infra-expert/` | `--root` (default nearest git root), `--force` |
 | `tmp` | Create one per-run scratch folder under `<root>/.gti/tmp/` and print its path, or list existing run folders with `--list` | `--name` (short task slug, default `run`), `--start` (default `.`), `--list` |
-| `learn` | Append a dated learning to `learnings.md` | `--area`, `--what`, `--rule` (all required), `--source`, `--dir` |
+| `learn` | Append a dated learning to `.gti/infra-expert/learnings.md` at the nearest git root (creating only that file when the folder is missing) and to `~/.gti/infra-expert/<project>/learnings.md` | `--area`, `--what`, `--rule` (all required), `--source`, `--dir` |
 | `gap` | Append a dated MCP gap to `mcp-gaps.md` | `--need`, `--command`, `--proposal` (all required), `--dir` |
 | `check` | Check that every template file exists and entries follow the format | `--dir` |
 

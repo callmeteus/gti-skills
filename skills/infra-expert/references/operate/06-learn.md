@@ -5,6 +5,7 @@ The project knowledge folder is a living document at the nearest git root of the
 ## Learnings
 
 - Append a learning with `knowledge.py learn` as soon as a failure is understood. Include the date (the script adds it), the area, what happened, the rule that prevents a repeat, and a source. Do not keep the lesson only in the chat, because context is lost between sessions.
+- The script writes the same entry to two places: `learnings.md` in `.gti/infra-expert/` at the nearest git root, so the team gets it with the repository, and `~/.gti/infra-expert/<project>/learnings.md`, so it survives on this machine. When the repository has no knowledge folder yet, it creates only `learnings.md` there; run `knowledge.py init` for the other files. Outside a git repository it writes only the home copy. Commit the repository copy with the change it belongs to.
 
 ```bash
 python3 <skill-dir>/scripts/knowledge/knowledge.py learn \

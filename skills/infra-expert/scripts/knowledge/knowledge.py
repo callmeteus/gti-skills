@@ -9,6 +9,7 @@ Use python3 on macOS and Linux, and python or py -3 on Windows.
 
 import argparse
 import datetime
+import os
 import re
 import shutil
 import sys
@@ -235,21 +236,56 @@ def cmd_tmp(args):
     return 0
 
 
+def gti_dir(skill, *parts):
+    """Folder for generated files: ~/.gti/<skill>/... (GTI_HOME replaces ~/.gti). Never the user's repository."""
+    base = Path(os.environ.get("GTI_HOME") or Path.home() / ".gti").expanduser()
+    folder = base.joinpath(skill, *parts)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def learn_targets(args):
+    """Return the repository learnings folder (or None outside a repository) and the project name.
+
+    With --dir the folder must exist. Otherwise the folder is <nearest git root>/.gti/infra-expert/,
+    created when missing, so a learning reaches the repository even before 'init'.
+    """
+    if getattr(args, "dir", None):
+        folder = resolve_folder(args)
+        return folder, folder.parent.parent.name or "project"
+    root = nearest_git_root(Path.cwd())
+    if root is None:
+        return None, Path.cwd().resolve().name or "project"
+    folder = root.joinpath(*FOLDER_PARTS)
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder, root.name or "project"
+
+
+def append_learning(path, block):
+    """Append a learning, starting a missing file from the learnings template."""
+    template = TEMPLATE_DIR / "learnings.md"
+    if not path.is_file() and template.is_file():
+        shutil.copyfile(template, path)
+    append_block(path, block)
+    print(path)
+
+
 def cmd_learn(args):
-    """Append a dated learning entry to learnings.md."""
+    """Append a dated learning entry to the repository's learnings.md and to the copy in GTI home."""
     source = args.source or "unspecified"
     ensure_not_secret({
         "area": args.area, "what": args.what, "rule": args.rule, "source": source,
     })
-    folder = resolve_folder(args)
+    folder, project = learn_targets(args)
     today = datetime.date.today().isoformat()
     block = entry_block("## " + today + " - " + one_line(args.area), [
         ("What", one_line(args.what)),
         ("Rule", one_line(args.rule)),
         ("Source", one_line(source)),
     ])
-    append_block(folder / "learnings.md", block)
-    print(folder / "learnings.md")
+    if folder is not None:
+        append_learning(folder / "learnings.md", block)
+    append_learning(gti_dir("infra-expert", project) / "learnings.md", block)
     return 0
 
 
@@ -344,7 +380,8 @@ def main():
                             help="List existing run folders with size and date, newest first")
     tmp_parser.set_defaults(func=cmd_tmp)
 
-    learn_parser = commands.add_parser("learn", help="Append a dated learning entry")
+    learn_parser = commands.add_parser(
+        "learn", help="Append a dated learning to the repository folder and to ~/.gti/infra-expert/<project>/")
     learn_parser.add_argument("--area", required=True, help="Area, for example access or diagnose")
     learn_parser.add_argument("--what", required=True, help="What happened")
     learn_parser.add_argument("--rule", required=True, help="The rule that prevents a repeat")
