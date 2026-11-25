@@ -67,6 +67,8 @@ Unslop Interface gives an agent a fixed order of eight passes, a checklist of th
 
 - **Ordered passes:** spacing, corner radius, color, icons and alignment, typography and copy, data display, actions and structure, and states and feel, each in its own reference file.
 - **Taste files:** `~/.gti/unslop-interface/taste.md` and a per-project file list what the user bans and what to keep; bans become extra tells and keeps are never changed.
+- **Native and Rust interfaces:** egui, iced, Slint, and gpui get the same passes, measured with screenshots, layout overlays, and a source scan that reads `.rs` and `.slint` colors.
+- **Suggestions, not changes:** an icon library (Lucide, Phosphor, Font Awesome, Noto Emoji) is suggested in the report when the icons are hand-drawn; the skill never adds a dependency.
 - **Shallow and full scope:** shallow fixes the screen you name with all its states; full maps every page from the routes in the source and a crawl of the running app (`crawl.mjs`), then reviews each page and state with a coverage table.
 - **Before and after diff:** `snapshot.mjs` lists what changed per element ("radius 6 -> 14") with screenshots of both states.
 - **Measured examples:** the spacing and icon passes include the exact values from the source frames, before and after, and the typography pass includes a measured timer that stops shifting with tabular figures.
@@ -242,7 +244,7 @@ node skills/unslop-interface/scripts/lintapple/probe.mjs http://localhost:3000 -
 | `--lane` | `64` | Largest distance to a shared column edge reported as off-lane, in pixels |
 | `--json` | Off | Print every finding as JSON |
 
-Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
+Rules: `near-miss-edge`, `off-lane`, `ragged-wrap`, `uneven-gap`, `curved-accent`, `nested-accent`, `uneven-siblings`, `misaligned-parts`, `repeated-form`, `competing-primaries`, `repeated-item-text`, `underlined-control`, `filters-outweigh-items`, `duplicate-filter`, `filter-link-in-item`, `empty-list-without-message`, `open-create-form`, `ragged-form-labels`, `raw-json-field`, `unexplained-control`, `icon-column`, `toolbar-center`, `create-as-item`, `user-as-text`, `icon-source` (suggestion), `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`, `kpi-without-context`, `too-many-kpis`, `chart-without-labels`, `arrow-suffix`, `accent-word`, `repeated-heading`, `lonely-word`, `transition-all`, `off-token-color`.
 
 ### scripts/lintapple/snapshot.mjs
 

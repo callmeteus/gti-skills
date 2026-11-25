@@ -61,6 +61,14 @@ Policy: <file, and the fonts, scale, and spacing steps it uses>
 | Token | Value | Used for |
 |-------|-------|----------|
 
+## Suggestions (not applied)
+
+Changes the user decides on, such as adopting an icon library. Write "None" when there are none.
+
+| Suggestion | Why | What it would replace |
+|------------|-----|-----------------------|
+| <Use Lucide for every icon> | <12 hand-drawn SVGs with three stroke widths> | <`src/icons/*.svg`, inline SVGs in `Sidebar.tsx`> |
+
 ## Kept on purpose
 
 - <A tell left in place and why, for example a brand gradient the user wants. Write "None" when every tell was fixed.>

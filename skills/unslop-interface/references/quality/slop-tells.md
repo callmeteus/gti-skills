@@ -58,6 +58,7 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Section headers aligned to the labels instead of the icon edge | Pritam Paul (/gridlines) | 04 |
 | Toolbar controls on different center lines (a select 4px higher than the button next to it) | Pritam Paul (/gridlines) | 04 |
 | One row nudged with its own margin instead of fixing the shared row or the container | Pritam Paul (/gridlines) | 04 |
+| Hand-drawn inline SVG or image-file icons with no icon library (suggest one, do not swap it in) | Common | 04 |
 
 ## Type and copy
 
@@ -140,6 +141,8 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Result, updates, and log as stacked cards, each empty, instead of tabs | Admin panels | 07 |
 | The same value (agent, runner) in two or three cards, and the status said three ways | Admin panels | 07 |
 | Values cut with an ellipsis and no tooltip, empty fields shown as a dash placeholder | Admin panels | 07 |
+| A "New ..." row styled as one more item at the end of the list it adds to | Admin panels | 07 |
+| The user as a text name and a text "Sign out" row, with no avatar | Admin panels | 07 |
 
 ## States and feel
 

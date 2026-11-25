@@ -27,7 +27,7 @@ A third source, a clip by Emil Kowalski, shows a trial card ("Your trial ends in
 
 ## Steps
 
-1. Pick one icon library already in the project (for example Lucide, Heroicons, Phosphor, Tabler, or SF Symbols). If none exists, ask the user before adding a dependency, or use inline SVG.
+1. Use the icon library already in the project (for example Lucide, Heroicons, Phosphor, Tabler, Font Awesome, Material Symbols, or SF Symbols). When there is none and the icons are hand-drawn inline SVGs or image files (`icons/*.svg`, `include_bytes!`, `@image-url`), do not replace them in this run: keep them, make them consistent in size and stroke, and write a suggestion in the report's Suggestions section. Name one library that matches the current icons (Lucide, Phosphor, Tabler, Heroicons, Font Awesome, Material Symbols, or Noto Emoji when the product shows emoji; an icon font for native toolkits, see [../stacks/native-ui.md](../stacks/native-ui.md)), say why, and list the files it would replace. The user decides; adding the dependency is never part of the passes.
 2. Replace every emoji used as an icon with an icon from that set. Use one size and one stroke width.
 3. Fix the icon column: the same inset from the panel edge for every row and section header, and the same gap between icon and label.
 4. Where icons only decorate a category, replace them with something that carries information, such as a color dot that matches the category's color elsewhere on the screen.
@@ -38,7 +38,7 @@ A third source, a clip by Emil Kowalski, shows a trial card ("Your trial ends in
 9. Put toolbars on one center line. Every control in a toolbar or header row (buttons, selects, search, avatar, icon buttons) shares one horizontal center line: `align-items: center` on the row, and one control height. Text next to the controls is centered on the same line.
 10. Fix the container, not one item. When one row or control is off its line, change the shared component or the container (its padding, gap, icon box, or alignment), not the one element with a nudge such as `margin-left: 3px`. A fix on one item breaks the next item added.
 11. Correct optically where the geometry lies. A play triangle sits slightly right of the center of its button, and a round or tall icon may need one pixel of offset to look centered. Do this inside the icon component, once, and only after the guide lines match.
-12. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `icon-column` (icons, labels, or section headers off their lines in one list) and `toolbar-center` (controls in one row with different centers). These findings are fixed, not explained.
+12. When the app runs, measure it: `node <skill-dir>/scripts/lintapple/probe.mjs <url>` reports `icon-column` (icons, labels, or section headers off their lines in one list) and `toolbar-center` (controls in one row with different centers). It also reports `icon-source` when three or more small icons are inline SVG or image files with no library; that one is a suggestion for the report, not a fix. The other findings are fixed, not explained.
 
 ## Check
 
@@ -47,3 +47,4 @@ A third source, a clip by Emil Kowalski, shows a trial card ("Your trial ends in
 - A vertical line touches the left edge of every icon, and another touches the start of every label; section headers start on the icon line. The probe reports no `icon-column`.
 - Every control in a toolbar sits on one center line; the probe reports no `toolbar-center`.
 - Each alignment fix is in the shared component or the container, not a nudge on one item.
+- When the icons are hand-drawn, the report suggests one icon library and the files it would replace, and no dependency was added.

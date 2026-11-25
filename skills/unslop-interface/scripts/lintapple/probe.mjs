@@ -14,6 +14,8 @@
  * too many KPIs, unlabeled charts, arrow suffixes, accented words) come from dashboard.mjs.
  * Detail page tells (status actions apart, controls under the title, refresh notes,
  * repeated values, stacked empty panels, cut values) come from detail.mjs.
+ * App shell tells (create rows styled as items, the user as text, hand-drawn icons) come
+ * from chrome.mjs; icon-source is a suggestion for the report, not a fix.
  *
  * lintapple measures alignment, gaps, and nested radii only on marked elements, and a
  * generated interface has no markers. This probe covers that gap. Its findings are
@@ -36,6 +38,7 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { measureChrome } from "./chrome.mjs";
 import { measureDashboard } from "./dashboard.mjs";
 import { measureDetail } from "./detail.mjs";
 
@@ -870,7 +873,7 @@ export function summarize(results) {
         const rules = [...new Set(result.findings.map((finding) => finding.rule))];
         for (const rule of rules) {
             const group = result.findings.filter((finding) => finding.rule === rule);
-            lines.push("", `[${rule}] ${group.length}`);
+            lines.push("", `[${rule}] ${group.length}${group[0].suggestion ? " (suggestion: put it in the report, do not apply it)" : ""}`);
             for (const finding of group.slice(0, 12)) {
                 lines.push(`- ${finding.actual}`);
                 for (const item of finding.items) lines.push(`    ${item.selector} @ x ${item.x}, y ${item.y}, right ${item.right}`);
@@ -951,6 +954,7 @@ export async function main(argv) {
             const result = await page.evaluate(measurePage, { near: options.near, lane: options.lane, ignore: options.ignore });
             result.findings.push(...await page.evaluate(measureDashboard, { ignore: options.ignore }));
             result.findings.push(...await page.evaluate(measureDetail, { ignore: options.ignore }));
+            result.findings.push(...await page.evaluate(measureChrome, { ignore: options.ignore }));
             results.push(result);
             await page.close();
         }

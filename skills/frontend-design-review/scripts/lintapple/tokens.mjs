@@ -3,11 +3,13 @@
  * Finds colors in UI source code that do not come from a token: hex, rgb(), hsl(), oklch(),
  * and other color literals, Tailwind palette classes (bg-red-500), and arbitrary values
  * (bg-[#7c3aed]). It also lists the color tokens the project defines and the semantic roles
- * that are missing from them.
+ * that are missing from them. Rust UI code is scanned too: egui and iced color constructors
+ * (Color32::from_rgb, Color::from_rgb8, color!) and Slint color literals.
  *
  * Token definitions are allowed: a CSS custom property line (`--primary: #2563eb;`) and the
  * files given with --allow (by default the Tailwind config and files whose name contains
- * "token" or "theme").
+ * "token" or "theme"). In Rust, a color `const` or `static` is a definition; in Slint, a
+ * `property <color>` or `property <brush>` is.
  *
  * Synced into the Frontend Design Review and Unslop Interface skills from
  * packages/lintapple/agent/scripts. Edit it there, then run `node packages/cli build`.
@@ -33,8 +35,8 @@ export const ROLES = {
     border: ["border", "outline", "divider", "stroke"],
 };
 
-const SOURCE = new Set([".css", ".scss", ".sass", ".less", ".pcss", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".vue", ".svelte", ".astro", ".html", ".erb", ".blade.php", ".php"]);
-const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".astro", "coverage", "vendor", ".turbo", ".cache", "public"]);
+const SOURCE = new Set([".css", ".scss", ".sass", ".less", ".pcss", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".vue", ".svelte", ".astro", ".html", ".erb", ".blade.php", ".php", ".rs", ".slint"]);
+const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "out", ".next", ".nuxt", ".svelte-kit", ".astro", "coverage", "vendor", ".turbo", ".cache", "public", "target"]);
 const DEFAULT_ALLOW = ["tailwind.config", "token", "theme"];
 const PALETTE = "slate|gray|grey|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
 const UTILITY = "bg|text|border(?:-[trblxyse])?|ring|ring-offset|fill|stroke|from|via|to|outline|decoration|divide|placeholder|caret|accent|shadow";
@@ -45,6 +47,9 @@ const patterns = [
     { kind: "arbitrary-color", regex: new RegExp(`(?<![\\w-])(?:[a-z0-9-]+:)*(?:${UTILITY})-\\[(?:#|rgb|hsl|oklch|oklab|lab|lch|color\\()[^\\]]*\\]`, "g") },
     { kind: "raw-color", regex: /(?<![\w&-])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])/g },
     { kind: "raw-color", regex: /(?<![\w-])(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\(\s*[\d.]/g },
+    { kind: "rust-color", regex: /\b(?:Color32|Color|Rgba|Srgba|Hsla|Hsva)::(?:from_rgba?(?:8|_u8|_unmultiplied|_premultiplied)?|from_gray|from_hex|new)\s*\(/g },
+    { kind: "rust-color", regex: /\bColor32::(?:RED|GREEN|BLUE|YELLOW|GOLD|KHAKI|BROWN|LIGHT_[A-Z_]+|DARK_[A-Z_]+)\b/g },
+    { kind: "rust-color", regex: /\bcolor!\s*\(/g },
 ];
 
 /** Lists source files under a folder, skipping build output and dependencies. */
@@ -71,6 +76,12 @@ export function scanText(text, allowed = false) {
     lines.forEach((raw, index) => {
         for (const definition of raw.matchAll(/(--[\w-]+)\s*:\s*([^;}]+)/g)) {
             if (/#|rgb|hsl|oklch|oklab|lab\(|lch\(|var\(--/.test(definition[2])) tokens.push(definition[1]);
+        }
+        // A named color in Rust (`const PRIMARY: Color32 = ...`) or Slint (`property <color> primary: ...`).
+        const named = raw.match(/\b(?:pub(?:\([\w:]+\))?\s+)?(?:const|static)\s+([A-Za-z_]\w*)\s*:\s*(?:[\w:]+::)?(?:Color32|Color|Rgba|Srgba|Hsla|Hsva)\b/) ?? raw.match(/\bproperty\s*<\s*(?:color|brush)\s*>\s*([\w-]+)\s*:/);
+        if (named) {
+            tokens.push(named[1]);
+            return;
         }
         const line = raw.replace(/--[\w-]+\s*:\s*[^;}]+;?/g, (text) => " ".repeat(text.length));
         if (allowed || /^\s*(\/\/|\*|\/\*)/.test(line) || /\burl\(/.test(line)) return;

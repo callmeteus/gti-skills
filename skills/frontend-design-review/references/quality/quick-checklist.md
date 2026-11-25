@@ -27,6 +27,8 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Every list has an empty state with the create button, not a bare header row (no `empty-list-without-message`)
 - [ ] Form labels sit above their fields, fixed choices are selects, settings are fields and not raw JSON (no `ragged-form-labels` or `raw-json-field`)
 - [ ] Every control has a label, and no select has a single option (no `unexplained-control`)
+- [ ] Lists add items from a "+" button in their header, and the user is an avatar with an icon sign-out (no `create-as-item` or `user-as-text`)
+- [ ] Hand-drawn icons get a suggestion for one icon library in the report, not a silent swap (`icon-source`)
 - [ ] A detail page has one header row (title left; status, refresh, and an Actions menu right), behavior notes in tooltips, views of one output in tabs, each fact once, and readable long values (no `status-actions-apart`, `header-controls-below-title`, `behavior-footnote`, `repeated-value`, `stacked-output-panels`, `truncated-without-tooltip`)
 - [ ] A dashboard names its question and period, shows four to six KPIs each with a comparison, target, or trend, and uses labeled charts that fit the data (no `kpi-without-context`, `too-many-kpis`, or `chart-without-labels`)
 - [ ] No heading accents one word and no button or link ends with an arrow (no `accent-word` or `arrow-suffix`)

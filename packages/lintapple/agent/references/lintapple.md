@@ -72,6 +72,9 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `repeated-value` | The same value of 8 to 60 characters in two or more cards. A value in the same kind of block in cards of one repeated component (a list) does not count |
 | `stacked-output-panels` | Two or more stacked panels with headings that are empty or waiting ("Aguardando", "Nenhuma", "No ... yet") |
 | `truncated-without-tooltip` | Text cut with `text-overflow: ellipsis` and no `title`, `aria-label`, or tooltip on it or its parents |
+| `create-as-item` | A create action ("Novo perfil", "New project") with the tag, width, and height of the items of the vertical list it ends or starts |
+| `user-as-text` | A sign-out link or button with a text label and no avatar (an image or an `avatar` element) near it, usually under a user name |
+| `icon-source` | Three or more small icons (32px or less) drawn as inline SVG or image files, with no icon library on the page. A suggestion for the report: the agent names a library and the user decides |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |

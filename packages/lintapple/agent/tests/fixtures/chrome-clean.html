@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; display: flex; }
+  aside { width: 240px; padding: 16px; display: flex; flex-direction: column; gap: 8px; min-height: 600px; }
+  .head { display: flex; justify-content: space-between; align-items: center; }
+  .profiles { display: flex; flex-direction: column; gap: 4px; }
+  .profile { display: block; width: 100%; height: 32px; border: 0; border-radius: 6px; text-align: left; padding: 0 12px; background: none; }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #333; }
+  svg { width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+  <aside>
+    <div class="head"><span>Perfis</span><button aria-label="Novo perfil" title="Novo perfil"><svg class="lucide lucide-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button></div>
+    <div class="profiles">
+      <button class="profile">Celular (grátis)</button>
+      <button class="profile">Celular 3x2</button>
+      <button class="profile">Default</button>
+    </div>
+    <div class="foot">
+      <button class="avatar" aria-label="Conta de Gio">G</button>
+      <button aria-label="Sair" title="Sair"><svg class="lucide lucide-log-out" viewBox="0 0 24 24"><path d="M9 21H5V3h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+    </div>
+  </aside>
+</body>
+</html>
