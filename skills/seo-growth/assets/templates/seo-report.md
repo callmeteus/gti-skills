@@ -43,7 +43,7 @@ Order by expected revenue impact, highest first.
 
 ## Checklist
 
-<The 46 items from the checklist with done, failing, not applicable, or not checked.>
+<The 55 items from the checklist with done, failing, not applicable, or not checked.>
 
 ## Pending: steps for the user
 

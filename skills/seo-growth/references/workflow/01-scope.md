@@ -20,6 +20,17 @@ List the 5 to 15 pages that drive revenue or signups: home, pricing, signup, mai
 - Main competitors (3 is enough). Ask once if they are not obvious from the site.
 - Optional: a competitor's funnel. Find the `GTM-XXXXXX` ID in their page source, open `https://www.googletagmanager.com/gtm.js?id=GTM-XXXXXX`, and search for `__awct`: the Google Ads conversion names it lists (for example registration, trial, first payment) show which steps they pay to drive, so which pages and keywords matter to them.
 
+## Topical map
+
+Before planning pages, write down in `state.md`:
+
+- **Central entity:** the one thing the site is about (for example "invoicing for freelancers").
+- **Source context:** why this site is a credible source on it (it sells the product, it publishes the data, its authors do the work). Pages that fit the source context are the ones worth building.
+- **Core section:** topics tied to the money pages, covering the entity's attributes with real values (prices, limits, formats, integrations, steps). These get the most depth and internal links.
+- **Outer section:** supporting topics that bring related searches and link into the core with contextual links.
+
+Pages far from the central entity (off-topic posts written for traffic) dilute the site's focus; merge, move, or `noindex` them. The 2024 leak of Google's internal API documentation names attributes such as `siteFocusScore`, `siteRadius`, and `siteQualityStddev`. Treat them as clues for an audit, not as confirmed ranking rules.
+
 ## Keyword map
 
 Keep a keyword map in `~/.gti/seo-growth/<project>/state.md`: one row per page with its primary keyword, intent, and status. One page per primary keyword. Two pages targeting the same keyword is cannibalization (step 3).

@@ -167,4 +167,5 @@ The skill works the same in every coding agent. If you need install paths, how t
 - Never promise rankings, traffic numbers, or timelines. Say what each change fixes and which metric to watch.
 - Never fabricate statistics, reviews, testimonials, author credentials, or competitor claims. Missing proof becomes a `[NEEDS PROOF]` marker for the user.
 - No link schemes, no paid links, no hidden text, no doorway pages, no cloaking (AI bots and Googlebot must receive the same content as users), and no auto-generated pages without unique data.
+- No click manipulation (bots, paid clicks, or click farms to fake engagement). Google's click signals, such as NavBoost, are documented, but the fix is a result people choose and a page that answers them.
 - Treat third-party SEO tool data as estimates. Search Console is the source of truth for the user's own site.

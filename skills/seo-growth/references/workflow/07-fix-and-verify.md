@@ -50,6 +50,7 @@ These are outward actions or need the user's accounts. List each in the report w
 
 ### Authority guidance for the report
 
+- Domains: when the user considers an expired or exact-match domain, check its history (Wayback Machine snapshots, topical relevance of its old content, backlink profile, spam signals). Buying an expired domain to redirect its links or host unrelated content is expired domain abuse under Google's spam policies, and private blog networks (PBNs) are link schemes. Explain the risk and never build either.
 - Earn links, never buy them. Count clean editorial referring domains against 3 competitors to size the gap. Treat a high Domain Rating with very little organic traffic as an inflated, low-value site.
 - Product loops earn links over time: a "Powered by" badge on free plans, indexable share URLs, and embeds with attribution.
 - Directories: only relevant, real directories with an audience, submitted in small batches with a log. Skip link farms.

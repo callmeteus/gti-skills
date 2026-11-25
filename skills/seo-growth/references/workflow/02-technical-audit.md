@@ -62,6 +62,7 @@ Then read the code paths behind every failure.
 
 - Fix internal links that return 404 or redirect: point them straight at the final URL.
 - An orphan page has no internal links pointing to it. Find them by comparing the sitemap with the pages linked from the site (grep the codebase for each path when the links are static). Link every orphan that should rank, or remove it.
+- Crawl depth: every money page and every page that earns traffic or conversions should be reachable within 3 clicks of the homepage. Trace the path through navigation, hubs, and pagination in the code (or a crawl the user runs). Valuable pages buried deeper, for example only reachable through page 6 of a blog list, get links from the homepage, a hub, or a related high-traffic page.
 
 ### Core Web Vitals and mobile
 

@@ -40,7 +40,7 @@
 
 Most of what an SEO retainer delivers each month is a set of checklists run by hand: crawl and indexing checks, title and meta fixes, Search Console reviews, new comparison and FAQ pages, and lately, checking whether AI search can read the site. A coding agent can run all of them and land the fixes as code changes, as long as it knows the rules, the thresholds, and where to stop.
 
-SEO Growth gives the agent that playbook in four modes (Audit, Grow, Build, AI search), two standard-library Python scripts (a live site check and a Search Console export analyzer), a 46-item checklist, and content rules that forbid invented proof. It edits the user's code and content; it never submits, posts, emails, or buys anything.
+SEO Growth gives the agent that playbook in four modes (Audit, Grow, Build, AI search), two standard-library Python scripts (a live site check and a Search Console export analyzer), a 55-item checklist, and content rules that forbid invented proof. It edits the user's code and content; it never submits, posts, emails, or buys anything.
 
 ```text
   site URL + repository (+ Search Console export)
@@ -75,7 +75,7 @@ SEO Growth gives the agent that playbook in four modes (Audit, Grow, Build, AI s
 - **In-console filter:** the regex for 8+ word queries to use directly in Search Console.
 - **Buyer pages:** rules for comparison, alternatives, use-case, FAQ from People Also Ask, listicles, clusters, and programmatic pages, with clear thresholds.
 - **Proof first:** every claim needs a source; missing proof becomes a `[NEEDS PROOF]` marker.
-- **46-item checklist:** every item mapped to the step that covers it, marked in the report.
+- **55-item checklist:** every item mapped to the step that covers it, marked in the report.
 - **Generated files outside the repository:** reports and analyses go to `~/.gti/seo-growth/<project>/`.
 
 ## Requirements
@@ -235,7 +235,7 @@ python3 scripts/gsc/gsc_queries.py Queries.csv --min-words 8 --min-impressions 1
 | `references/workflow/05-pages-to-build.md` | Keyword selection and rules for each buyer page type |
 | `references/workflow/06-ai-search.md` | AI crawler access, structured facts, `llms.txt`, and buyer prompts |
 | `references/workflow/07-fix-and-verify.md` | Fix order, verification commands, and the user's own steps |
-| `references/quality/checklist.md` | The 46-item checklist |
+| `references/quality/checklist.md` | The 55-item checklist |
 | `references/quality/content-rules.md` | Proof, answer-first, plain writing, and honesty rules |
 
 ## Output
@@ -264,7 +264,7 @@ python3 scripts/gsc/gsc_queries.py Queries.csv --min-words 8 --min-impressions 1
 | Findings | One block per problem by revenue impact: where, problem, fix, verify, watch |
 | Search Console actions | Each query or page with its signal, action, and status |
 | Pages to build | Planned pages with keyword, intent, and missing proof |
-| Checklist | The 46 items marked done, failing, not applicable, or not checked |
+| Checklist | The 55 items marked done, failing, not applicable, or not checked |
 | Pending | Outward steps for the user, with the exact text to use |
 | Not verified | What could not be checked and why |
 
@@ -347,6 +347,7 @@ Restart the agent session after installing, and confirm the folder is in the pat
 | [Edward Sturm on X: Search Console long-query filter](https://x.com/edwardeachday/status/2123711810989600882) | Post on X | The 8+ word regex filter and the answer-at-the-top workflow |
 | [Okara on X: SEO checklist](https://x.com/askOkara/status/2123702890724552943) | Post on X | The base of the checklist |
 | [Oleksii Sidorov on X: 48 SEO and GEO tricks](https://x.com/acecreamu/status/2125234701912985928) | Post on X | Brand search tracking, SERP format matching, profile and cross-post rules, AI answer tracking, the About page, and the community posting rules |
+| [Shubham Kshatriya on X: SEO task list](https://x.com/shubham_habib/status/2125116847427334506) | Post on X | The topical map, crawl depth, internal authority flow, per-section quality, device CTR, Bing research, Query Deserves a Page, weak SERPs, money per landing page, and domain risk checks |
 
 ## License
 

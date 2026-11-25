@@ -42,6 +42,7 @@ Two pages targeting the same primary keyword split their signals. Find them with
 - Merge thin or overlapping pages. Delete or `noindex` pages with nothing unique.
 - Boilerplate blocks repeated on more than 30% of pages (the same FAQ, the same intro) either get real per-page variables or get removed.
 - Write original content: first-hand data, screenshots of the real product, real examples. Do not rewrite the top result.
+- Judge quality per section, not only per page. A weak section (an old blog, thin programmatic pages, abandoned docs) can hold back the whole site. Compare sections in the Search Console Pages report with a URL filter per folder (`/blog/`, `/docs/`, `/integrations/`) and fix, merge, or `noindex` the weakest.
 
 ## Internal links
 
@@ -49,6 +50,8 @@ Two pages targeting the same primary keyword split their signals. Find them with
 - Anchors are 3 to 7 descriptive words. Use at least 5 different anchors for a target page and the same exact anchor no more than 3 times.
 - Link from pages that already get traffic (Search Console Pages report) to the pages you want to push.
 - Build hub pages (pillars) that link to every page in a cluster, and have every cluster page link back.
+- Pass authority deliberately: the pages with the most backlinks (Search Console, Links, Top linked pages) should link to the money pages. Keep sitewide menu and footer links to the pages that deserve them, since every link on a page shares that page's weight.
+- Bridge related articles across clusters with one sentence that explains the connection and a descriptive anchor, so readers and crawlers move from outer topics into the core section (step 1).
 
 ## URLs
 

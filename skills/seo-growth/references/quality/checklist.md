@@ -67,3 +67,12 @@ Mark every item in the report as done, failing, not applicable, or not checked. 
 | 44 | AI answers for category prompts tracked: brands named and pages cited | 6 |
 | 45 | Official profiles (GitHub, Crunchbase, G2, Capterra, Product Hunt) filled with consistent facts and listed in `sameAs` | 7 |
 | 46 | Cross-posted articles carry a canonical link to the original | 7 |
+| 47 | Central entity, source context, and core and outer sections written down; off-topic pages handled | 1 |
+| 48 | Money pages and pages that earn traffic are within 3 clicks of the homepage | 2 |
+| 49 | Strongest pages link to money pages; related articles bridged across clusters | 3 |
+| 50 | Content quality compared per site section; the weakest section fixed, merged, or noindexed | 3 |
+| 51 | Mobile and desktop CTR compared before rewriting titles | 4 |
+| 52 | Bing keywords and rankings reviewed separately from Google | 4 |
+| 53 | Organic work ranked by conversions or revenue per landing page | 4 |
+| 54 | New URLs only where the query deserves its own page; weak SERPs preferred over strong ones | 5 |
+| 55 | Original tools, calculators, or datasets where the SERP rewards them | 5 |

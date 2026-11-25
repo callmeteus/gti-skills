@@ -10,7 +10,8 @@ Apply the content rules (`references/quality/content-rules.md`, linked from step
 - Group keywords into one page by SERP overlap: if two keywords share 3 or more of the same top-10 URLs, they belong on one page. With 2 shared URLs, check the page types. With 0 or 1, they need separate pages.
 - Check the keyword map first. Never create a page for a keyword another page already targets; improve that page instead.
 - Match the format of the top 3 results: a listicle, a tool, a guide, or a comparison. A guide rarely ranks where every top result is a tool.
-- Deprioritize keywords whose top 10 is mostly large third-party platforms (Reddit, Quora, LinkedIn, Medium, YouTube, major news sites). A new page rarely displaces them; for those keywords, getting mentioned on the ranking pages is the move (step 7).
+- Read the SERP's strength before committing. A weak SERP is an opening even at high volume: old forum threads, thin or outdated pages, results that answer a different question, or small sites with no clear expertise. A strong SERP is hard to enter: large brands and platforms (Reddit, LinkedIn, Medium, YouTube, major news sites) with fresh pages that match the intent well. Deprioritize strong ones; for those keywords, getting mentioned on the ranking pages is the move (step 7).
+- Query Deserves a Page: before creating a URL, check whether the top results are dedicated pages or sections of broader pages. When Google answers the query with sections, add a section to the right existing page instead of a new URL.
 - Mine community threads for questions: search `site:reddit.com <the buyer's problem>` to find threads that already rank. Their questions and objections, in the buyer's own words, are input for the page. Write a better, original answer on the site; never copy the thread.
 
 ## Page types
@@ -38,6 +39,10 @@ Search the main keywords, expand the "People also ask" boxes (each opens more), 
 ### Listicles
 
 "Best X for Y" pages rank and get cited by AI search. Make the best one in the category: clear criteria, real testing, honest placement of the user's product (not always first unless it truly fits the criteria), and an update date.
+
+### Tools, calculators, and datasets
+
+Original calculators, free tools, and datasets built from the product's own data rank for "calculator" and "template" searches, earn links and AI citations, and are hard for competitors to copy. Build a working tool on the page (server-rendered explanation and results, step 2), not an article about one, and publish the method and the data date.
 
 ### Topic clusters
 
