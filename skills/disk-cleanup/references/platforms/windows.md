@@ -22,7 +22,7 @@ Google Drive for desktop mounts a virtual drive, `G:` by default but any free le
 
 ## Admin
 
-Items marked `admin` need an elevated prompt (Run as administrator). The skill never elevates; when the user wants them, they open an elevated terminal and run the agent there, or run the commands shown in the report. Without elevation, Prefetch is unreadable, so only programs opened from Start or Explorer have a last-use date; the others are left out of the unused list, not put in it.
+Items marked `admin` need administrator rights. With `--elevate`, they run in one elevated copy of the script started with `Start-Process -Verb RunAs`, which shows the Windows permission dialog (UAC); a standard user types an administrator password there, never to the agent. Without it, the user runs the commands in an elevated prompt. Without elevation, Prefetch is unreadable, so only programs opened from Start or Explorer have a last-use date; the others are left out of the unused list, not put in it.
 
 ## What is checked
 

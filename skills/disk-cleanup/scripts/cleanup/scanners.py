@@ -112,6 +112,8 @@ def scan_targets(platform, ctx):
         age = target.older_than_days
         if age == "temp":
             age = ctx.pref("temp_age_days")
+        if target.admin and not ctx.elevated and os.path.isdir(path) and not os.access(path, os.R_OK | os.X_OK):
+            return target, path, None, age  # only root can read it: report it with an unknown size
         if target.action == "delete_contents" and age:
             size = fsutil.tree(path, older_than=age).size
         else:
@@ -120,11 +122,13 @@ def scan_targets(platform, ctx):
 
     with ThreadPoolExecutor(max_workers=ctx.jobs) as pool:
         for target, path, size, age in pool.map(measure, jobs):
-            if size < min_size:
+            unknown = size is None
+            if not unknown and size < min_size:
                 continue
             findings.append(Finding(
                 category=target.category, title=target.title, action=target.action, level=target.level,
-                size=size, paths=[path], admin=target.admin, auto=target.auto, reason=target.reason,
+                size=0 if unknown else size, estimate=unknown, paths=[path], admin=target.admin, auto=target.auto,
+                reason=target.reason + (" Only root can read it, so its size is known only after cleaning." if unknown else ""),
                 risk=target.risk, restore=target.restore, older_than_days=age,
                 drive=getattr(ctx.drive_of(path), "id", None),
             ))

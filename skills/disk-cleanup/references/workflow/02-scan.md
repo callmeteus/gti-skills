@@ -44,7 +44,7 @@ On a laptop with 4.7 million files the whole scan took about 35 seconds. A tool 
 
 ## Elevation
 
-Without administrator or root rights, folders the user cannot read are measured as far as possible and items that need rights are marked `admin`. Do not elevate on your own and never ask for a password. If the user wants those items, they can run the agent's terminal as Administrator or with their own `sudo`, or run the listed commands themselves.
+Without administrator or root rights, folders the user cannot read are measured as far as possible and items that need rights are marked `admin`. The scan itself never elevates. To clean those items, `clean --elevate` asks the operating system for rights through its own password dialog, after the user agreed (see step 6).
 
 ## Reading the result
 

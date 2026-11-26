@@ -73,7 +73,7 @@ Disk Cleanup gives the agent one script that lists the drives, excludes Google D
 | Delete caches, temp files, logs, trash, duplicates, old downloads, and build output by level | Delete documents, photos, or videos, except verified duplicate copies |
 | Run the owning tool's cleanup (apt-get clean, docker prune, Dism, tmutil) | Delete inside WinSxS, Docker, snap, or snapshot folders by hand |
 | Find settings that waste space and give the command and the undo | Change a setting or uninstall a program without the user's yes for that item |
-| List programs unused for months with their uninstall command | Elevate, ask for a password, or accept an EULA |
+| Run administrator items through the system's own password dialog when the user agrees | Ask for, see, or type a password, or accept an EULA |
 
 ## Features
 
@@ -88,6 +88,7 @@ Disk Cleanup gives the agent one script that lists the drives, excludes Google D
 - **Packages installed many times:** Playwright browser revisions no install uses (the rule Playwright applies itself), old Puppeteer and Cypress builds, global npm packages repeated in every Node version, old Node versions (kept: current, default, newest, and versions pinned in `.nvmrc`), and heavy packages such as electron, esbuild, or torch copied into many projects, with how to keep one copy.
 - **Uninstall by name:** `uninstall "Gunfire Reborn" SideQuest` finds each program among everything installed, whatever its level or last use, runs the uninstallers one at a time (Windows shows its own permission dialog), and checks that each one is gone.
 - **Unused programs:** listed only with a real last-use date older than 180 days: Prefetch and UserAssist on Windows, Spotlight on macOS, Flatpak, snap, AppImage, and packages with a launcher on Linux. A program with no reliable date is never called unused; runtimes, updates, drivers, and sync clients are never listed.
+- **System password dialog:** `--elevate` runs the items that need administrator or root rights in one elevated copy of the script through polkit (`pkexec`), the macOS administrator prompt, or UAC, with the same guard and log; the password goes to the system, never to the agent.
 - **Guarded cleaner:** every path checked again for links, protected folders, keys and credentials, cloud folders, excluded drives, and user exclusions; duplicates hashed again; every deletion in a manifest.
 - **Automatic mode:** off by default; system drive only; only findings marked auto at the level; settings, uninstalls, volumes, and phone backups always stay pending.
 - **Preferences:** saved level, automatic mode, exclusions, and age thresholds in `~/.gti/disk-cleanup/preferences.json`, each change shown with its old and new value.
@@ -253,6 +254,7 @@ python3 scripts/disk_cleanup.py clean [--scan PATH] [--level L] [--ids ...] [--c
 | `--allow-system-changes` | off | Run settings and uninstalls named in `--ids`; refused with `--auto` |
 | `--allow-old-scan` | off | Accept a scan older than 24 hours |
 | `--jobs` | 4 | Parallel deletions |
+| `--elevate` | off | Run administrator items through the system's own password dialog (polkit, macOS prompt, UAC) |
 | `--apply` | off | Delete; without it, a dry run |
 
 ### disk_cleanup.py programs
@@ -276,6 +278,7 @@ python3 scripts/disk_cleanup.py uninstall NAME [NAME ...] [--apply]
 |----------|---------|-------------|
 | `NAME` | required | Program names as the user said them; each must match exactly one installed program |
 | `--apply` | off | Run the uninstallers; without it, a dry run. Afterwards, checks which programs are really gone |
+| `--elevate` | off | Uninstall programs that need root (apt, snap) through the system's password dialog |
 
 ### disk_cleanup.py prefs
 
@@ -337,6 +340,7 @@ python3 scripts/disk_cleanup.py prefs reset
 | `scripts/cleanup/scanners.py` | Parallel scanners, the multi-process data walk, duplicates, build output, Downloads |
 | `scripts/cleanup/worktrees.py` | Stale git worktrees: activity from git's index and reflog, and the checks before `git worktree remove` |
 | `scripts/cleanup/packages.py` | Browser builds per version (Playwright, Puppeteer, Cypress), Node versions, packages copied into many projects |
+| `scripts/cleanup/elevate.py` | Runs the script again with administrator rights through pkexec, osascript, or UAC |
 | `scripts/cleanup/clean.py` | Choosing findings, the guard, deletion, commands, manifest |
 | `scripts/cleanup/fsutil.py` | Link-safe walking, native du, hashing, deletion helpers |
 | `scripts/cleanup/report.py` | Scan and cleanup reports |
@@ -345,7 +349,7 @@ python3 scripts/disk_cleanup.py prefs reset
 ## Security
 
 - **Network:** none. The script reads the local file system and runs local tools; it sends nothing anywhere.
-- **Privileges:** the script never elevates, never runs `sudo`, and never asks for a password; admin items are listed with their commands.
+- **Privileges:** the script never runs `sudo` and never handles a password. With `--elevate`, administrator items run in one elevated copy of the script through the operating system's own dialog (polkit `pkexec` on Linux, the administrator prompt on macOS, UAC on Windows); the user types the password there. Without it, admin items are listed with their commands.
 - **File access:** links and junctions are never followed or deleted; keys, credentials, wallets, and cloud-synced folders are never touched; every deletion is logged.
 - **Third-party terms:** the Sysinternals EULA is never accepted on the user's behalf.
 
@@ -373,7 +377,7 @@ python3 scripts/disk_cleanup.py prefs set exclude "H:\\"
 <details>
 <summary><strong>Many items say "needs administrator or root rights"</strong></summary>
 
-The agent is not elevated, and the skill never elevates on its own. Run the commands from the report in an elevated prompt or under your own `sudo`, or start the agent from an elevated terminal and scan again.
+The agent is not elevated. Add `--elevate` to `clean` or `uninstall`: the system shows its own password dialog and the items run in one elevated copy of the script. With no graphical session, or when the dialog is cancelled, run the commands from the report in an elevated prompt or with your own `sudo`.
 
 </details>
 

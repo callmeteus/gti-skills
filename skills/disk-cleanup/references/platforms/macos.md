@@ -10,7 +10,7 @@ Google Drive for desktop mounts in `~/Library/CloudStorage/GoogleDrive-<account>
 
 ## Permissions
 
-Some folders (`~/.Trash`, Mail, Messages, `MobileSync` backups) need Full Disk Access for the terminal app the agent runs in: System Settings > Privacy & Security > Full Disk Access. Without it those folders are reported as unreadable. The skill never changes that setting; the user grants it if they want. Items marked `admin` need `sudo`, which the user runs.
+Some folders (`~/.Trash`, Mail, Messages, `MobileSync` backups) need Full Disk Access for the terminal app the agent runs in: System Settings > Privacy & Security > Full Disk Access. Without it those folders are reported as unreadable. The skill never changes that setting; the user grants it if they want. Items marked `admin` need administrator rights: with `--elevate`, they run through the macOS administrator prompt (`osascript ... with administrator privileges`), where the user types the password; otherwise the user runs them with `sudo`.
 
 ## What is checked
 

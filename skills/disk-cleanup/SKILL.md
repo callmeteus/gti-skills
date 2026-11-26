@@ -38,7 +38,7 @@ In this skill:
 - **With automatic mode on:** run `clean --auto --run-commands --apply` at the chosen level. It deletes only findings marked `auto` within that level, on the system drive.
 - **Programs the user named in the request:** uninstall them with `uninstall "<name>" --apply`; a name that matches no program or several is reported, not guessed.
 - **Settings, uninstalls the user did not name, Docker volumes, phone backups, and duplicates in backup folders (step 5):** never in this mode. List them as pending with their commands.
-- **Items that need administrator or root rights:** never ask for a password and never elevate. List them as pending with the command to run in an elevated prompt.
+- **Items that need administrator or root rights:** never pass `--elevate` in this mode (it opens a password dialog that waits for the user). List them as pending with the command, or with the `--elevate` command to run later.
 - **Reports:** write them; do not open them.
 
 ## Automatic Mode
@@ -133,6 +133,12 @@ Run the script with `python3` on macOS and Linux and `python` or `py -3` on Wind
 
    Every path is checked again right before it is deleted, duplicates are hashed again, and each deletion is logged. Read [references/workflow/04-clean.md](references/workflow/04-clean.md).
 
+   **Items that need administrator or root rights** (journald, APT, snap, Windows Update, system logs): tell the user how many and how much, say that the operating system will show its own password dialog, and with their yes add `--elevate`. The script runs those items in one elevated copy of itself through polkit (`pkexec`) on Linux, the administrator prompt on macOS, or UAC on Windows. The user types the password into that dialog; the agent never asks for it, sees it, or types it, and never clicks the dialog for the user. If the dialog is cancelled or unavailable (no graphical session), the items stay pending with their commands.
+
+   ```bash
+   python3 <skill-dir>/scripts/disk_cleanup.py clean --categories logs system --level aggressive --run-commands --elevate --apply
+   ```
+
    **When the user names programs to remove,** do not look for them among the scan's unused programs: the scan lists only programs with a known old last use. Uninstall by name, from every installed program, whatever the level:
 
    ```bash
@@ -194,5 +200,5 @@ The skill works the same in every coding agent. If you need install paths, how t
 ## Notes
 
 - Sizes come from the scan, never from a guess. A `~` marks an estimate; `unknown` means the tool reports the size only after it runs.
-- Run the agent's terminal elevated (Administrator on Windows, root through the user's own `sudo` on Linux and macOS) only if the user chooses to; the skill never asks for a password.
+- Administrator rights come only from the operating system's own dialog (`--elevate`) after the user agrees, or from a terminal the user elevated. The agent never asks for, sees, or types a password.
 - Never size folders with PowerShell `Get-ChildItem -Recurse` or `Measure-Object`, or with Explorer: they are many times slower than the script.

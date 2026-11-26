@@ -16,7 +16,7 @@ Folder sizes come from `du -skx` (allocated size, one file system), the data wal
 
 ## Root
 
-Items marked `admin` need root. The skill never runs `sudo` and never asks for a password. The user can run the commands in the report, or run the agent under their own `sudo` session. Without root, the system journal size may be unreadable (unless the user is in the `systemd-journal` or `adm` group) and Docker data needs the `docker` group.
+Items marked `admin` need root. With `--elevate`, they run through `pkexec`, which shows the desktop's polkit password dialog (GNOME, KDE, and others ship the agent); the password goes to polkit, never to the agent. Without a graphical session or a polkit agent, they stay pending, and the user runs the commands with their own `sudo`. The skill never runs `sudo` itself. Without root, the system journal size may be unreadable (unless the user is in the `systemd-journal` or `adm` group) and Docker data needs the `docker` group.
 
 ## What is checked
 
@@ -31,6 +31,11 @@ Items marked `admin` need root. The skill never runs `sudo` and never asks for a
 | Dev | Docker and Podman images, build cache, stopped containers, volumes (never automatic) |
 | Config | journald without `SystemMaxUse`, snap `refresh.retain` over 2, any single log over 1 GB in `/var/log`, Docker logs without `max-size`, core dumps over 1 GB, Baloo or Tracker index over 1 GB, swap file far above RAM, Timeshift or Snapper keeping many snapshots |
 | Programs | Flatpak apps (last use from `~/.var/app`), snaps (from `~/snap`), AppImages, manually installed packages with a desktop launcher (last use from access time; approximate, wrong on `noatime` mounts) |
+
+## Notes
+
+- **Snap revisions:** snapd keeps a hardlink of every downloaded snap in `/var/lib/snapd/cache`, so removing old revisions frees space only together with the snapd download cache item. Only root can read that folder, so the scan lists it with an unknown size.
+- **Old kernels:** the size comes from `apt-get -s autoremove --purge`, a dry run that needs no root. Ubuntu keeps the running kernel and fallbacks; leftover `/lib/modules` folders of removed kernels are not counted.
 
 ## Restore
 

@@ -233,7 +233,7 @@ class Linux(Platform):
             Command("system", "DNF package cache", ["dnf", "clean", "all"], binary="dnf", admin=True,
                     measure=("/var/cache/dnf", "/var/cache/yum", "/var/cache/libdnf5"), on="/var/cache"),
             Command("system", "Packages no longer needed (DNF)", ["dnf", "autoremove", "-y"], level="aggressive",
-                    binary="dnf", admin=True, probe=old_kernels, on="/usr"),
+                    binary="dnf", admin=True, probe=dnf_autoremove, on="/usr"),
             Command("system", "Pacman cache beyond the last two versions", ["paccache", "-rk2"], binary="paccache",
                     admin=True, measure=("/var/cache/pacman/pkg",), on="/var/cache",
                     reason="Measured size is the whole cache; the command keeps the last two versions of each package."),
@@ -435,15 +435,25 @@ def journal_excess(ctx):
 
 
 def old_kernels(ctx):
-    running = os.uname().release if hasattr(os, "uname") else ""
-    versions = sorted((os.path.basename(p) for p in glob.glob("/lib/modules/*")), key=version_key)
-    keep = {running} | set(versions[-1:])
-    old = [v for v in versions if v not in keep]
-    if not old:
-        return 0, True, {}
-    size = sum(fsutil.tree(f"/lib/modules/{v}").size for v in old)
-    size += sum(fsutil.tree(p).size for v in old for p in glob.glob(f"/boot/*{v}*"))
-    return size, True, {"old_kernels": old, "running": running}
+    """What `apt-get autoremove` would really remove, from its own dry run (no root needed), sized from dpkg.
+    Ubuntu keeps the running kernel and fallbacks; counting every /lib/modules folder promised space that never came."""
+    if not fsutil.run_exists("apt-get"):
+        return None
+    out = fsutil.run(["apt-get", "-s", "autoremove", "--purge"], timeout=120)
+    if out is None:
+        return None
+    packages = re.findall(r"^(?:Remv|Purg) (\S+)", out, re.M)
+    if not packages:
+        return None
+    sizes = fsutil.run(["dpkg-query", "-W", "-f=${Installed-Size}\\t${Package}\\n", *packages], timeout=60) or ""
+    size = sum(int(line.split("\t")[0]) * 1024 for line in sizes.splitlines() if line.split("\t")[0].isdigit())
+    return size, False, {"packages": packages}
+
+
+def dnf_autoremove(ctx):
+    if not fsutil.run_exists("dnf"):
+        return None
+    return 0, True, {"note": "dnf reports the size only when it runs"}
 
 
 def version_key(text):

@@ -18,7 +18,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from cleanup import fsutil, packages, scanners, worktrees  # noqa: E402
+from cleanup import elevate, fsutil, packages, scanners, worktrees  # noqa: E402
 from cleanup.clean import Guard, choose, execute  # noqa: E402
 from cleanup.drives import Drive, classify, google_drive_reason, select  # noqa: E402
 from cleanup.model import DEFAULT_PREFERENCES, Finding, parse_human, parse_level, within  # noqa: E402
@@ -628,6 +628,91 @@ class UninstallTests(unittest.TestCase):
 
     def test_windows_uninstallers_start_through_shell_execute_for_uac(self):
         self.assertEqual(uac_launch('MsiExec.exe /X{ABC}'), 'start "" /wait MsiExec.exe /X{ABC}')
+
+
+class LinuxProbeTests(unittest.TestCase):
+    def test_kernels_come_from_the_apt_dry_run_not_from_every_modules_folder(self):
+        from unittest import mock
+        from platforms import linux
+
+        def fake(argv, timeout=60, shell=False):
+            if argv[:2] == ["apt-get", "-s"]:
+                return "Reading package lists...\nPurg linux-image-6.8.0-40-generic [6.8.0-40.40]\nPurg linux-modules-6.8.0-40-generic\n"
+            if argv[0] == "dpkg-query":
+                return "14000\tlinux-image-6.8.0-40-generic\n120000\tlinux-modules-6.8.0-40-generic\n"
+            return None
+
+        with mock.patch.object(linux.fsutil, "run", side_effect=fake), \
+                mock.patch.object(linux.fsutil, "run_exists", return_value=True):
+            size, estimate, details = linux.old_kernels(None)
+        self.assertEqual(size, 134000 * 1024)
+        self.assertFalse(estimate)
+        self.assertEqual(len(details["packages"]), 2)
+        with mock.patch.object(linux.fsutil, "run", return_value="Reading package lists...\n0 upgraded, 0 to remove\n"), \
+                mock.patch.object(linux.fsutil, "run_exists", return_value=True):
+            self.assertIsNone(linux.old_kernels(None))
+
+    @unittest.skipIf(os.name == "nt" or (hasattr(os, "geteuid") and os.geteuid() == 0), "needs a non-root POSIX user")
+    def test_a_root_only_folder_is_reported_with_an_unknown_size(self):
+        from platforms.base import Target
+        with tempfile.TemporaryDirectory() as home:
+            locked = Path(home) / "cache"
+            write(locked / "a.snap", b"x" * 4096)
+            os.chmod(locked, 0)
+            try:
+                platform = FakePlatform(home)
+                platform.targets = lambda ctx: [Target("system", "snapd download cache", (str(locked),), admin=True)]
+                [finding] = scanners.scan_targets(platform, context(Path(home)))
+            finally:
+                os.chmod(locked, 0o755)
+        self.assertTrue(finding.estimate)
+        self.assertEqual(finding.size, 0)
+        self.assertIn("Only root", finding.reason)
+
+
+class ElevateTests(unittest.TestCase):
+    env = {"HOME": "/home/u", "GTI_HOME": "/home/u/.gti"}
+
+    def test_linux_uses_pkexec_and_passes_the_environment_through_env(self):
+        command = elevate.build("pkexec", "/usr/bin/python3", "/s/disk_cleanup.py", ["clean", "--ids", "a"], self.env, "p")
+        self.assertEqual(command[:4], ["pkexec", "env", "HOME=/home/u", "GTI_HOME=/home/u/.gti"])
+        self.assertEqual(command[4:], ["/usr/bin/python3", "/s/disk_cleanup.py", "clean", "--ids", "a"])
+
+    def test_macos_uses_the_administrator_prompt_and_quotes_paths(self):
+        [_, _, script] = elevate.build("osascript", "/usr/bin/python3", "/Users/u/My Skills/disk_cleanup.py",
+                                       ["clean"], self.env, 'Disk "Cleanup"')
+        self.assertTrue(script.startswith("do shell script "))
+        self.assertIn("with administrator privileges", script)
+        self.assertIn("'/Users/u/My Skills/disk_cleanup.py'", script)
+        self.assertIn('with prompt "Disk \\"Cleanup\\""', script)
+
+    def test_windows_uses_uac_and_waits_for_the_exit_code(self):
+        command = elevate.build("uac", r"C:\Python\python.exe", r"C:\s\disk_cleanup.py", ["clean", "--ids", "a b"],
+                                self.env, "p")
+        self.assertEqual(command[0], "powershell")
+        self.assertIn("-Verb RunAs -Wait -PassThru", command[-1])
+        self.assertIn("exit $p.ExitCode", command[-1])
+        self.assertIn("'\"a b\"'", command[-1])
+
+    def test_a_cancelled_dialog_is_explained(self):
+        self.assertIn("closed", elevate.explain("pkexec", 126, ""))
+        self.assertIn("agent", elevate.explain("pkexec", 127, ""))
+        self.assertIn("cancelled", elevate.explain("osascript", 1, "execution error: User canceled. (-128)"))
+        self.assertIn("UAC", elevate.explain("uac", 1, "The operation was canceled by the user."))
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux only")
+    def test_no_dialog_without_a_graphical_session(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"DISPLAY": "", "WAYLAND_DISPLAY": ""}):
+            kind, reason = elevate.method()
+        self.assertIsNone(kind)
+        self.assertIn("graphical session", reason)
+
+    def test_with_elevate_admin_items_are_chosen_instead_of_pending(self):
+        journal = Finding(category="logs", title="journal", action="command", level="aggressive", admin=True, auto=True,
+                          command=["journalctl", "--vacuum-size=200M"])
+        self.assertEqual(choose([journal], "aggressive", categories=["logs"], run_commands=True)[0], [])
+        self.assertEqual(choose([journal], "aggressive", categories=["logs"], run_commands=True, elevated=True)[0], [journal])
 
 
 class PrefsTests(unittest.TestCase):

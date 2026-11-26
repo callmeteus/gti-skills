@@ -10,7 +10,7 @@ Mark each item done, failing, not applicable, or not checked.
 - [ ] Nothing above the chosen level was cleaned.
 - [ ] Settings and uninstalls ran only with the user's yes for each item, never in automatic mode.
 - [ ] Docker volumes, phone backups, and duplicates in backup folders were cleaned only when the user named them.
-- [ ] No password was asked for, no prompt was elevated by the agent, and no EULA was accepted for the user.
+- [ ] No password was asked for, seen, or typed by the agent; `--elevate` was used only after the user agreed, and no EULA was accepted for the user.
 - [ ] Free space before and after per drive comes from the cleaner, not from estimates.
 - [ ] Every skipped path and every pending item has its reason, and pending items have exact commands.
 - [ ] Estimates are marked as estimates; the "Not verified" notes are in the report.

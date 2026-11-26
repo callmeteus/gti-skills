@@ -25,12 +25,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from cleanup import fsutil, scanners  # noqa: E402
+from cleanup import elevate, fsutil, scanners  # noqa: E402
 from cleanup.clean import (MAX_SCAN_AGE_HOURS, Guard, choose, execute, load_scan, run_command,  # noqa: E402
                            scan_age_hours)
 from cleanup.drives import select  # noqa: E402
 from cleanup.model import CATEGORIES, DEFAULT_PREFERENCES, human, normalize, parse_level  # noqa: E402
-from cleanup.report import clean_markdown, reclaimable, scan_markdown  # noqa: E402
+from cleanup.report import clean_markdown, reclaimable, scan_markdown, size_text  # noqa: E402
 from common.gti import gti_dir, machine_name, read_json, stamp, write_json  # noqa: E402
 from platforms import current  # noqa: E402
 from platforms.base import Context  # noqa: E402
@@ -158,34 +158,50 @@ def cmd_clean(args):
     platform = current()
     drives = platform.list_drives()
     elevated = fsutil.is_elevated()
+    if args.elevated_child and not elevated:
+        out("The elevated run did not get administrator rights.")
+        return 2
     chosen, skipped = choose(scan["findings"], level, ids=args.ids, categories=args.categories,
                              exclude_ids=args.exclude_ids, auto=args.auto, run_commands=args.run_commands,
-                             allow_system=args.allow_system_changes, elevated=elevated)
+                             allow_system=args.allow_system_changes, elevated=elevated or args.elevate)
     if not chosen:
         out("Nothing chosen. Pass --ids, --categories, or --auto (see the report for ids).")
         for f, reason in skipped:
             out(f"  pending {f.id} {f.title}: {reason}")
         return 0 if skipped else 1
+    raised = [f for f in chosen if f.admin and not elevated]  # done through the system's password dialog
+    local = [f for f in chosen if f not in raised]
     total = sum(f.size for f in chosen)
     out(f"{'Cleaning' if args.apply else 'Would clean'} {len(chosen)} items, about {human(total)}, at level {level}:")
     for f in chosen:
-        out(f"  {f.id}  {human(f.size):>10}  [{f.category}] {f.title} ({f.action}, {len(f.paths)} paths)")
+        note = "  (administrator: through the system password dialog)" if f in raised else ""
+        out(f"  {f.id}  {size_text(f):>10}  [{f.category}] {f.title} ({f.action}, {len(f.paths)} paths){note}")
     for f, reason in skipped:
         out(f"  pending {f.id}  {f.title}: {reason}")
     if not args.apply:
         out("Dry run: nothing was deleted. Add --apply to delete.")
         return 0
     guard = Guard(platform, drives, scan["selected"], exclude=prefs.get("exclude", []))
-    folder = gti_dir(machine_name(), "cleanups", stamp())
+    folder = Path(args.out) if args.out else gti_dir(machine_name(), "cleanups", stamp())
+    folder.mkdir(parents=True, exist_ok=True)
     before = {d: fsutil.disk_usage(root)["free"] for d, root in drive_roots(drives, scan["selected"]).items()}
-    results = execute(chosen, guard, folder / "manifest.jsonl", jobs=args.jobs or 4, exclude_paths=args.exclude_paths or ())
+    results = execute(local, guard, folder / "manifest.jsonl", jobs=args.jobs or 4, exclude_paths=args.exclude_paths or ())
+    if raised:
+        child_results, child_pending = run_raised(raised, args, level, scan_path, folder)
+        results += child_results
+        skipped += child_pending
     after = {d: fsutil.disk_usage(root)["free"] for d, root in drive_roots(drives, scan["selected"]).items()}
     run = {"machine": machine_name(), "created": time.strftime("%Y-%m-%d %H:%M:%S"), "level": level, "auto": args.auto,
            "scan": scan_path, "manifest": str(folder / "manifest.jsonl"),
            "free": {d: (before[d], after.get(d, before[d])) for d in before}}
-    write_json(folder / "result.json", {**run, "results": results,
-                                         "pending": [{"id": f.id, "title": f.title, "reason": r} for f, r in skipped]})
+    pending = [{"id": f.id, "title": f.title, "reason": r} for f, r in skipped]
+    write_json(folder / "result.json", {**run, "results": results, "pending": pending})
+    if args.result_file:
+        write_json(Path(args.result_file), {"results": results, "pending": pending})
     (folder / "report.md").write_text(clean_markdown(run, results, skipped), encoding="utf-8")
+    if args.elevated_child:
+        elevate.hand_back(str(folder), *([args.result_file] if args.result_file else []))
+        return 0
     freed = sum(r["freed"] for r in results)
     gained = sum(max(a - b, 0) for b, a in run["free"].values())
     out(f"Freed {human(freed)} (free space grew by {human(gained)}).")
@@ -194,6 +210,30 @@ def cmd_clean(args):
         out(f"{problems} paths were skipped or failed; see the report.")
     out(f"Report: {folder / 'report.md'}")
     return 0
+
+
+def run_raised(raised, args, level, scan_path, folder):
+    """Runs the administrator items in one elevated run of this script, through the system's password dialog."""
+    by_id = {f.id: f for f in raised}
+    result_file = folder / "elevated-result.json"
+    child = ["clean", "--scan", str(scan_path), "--level", level, "--ids", *by_id, "--apply", "--elevated-child",
+             "--out", str(folder), "--result-file", str(result_file)]
+    if args.run_commands:
+        child.append("--run-commands")
+    if args.allow_system_changes:
+        child.append("--allow-system-changes")
+    if args.exclude_paths:
+        child += ["--exclude-paths", *args.exclude_paths]
+    out(f"Asking the system for administrator rights for {len(raised)} items: answer the password dialog on screen. "
+        "The password goes to the system, never to this script or the agent.")
+    ok, message = elevate.run(child, f"Disk Cleanup wants to clean {len(raised)} system items "
+                                     f"(about {human(sum(f.size for f in raised))}).", str(gti_dir().parent))
+    if not ok:
+        out(f"Administrator items not done: {message}.")
+        return [], [(f, f"not done: {message}") for f in raised]
+    data = read_json(result_file, {}) or {}
+    pending = [(by_id[p["id"]], p["reason"]) for p in data.get("pending", []) if p.get("id") in by_id]
+    return data.get("results", []), pending
 
 
 def drive_roots(drives, ids):
@@ -257,35 +297,57 @@ def cmd_uninstall(args):
         out("Nothing to uninstall.")
         return 1
     elevated = fsutil.is_elevated()
-    ready = []
+    if args.elevated_child and not elevated:
+        out("The elevated run did not get administrator rights.")
+        return 2
+    ready, raised = [], []
     for p in chosen:
         command = p.command if isinstance(p.command, str) else " ".join(p.command)
-        if p.admin and not elevated:
-            out(f"  pending  {p.title} ({human(p.size)}): needs root; run it yourself: sudo {command}")
+        if p.admin and not elevated and not args.elevate:
+            out(f"  pending  {p.title} ({human(p.size)}): needs root; pass --elevate for the system password dialog, "
+                f"or run it yourself: sudo {command}")
             continue
-        ready.append(p)
-        out(f"  {'uninstall' if args.apply else 'would uninstall'}  {p.title} ({human(p.size)}): {command}")
-    if not args.apply or not ready:
+        (raised if p.admin and not elevated else ready).append(p)
+        note = "  (administrator: through the system password dialog)" if p in raised else ""
+        out(f"  {'uninstall' if args.apply else 'would uninstall'}  {p.title} ({human(p.size)}): {command}{note}")
+    if not args.apply or not (ready or raised):
         if not args.apply:
             out("Dry run: nothing was removed. Add --apply to uninstall.")
         return 0
     out("Uninstalling one at a time. If an uninstaller opens a window or Windows asks for permission, answer it there.")
-    folder = gti_dir(machine_name(), "cleanups", stamp())
+    folder = Path(args.out) if args.out else gti_dir(machine_name(), "cleanups", stamp())
+    folder.mkdir(parents=True, exist_ok=True)
     manifest = folder / "manifest.jsonl"
     with open(manifest, "a", encoding="utf-8") as handle:
         def log(entry):
             entry["time"] = time.strftime("%Y-%m-%dT%H:%M:%S")
             handle.write(json.dumps(entry, ensure_ascii=False, default=str) + "\n")
             handle.flush()
-        results = [run_command(p, None, log) for p in ready]
+        results = {p.title: run_command(p, None, log) for p in ready}
+    if args.elevated_child:
+        write_json(Path(args.result_file), {"results": results})
+        elevate.hand_back(str(folder), args.result_file)
+        return 0
+    if raised:
+        result_file = folder / "elevated-uninstall.json"
+        out(f"Asking the system for administrator rights to uninstall {len(raised)} programs: answer the password "
+            "dialog on screen. The password goes to the system, never to this script or the agent.")
+        ok, message = elevate.run(["uninstall", *[p.title for p in raised], "--apply", "--elevated-child",
+                                   "--out", str(folder), "--result-file", str(result_file)],
+                                  f"Disk Cleanup wants to uninstall {', '.join(p.title for p in raised)}.",
+                                  str(gti_dir().parent))
+        child = (read_json(result_file, {}) or {}).get("results", {}) if ok else {}
+        for p in raised:
+            results[p.title] = child.get(p.title) or {"problems": [f"not done: {message}" if not ok else "no result"]}
     _, after = installed(args)
     still = {normalize(p.title) for p in after}
     rows = []
-    for p, result in zip(ready, results):
+    for p in ready + raised:
+        result = results.get(p.title, {"problems": []})
         gone = normalize(p.title) not in still
-        rows.append({"title": p.title, "size": p.size, "removed": gone, "problems": result["problems"]})
+        rows.append({"title": p.title, "size": p.size, "removed": gone, "problems": result.get("problems", [])})
         out(f"  {'removed' if gone else 'STILL INSTALLED'}  {p.title}" + ("" if gone else
-            f" ({'; '.join(result['problems']) or 'the uninstaller was cancelled or failed'})"))
+            f" ({'; '.join(result.get('problems', [])) or 'the uninstaller was cancelled or failed'})"))
     write_json(folder / "uninstall.json", {"machine": machine_name(), "created": time.strftime("%Y-%m-%d %H:%M:%S"),
                                            "results": rows, "not_found": problems})
     out(f"Log: {manifest}")
@@ -366,6 +428,12 @@ def main(argv=None):
     p.add_argument("--allow-old-scan", action="store_true")
     p.add_argument("--jobs", type=int)
     p.add_argument("--apply", action="store_true", help="Really delete. Without it, only print what would happen")
+    p.add_argument("--elevate", action="store_true",
+                   help="Do administrator items through the system's own password dialog (polkit, macOS, UAC)")
+    p.add_argument("--out", help=argparse.SUPPRESS)
+    p.add_argument("--elevated-child", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--result-file", help=argparse.SUPPRESS)
+    p.add_argument("--gti-home", help=argparse.SUPPRESS)
     p.set_defaults(fn=cmd_clean)
 
     p = sub.add_parser("programs", help="List every installed program with its size and days since last use")
@@ -377,7 +445,13 @@ def main(argv=None):
     p = sub.add_parser("uninstall", help="Uninstall the programs the user named (dry run without --apply)")
     p.add_argument("names", nargs="+", help="Program names as the user said them; each must match one program")
     p.add_argument("--apply", action="store_true", help="Really uninstall")
+    p.add_argument("--elevate", action="store_true",
+                   help="Uninstall programs that need root through the system's own password dialog")
     p.add_argument("--jobs", type=int)
+    p.add_argument("--out", help=argparse.SUPPRESS)
+    p.add_argument("--elevated-child", action="store_true", help=argparse.SUPPRESS)
+    p.add_argument("--result-file", help=argparse.SUPPRESS)
+    p.add_argument("--gti-home", help=argparse.SUPPRESS)
     p.set_defaults(fn=cmd_uninstall)
 
     p = sub.add_parser("prefs", help="Show or change saved preferences")
@@ -386,6 +460,9 @@ def main(argv=None):
     p.add_argument("value", nargs="?")
     p.set_defaults(fn=cmd_prefs)
 
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if "--gti-home" in argv[:-1]:  # an elevated run on Windows cannot inherit GTI_HOME, so it comes as an argument
+        os.environ["GTI_HOME"] = argv[argv.index("--gti-home") + 1]
     args = parser.parse_args(argv)
     return args.fn(args)
 

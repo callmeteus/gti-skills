@@ -18,7 +18,7 @@ These hold at every level, in every mode. The cleaner enforces them again right 
 
 ## Never done
 
-- Never elevate, never ask for or type a password, never accept an EULA or license for the user. Admin items become pending commands.
+- Never ask for, see, or type a password, never approve a permission dialog for the user, and never accept an EULA or license for them. Administrator items run only through the operating system's own dialog (`--elevate`: polkit, the macOS administrator prompt, or UAC), after the user agreed in chat, never in autonomous mode; otherwise they are pending commands.
 - Never run a setting change or an uninstall in automatic mode, and never without the user's yes for that item.
 - Never prune Docker volumes, delete phone backups, or delete a duplicate whose twin is in a backup folder without the user naming it.
 - Never delete files by hand from `WinSxS`, `C:\Windows\Installer` (except the patch cache at yolo), `/var/lib/docker`, snap or flatpak folders, Time Machine or Timeshift snapshots, or APFS snapshots: their own tools do it (Dism, docker, snap, flatpak, tmutil, Timeshift).

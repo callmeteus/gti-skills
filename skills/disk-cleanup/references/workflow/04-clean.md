@@ -25,6 +25,7 @@ python3 <skill-dir>/scripts/disk_cleanup.py clean --auto --level safe --run-comm
 | `--run-commands` | off | Also run cleanup commands (apt-get clean, docker image prune, Dism) |
 | `--allow-system-changes` | off | Run settings and uninstalls named in `--ids`; refused with `--auto` |
 | `--allow-old-scan` | off | Use a scan older than 24 hours |
+| `--elevate` | off | Run the chosen administrator items in one elevated run, through the system's own password dialog |
 | `--apply` | off | Without it, nothing is deleted |
 
 ## What the cleaner checks before each deletion
@@ -54,14 +55,14 @@ python3 <skill-dir>/scripts/disk_cleanup.py uninstall "Gunfire Reborn" SideQuest
 `programs` lists every installed program with its size and days since last use (`?` when unknown). `uninstall` matches each name against every installed program, accents and case ignored: an exact name, else the one program that contains it, else the one that has all its words. A name with no match or several matches is reported with the closest names; ask the user which one. It runs the uninstallers one at a time and then checks which programs are really gone, because uninstallers often exit with odd codes.
 
 - **Windows:** the uninstaller runs through `start /wait`, so one that needs admin rights shows the permission dialog (UAC) instead of failing. The user answers it; the agent never does. Steam games open Steam's own confirmation.
-- **Linux:** `apt-get remove` and `snap remove` need root: they are printed as commands for the user to run with their own `sudo`.
+- **Linux:** `apt-get remove` and `snap remove` need root: add `--elevate` to `uninstall` for the polkit password dialog, or the user runs the printed command with their own `sudo`.
 - **macOS:** the app is moved to the Trash; its data in `~/Library` stays.
 
 ## Commands, settings, and uninstalls
 
 - **Commands** run one at a time, after the file deletions, and the freed space is measured as the change in free space on their drive.
 - **Settings and uninstalls** run only with their id, `--allow-system-changes`, and the user's yes for that item. Items marked `manual` are instructions (a Settings page): walk the user through them instead.
-- **Admin items** are skipped when the agent is not elevated; give the user the exact command for an elevated prompt.
+- **Admin items** are skipped when the agent is not elevated, unless `--elevate` is passed. With it, the script runs them in one elevated copy of itself, by id, with the same guard and manifest, through polkit (`pkexec`) on Linux, the administrator prompt on macOS, or UAC on Windows; the report files it writes are handed back to the user. Ask the user first and say a password dialog will appear. Cancelled, wrong password, no polkit agent, or no graphical session: the items stay pending with the reason.
 
 ## After a mistake
 
