@@ -3,13 +3,13 @@ name: disk-cleanup
 description: >-
   Frees disk space on Windows, Linux, and macOS. Scans the chosen drives in parallel for temporary files, caches,
   old logs and crash dumps, the trash, duplicate files, old installers in Downloads, build output in stale
-  projects, packages installed many times (old Playwright, Puppeteer, and Cypress browsers, Node versions),
+  projects, stale git worktrees, packages installed many times (old Playwright, Puppeteer, and Cypress browsers, Node versions),
   Docker and package manager leftovers, system leftovers (Windows.old, old kernels, snap revisions,
   Time Machine snapshots), settings that waste space (unlimited journald, hibernation, restore points, WSL disks
   that never shrink), and programs not used in months. Three levels: safe, aggressive, and yolo ("nao ligo").
   Asks which drives to clean, never touches Google Drive or other cloud mounts, and deletes nothing until the user
-  chooses, unless automatic mode is on (off by default; system drive only). Use when the user says the disk is
-  full, asks to free space, clean the PC, find duplicates, or what is using the disk. Do not use for backups,
+  chooses, unless automatic mode is on (off by default; system drive only). Use when the disk is full, or the user asks
+  to free space, clean the PC, find duplicates, or what uses the disk. Do not use for backups,
   file recovery, or disk partitioning.
 metadata:
   display-name: Disk Cleanup
@@ -77,7 +77,7 @@ Do not use this skill for backups, recovering deleted files, resizing or partiti
 | Level | Also called | Deletes |
 |-------|-------------|---------|
 | `safe` | seguro | Things that regenerate on their own: temp files older than 2 days, browser and app caches, package manager download caches, thumbnails, crash dumps, rotated logs, dangling Docker images, APT, DNF, Pacman, and Delivery Optimization caches, Playwright browser revisions no install uses |
-| `aggressive` | agressivo | Safe, plus: the trash, duplicates, old installers and extracted archives in Downloads, build output in projects untouched for 90 days, old Puppeteer and Cypress browser builds, developer tool caches, Docker build cache, journald above 200 MB, old kernels, disabled snap revisions, Windows Update downloads and upgrade leftovers, Time Machine local snapshots |
+| `aggressive` | agressivo | Safe, plus: the trash, duplicates, old installers and extracted archives in Downloads, build output in projects untouched for 90 days, git worktrees untouched for 30 days with nothing uncommitted (the branch stays), old Puppeteer and Cypress browser builds, developer tool caches, Docker build cache, journald above 200 MB, old kernels, disabled snap revisions, Windows Update downloads and upgrade leftovers, Time Machine local snapshots |
 | `yolo` | não ligo | Aggressive, plus: build output in active projects, old Node.js versions (never automatic), every unused Docker image and stopped container, every app cache in `~/Library/Caches` on macOS, Maven and model caches, installers older than 7 days and archives older than 30, Xcode archives, the Windows Installer patch cache |
 
 A level includes everything below it. Levels choose what the skill offers in bulk; they never block what the user names. An item the user picks by id, or a program the user names, is done whatever its level. Full matrix, with the settings and programs each level lists: [references/rules/levels.md](references/rules/levels.md).

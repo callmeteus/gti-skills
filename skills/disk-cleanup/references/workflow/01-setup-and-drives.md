@@ -20,6 +20,7 @@ python3 <skill-dir>/scripts/disk_cleanup.py prefs reset
 | `temp_age_days` | `2` | Temp entries newer than this (changed or read) stay |
 | `download_age_days` | `30` | Installers and archives in Downloads older than this are candidates |
 | `stale_project_days` | `90` | Build output of a project untouched this long is `aggressive`; newer is `yolo` |
+| `stale_worktree_days` | `30` | Git worktrees with no change for this long are removal candidates |
 | `unused_program_days` | `180` | Programs not used this long are listed |
 | `min_duplicate_mb` | `1` | Smaller files are not checked for duplicates |
 | `large_file_mb` | `500` | Files at least this large appear in the largest files list |

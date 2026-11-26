@@ -11,7 +11,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from cleanup import fsutil, packages
+from cleanup import fsutil, packages, worktrees
 from cleanup.model import COMMAND, DELETE, REPORT, Finding
 
 MB = 1024 * 1024
@@ -198,6 +198,7 @@ class WalkResult:
         self.large = []                     # heap of (size, path, mtime)
         self.artifacts = {}                 # path -> name
         self.artifact_size = defaultdict(int)
+        self.worktrees = []                 # folders with a .git file: linked worktrees or submodules
         self.folders = defaultdict(int)     # first-level folder -> bytes
         self.files = 0
         self.bytes = 0
@@ -216,6 +217,7 @@ class WalkResult:
         for item in other.large:
             self.add_large(item)
         self.artifacts.update(other.artifacts)
+        self.worktrees.extend(other.worktrees)
         for key, value in other.artifact_size.items():
             self.artifact_size[key] += value
         for key, value in other.folders.items():
@@ -320,6 +322,8 @@ class Walker:
             return (entry.path, root, key, child_ok, child_art, child_user)
         if not stat.S_ISREG(st.st_mode) or fsutil.is_cloud_placeholder(st):
             return None
+        if entry.name == ".git":
+            part.worktrees.append(folder)
         if st.st_nlink > 1 and st.st_ino:
             inode = (st.st_dev, st.st_ino)
             if inode in self.seen_inodes:
@@ -620,9 +624,12 @@ def scan_data(platform, ctx):
         "dev": lambda: artifact_findings(walk, ctx),
         "downloads": lambda: download_findings(platform, ctx),
         "packages": lambda: packages.package_findings(platform, ctx, walk),
+        "worktrees": lambda: worktrees.worktree_findings(walk, ctx, set(ARTIFACTS)),
     }
     results, timings = run_parallel(tasks, len(tasks), ctx)
-    findings = results["duplicates"] + results["dev"] + results["downloads"] + results["packages"] \
+    removed = [f.paths[0] for f in results["worktrees"] if f.action == COMMAND]
+    dev = [f for f in results["dev"] if not worktrees.inside(f.paths[0], removed)]  # goes with its worktree
+    findings = results["duplicates"] + dev + results["worktrees"] + results["downloads"] + results["packages"] \
         + large_findings(walk, ctx)
     summary = {
         "roots": roots, "files": walk.files, "bytes": walk.bytes, "unreadable": walk.errors,

@@ -38,6 +38,7 @@ DEFAULT_PREFERENCES = {
     "temp_age_days": 2,
     "download_age_days": 30,
     "stale_project_days": 90,
+    "stale_worktree_days": 30,
     "unused_program_days": 180,
     "min_duplicate_mb": 1,
     "large_file_mb": 500,

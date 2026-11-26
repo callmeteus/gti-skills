@@ -35,6 +35,7 @@ scan
        ├── duplicates   size, then first and last 64 KiB, then the whole file (BLAKE2b)
        ├── dev          build output next to its marker file, sized from single-link files only
        ├── packages     browser builds per version, Node versions, packages copied into many projects
+       ├── worktrees    linked git worktrees (a .git file), checked with git status before any removal
        ├── downloads    old installers, disk images, extracted archives
        └── large        the 25 largest files and the space per folder
 ```

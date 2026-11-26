@@ -84,6 +84,7 @@ Disk Cleanup gives the agent one script that lists the drives, excludes Google D
 - **Safe duplicates:** size, then the first and last 64 KiB, then the whole file with BLAKE2b; only user content, never inside repositories, program folders, or SDKs; the original kept by location and name; copies in backup folders kept unless the level is yolo.
 - **Honest sizes:** allocated bytes, hardlinks counted once, build folders sized from single-link files so pnpm and Bun stores are not overcounted, estimates marked as estimates.
 - **Settings that waste space:** journald and Docker logs with no limit, core dumps, hibernation and page files, restore points, search indexes, WSL and Docker disks that never shrink, snap retention, Storage Sense.
+- **Stale git worktrees:** worktrees left by coding agents and people (opencode, Claude Code, Cursor, Maestro) with no change for 30 days are removed with `git worktree remove`, never `--force`, only when git says nothing is uncommitted and the commit is on a branch, which stays; worktrees with uncommitted work, detached commits, a lock, or a missing repository are only reported.
 - **Packages installed many times:** Playwright browser revisions no install uses (the rule Playwright applies itself), old Puppeteer and Cypress builds, global npm packages repeated in every Node version, old Node versions (kept: current, default, newest, and versions pinned in `.nvmrc`), and heavy packages such as electron, esbuild, or torch copied into many projects, with how to keep one copy.
 - **Uninstall by name:** `uninstall "Gunfire Reborn" SideQuest` finds each program among everything installed, whatever its level or last use, runs the uninstallers one at a time (Windows shows its own permission dialog), and checks that each one is gone.
 - **Unused programs:** listed only with a real last-use date older than 180 days: Prefetch and UserAssist on Windows, Spotlight on macOS, Flatpak, snap, AppImage, and packages with a launcher on Linux. A program with no reliable date is never called unused; runtimes, updates, drivers, and sync clients are never listed.
@@ -189,6 +190,10 @@ Why does my disk keep filling up? Check the system settings.
 Find packages I have installed many times, like Playwright and Puppeteer browsers.
 ```
 
+```text
+Remove git worktrees nobody touched in a month.
+```
+
 ## How It Works
 
 ```text
@@ -289,6 +294,7 @@ python3 scripts/disk_cleanup.py prefs reset
 | `temp_age_days` | `2` | Temp entries changed or read more recently stay |
 | `download_age_days` | `30` | Age of installers and archives in Downloads |
 | `stale_project_days` | `90` | Build output of older projects is aggressive, newer is yolo |
+| `stale_worktree_days` | `30` | Git worktrees with no change this long are removal candidates |
 | `unused_program_days` | `180` | Programs unused this long are listed |
 | `min_duplicate_mb` | `1` | Smallest file checked for duplicates |
 | `large_file_mb` | `500` | Smallest file in the largest files list |
@@ -329,6 +335,7 @@ python3 scripts/disk_cleanup.py prefs reset
 | `scripts/cleanup/model.py` | Levels, findings, preferences, size parsing |
 | `scripts/cleanup/drives.py` | Drive model, Google Drive and cloud detection, drive selection |
 | `scripts/cleanup/scanners.py` | Parallel scanners, the multi-process data walk, duplicates, build output, Downloads |
+| `scripts/cleanup/worktrees.py` | Stale git worktrees: activity from git's index and reflog, and the checks before `git worktree remove` |
 | `scripts/cleanup/packages.py` | Browser builds per version (Playwright, Puppeteer, Cypress), Node versions, packages copied into many projects |
 | `scripts/cleanup/clean.py` | Choosing findings, the guard, deletion, commands, manifest |
 | `scripts/cleanup/fsutil.py` | Link-safe walking, native du, hashing, deletion helpers |

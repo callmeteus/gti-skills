@@ -18,7 +18,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from cleanup import fsutil, packages, scanners  # noqa: E402
+from cleanup import fsutil, packages, scanners, worktrees  # noqa: E402
 from cleanup.clean import Guard, choose, execute  # noqa: E402
 from cleanup.drives import Drive, classify, google_drive_reason, select  # noqa: E402
 from cleanup.model import DEFAULT_PREFERENCES, Finding, parse_human, parse_level, within  # noqa: E402
@@ -353,6 +353,92 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(finding.title, "electron copied into 3 projects")
         self.assertEqual(finding.action, "report")
         self.assertEqual(finding.size, 2 * packages.single_link_size(self.home / "a/node_modules/electron"))
+
+
+@unittest.skipUnless(fsutil.run_exists("git"), "git is not installed")
+class WorktreeTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+                    "GIT_COMMITTER_EMAIL": "t@t", "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+        self.repo = self.home / "repo"
+        self.git("init", "-q", "-b", "main", str(self.repo))
+        write(self.repo / "README.md", b"hello")
+        self.git("-C", str(self.repo), "add", ".")
+        self.git("-C", str(self.repo), "commit", "-q", "-m", "first")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def git(self, *args):
+        import subprocess
+        subprocess.run(["git", *args], check=True, env=self.env, capture_output=True)
+
+    def add(self, name, *extra):
+        path = self.home / "worktrees" / name
+        self.git("-C", str(self.repo), "worktree", "add", "-q", *extra, str(path))
+        return path
+
+    def age(self, path, days):
+        old = time.time() - days * DAY
+        gitdir = worktrees.read_gitdir(str(path))
+        for folder in (path, Path(gitdir)):
+            for root, dirs, files in os.walk(folder):
+                for name in dirs + files:
+                    os.utime(os.path.join(root, name), (old, old), follow_symlinks=False)
+            os.utime(folder, (old, old))
+
+    def scan(self):
+        walk = scanners.WalkResult()
+        walk.worktrees = [str(p) for p in (self.home / "worktrees").iterdir()] if (self.home / "worktrees").exists() else []
+        walk.worktrees.append(str(self.repo))  # the main repository has a .git folder, not a file: ignored
+        return {Path(f.paths[0]).name if f.action == "command" else f.title: f
+                for f in worktrees.worktree_findings(walk, context(self.home), set(scanners.ARTIFACTS))}
+
+    def test_only_a_stale_clean_worktree_is_removed_and_its_branch_stays(self):
+        stale = self.add("old-feature", "-b", "old-feature")
+        self.add("recent", "-b", "recent")
+        self.age(stale, 60)
+        found = self.scan()
+        self.assertEqual(list(found), ["old-feature"])
+        finding = found["old-feature"]
+        self.assertEqual((finding.level, finding.auto), ("aggressive", True))
+        self.assertEqual(finding.command[-3:], ["worktree", "remove", str(stale)])
+        self.assertIn("branch old-feature stays", finding.reason)
+
+    def test_uncommitted_work_detached_commits_orphans_and_locks_are_never_removed(self):
+        dirty = self.add("dirty", "-b", "dirty")
+        write(dirty / "notes.txt", b"work in progress")
+        detached = self.add("detached", "--detach")
+        write(detached / "new.txt", b"x")
+        self.git("-C", str(detached), "add", ".")
+        self.git("-C", str(detached), "commit", "-q", "-m", "only here")
+        locked = self.add("locked", "-b", "locked")
+        self.git("-C", str(self.repo), "worktree", "lock", str(locked))
+        for path in (dirty, detached, locked):
+            self.age(path, 60)
+        orphan = self.home / "worktrees" / "orphan"
+        write(orphan / ".git", f"gitdir: {self.home}/gone/.git/worktrees/orphan".encode())
+        found = self.scan()
+        self.assertFalse(any(f.action == "command" for f in found.values()), list(found))
+        titles = " | ".join(found)
+        self.assertIn("uncommitted changes (1)", titles)
+        self.assertIn("commits on no branch (1)", titles)
+        self.assertIn("repository is gone (1)", titles)
+        self.assertNotIn("locked", " ".join(p for f in found.values() for p in f.paths))
+
+    def test_removing_through_the_cleaner_keeps_the_branch(self):
+        stale = self.add("done", "-b", "done")
+        self.age(stale, 60)
+        finding = self.scan()["done"]
+        from cleanup.clean import run_command
+        result = run_command(finding, None, lambda entry: None)
+        self.assertEqual(result["problems"], [])
+        self.assertFalse(stale.exists())
+        branches = __import__("subprocess").run(["git", "-C", str(self.repo), "branch", "--list", "done"],
+                                                capture_output=True, text=True, env=self.env).stdout
+        self.assertIn("done", branches)
 
 
 class CleanTests(unittest.TestCase):

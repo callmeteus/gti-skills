@@ -12,6 +12,7 @@ These hold at every level, in every mode. The cleaner enforces them again right 
 - **The only copy of anything.** A duplicate set always keeps one file, and the kept copy is hashed again before its twin goes.
 - **Anything behind a link or junction.** Links are never followed during the scan and never deleted.
 - **Files inside git repositories** as duplicates, and build folders that git tracks.
+- **Git worktrees with anything to lose:** uncommitted or untracked changes, commits on a detached HEAD that no branch contains, a lock (`git worktree lock`), or a repository that no longer exists. A stale clean worktree is removed only through `git worktree remove` without `--force`, so git itself refuses when something is left, and its branch stays.
 - **Program files, libraries, and SDKs** as duplicates: only user content (documents, images, video, audio, archives, installers, 3D and project files) is checked.
 - **Paths in the `exclude` preference.**
 
