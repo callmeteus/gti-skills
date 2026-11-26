@@ -543,12 +543,28 @@ class DockerProbe:
                 self._rows[row.get("Type", "")] = row
         return self._rows
 
+    def dangling_unused(self):
+        """Dangling images no container uses. `image prune` keeps the ones a container (even a stopped one) was
+        created from, so counting those would promise space the command never frees."""
+        out = fsutil.run([self.binary, "images", "--filter", "dangling=true", "--no-trunc", "--format", "{{.ID}} {{.Size}}"],
+                         timeout=60)
+        if not out:
+            return None
+        containers = (fsutil.run([self.binary, "ps", "-a", "-q"], timeout=60) or "").split()
+        used = set()
+        if containers:
+            used = set((fsutil.run([self.binary, "inspect", "--format", "{{.Image}}", *containers], timeout=60) or "").split())
+        size = 0
+        for line in out.splitlines():
+            image, _, text = line.partition(" ")
+            if image and image not in used:
+                size += parse_human(text)
+        return (size, True, {"note": "image sizes include layers shared with other images"}) if size else None
+
     def reclaim(self, *types, dangling=False):
         def probe(ctx):
             if dangling:
-                out = fsutil.run([self.binary, "images", "--filter", "dangling=true", "--format", "{{.Size}}"], timeout=60)
-                size = sum(parse_human(line) for line in (out or "").splitlines())
-                return (size, True, {"note": "image sizes include layers shared with other images"}) if size else None
+                return self.dangling_unused()
             rows = self.rows()
             if not rows:
                 return None

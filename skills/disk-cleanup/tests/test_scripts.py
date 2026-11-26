@@ -580,6 +580,26 @@ class ProgramTests(unittest.TestCase):
         self.assertEqual(parse_userassist(codecs.encode("Microsoft.Windows.Explorer", "rot13"), data), (None, None))
 
 
+class DockerTests(unittest.TestCase):
+    def test_dangling_images_a_container_uses_are_not_counted(self):
+        from unittest import mock
+        from platforms import linux
+
+        def fake(argv, timeout=60, shell=False):
+            if argv[1] == "images":
+                return "sha256:aaa 1.2GB\nsha256:bbb 300MB\n"
+            if argv[1] == "ps":
+                return "c1\nc2\n"
+            if argv[1] == "inspect":
+                return "sha256:aaa\nsha256:ccc\n"
+            return None
+
+        with mock.patch.object(linux.fsutil, "run", side_effect=fake):
+            size, estimate, _ = linux.DockerProbe("docker").dangling_unused()
+        self.assertEqual(size, 300 * 1024 ** 2)
+        self.assertTrue(estimate)
+
+
 class UninstallTests(unittest.TestCase):
     def programs(self, *names):
         return [Finding(category="programs", title=n, action="uninstall", level="safe", command=["x"]) for n in names]
