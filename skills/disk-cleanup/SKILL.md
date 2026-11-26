@@ -3,7 +3,8 @@ name: disk-cleanup
 description: >-
   Frees disk space on Windows, Linux, and macOS. Scans the chosen drives in parallel for temporary files, caches,
   old logs and crash dumps, the trash, duplicate files, old installers in Downloads, build output in stale
-  projects, Docker and package manager leftovers, system leftovers (Windows.old, old kernels, snap revisions,
+  projects, packages installed many times (old Playwright, Puppeteer, and Cypress browsers, Node versions),
+  Docker and package manager leftovers, system leftovers (Windows.old, old kernels, snap revisions,
   Time Machine snapshots), settings that waste space (unlimited journald, hibernation, restore points, WSL disks
   that never shrink), and programs not used in months. Three levels: safe, aggressive, and yolo ("nao ligo").
   Asks which drives to clean, never touches Google Drive or other cloud mounts, and deletes nothing until the user
@@ -75,9 +76,9 @@ Do not use this skill for backups, recovering deleted files, resizing or partiti
 
 | Level | Also called | Deletes |
 |-------|-------------|---------|
-| `safe` | seguro | Things that regenerate on their own: temp files older than 2 days, browser and app caches, package manager download caches, thumbnails, crash dumps, rotated logs, dangling Docker images, APT, DNF, Pacman, and Delivery Optimization caches |
-| `aggressive` | agressivo | Safe, plus: the trash, duplicates, old installers and extracted archives in Downloads, build output in projects untouched for 90 days, developer tool caches, Docker build cache, journald above 200 MB, old kernels, disabled snap revisions, Windows Update downloads and upgrade leftovers, Time Machine local snapshots |
-| `yolo` | não ligo | Aggressive, plus: build output in active projects, every unused Docker image and stopped container, every app cache in `~/Library/Caches` on macOS, Maven and model caches, installers older than 7 days and archives older than 30, Xcode archives, the Windows Installer patch cache |
+| `safe` | seguro | Things that regenerate on their own: temp files older than 2 days, browser and app caches, package manager download caches, thumbnails, crash dumps, rotated logs, dangling Docker images, APT, DNF, Pacman, and Delivery Optimization caches, Playwright browser revisions no install uses |
+| `aggressive` | agressivo | Safe, plus: the trash, duplicates, old installers and extracted archives in Downloads, build output in projects untouched for 90 days, old Puppeteer and Cypress browser builds, developer tool caches, Docker build cache, journald above 200 MB, old kernels, disabled snap revisions, Windows Update downloads and upgrade leftovers, Time Machine local snapshots |
+| `yolo` | não ligo | Aggressive, plus: build output in active projects, old Node.js versions (never automatic), every unused Docker image and stopped container, every app cache in `~/Library/Caches` on macOS, Maven and model caches, installers older than 7 days and archives older than 30, Xcode archives, the Windows Installer patch cache |
 
 A level includes everything below it. Levels choose what the skill offers in bulk; they never block what the user names. An item the user picks by id, or a program the user names, is done whatever its level. Full matrix, with the settings and programs each level lists: [references/rules/levels.md](references/rules/levels.md).
 
@@ -111,14 +112,14 @@ Run the script with `python3` on macOS and Linux and `python` or `py -3` on Wind
 
 3. **Level.** Ask for the level (safe, aggressive, or yolo, default the saved one, else safe), unless the user already named it.
 
-4. **Scan.** One command scans every category in parallel: targets, cleanup commands, system leftovers, settings, programs, and one walk of the user's data split across one process per CPU (duplicates, build output, Downloads, large files). Folder sizes use the native `du` when it is there.
+4. **Scan.** One command scans every category in parallel: targets, cleanup commands, system leftovers, settings, programs, and one walk of the user's data split across one process per CPU (duplicates, build output, packages installed many times, Downloads, large files). Folder sizes use the native `du` when it is there.
 
    ```bash
    python3 <skill-dir>/scripts/disk_cleanup.py scan --drives C: D: --level aggressive
    python3 <skill-dir>/scripts/disk_cleanup.py scan --auto
    ```
 
-   Read [references/workflow/02-scan.md](references/workflow/02-scan.md).
+   Read [references/workflow/02-scan.md](references/workflow/02-scan.md). For the `packages` category (duplicate browser builds, global packages per Node version, heavy packages copied into every project), read [references/rules/packages.md](references/rules/packages.md).
 
 5. **Review and choose.** Read `report.md`. Show the user the reclaimable space per level and per category, then ask what to delete: by category, by id, or everything marked auto at the level. Ask separately, item by item, for settings, uninstalls, Docker volumes, phone backups, and duplicates in backup folders. Read [references/workflow/03-review.md](references/workflow/03-review.md).
 
@@ -181,6 +182,7 @@ hashing both copies again.
 | `references/workflow/` | One file per step: setup and drives, scan, review, clean, report |
 | `references/rules/levels.md` | What each level includes, category by category |
 | `references/rules/guardrails.md` | What is never deleted, and every check before a deletion |
+| `references/rules/packages.md` | Packages installed many times: what is found, what stays, and how to keep one copy |
 | `references/platforms/` | Windows, Linux, and macOS: what is checked, admin commands, and manual steps |
 | `references/quality/checklist.md` | Checks before the report |
 | `assets/templates/cleanup-report.md` | The final report structure |

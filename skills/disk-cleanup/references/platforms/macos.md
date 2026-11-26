@@ -17,7 +17,8 @@ Some folders (`~/.Trash`, Mail, Messages, `MobileSync` backups) need Full Disk A
 | Category | Items |
 |----------|-------|
 | Temp | `$TMPDIR`, `/private/tmp` |
-| Caches | Safari, Chrome, Edge, Brave, Arc, Vivaldi, Firefox, Electron apps, Homebrew downloads, pip, npm, Yarn, Go, CocoaPods, Bun, Poetry, uv, node-gyp, JetBrains, Playwright, Cypress, Gradle, Cargo, Hugging Face, PyTorch, every other app cache in `~/Library/Caches` at yolo (iCloud, CloudKit, Find My, and similar state caches stay), `brew cleanup --prune=all -s`, Conda |
+| Caches | Safari, Chrome, Edge, Brave, Arc, Vivaldi, Firefox, Electron apps, Homebrew downloads, pip, npm, Yarn, Go, CocoaPods, Bun, Poetry, uv, node-gyp, JetBrains, Gradle, Cargo, Hugging Face, PyTorch, every other app cache in `~/Library/Caches` at yolo (iCloud, CloudKit, Find My, and similar state caches stay), `brew cleanup --prune=all -s`, Conda |
+| Packages | Playwright browser revisions no install uses, old Puppeteer and Cypress builds, global npm packages repeated per Node version, old Node versions (never automatic), heavy packages copied into many projects; see [../rules/packages.md](../rules/packages.md) |
 | Logs | `~/Library/Logs/DiagnosticReports`, `/Library/Logs/DiagnosticReports` (admin) |
 | Trash | `~/.Trash`, `.Trashes/<uid>` on chosen external volumes |
 | Downloads | iOS and iPadOS update files, Mail attachment downloads |

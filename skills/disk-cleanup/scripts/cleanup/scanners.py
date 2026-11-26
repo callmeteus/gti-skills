@@ -11,7 +11,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from cleanup import fsutil
+from cleanup import fsutil, packages
 from cleanup.model import COMMAND, DELETE, REPORT, Finding
 
 MB = 1024 * 1024
@@ -233,7 +233,7 @@ def walk_data(platform, ctx, roots):
     walker = Walker(platform, ctx)
     jobs = []
     for root in roots:
-        jobs.append((root, root, None, True, None))
+        jobs.append((root, root, None, True, None, True))
     workers = max(1, min(ctx.jobs, os.cpu_count() or 1))
     depth = 0
     while jobs and len(jobs) < workers * 8 and depth < 4:
@@ -277,7 +277,7 @@ class Walker:
         return part
 
     def list_folder(self, job, part):
-        folder, root, top, dup_ok, art = job
+        folder, root, top, dup_ok, art, user = job
         try:
             entries = list(os.scandir(folder))
         except OSError:
@@ -287,12 +287,14 @@ class Walker:
         child_dup_ok = dup_ok and ".git" not in names
         children = []
         for entry in entries:
-            item = self.visit(entry, folder, root, top, child_dup_ok, art, names, part)
+            item = self.visit(entry, folder, root, top, child_dup_ok, art, names, part, user)
             if item:
                 children.append(item)
         return children
 
-    def visit(self, entry, folder, root, top, dup_ok, art, names, part):
+    def visit(self, entry, folder, root, top, dup_ok, art, names, part, user=True):
+        # user: the folder is the user's own work, not inside a hidden folder (~/.nvm, ~/.cursor, ~/.config),
+        # program data (AppData, Library), or a package folder (node_modules). Build output is looked for only there.
         """Counts a file, or returns the walk job for a folder."""
         try:
             st = entry.stat(follow_symlinks=False)
@@ -307,13 +309,15 @@ class Walker:
                 return None
             lower = entry.name.lower()
             child_art = art
-            if art is None and entry.name in ARTIFACTS and is_artifact(entry.name, folder, names):
+            if user and art is None and entry.name in ARTIFACTS and is_artifact(entry.name, folder, names):
                 part.artifacts[entry.path] = entry.name
                 child_art = entry.path
             child_ok = dup_ok and child_art is None and lower not in PACKAGE_DIRS and lower not in self.appdata \
                 and not lower.endswith(BUNDLE_SUFFIXES) and not TOOLCHAIN_DIRS.search(lower) \
                 and not (entry.name.startswith(".") and root == self.home)
-            return (entry.path, root, key, child_ok, child_art)
+            child_user = user and not entry.name.startswith(".") and lower not in self.appdata \
+                and lower not in PACKAGE_DIRS and lower not in ("extensions", "lib") and not lower.endswith(BUNDLE_SUFFIXES)
+            return (entry.path, root, key, child_ok, child_art, child_user)
         if not stat.S_ISREG(st.st_mode) or fsutil.is_cloud_placeholder(st):
             return None
         if st.st_nlink > 1 and st.st_ino:
@@ -495,12 +499,13 @@ def restore_hint(name):
 
 
 def git_tracks(project, name):
-    if not fsutil.run_exists("git"):
-        return True  # without git, never delete a folder that might hold source
+    """True means keep: git tracks something inside, or the project is not a git repository, or git is missing.
+    Folders such as dist, build, bin, and target hold source in some projects, so only an untracked one inside
+    a repository counts as build output."""
+    if not fsutil.run_exists("git") or not _inside_repo(project):
+        return True
     out = fsutil.run(["git", "-C", project, "ls-files", "--", name], timeout=20)
-    if out is None:
-        return not os.path.isdir(os.path.join(project, ".git")) and _inside_repo(project)
-    return bool(out.strip())
+    return out is None or bool(out.strip())
 
 
 def _inside_repo(folder):
@@ -614,9 +619,11 @@ def scan_data(platform, ctx):
         "duplicates": lambda: find_duplicates(walk, ctx),
         "dev": lambda: artifact_findings(walk, ctx),
         "downloads": lambda: download_findings(platform, ctx),
+        "packages": lambda: packages.package_findings(platform, ctx, walk),
     }
-    results, timings = run_parallel(tasks, 3, ctx)
-    findings = results["duplicates"] + results["dev"] + results["downloads"] + large_findings(walk, ctx)
+    results, timings = run_parallel(tasks, len(tasks), ctx)
+    findings = results["duplicates"] + results["dev"] + results["downloads"] + results["packages"] \
+        + large_findings(walk, ctx)
     summary = {
         "roots": roots, "files": walk.files, "bytes": walk.bytes, "unreadable": walk.errors,
         "seconds": walk.seconds, "folders": folder_usage(walk), "timings": timings,

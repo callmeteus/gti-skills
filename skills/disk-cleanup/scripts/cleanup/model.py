@@ -27,7 +27,7 @@ FILE_ACTIONS = (DELETE, DELETE_CONTENTS)
 SYSTEM_ACTIONS = (SETTING, UNINSTALL)
 
 CATEGORIES = (
-    "temp", "caches", "logs", "trash", "duplicates", "downloads", "dev", "system",
+    "temp", "caches", "logs", "trash", "duplicates", "downloads", "dev", "packages", "system",
     "config", "programs", "large",
 )
 

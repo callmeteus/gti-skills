@@ -18,7 +18,8 @@ from platforms.linux import DockerProbe, unknown_size
 # Caches that hold state, not just downloads: never emptied as part of "all of ~/Library/Caches".
 KEEP_CACHES = {"com.apple.bird", "cloudkit", "com.apple.cloudkit", "com.apple.homed", "com.apple.containermanagerd",
                "com.apple.ap.adprivacyd", "familycircled", "com.apple.findmy.fmipcore", "com.apple.icloud.fmfd",
-               "com.apple.nsurlsessiond", "com.apple.Safari.SafeBrowsing", "com.apple.akd"}
+               "com.apple.nsurlsessiond", "com.apple.Safari.SafeBrowsing", "com.apple.akd",
+               "ms-playwright", "Cypress"}  # browser builds: the packages scan keeps the ones still in use
 
 
 def parse_df(text):
@@ -124,9 +125,8 @@ class MacOS(Platform):
             Target("dev", "Xcode archives", (f"{h}/Library/Developer/Xcode/Archives",), level="yolo",
                    risk="Archives hold the dSYMs needed to read crash reports of shipped builds.",
                    restore="Not recoverable; rebuild from the tagged commit."),
-            Target("caches", "Developer tool caches (JetBrains, Playwright, Cypress, Gradle, Cargo)",
-                   (f"{h}/Library/Caches/JetBrains", f"{h}/Library/Caches/ms-playwright", f"{h}/Library/Caches/Cypress",
-                    f"{h}/.gradle/caches", f"{h}/.cargo/registry/cache", f"{h}/.cargo/registry/src"),
+            Target("caches", "Developer tool caches (JetBrains, Gradle, Cargo)",
+                   (f"{h}/Library/Caches/JetBrains", f"{h}/.gradle/caches", f"{h}/.cargo/registry/cache", f"{h}/.cargo/registry/src"),
                    level="aggressive", restore="Each tool downloads or rebuilds it on next use."),
             Target("caches", "Every other app cache in ~/Library/Caches", (f"{h}/Library/Caches/*",), action="delete_contents",
                    level="yolo", risk="Apps rebuild caches; some sign you out or redownload content.",

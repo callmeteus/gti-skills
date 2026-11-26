@@ -18,7 +18,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
-from cleanup import fsutil, scanners  # noqa: E402
+from cleanup import fsutil, packages, scanners  # noqa: E402
 from cleanup.clean import Guard, choose, execute  # noqa: E402
 from cleanup.drives import Drive, classify, google_drive_reason, select  # noqa: E402
 from cleanup.model import DEFAULT_PREFERENCES, Finding, parse_human, parse_level, within  # noqa: E402
@@ -219,6 +219,27 @@ class ScanTests(unittest.TestCase):
         self.assertEqual([os.path.basename(f.paths[0]) for f in dev], ["node_modules"])
         self.assertEqual(dev[0].level, "aggressive")
 
+    def test_global_packages_extensions_and_hidden_folders_are_not_build_output(self):
+        for path in (".nvm/versions/node/v22/lib/node_modules/pm2",
+                     ".cursor/extensions/ms-azuretools.containers-2.4.5/",
+                     ".npm/_npx/668c188756b835f3",
+                     "nodejs/node_modules/pm2",
+                     "app/node_modules/vite"):
+            write(self.home / path / "package.json", b"{}", age_days=400)
+            write(self.home / path / "node_modules/x/index.js", b"x" * 5000, age_days=400)
+            write(self.home / path / "dist/index.js", b"x" * 5000, age_days=400)
+        write(self.home / "app/package.json", b"{}", age_days=400)
+        ctx = context(self.home)
+        dev = [f for f in scanners.scan_data(self.platform, ctx)[0] if f.category == "dev"]
+        self.assertEqual([f.paths[0] for f in dev], [str(self.home / "app/node_modules")])
+
+    def test_dist_outside_a_git_repository_is_never_build_output(self):
+        write(self.home / "site/package.json", b"{}", age_days=400)
+        write(self.home / "site/dist/index.html", b"x" * 5000, age_days=400)
+        ctx = context(self.home)
+        dev = [f for f in scanners.scan_data(self.platform, ctx)[0] if f.category == "dev"]
+        self.assertEqual(dev, [])
+
     def test_old_installers_in_downloads(self):
         write(self.home / "Downloads/setup.exe", b"z" * 4096, age_days=60)
         write(self.home / "Downloads/new.dmg", b"z" * 4096, age_days=1)
@@ -240,6 +261,98 @@ class ScanTests(unittest.TestCase):
         self.assertTrue(os.path.exists(new))
         self.assertTrue(os.path.exists(kept))
         self.assertEqual((removed, errors), (1, []))
+
+
+class PackageTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.ctx = context(self.home)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def project_with_playwright(self, name, revisions):
+        core = self.home / name / "node_modules/playwright-core"
+        browsers = [{"name": n, "revision": r} for n, r in revisions.items()]
+        write(core / "browsers.json", json.dumps({"browsers": browsers}).encode())
+        return core
+
+    def test_playwright_revisions_no_install_uses_are_safe_to_delete(self):
+        cache = self.home / ".cache/ms-playwright"
+        core = self.project_with_playwright("app", {"chromium": "1248", "chromium-headless-shell": "1248"})
+        for folder in ("chromium-1248", "chromium_headless_shell-1248", "chromium-1200", "firefox-1400"):
+            write(cache / folder / "chrome", b"x" * 4096)
+        write(cache / ".links/aaa", str(core).encode())
+        write(cache / ".links/bbb", str(self.home / "deleted-project/node_modules/playwright-core").encode())
+        [finding] = packages.playwright_findings(cache, [], self.ctx)
+        self.assertEqual(finding.level, "safe")
+        self.assertEqual(sorted(os.path.basename(p) for p in finding.paths), ["chromium-1200", "firefox-1400"])
+
+    def test_without_install_links_the_newest_and_referenced_revisions_stay(self):
+        cache = self.home / ".cache/ms-playwright"
+        self.project_with_playwright("old", {"chromium": "1100"})
+        for folder in ("chromium-1100", "chromium-1150", "chromium-1248"):
+            write(cache / folder / "chrome", b"x" * 4096)
+        [finding] = packages.playwright_findings(cache, [str(self.home / "old/node_modules")], self.ctx)
+        self.assertEqual(finding.level, "aggressive")
+        self.assertEqual([os.path.basename(p) for p in finding.paths], ["chromium-1150"])
+
+    def test_old_puppeteer_builds_go_but_the_newest_and_used_ones_stay(self):
+        cache = self.home / ".cache/puppeteer"
+        for build in ("linux-120.0.6099.109", "linux-125.0.6422.60", "linux-131.0.6778.85"):
+            write(cache / "chrome" / build / "chrome", b"x" * 4096)
+        write(self.home / "app/node_modules/puppeteer-core/lib/cjs/puppeteer/revisions.js",
+              b"exports.PUPPETEER_REVISIONS = { chrome: '125.0.6422.60', firefox: 'stable_126.0' };")
+        used = packages.used_puppeteer_builds([str(self.home / "app/node_modules")])
+        [finding] = packages.versioned_cache_findings("Puppeteer", cache, [str(cache / "chrome")], used, self.ctx, "x")
+        self.assertEqual([os.path.basename(p) for p in finding.paths], ["linux-120.0.6099.109"])
+
+    def test_old_cypress_binaries_go_but_the_newest_and_used_ones_stay(self):
+        cache = self.home / ".cache/Cypress"
+        for version in ("12.0.0", "13.0.0", "13.6.0"):
+            write(cache / version / "Cypress/cypress", b"x" * 4096)
+        write(self.home / "app/node_modules/cypress/package.json", b'{"version": "12.0.0"}')
+        [finding] = packages.cypress_findings(cache, [str(self.home / "app/node_modules")], self.ctx)
+        self.assertEqual([os.path.basename(p) for p in finding.paths], ["13.0.0"])
+
+    def test_node_versions_repeat_global_packages_and_old_ones_are_offered_but_never_automatic(self):
+        from unittest import mock
+        nvm = self.home / ".nvm"
+        for version in ("v18.20.0", "v20.1.0", "v20.9.0", "v22.0.0", "v25.2.1", "v26.1.0"):
+            write(nvm / "versions/node" / version / "lib/node_modules/pm2/index.js", b"x" * 4096)
+            write(nvm / "versions/node" / version / "lib/node_modules/npm/index.js", b"x" * 4096)
+        write(nvm / "alias/default", b"22")
+        write(self.home / "legacy/.nvmrc", b"20\n")
+        write(self.home / "legacy/node_modules/x/index.js", b"x")
+        with mock.patch.dict(os.environ, {"NVM_DIR": str(nvm)}), \
+                mock.patch.object(packages.fsutil, "run", return_value="v25.2.1\n"):
+            findings = packages.node_version_findings("linux", self.home, self.ctx, [str(self.home / "legacy/node_modules")])
+        report = [f for f in findings if f.action == "report"]
+        commands = [f for f in findings if f.action == "command"]
+        self.assertIn("pm2 in 6 versions", report[0].reason)
+        self.assertNotIn("npm in", report[0].reason)
+        # kept: v25.2.1 current, v26.1.0 newest, v22.0.0 default, v20.9.0 the newest match of the .nvmrc pin "20"
+        self.assertEqual(sorted(f.title.split()[1] for f in commands), ["v18.20.0", "v20.1.0"])
+        self.assertFalse(commands[0].auto)
+        self.assertEqual(commands[0].level, "yolo")
+
+    def test_versions_sort_by_number_not_by_text(self):
+        self.assertGreater(packages.version_key("v26.1.0"), packages.version_key("v18.20.0"))
+        self.assertGreater(packages.version_key("linux-131.0.6778.85"), packages.version_key("linux-125.0.6422.60"))
+
+    def test_heavy_packages_copied_into_projects_are_reported_and_hardlinks_are_free(self):
+        from unittest import mock
+        for project in ("a", "b"):
+            write(self.home / project / "node_modules/electron/dist/electron", b"x" * 8192)
+        shared = write(self.home / "c/node_modules/electron/dist/electron", b"y" * 8192)
+        os.link(shared, self.home / "store-copy")
+        nm = [str(self.home / p / "node_modules") for p in ("a", "b", "c")]
+        with mock.patch.object(packages, "COPY_MIN", 1):
+            [finding] = packages.copied_package_findings(nm, [], self.ctx)
+        self.assertEqual(finding.title, "electron copied into 3 projects")
+        self.assertEqual(finding.action, "report")
+        self.assertEqual(finding.size, 2 * packages.single_link_size(self.home / "a/node_modules/electron"))
 
 
 class CleanTests(unittest.TestCase):
@@ -306,6 +419,14 @@ class CleanTests(unittest.TestCase):
             self.assertIn("not on any known drive", self.guard.check(other))
         finally:
             os.rmdir(other)
+
+    def test_emptying_a_protected_folder_is_allowed_but_deleting_it_is_not(self):
+        write(self.home / "tmp/old.log")
+        guard = Guard(self.platform, [Drive(id="T", mountpoints=[str(self.home)], system=True)], ["T"])
+        guard.protected.append(str(self.home / "tmp"))
+        self.assertIsNone(guard.check(str(self.home / "tmp"), contents=True))
+        self.assertIn("protected", guard.check(str(self.home / "tmp")))
+        self.assertIn("protected", guard.check(str(self.home), contents=True))
 
     def test_guard_refuses_an_excluded_drive_and_user_exclusions(self):
         gdrive = classify(Drive(id="G", mountpoints=[str(self.home / "gd")], label="Google Drive"))

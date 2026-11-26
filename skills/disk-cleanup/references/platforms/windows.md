@@ -29,7 +29,8 @@ Items marked `admin` need an elevated prompt (Run as administrator). The skill n
 | Category | Items |
 |----------|-------|
 | Temp | `%TEMP%`, `C:\Windows\Temp` (admin) |
-| Caches | Thumbnail and icon caches, INetCache, Chrome, Edge, Brave, Vivaldi, Firefox, Opera, Electron apps in `%APPDATA%`, DirectX, NVIDIA, AMD, and Intel shader caches, pip, uv, Poetry, npm, Yarn, Go, Bun, node-gyp, pnpm, Gradle, Cargo, JetBrains, Playwright, Cypress, new Teams, NuGet (`dotnet nuget locals all --clear`), Conda, Maven, Hugging Face, PyTorch, Steam shader cache |
+| Caches | Thumbnail and icon caches, INetCache, Chrome, Edge, Brave, Vivaldi, Firefox, Opera, Electron apps in `%APPDATA%`, DirectX, NVIDIA, AMD, and Intel shader caches, pip, uv, Poetry, npm, Yarn, Go, Bun, node-gyp, pnpm, Gradle, Cargo, JetBrains, new Teams, NuGet (`dotnet nuget locals all --clear`), Conda, Maven, Hugging Face, PyTorch, Steam shader cache |
+| Packages | Playwright browser revisions no install uses, old Puppeteer and Cypress builds, global npm packages repeated per Node version, old Node versions (never automatic), heavy packages copied into many projects; see [../rules/packages.md](../rules/packages.md) |
 | Logs | `%LOCALAPPDATA%\CrashDumps`, WER archives (user and system), Minidump, LiveKernelReports, `MEMORY.DMP`, old CBS `.cab` files |
 | Trash | `Clear-RecycleBin -DriveLetter <X> -Force` for each chosen drive |
 | System | Delivery Optimization cache, `SoftwareDistribution\Download`, `$Windows.~BT`, `$Windows.~WS`, `$GetCurrent`, `ESD\Download`, `Dism /StartComponentCleanup` (and `/ResetBase` at yolo), `Installer\$PatchCache$` at yolo, Windows.old (manual) |

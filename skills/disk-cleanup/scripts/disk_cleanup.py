@@ -93,7 +93,7 @@ def cmd_scan(args):
     if "programs" in wanted:
         tasks["programs"] = lambda: [f for f in platform.programs(ctx) if f]
     data_summary = {}
-    if wanted & {"duplicates", "dev", "downloads", "large"}:
+    if wanted & {"duplicates", "dev", "downloads", "packages", "large"}:
         def data():
             findings, summary = scanners.scan_data(platform, ctx)
             data_summary.update(summary)

@@ -277,7 +277,7 @@ def remove(path):
 
 
 SPECIAL_TEMP_NAMES = (
-    ".X11-unix", ".ICE-unix", ".XIM-unix", ".font-unix", ".Test-unix", ".X0-lock", ".X1-lock",
+    ".X", ".ICE-unix", ".font-unix", ".Test-unix",  # .X matches every X server lock and socket folder
     "systemd-private-", "snap-private-tmp", "tmux-", "ssh-", "pulse-", ".com.google.Chrome", "com.apple.",
     "dbus-", "krb5cc", "gnupg", "vscode-", "jetbrains", ".s.PGSQL",
 )

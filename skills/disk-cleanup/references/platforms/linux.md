@@ -23,7 +23,8 @@ Items marked `admin` need root. The skill never runs `sudo` and never asks for a
 | Category | Items |
 |----------|-------|
 | Temp | `/tmp`, `/var/tmp` (entries changed or read within 2 days stay; X11, ICE, systemd-private, tmux, and ssh entries always stay) |
-| Caches | Thumbnails, Firefox (including snap and flatpak), Chrome, Chromium, Brave, Edge, Vivaldi, Opera, Electron apps in `~/.config`, service worker caches, pip, uv, Poetry, pipenv, npm, Yarn, pnpm, Bun, node-gyp, Go, Mesa and NVIDIA shader caches, JetBrains, Bazel, pre-commit, Deno, Playwright, Cypress, Cargo, Gradle, Maven, Hugging Face, PyTorch, Whisper, Steam shader cache, Conda, Homebrew |
+| Caches | Thumbnails, Firefox (including snap and flatpak), Chrome, Chromium, Brave, Edge, Vivaldi, Opera, Electron apps in `~/.config`, service worker caches, pip, uv, Poetry, pipenv, npm, Yarn, pnpm, Bun, node-gyp, Go, Mesa and NVIDIA shader caches, JetBrains, Bazel, pre-commit, Deno, Cargo, Gradle, Maven, Hugging Face, PyTorch, Whisper, Steam shader cache, Conda, Homebrew |
+| Packages | Playwright browser revisions no install uses, old Puppeteer and Cypress builds, global npm packages repeated per Node version, old Node versions (never automatic), heavy packages copied into many projects; see [../rules/packages.md](../rules/packages.md) |
 | Logs | `/var/crash`, `/var/lib/systemd/coredump`, rotated logs in `/var/log`, `journalctl --vacuum-size=200M` |
 | Trash | `~/.local/share/Trash` and `.Trash-<uid>` on each chosen mount |
 | System | `apt-get clean`, `apt-get autoremove --purge` (old kernels), `dnf clean all`, `dnf autoremove`, `paccache -rk2`, `pacman -Scc`, `zypper clean --all`, `flatpak uninstall --unused`, disabled snap revisions, snapd cache, `nix-collect-garbage` |

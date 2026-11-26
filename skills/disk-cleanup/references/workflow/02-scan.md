@@ -16,7 +16,7 @@ python3 <skill-dir>/scripts/disk_cleanup.py scan --drives D: --categories duplic
 | `--drives` | system drive | Drive ids, roots, or labels from `drives` |
 | `--auto` | off | Automatic mode: the system drive only, whatever `--drives` says |
 | `--level` | saved, else `safe` | Recorded in the scan; the report shows every level anyway |
-| `--categories` | all | Any of `temp caches logs trash duplicates downloads dev system config programs large` |
+| `--categories` | all | Any of `temp caches logs trash duplicates downloads dev packages system config programs large` |
 | `--jobs` | 2 per CPU, at most 16 | Parallel workers |
 | `--out` | `~/.gti/disk-cleanup/<machine>/scans/<stamp>/` | Folder for `scan.json` and `report.md` |
 
@@ -34,6 +34,7 @@ scan
  └── data walk   the user's data, split breadth first across one process per CPU
        ├── duplicates   size, then first and last 64 KiB, then the whole file (BLAKE2b)
        ├── dev          build output next to its marker file, sized from single-link files only
+       ├── packages     browser builds per version, Node versions, packages copied into many projects
        ├── downloads    old installers, disk images, extracted archives
        └── large        the 25 largest files and the space per folder
 ```

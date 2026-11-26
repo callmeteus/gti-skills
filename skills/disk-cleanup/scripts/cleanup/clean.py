@@ -64,8 +64,9 @@ class Guard:
                     best, best_len = drive, len(mount)
         return best
 
-    def check(self, path):
-        """None when the path may be deleted, else the reason it may not."""
+    def check(self, path, contents=False):
+        """None when the path may be deleted, else the reason it may not. With `contents`, only what is inside
+        the folder goes, so the folder itself may be a protected one (/tmp, ~/.cache), just not a parent of one."""
         if not os.path.isabs(path):
             return "not an absolute path"
         if not os.path.lexists(path):
@@ -80,7 +81,7 @@ class Guard:
             if fsutil.is_under(path, root):
                 return f"inside {root}, excluded by the user's preferences"
         for root in self.protected:
-            if fsutil.is_under(root, path):
+            if fsutil.is_under(root, path) and not (contents and fsutil.norm(root) == fsutil.norm(path)):
                 return f"would delete the protected folder {root}"
         drive = self.drive_of(path)
         if drive is None:
@@ -124,7 +125,7 @@ def execute(chosen, guard, manifest_path, jobs=4, exclude_paths=()):
             if any(fsutil.is_under(path, p) for p in exclude_paths):
                 problems.append(f"{path}: excluded for this run")
                 continue
-            reason = guard.check(path)
+            reason = guard.check(path, contents=f.action == DELETE_CONTENTS)
             if reason is None and f.category == "duplicates":
                 reason = verify_duplicate(f, path)
             if reason:

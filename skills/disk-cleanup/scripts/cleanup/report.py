@@ -9,6 +9,7 @@ from cleanup.model import CATEGORIES, LEVELS, REPORT, SYSTEM_ACTIONS, human, wit
 TITLES = {
     "temp": "Temporary files", "caches": "Caches", "logs": "Logs and crash dumps", "trash": "Trash and Recycle Bin",
     "duplicates": "Duplicate files", "downloads": "Old downloads", "dev": "Build output and developer tools",
+    "packages": "Packages installed many times (browsers, Node versions, copies)",
     "system": "System leftovers", "config": "Settings that waste space", "programs": "Programs not used",
     "large": "Largest files (only you can judge)",
 }
