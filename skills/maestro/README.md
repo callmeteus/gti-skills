@@ -94,12 +94,16 @@ The skill also remembers how the user likes to work. It stores an orchestrator p
 - **OpenAgents support:** uses the Workspace MCP server for shared briefs, files, approvals, and status, and delegates code through OpenAgents Coder's `delegate` and `chat --session` commands.
 - **Coordination separated from delegation:** a server that only reads workspace history never gets reported as a spawn, and a read-only docs server is used for discovery only.
 - **Nested orchestrators stay reviewable:** another orchestrator is a worker to Maestro, with per-task evidence and child chat ids required.
+- **Team mode for long, hard runs:** for a very long debug, an application rebuild, or a large migration, workers get mailboxes, a shared findings board, and task locks so they can trade findings and claim work; it stays off for everyday tasks.
+- **Teacher and student mode:** on request only, a teacher worker writes a lesson, students run it in fresh chats with the same task and different instructions or different tasks and the same instructions, and the lesson is revised until they master it, both right and without overthinking or overlong output.
+- **Pull requests and issues on permission:** with the user's permission, workers push `maestro/<run>/<task>` branches and open draft pull requests and issues on GitHub, Forgejo, Gitea, or GitLab. Every permission is off by default and none is learned by repetition.
+- **Review panels with consensus:** 1 to 5 independent reviewers, sized by the change and its risk, review the same pull request without seeing each other. Maestro matches their findings, settles disputes with a mediated debate, and decides on evidence, not votes.
 - **Simple and complex runs:** one worker for small work, waves with dependencies and review gates for larger work.
 - **Plans on demand:** `/maestro plan` writes the execution plan without spawning workers.
 - **Evidence-first review:** a six-gate rubric, explicit commands and diffs, and four verdicts: PASS, FIX, REASSIGN, ESCALATE.
 - **Fix loop in place:** numbered findings go to the same chat, with a default limit of two rounds before a reassignment.
 - **Persistent ledger:** `run.json`, `workers.jsonl`, decisions, audit, task briefs, and a final report survive context resets.
-- **Anti-pattern library:** twenty-six failure modes, including doing the work yourself, context dumping, review theater, orphan chats, preference amnesia, hardcoded model IDs, provider assumption, retrying a rate limit, MCP by brand name, and coordination mistaken for delegation.
+- **Anti-pattern library:** thirty-four failure modes, including doing the work yourself, context dumping, review theater, orphan chats, preference amnesia, hardcoded model IDs, provider assumption, retrying a rate limit, MCP by brand name, and coordination mistaken for delegation.
 - **Budget caps:** worker, wave, and fix-round limits, with token and cost recorded when the harness reports them.
 - **Language rule:** the skill always answers in the user's language, regardless of the language of the skill.
 
@@ -349,6 +353,18 @@ Discovers providers and models, refreshes context, cost, limits, and health, and
 
 Shows context-first routing and a rate-limit fallback. The preference is not changed; the run uses the free variant only when the primary is cooling.
 
+```text
+/maestro teach the release checklist to deepseek-v4.1-flash: same task, two instruction variants, then two held-out releases
+```
+
+Teacher and student mode, asked for by name. A teacher worker writes the lesson and its checks, three students per iteration run it in fresh chats, and the lesson is revised until every student passes the checks inside the efficiency budget, including the held-out tasks.
+
+```text
+/maestro agents need to hunt this memory leak for hours: let them share findings
+```
+
+A long, hard debug, so team mode is allowed: workers get mailboxes, a findings board, and task locks.
+
 ## How It Works
 
 ```text
@@ -552,6 +568,36 @@ MCP ORCHESTRATORS  run-2026-11-14-001  updated 15:00
   selected: paseo spawner, openagents-workspace coordination
 ```
 
+### /maestro review pr
+
+```text
+/maestro review pr <url or number> [--reviewers <1-5>] [--post]
+```
+
+Reviews a pull request with an independent panel and Maestro's consensus. Procedure: [references/modes/review-panel.md](references/modes/review-panel.md).
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<url or number>` | Required | The pull request; a number uses the current repository |
+| `--reviewers` | Sized by the change: 1 up to 50 lines, 2 up to 300, 3 up to 1,000, 4 up to 3,000, 5 above; plus 1 for risk | Panel size, within 1 to 5 |
+| `--post` | Off | Post the consolidated review; needs the `reviewComments` permission |
+
+### /maestro teach
+
+```text
+/maestro teach <goal> [for <student model>] [design]
+```
+
+Runs teacher and student mode. It only runs when the user asks for it. The full loop, designs, and ledger are in [references/modes/teacher-student.md](references/modes/teacher-student.md).
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `<goal>` | Required | What the lesson must teach |
+| Student model | The executor role | The model the lesson is for; a cheaper model than the teacher |
+| Design | Repeat | `repeat`, `instruction A/B`, `generalization` (held-out tasks), or `student comparison` |
+| Students per iteration | `3` | At least 3; one trial proves nothing |
+| Stop rule | Mastered, 6 iterations, or 2 without a better score | When the loop ends |
+
 ### /maestro central
 
 ```bash
@@ -590,6 +636,30 @@ Starts and resumes CLI workers with the flags each harness needs, captures the c
 | `resume` | Review or fix in the same chat | `--session` plus the spawn flags |
 | `models` | The harness's own model listing | `--harness`, `--provider` |
 
+### Team mailbox
+
+```bash
+python3 scripts/team/mailbox.py --team <team-dir> open | send | post | read | claim | release | status | close [args]
+```
+
+Writes the team folder of a team-mode run: direct messages, the shared findings board, and task locks. It appends under a file lock, claims with an exclusive create, and never reaches the network. See [references/modes/team.md](references/modes/team.md) for the gate and the traffic rules.
+
+| Command | Purpose | Key flags |
+|---------|---------|-----------|
+| `open` | Create the team or add members (Maestro) | `--members`, `--goal`, `--run`, `--budget` |
+| `send` | Direct message to one member or `maestro` | `--from`, `--to`, `--kind`, `--text`, `--ref`, `--reply-to` |
+| `post` | Post to the shared findings board | `--from`, `--kind`, `--text`, `--evidence`, `--ref`, `--task` |
+| `read` | New messages and board posts since the last read | `--as`, `--all`, `--peek` |
+| `claim` | Take a task lock; exit 3 when another member holds it | `--as`, `--task` |
+| `release` | Give a task lock back | `--as`, `--task`, `--done` |
+| `status` | Members, sent and unread counts, locks, last events | None |
+| `close` | Close the team; later sends are refused (Maestro) | None |
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--team` | `MAESTRO_TEAM`, else `~/.gti/maestro/<cwd name>/team` | Team folder; give workers the absolute path |
+| `--budget` | `40` | Messages and posts each worker may send |
+
 ### Preference and catalog files
 
 | Path | Contents |
@@ -616,6 +686,9 @@ Starts and resumes CLI workers with the flags each harness needs, captures the c
 | `~/.gti/maestro/<project>/tasks/<id>/brief.md` | The exact brief sent to the worker |
 | `~/.gti/maestro/<project>/tasks/<id>/result.md` | The worker output contract and diff, kept when the chat is not resumable |
 | `~/.gti/maestro/<project>/tasks/<id>/review.md` | Self-review, independent verification, verdict, and fix rounds |
+| `~/.gti/maestro/<project>/team/` | Team mode only: mailboxes, findings board, task locks, and the message log |
+| `~/.gti/maestro/<project>/lessons/<id>/` | Teacher and student mode only: the lesson, its frozen iterations, every trial, and `trials.jsonl` |
+| `~/.gti/maestro/<project>/reviews/<id>/` | Review panels: each reviewer's output, `consensus.json`, and `consensus.md` |
 | `~/.gti/maestro/<project>/report.md` | The final report |
 
 ## Output
@@ -794,6 +867,11 @@ That is intentional. A check that could not run, a platform that was not tested,
 - The catalog is a cache, not a guarantee. Free tiers, quotas, prices, and model IDs change; refresh before relying on them.
 - Routing is a heuristic, not a benchmark. The review still decides whether the work is good.
 - Token and cost reporting is partial. Maestro records them when the harness reports them and uses worker and round caps otherwise.
+- Forge actions depend on the forge's CLI or MCP server being signed in. Maestro never handles a token, so without a working sign-in the pull request or issue stays pending.
+- Reviewer independence is enforced by what Maestro shares, not by the operating system. Maestro checks the reviews for signs of copying, but cannot prove two agents never communicated.
+- Teacher and student mode is costly. Every iteration runs at least 3 students plus the teacher, so it runs only when the user asks for it.
+- Team mailboxes are files. A worker sees a message at its next checkpoint, not at once, and a worker on another machine joins only when the team folder is on a shared filesystem.
+- Team mode costs more. Every message and inbox read is tokens, so the gate keeps it for long, hard runs.
 - Parallel edits need worktrees. A shared checkout with two writers creates collisions that no review can fix.
 - Review evidence is produced by the worker. Maestro mitigates this by running the verification checks and reading the diff, but a check that cannot run stays unverified.
 - A run can stop on a product decision or a gated action. In autonomous mode those become pending items, not silent choices.
@@ -808,6 +886,9 @@ That is intentional. A check that could not run, a platform that was not tested,
 | [Pi CLI](https://docs.pi.dev/latest/cli), [Hermes ACP](https://hermes-agent.nousresearch.com/docs/user-guide/features/acp), [Cline CLI](https://cline.bot/cli), [Command Code](https://commandcode.ai/docs/skills) | Respective | The spawn, resume, model, and skill paths documented in the adapters |
 | [Claude Code](https://code.claude.com/docs/en/cli-reference), [Codex](https://developers.openai.com/codex/developer-commands), [OpenCode](https://opencode.ai/docs/), [Cursor CLI](https://cursor.com/docs/cli/overview) | Respective | The session, resume, and model flags documented in the adapters |
 | [OpenAgents Workspace](https://openagents.org/docs/en/reference/cli-reference), [OpenAgents Coder](https://openagents.com/docs/coder-scripts) | Apache-2.0 | The `agn mcp-server` coordination tools, `openagents coder delegate`, `--session`, and the hosted MCP servers |
+| [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams), [Anthropic: parallel Claudes build a C compiler](https://www.anthropic.com/engineering/building-c-compiler), [Anthropic: multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) | Respective | The inbox files, shared task list, task lock files, and the cost and chatter warnings behind team mode |
+| [OpenAI: Securing our frontier model training environment](https://openai.com/index/securing-our-frontier-model-training-environment/) | Respective | The red-team finding that isolated agents passed information through the CPU cache and other shared surfaces, behind the sanctioned team channel and the reviewer isolation rules |
+| [Anthropic: harnesses for long-running agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents), [OpenAI: long horizon tasks with Codex](https://developers.openai.com/blog/run-long-horizon-tasks-with-codex) | Respective | Durable progress and findings files for long runs |
 | [Sybil Solutions: skill-distill](https://github.com/sybil-solutions/skill-distill) | MIT | Session log parsing and the first harness flags in the shared agent runner |
 
 ## License

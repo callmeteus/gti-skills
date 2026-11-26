@@ -19,8 +19,23 @@
 │       ├── brief.md
 │       ├── result.md
 │       └── review.md
+├── team/
+│   ├── team.json
+│   ├── inbox/<member>.jsonl
+│   ├── findings.jsonl
+│   ├── log.jsonl
+│   ├── cursors/<member>.json
+│   └── locks/<task>.lock
+├── lessons/<lesson-id>/
+├── reviews/<pr-or-task-id>/
 └── report.md
 ```
+
+`reviews/<id>/` holds each review panel; see [../modes/review-panel.md](../modes/review-panel.md#ledger). Worker records may carry `pr` (URL) and `issues` (URLs) when the forge permission allowed them.
+
+`lessons/<lesson-id>/` exists only in teacher and student mode; see [../modes/teacher-student.md](../modes/teacher-student.md#the-ledger).
+
+`team/` exists only in a team run and is written by `scripts/team/mailbox.py`; see [team-mode.md](../modes/team.md#the-team-folder).
 
 ## Preference and catalog files
 
@@ -105,6 +120,9 @@ One object, updated in place at every phase change.
 | `checklist` | object | Boolean per workflow step |
 | `pending` | string[] | Gated actions and open decisions |
 | `notVerified` | string[] | Checks that could not run |
+| `teaching` | object or null | Teacher and student mode only: `lesson`, `design`, `studentModel`, `iteration`, `status`; `null` otherwise |
+| `forge` | object | Permissions for this run: `branches`, `pullRequests`, `issues`, `reviewComments`, `repo`, `source` (`request`, `user`, or `none`); all false by default |
+| `team` | object or null | Team mode only: `dir`, `goal`, `members`, `budget`, `reason`, `status` (`open` or `closed`); `null` in a normal run |
 
 Example:
 

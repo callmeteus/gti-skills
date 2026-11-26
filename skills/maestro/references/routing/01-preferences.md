@@ -76,7 +76,9 @@ A profile sets only the fields it names; every other field falls through to the 
 |---|---|
 | `roles.orchestrator` | Preferred model for planning and review agents |
 | `roles.executor` | Preferred default worker model |
-| `defaults` | Run settings every run starts from: `adapter`, `budget`, `tier`, `verifier`, `autonomous`, `skills` |
+| `defaults` | Run settings every run starts from: `adapter`, `budget`, `tier`, `verifier`, `autonomous`, `skills`, `forge`, `reviewPanel` |
+| `defaults.forge` | Pull request, issue, and push permissions for one repository; all off unless the user said so. See [../harness/github.md](../harness/github.md) |
+| `defaults.reviewPanel` | `min` and `max` reviewers for a review panel, within 1 to 5 |
 | `profiles.<kind>` | Settings for one run kind: `match`, `orchestrator`, `executor`, `adapter`, `budget`, `tier`, `verifier`, `autonomous`, `skills`, `routes`, `fallbacks` |
 | `profiles.<kind>.match` | Words and skill IDs that select this profile, in any language |
 | `source` | `user` (stated as durable), `run` (remembered from a run of this kind), or `repeated` (promoted after repeated requests) |
@@ -133,6 +135,7 @@ Maestro also keeps a short history of the effective settings of each run in `~/.
 - If the user set the same value for the same field in the last 3 runs of a kind, write it to that profile with `source: repeated`.
 - If the user set the same value in the last 3 runs of any kind, write it to `defaults` with `source: repeated`.
 - Report each promotion in the final report with the old and new value, and how to undo it (`/maestro preferences forget <key>`).
+- Never promote `forge` permissions. Pushing, opening pull requests or issues, and posting reviews are saved only when the user says so in words.
 
 Keep only the last 50 lines of `history.jsonl`.
 

@@ -62,6 +62,8 @@ A task has one owner and one chat. If a task needs two owners, it is two tasks.
 | `build` | Makes the focused change and runs the focused checks | Change files outside its scope |
 | `verify` | Runs the full checks, reads the diff, hunts regressions | Fix anything; report only |
 | `synthesize` | Combines several worker results into one deliverable | Invent facts that no worker produced |
+| `teacher` | Teacher and student mode only: writes and revises the lesson, the acceptance list, and the checks; judges trials | Put the expected answer in the lesson, or do the task |
+| `student` | Teacher and student mode only: does the task with the lesson and the task prompt alone | Read the teacher's notes, the acceptance list, or another trial |
 
 A verifier that finds a problem does not fix it. The fix goes back to the builder chat or to a new task.
 
@@ -101,6 +103,23 @@ When parallel edits are unavoidable, use separate worktrees:
 - Other CLIs: create a git worktree yourself and run the worker with its `--cwd`.
 - An integration worker merges the results after the wave.
 
+## Team mode
+
+Decide here whether the run is a team run. The default is no. Say yes only when the gate in [../modes/team.md](../modes/team.md#the-gate) holds: a complex run that will take many hours or waves, with at least 3 parallel workers whose findings change each other's next step (a very long debug, an application rebuild, a large migration, a deep investigation), or the user asked for it.
+
+For a team run, the plan also names:
+
+- The team goal, one sentence every member works toward.
+- The members of each team wave and the scope each one owns.
+- The board tasks members may claim, each with its own scope and no unmet dependency.
+- The message budget per worker (default 40).
+
+Record the choice and the reason in `run.json` (`team`) and `decisions.jsonl`. A normal run never gets a team "just in case".
+
+## Teacher and student runs
+
+Only when the user asked for the mode. The plan is the lesson loop in [../modes/teacher-student.md](../modes/teacher-student.md#the-loop): one teacher chat, then one wave of at least 3 students per iteration, each isolated in its own worktree or copy, with a review gate where Maestro runs the checks. Name the design, the student model, the training and held-out tasks, the efficiency budget, and the stop rule.
+
 ## Plan self-check
 
 Before spawning, Maestro answers these:
@@ -115,6 +134,7 @@ Before spawning, Maestro answers these:
 - Is the cheapest tier used for each task?
 - Is there a verifier for the whole run?
 - Does the budget cover the plan?
+- If this is a team run, does it pass the gate, and does every board task have its own scope?
 
 Fix the plan before spawning. Do not discover a collision after the workers start.
 

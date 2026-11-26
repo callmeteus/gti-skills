@@ -106,6 +106,10 @@ Find what is wrong: correctness, missing cases, weakened tests, unnecessary comp
 
 Maestro compares both reviews and makes the final call. A second opinion does not replace the evidence check.
 
+## Step 6: review panels for pull requests
+
+A pull request a worker opened, a pull request the user asked to have reviewed, and the final diff of a complex run get a panel of 1 to 5 independent reviewers instead of a single second opinion. Size it by the change and the risk, keep the reviewers apart, and build the consensus yourself, with a mediated debate for disputed findings. The full procedure is in [../modes/review-panel.md](../modes/review-panel.md). The author's chat still gets the confirmed findings as a FIX, and its fix is checked by a smaller panel.
+
 ## Model fit
 
 A review judges the work, but it also notices when the wrong model was chosen:

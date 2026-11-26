@@ -92,6 +92,18 @@ Spawn tasks in parallel only when the plan says the wave is safe:
 
 Send the spawns together, then track them in the ledger. If the harness supports completion notifications, wait for them instead of polling.
 
+## Team runs
+
+When the plan made this a team run, before the wave starts:
+
+1. Open the team with the wave's members: `scripts/team/mailbox.py --team <team-dir> open --members <ids> --goal "<team goal>" --run <run id>`.
+2. Put the board tasks in the plan and in the brief. A member claims one with `claim`; one lock per task.
+3. Add the Team section from [../modes/team.md](../modes/team.md#brief-addition) to every brief, with the absolute team path, so workers in other worktrees reach the same folder.
+4. Between turns, read `status` and `read --as maestro`. Wake a worker in its own chat only for an urgent message, with "read your inbox", not the message body.
+5. At the end of the wave, `close` the team and review each result in its own chat as usual.
+
+A normal run has no team folder and no mailbox lines in the brief.
+
 ## Waiting
 
 - Use the harness notification when it exists (Paseo `notifyOnFinish`, Claude Code background sessions, native agent tools).
@@ -173,5 +185,5 @@ If a fallback model produced the result, the review goes to the fallback's chat,
 
 - The plan itself. Maestro writes it.
 - The verdict. Maestro decides it.
-- Gated actions. Those wait for the user.
+- Gated actions. Those wait for the user. The one exception is a branch push, pull request, or issue that the user's `forge` permission allows; then the brief carries the worker rules from [../harness/github.md](../harness/github.md#rules-for-workers).
 - Secrets. Never put credentials in a brief; pass the name of an environment variable or a profile instead.
