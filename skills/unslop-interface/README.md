@@ -86,7 +86,7 @@ Unslop Interface gives an agent a fixed order of eight passes, a checklist of th
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
 | Node.js | 22+ | Runs the skill's CLI (`scripts/unslop/unslop.mjs`) and lintapple, the measured UI checks | No |
-| lintapple | 0.1.24, from `packages/lintapple` | Measured checks of the rendered page; built on install and update, or run with `npx` | Yes |
+| lintapple fork | In `packages/lintapple` | Measured checks of the rendered page; the only linter the runner uses, built on install and update | Yes |
 | Chromium for Playwright | Matches lintapple's Playwright | Browser lintapple drives; the runner prints the install command when it is missing | No |
 
 The agent needs to read images to work from screenshots. Without image input, share the component code.
@@ -245,14 +245,14 @@ node skills/unslop-interface/scripts/lintapple/run.mjs http://localhost:3000 --p
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
-| `--project` | Current folder | The app folder; its `ui-policy.json` and `node_modules/lintapple` are used when present |
+| `--project` | Current folder | The app folder; its `ui-policy.json` is used when present |
 | `--config` | Project policy, else the default | Policy file adapted to the design system |
 | `--ready` | None | Selector that is visible when the page is ready |
 | `--interactions` | None | lintapple interaction plan for menus, dialogs, and other states |
 | `--out` | `~/.gti/lintapple/<project>/` | Where to save the full JSON report |
 | `--top` | `15` | Problem groups printed in the summary |
 | `--write-policy FILE` | - | Writes the default policy to adapt |
-| `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
+| `--where` | - | Shows the gti-skills fork path, or the build error when it is missing |
 
 ### scripts/lintapple/probe.mjs
 
@@ -445,7 +445,7 @@ The icons pass uses the project's icon library first and asks before adding a de
 |---------|---------|----------|
 | [Damir Sokolovsky: Unslopping a vibecoded dashboard](https://x.com/heydamir/status/2115063463063998736) | Standard X post terms | Source of the passes, measurements, and before and after states |
 | [Nexvyn: tabular-nums for numbers that change](https://x.com/nexvyn/status/2114952765193732418) | Standard X post terms | Tabular figures rule and the timer measurement in the typography pass |
-| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured checks before and after the passes, vendored in `packages/lintapple` |
+| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured checks before and after the passes, forked into `packages/lintapple` with local checks |
 | [Jaimin: ten rules for apps that feel native](https://x.com/jaimintf/status/2123786458721116225) | Standard X post terms | The states and feel pass, smooth corners, and balanced line breaks |
 | [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines) | MIT | Form, focus, motion, typography, and copy rules in the states and feel and copy passes |
 | [Murat Alpay: ui-diff](https://x.com/imuratalpay/status/2123745913063477684) | Standard X post terms | The idea behind the before and after snapshot diff |

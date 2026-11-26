@@ -7,16 +7,6 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   for (const container of policy.controlContainers) document.querySelector(container);
   for (const rule of policy.contentInsetRules) { document.querySelector(rule.selector); document.querySelector(rule.contentSelector); }
   const findings: Finding[] = [];
-  const selector = (element: Element) => {
-    const parts: string[] = [];
-    for (let node: Element | null = element; node; node = node.parentElement) {
-      const tag = node.tagName.toLowerCase();
-      if (node === document.documentElement) { parts.unshift(tag); break; }
-      const siblings = [...node.parentElement!.children].filter(s => s.tagName === node.tagName);
-      parts.unshift(`${tag}:nth-of-type(${siblings.indexOf(node) + 1})`);
-    }
-    return parts.join(' > ');
-  };
   const add: AddFinding = (rule, element, actual, expected, fix, related, details = {}) => {
     const pseudo = details.selector?.match(/::[\w-]+$/)?.[0];
     const exception = policy.exceptions.find(e => e.rules.includes(rule) && (element.matches(e.selector) || !!pseudo && e.selector.endsWith(pseudo) && element.matches(e.selector.slice(0, -pseudo.length))));
@@ -24,8 +14,9 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
     findings.push(format(rule, selector(element), actual, expected, fix, { ...(related ? { relatedSelector: selector(related) } : {}), ...details }));
   };
   const suppressed: SuppressedFinding[] = [];
-  const { textRects, generatedTextRects, visible, hasVisibleContent, generatedTextStyles } = visibility;
-  const elements = [...document.querySelectorAll('body, body *')].filter(visible);
+  const { visuallyHidden, parent, descendants, selector, resolveSelector, textRects, generatedTextRects, visible, hasVisibleContent, generatedTextStyles } = visibility;
+  const allElements = document.body ? [document.body, ...descendants(document.body)] : [];
+  const elements = allElements.filter(visible);
   if (!elements.length) throw new Error('Page has no visible body. Wait for the interface before checking it.');
   if (elements.length > 5000) throw new Error('Page exceeds the 5000 element limit. Check a smaller page or component.');
   const styles = new Map(elements.map(el => [el, getComputedStyle(el)]));
@@ -36,8 +27,22 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
     controls = elements.filter(el => el.matches('button, input[type="button"], input[type="submit"], input[type="reset"], input[type="image"]') || contrast.commons.aria.getRole(el, { fallback: true }) === 'button');
     dropdownControls = elements.filter(el => el.matches('select') || contrast.commons.aria.getRole(el, { fallback: true }) === 'combobox');
   } finally { contrast.teardown(); }
-  const isText = (el: Element) => textRects(el).length > 0 || el.matches('textarea, select') ||
-    el instanceof HTMLInputElement && !['checkbox', 'radio', 'range', 'color'].includes(el.type);
+  const loadedImages = new Set<Element>();
+  await Promise.all(elements.filter(el => el.matches('input[type="image"][src]')).map(async el => {
+    const image = new Image();
+    image.src = (el as HTMLInputElement).src;
+    try { await image.decode(); loadedImages.add(el); } catch { /* A failed image can paint its alternate text. */ }
+  }));
+  const isText = (el: Element) => {
+    let groupLabel = false;
+    if (el instanceof HTMLOptGroupElement && el.label.trim()) {
+      const select = el.closest('select');
+      groupLabel = !!select && !(getComputedStyle(select).appearance === 'base-select' && el.querySelector(':scope > legend'));
+    }
+    return textRects(el).length > 0 || el.matches('textarea, select') || groupLabel ||
+      el instanceof HTMLOptionElement && el.text.trim().length > 0 && !!el.closest('select')?.matches('select[multiple], select[size]:not([size="0"]):not([size="1"])') ||
+      el instanceof HTMLInputElement && !['checkbox', 'radio', 'range', 'color'].includes(el.type) && !loadedImages.has(el);
+  };
   const checkFontSize = (el: Element, style: CSSStyleDeclaration, pseudo = '') => {
     const size = parseFloat(style.fontSize);
     const tooltip = el.closest('[role="tooltip"]');
@@ -60,6 +65,24 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
     const style = getComputedStyle(el, '::placeholder');
     return style.display !== 'none' && style.visibility === 'visible' && parseFloat(style.opacity) > 0 && parseFloat(style.fontSize) > 0 ? style : null;
   };
+  const textPseudos = (el: Element) => {
+    const pseudos: string[] = [];
+    if (el.matches('input[type="file"]')) pseudos.push('::file-selector-button');
+    const style = styles.get(el)!;
+    if (style.display === 'list-item') {
+      const marker = getComputedStyle(el, '::marker');
+      if (!['none', 'normal', '""'].includes(marker.content) || marker.content === 'normal' && style.listStyleImage === 'none' && /^(decimal|lower-|upper-)/.test(style.listStyleType)) pseudos.push('::marker');
+    }
+    if (['block', 'list-item', 'inline-block', 'flow-root', 'table-cell', 'table-caption'].includes(style.display)) pseudos.push('::first-letter', '::first-line');
+    return pseudos.flatMap(pseudo => {
+      const style = getComputedStyle(el, pseudo);
+      if (['::first-letter', '::first-line'].includes(pseudo)) {
+        if (style.fontFamily === styles.get(el)!.fontFamily && style.fontSize === styles.get(el)!.fontSize) return [];
+        if (![el, ...el.querySelectorAll('*')].some(node => visible(node) && textRects(node).length > 0)) return [];
+      }
+      return style.display !== 'none' && style.visibility === 'visible' && parseFloat(style.opacity) > 0 && parseFloat(style.fontSize) > 0 ? [{ pseudo, style }] : [];
+    });
+  };
   const hasTabularNumbers = (style: CSSStyleDeclaration) => {
     const feature = style.fontFeatureSettings.match(/['"]tnum['"](?:\s+(\d+|on|off))?(?=\s*,|$)/)?.[1];
     return /['"]tnum['"]/.test(style.fontFeatureSettings) ? feature !== 'off' && feature !== '0' : style.fontVariantNumeric.split(/\s+/).includes('tabular-nums');
@@ -67,11 +90,11 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   let numericElements = 0;
   for (const el of elements) {
     const style = styles.get(el)!;
-    if (isText(el) && !el.closest('pre, code, kbd, samp')) checkFont(el, style);
-    if (!el.closest('pre, code, kbd, samp'))
-      for (const { pseudo, style: textStyle } of generatedTextStyles(el)) checkFont(el, textStyle, pseudo);
+    if (!visuallyHidden(el) && isText(el) && !el.closest('pre, code, kbd, samp')) checkFont(el, style);
+    if (!visuallyHidden(el) && !el.closest('pre, code, kbd, samp'))
+      for (const { pseudo, style: textStyle } of [...generatedTextStyles(el), ...textPseudos(el)]) checkFont(el, textStyle, pseudo);
     const placeholder = placeholderStyle(el);
-    if (placeholder && !el.closest('pre, code, kbd, samp')) checkFont(el, placeholder, '::placeholder');
+    if (placeholder && !visuallyHidden(el) && !el.closest('pre, code, kbd, samp')) checkFont(el, placeholder, '::placeholder');
     // Numeric meaning is explicit for live values. Numeric table cells are inferred.
     const numericCell = el.matches('td') && /^[+−-]?[\d\s,.:%$€£]+$/.test((el.textContent ?? '').trim()) && /\d/.test(el.textContent ?? '');
     if (el.matches('[data-ui-number]') || numericCell) {
@@ -118,11 +141,42 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
         add('copy', el, phrase, 'text without prohibited phrases', 'Remove the phrase or use specific text that helps the user.');
     }
   }
-  const groups = new Map<Element | null, Element[]>();
+  const groups = new Map<Node, Element[]>();
   for (const el of controls) {
-    const parent = el.closest('[data-ui-actions]') ?? el.parentElement;
+    const parent = el.closest('[data-ui-actions]') ?? el.parentElement ?? el.getRootNode();
     const list = groups.get(parent) ?? [];
     list.push(el); groups.set(parent, list);
+  }
+  // One action with two states should be one button. Use DOM structure and state, never label text.
+  const actionKey = (el: Element): string | null => {
+    for (const name of ['data-ui-action', 'data-action', 'aria-controls', 'formaction']) {
+      const value = el.getAttribute(name);
+      if (value?.trim()) return `${name}:${value.trim()}`;
+    }
+    const name = el.getAttribute('name'), value = el.getAttribute('value');
+    return name?.trim() && value?.trim() ? `name:${name.trim()} value:${value.trim()}` : null;
+  };
+  const inactive = (el: Element) => el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true';
+  const nearby = (a: Element, b: Element) => {
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    if (ra.height <= 0 || rb.height <= 0 || Math.abs(ra.height - rb.height) > 4) return false;
+    const overlap = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
+    if (overlap < Math.min(ra.height, rb.height) * 0.5) return false;
+    const gap = Math.max(ra.left - rb.right, rb.left - ra.right);
+    return gap >= -1 && gap <= 24;
+  };
+  for (const group of groups.values()) {
+    for (let i = 0; i < group.length; i++) for (let j = i + 1; j < group.length; j++) {
+      const a = group[i], b = group[j];
+      if (!nearby(a, b)) continue;
+      const keyA = actionKey(a), keyB = actionKey(b);
+      if (keyA && keyB && keyA !== keyB) continue;
+      const stateA = inactive(a), stateB = inactive(b);
+      const sameAction = !!keyA && keyA === keyB;
+      const exclusiveState = stateA !== stateB && !(stateA && stateB);
+      if (!sameAction && !exclusiveState) continue;
+      add('redundant-state-actions', a, 'two nearby buttons in one action group', 'one button that changes with the state', 'Use one button whose label and action change after the click. Keep its accessible name and state in sync.', b);
+    }
   }
   // Use the same geometry for control groups and component stacks.
   const checkGap = (group: Element[], rule: RuleId, minimum: number) => {
@@ -138,10 +192,10 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   for (const group of groups.values()) checkGap(group, 'control-gap', policy.minControlGap);
   const layoutChildren = (el: Element): Element[] => [...el.children].flatMap(child =>
     getComputedStyle(child).display === 'contents' ? layoutChildren(child) : visible(child) ? [child] : []);
-  for (const el of [...document.querySelectorAll('[data-ui-stack]')].filter(hasVisibleContent))
+  for (const el of allElements.filter(el => el.matches('[data-ui-stack]')).filter(hasVisibleContent))
     checkGap(layoutChildren(el), 'layout-gap', policy.minLayoutGap);
   let alignmentGroups = 0;
-  for (const group of [...document.querySelectorAll('[data-ui-align]')].filter(hasVisibleContent)) {
+  for (const group of allElements.filter(el => el.matches('[data-ui-align]')).filter(hasVisibleContent)) {
     const alignment = group.getAttribute('data-ui-align');
     const items = [...group.querySelectorAll('[data-ui-align-item]')].filter(el => el.closest('[data-ui-align]') === group);
     if (!['start', 'center', 'end'].includes(alignment ?? '') || items.length < 2) {
@@ -171,11 +225,14 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   });
   const transformFor = (container: Element) => {
     let transform = new DOMMatrix();
-    for (let node: Element | null = container; node; node = node.parentElement) {
+    for (let node: Element | null = container; node; node = parent(node)) {
       const style = getComputedStyle(node);
-      const matrix = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
+      let matrix = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
       const [x, y = x] = style.scale === 'none' ? [1, 1] : style.scale.split(/\s+/).map(Number);
-      transform = matrix.scale(x, y).multiply(transform);
+      const rotate = /^-?[\d.]+deg$/.test(style.rotate) ? parseFloat(style.rotate) : 0;
+      if (x !== 1 || y !== 1) matrix = new DOMMatrix().scale(x, y).multiply(matrix);
+      if (rotate) matrix = new DOMMatrix().rotate(rotate).multiply(matrix);
+      transform = matrix.multiply(transform);
     }
     return transform;
   };
@@ -192,37 +249,52 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
     return { x: width ? bounds.width / width : Math.hypot(transform.a, transform.b), y: height ? bounds.height / height : Math.hypot(transform.c, transform.d) };
   };
   // One client-box primitive for control insets and text clipping.
-  const clientBounds = (container: Element, box: 'padding-box' | 'content-box' | 'border-box' = 'padding-box') => {
+  const clientBounds = (container: Element, box: 'padding-box' | 'content-box' | 'border-box' = 'padding-box', inset = [0, 0, 0, 0]) => {
     const bounds = container.getBoundingClientRect();
     // Client dimensions use rounded layout pixels, so their scale uses offset dimensions.
     const scaleX = (container as HTMLElement).offsetWidth ? bounds.width / (container as HTMLElement).offsetWidth : container instanceof SVGSVGElement ? scaleFor(container).x : 1;
     const scaleY = (container as HTMLElement).offsetHeight ? bounds.height / (container as HTMLElement).offsetHeight : container instanceof SVGSVGElement ? scaleFor(container).y : 1;
+    const width = container instanceof HTMLElement ? container.offsetWidth : bounds.width / scaleX;
+    const height = container instanceof HTMLElement ? container.offsetHeight : bounds.height / scaleY;
     const style = getComputedStyle(container);
     const inline = container instanceof HTMLElement && style.display === 'inline';
     let clientLeft = inline ? parseFloat(style.borderLeftWidth) : container.clientLeft;
     let clientTop = inline ? parseFloat(style.borderTopWidth) : container.clientTop;
-    let clientWidth = inline ? bounds.width / scaleX - clientLeft - parseFloat(style.borderRightWidth) : container.clientWidth;
-    let clientHeight = inline ? bounds.height / scaleY - clientTop - parseFloat(style.borderBottomWidth) : container.clientHeight;
+    let clientWidth = inline ? width - clientLeft - parseFloat(style.borderRightWidth) : container.clientWidth;
+    let clientHeight = inline ? height - clientTop - parseFloat(style.borderBottomWidth) : container.clientHeight;
     if (box === 'border-box') {
       clientLeft = clientTop = 0;
-      clientWidth = bounds.width / scaleX;
-      clientHeight = bounds.height / scaleY;
+      clientWidth = width;
+      clientHeight = height;
     } else if (box === 'content-box') {
       clientLeft += parseFloat(style.paddingLeft);
       clientTop += parseFloat(style.paddingTop);
       clientWidth -= parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
       clientHeight -= parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
     }
+    clientLeft += inset[3]; clientTop += inset[0];
+    clientWidth = Math.max(0, clientWidth - inset[1] - inset[3]);
+    clientHeight = Math.max(0, clientHeight - inset[0] - inset[2]);
     const transform = transformFor(container);
-    const left = transform.a < 0 ? bounds.right - (clientLeft + clientWidth) * scaleX : bounds.left + clientLeft * scaleX;
-    const top = transform.d < 0 ? bounds.bottom - (clientTop + clientHeight) * scaleY : bounds.top + clientTop * scaleY;
-    const result = { left, top, right: left + clientWidth * scaleX, bottom: top + clientHeight * scaleY };
+    const projectedWidth = Math.abs(transform.a) * width + Math.abs(transform.c) * height;
+    const projectedHeight = Math.abs(transform.b) * width + Math.abs(transform.d) * height;
+    const zoomX = projectedWidth ? bounds.width / projectedWidth : 1, zoomY = projectedHeight ? bounds.height / projectedHeight : 1;
+    const originX = transform.e + Math.min(0, transform.a * width) + Math.min(0, transform.c * height);
+    const originY = transform.f + Math.min(0, transform.b * width) + Math.min(0, transform.d * height);
+    const corners = [[clientLeft, clientTop], [clientLeft + clientWidth, clientTop], [clientLeft, clientTop + clientHeight], [clientLeft + clientWidth, clientTop + clientHeight]]
+      .map(([x, y]) => new DOMPoint(x, y).matrixTransform(transform));
+    const result = {
+      left: bounds.left + (Math.min(...corners.map(point => point.x)) - originX) * zoomX,
+      top: bounds.top + (Math.min(...corners.map(point => point.y)) - originY) * zoomY,
+      right: bounds.left + (Math.max(...corners.map(point => point.x)) - originX) * zoomX,
+      bottom: bounds.top + (Math.max(...corners.map(point => point.y)) - originY) * zoomY,
+    };
     if (!Object.values(result).every(Number.isFinite)) throw new Error('A clipping or control container must have a measurable HTML box.');
     return result;
   };
   let insetControls = 0;
   for (const el of controls) {
-    const container = el.parentElement!.closest(policy.controlContainers.join(', '));
+    const container = parent(el)?.closest(policy.controlContainers.join(', '));
     if (!container || !visible(container)) continue;
     insetControls++;
     const innerBounds = clientBounds(container);
@@ -269,7 +341,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
         if (el.closest('svg') && !el.matches('svg')) continue;
         const style = getComputedStyle(el);
         let clipped = false;
-        for (let node: Element | null = el; node; node = node.parentElement) {
+        for (let node: Element | null = el; node; node = parent(node)) {
           const item = getComputedStyle(node);
           if (item.clip !== 'auto' || item.clipPath !== 'none') { clipped = true; break; }
           if (node === container) break;
@@ -331,7 +403,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
     const ancestors: Element[] = [];
     let containingBlock: Element | null = null;
     let overlay = false;
-    for (let node: Element | null = el; node; node = node.parentElement) {
+    for (let node: Element | null = el; node; node = parent(node)) {
       overlay ||= styleOf(node).position === 'fixed' || node.matches('dialog[open], [role="dialog"], [role="alertdialog"], [role="tooltip"], [data-ui-overlay]');
       // Overflow below an absolute box's containing block cannot clip that box.
       if (containingBlock && node !== containingBlock) continue;
@@ -374,14 +446,76 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
       textScrollY: ancestors.some(node => scrolls(node, 'Y') && node !== document.body && node !== document.documentElement),
     };
   };
-  for (const el of controls) {
+  const shapeBounds = (el: Element): Bounds | null => {
+    const value = styleOf(el).clipPath;
+    if (value === 'none') return null;
+    const match = /^inset\(([^()]*)\)(?: border-box)?$/.exec(value);
+    const values = match?.[1].split(/\s+round\s+/)[0].trim().split(/\s+/);
+    if (!(el instanceof HTMLElement) || !values?.length || values.length > 4 || values.some(value => !/^-?[\d.]+(?:px|%)$/.test(value))) return null;
+    const [top, right = top, bottom = top, left = right] = values;
+    const inset = [top, right, bottom, left].map((value, index) => parseFloat(value) * (value.endsWith('%') ? (index % 2 ? el.offsetWidth : el.offsetHeight) / 100 : 1));
+    return clientBounds(el, 'border-box', inset);
+  };
+  const reachableSize = (el: Element) => {
     let { left, right, top, bottom } = el.getBoundingClientRect();
-    for (const clip of contextFor(el).clips) {
-      if (clip.element === el) continue;
-      if (clip.x) { left = Math.max(left, clip.bounds.left); right = Math.min(right, clip.bounds.right); }
-      if (clip.y) { top = Math.max(top, clip.bounds.top); bottom = Math.min(bottom, clip.bounds.bottom); }
+    const { ancestors, clips } = contextFor(el);
+    const ownShape = shapeBounds(el);
+    if (ownShape) {
+      left = Math.max(left, ownShape.left); right = Math.min(right, ownShape.right);
+      top = Math.max(top, ownShape.top); bottom = Math.min(bottom, ownShape.bottom);
     }
-    const rect = { width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+    let maxWidth = Math.max(0, right - left), maxHeight = Math.max(0, bottom - top);
+    // Carry reachable positions out through nested scrollports without scrolling the app.
+    for (const node of ancestors.slice(1)) {
+      const scrollX = scrolls(node, 'X'), scrollY = scrolls(node, 'Y');
+      const clip = clips.find(clip => clip.element === node), shape = shapeBounds(node);
+      if (!scrollX && !scrollY && !clip && !shape) continue;
+      const style = styleOf(node), bounds = clientBounds(node), transform = transformFor(node);
+      const vertical = style.writingMode !== 'horizontal-tb';
+      let reverseX = vertical ? style.writingMode.endsWith('-rl') : style.direction === 'rtl';
+      let reverseY = vertical && ((style.direction === 'rtl') !== (style.writingMode === 'sideways-lr'));
+      if (style.display.includes('flex')) {
+        const mainX = style.flexDirection.startsWith('row') !== vertical;
+        if (style.flexDirection.endsWith('reverse')) {
+          if (mainX) reverseX = !reverseX; else reverseY = !reverseY;
+        }
+        if (style.flexWrap === 'wrap-reverse') {
+          if (mainX) reverseY = !reverseY; else reverseX = !reverseX;
+        }
+      }
+      const rangeX = scrollX ? node.scrollWidth - node.clientWidth : 0, rangeY = scrollY ? node.scrollHeight - node.clientHeight : 0;
+      const startX = scrollX ? node.scrollLeft : 0, startY = scrollY ? node.scrollTop : 0;
+      const minX = startX - (reverseX ? 0 : rangeX), maxX = startX + (reverseX ? rangeX : 0);
+      const minY = startY - (reverseY ? 0 : rangeY), maxY = startY + (reverseY ? rangeY : 0);
+      const projectedWidth = Math.abs(transform.a) * node.clientWidth + Math.abs(transform.c) * node.clientHeight;
+      const projectedHeight = Math.abs(transform.b) * node.clientWidth + Math.abs(transform.d) * node.clientHeight;
+      const zoomX = projectedWidth ? (bounds.right - bounds.left) / projectedWidth : 1;
+      const zoomY = projectedHeight ? (bounds.bottom - bounds.top) / projectedHeight : 1;
+      left += (Math.min(transform.a * minX, transform.a * maxX) + Math.min(transform.c * minY, transform.c * maxY)) * zoomX;
+      right += (Math.max(transform.a * minX, transform.a * maxX) + Math.max(transform.c * minY, transform.c * maxY)) * zoomX;
+      top += (Math.min(transform.b * minX, transform.b * maxX) + Math.min(transform.d * minY, transform.d * maxY)) * zoomY;
+      bottom += (Math.max(transform.b * minX, transform.b * maxX) + Math.max(transform.d * minY, transform.d * maxY)) * zoomY;
+      const swapped = Math.abs(transform.a) < 1e-8 && Math.abs(transform.d) < 1e-8;
+      if (scrollX || scrollY) {
+        left = Math.max(left, bounds.left); right = Math.min(right, bounds.right);
+        top = Math.max(top, bounds.top); bottom = Math.min(bottom, bounds.bottom);
+      } else if (clip) {
+        if (swapped ? clip.y : clip.x) { left = Math.max(left, clip.bounds.left); right = Math.min(right, clip.bounds.right); }
+        if (swapped ? clip.x : clip.y) { top = Math.max(top, clip.bounds.top); bottom = Math.min(bottom, clip.bounds.bottom); }
+      }
+      if (shape) {
+        left = Math.max(left, shape.left); right = Math.min(right, shape.right);
+        top = Math.max(top, shape.top); bottom = Math.min(bottom, shape.bottom);
+      }
+      maxWidth = Math.min(maxWidth, Math.max(0, right - left));
+      maxHeight = Math.min(maxHeight, Math.max(0, bottom - top));
+    }
+    const unresolved = ancestors.some(node => styleOf(node).clipPath !== 'none' && !shapeBounds(node));
+    return { width: maxWidth, height: maxHeight, unresolved };
+  };
+  for (const el of controls) {
+    const rect = reachableSize(el);
+    if (rect.unresolved) add('control-size', el, 'clip-path hit area could not be measured', 'a measurable control hit area', 'Review the clipped control hit area.', undefined, { status: 'unresolved' });
     const minimum = policy.controlSizeRules.find(rule => el.matches(rule.selector) && innerWidth >= (rule.minViewportWidth ?? 1) && innerWidth <= (rule.maxViewportWidth ?? 10000))?.minSize ?? policy.minControlSize;
     if (rect.width + 0.1 < minimum || rect.height + 0.1 < minimum)
       add('control-size', el, `${Number(rect.width.toFixed(2))} × ${Number(rect.height.toFixed(2))}px`, `at least ${minimum}px in each dimension`, 'Increase the control hit area.');
@@ -389,13 +523,8 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   for (const el of elements) {
     const rule = policy.iconSizeRules.find(rule => el.matches(rule.selector));
     if (!rule) continue;
-    let { left, right, top, bottom } = el.getBoundingClientRect();
-    for (const clip of contextFor(el).clips) {
-      if (clip.element === el) continue;
-      if (clip.x) { left = Math.max(left, clip.bounds.left); right = Math.min(right, clip.bounds.right); }
-      if (clip.y) { top = Math.max(top, clip.bounds.top); bottom = Math.min(bottom, clip.bounds.bottom); }
-    }
-    const rect = { width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+    const rect = reachableSize(el);
+    if (rect.unresolved) add('icon-size', el, 'clip-path bounds could not be measured', 'measurable icon bounds', 'Review the clipped icon bounds.', undefined, { status: 'unresolved' });
     if (!rule.sizes.some(size => Math.abs(rect.width - size) <= 0.1 && Math.abs(rect.height - size) <= 0.1))
       add('icon-size', el, `${Number(rect.width.toFixed(2))} × ${Number(rect.height.toFixed(2))}px`, `a square icon of one of ${rule.sizes.join(', ')}px`, 'Use an allowed icon size. Check the rendered width, height, borders, and transforms.');
   }
@@ -411,8 +540,10 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   };
   for (const el of elements.filter(el => el instanceof HTMLElement || el instanceof SVGSVGElement || el instanceof SVGTextContentElement)) {
     const context = contextFor(el);
+    // Check the current style so text that appears on focus can still fail.
+    const checkClipping = context.clips.length > 0 && !visuallyHidden(el);
     const generated = generatedTextRects(el);
-    if (generated === null && context.clips.length)
+    if (generated === null && checkClipping)
       add('content-clipping', el, 'generated text geometry could not be measured', 'text lines inside the clipping area', 'Review the generated text and its clipping area.', undefined, { status: 'unresolved' });
     const rects = [...textRects(el), ...(generated ?? [])];
     const escaped = new Map<string, number>();
@@ -439,6 +570,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
       if (overflow.size)
         add('content-overflow', el, [...overflow].map(([edge, amount]) => `${edge} text overflow ${Number(amount.toFixed(2))}px`).join(', '), 'text inside the nearest data-ui-content container', 'Let text wrap or provide a local scroll region inside the marked container.', container);
     }
+    if (!checkClipping) continue;
     for (const clip of context.clips) {
       const cut = new Map<string, number>();
       for (const rect of rects) for (const [edge, distance] of outside(clip.bounds, rect, clip.x && !scrollsWithin(context.ancestors, clip, 'X'), clip.y && !scrollsWithin(context.ancestors, clip, 'Y')))
@@ -480,7 +612,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
       const el = node.element;
       if (!inScope.has(el) || !visible(el) || el.closest('button:disabled, [aria-disabled="true"]')) continue;
       if (el.matches('input:placeholder-shown, textarea:placeholder-shown') && el.getAttribute('placeholder')?.trim()) continue;
-      if (svgContrast.some(result => document.querySelector(result.selector) === el)) continue;
+      if (svgContrast.some(result => resolveSelector(result.selector) === el)) continue;
       const check = [...node.any, ...node.all, ...node.none].find(check => check.id === 'color-contrast');
       const data = check?.data ?? {};
       reportContrast(el, status, data, check?.message ?? node.failureSummary);
@@ -488,7 +620,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
   }
   for (const result of svgContrast) {
     if (result.status === 'passed') continue;
-    const el = document.querySelector(result.selector);
+    const el = resolveSelector(result.selector);
     if (!el || !inScope.has(el)) continue;
     reportContrast(el, result.status, { expectedContrastRatio: `${result.required}:1`, contrastRatio: result.contrastRatio, fgColor: result.fgColor, bgColor: result.bgColor }, result.reason);
   }
@@ -501,9 +633,9 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
       const required = parseFloat(style.fontSize) >= 24 || (parseFloat(style.fontWeight) >= 700 && parseFloat(style.fontSize) >= 56 / 3) ? 3 : 4.5;
       const data = { expectedContrastRatio: `${required}:1` };
       const rects = textRects(el);
-      let box = el.parentElement, unsupported = false;
-      while (box && rects.some(rect => outside(box!.getBoundingClientRect(), rect, true, true).length)) box = box.parentElement;
-      for (let node: Element | null = el; node; node = node.parentElement) {
+      let box = parent(el), unsupported = false;
+      while (box && rects.some(rect => outside(box!.getBoundingClientRect(), rect, true, true).length)) box = parent(box);
+      for (let node: Element | null = el; node; node = parent(node)) {
         const nodeStyle = styleOf(node);
         if ((nodeStyle.display !== 'contents' && parseFloat(nodeStyle.opacity) !== 1) || nodeStyle.filter !== 'none' || nodeStyle.backdropFilter !== 'none' || nodeStyle.mixBlendMode !== 'normal' || nodeStyle.textShadow !== 'none' || parseFloat(nodeStyle.webkitTextStrokeWidth) > 0) unsupported = true;
         if (box && node !== box && box.contains(node) && nodeStyle.display !== 'contents') {
@@ -544,7 +676,7 @@ export async function audit({ policy, contrast, accessibility, format, visibilit
       const required = size >= 24 || (bold && size >= 56 / 3) ? 3 : 4.5;
       const data = { expectedContrastRatio: `${required}:1` };
       let unsupported = false;
-      for (let node: Element | null = el; node; node = node.parentElement) {
+      for (let node: Element | null = el; node; node = parent(node)) {
         const nodeStyle = getComputedStyle(node);
         if ((nodeStyle.display !== 'contents' && parseFloat(nodeStyle.opacity) !== 1) || nodeStyle.filter !== 'none' || nodeStyle.backdropFilter !== 'none' || nodeStyle.mixBlendMode !== 'normal') unsupported = true;
       }

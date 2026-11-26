@@ -18,7 +18,7 @@ node <skill-dir>/scripts/lintapple/run.mjs http://localhost:3000 --project .
 
 | Option | Use |
 |--------|-----|
-| `--project DIR` | The app's folder (default: current folder); its `ui-policy.json` and `node_modules/lintapple` are used when present |
+| `--project DIR` | The app's folder (default: current folder); its `ui-policy.json` is used when present |
 | `--config FILE` | A policy file to use instead |
 | `--ready SELECTOR` | Wait for this selector before checking a page that loads asynchronously |
 | `--interactions FILE` | A lintapple interaction plan, to check open menus, dialogs, and other states |
@@ -29,7 +29,7 @@ node <skill-dir>/scripts/lintapple/run.mjs http://localhost:3000 --project .
 
 The script prints a summary (problems by rule, then the top groups with selector, actual, expected, fix, and where they were seen) and the path of the full report. Exit codes: `0` passed, `1` findings or unresolved checks, `2` the check did not finish.
 
-It uses, in order, the project's own `lintapple`, the copy installed with gti-skills, or `npx lintapple@<version>` from npm. It needs Node.js 22 or later and Chromium for Playwright; if Chromium is missing, the script prints the one command that installs it. Nothing is written into the project.
+It always uses the gti-skills fork in `packages/lintapple`, found through `lintapple.root`. It never uses a project copy and never downloads the upstream package from npm, so new checks in the fork reach every run. If the fork is not built, the script prints the build command and stops. It needs Node.js 22 or later and Chromium for Playwright; if Chromium is missing, the script prints the one command that installs it. Nothing is written into the project.
 
 ## Probe unmarked layouts
 
@@ -166,13 +166,14 @@ The default policy expects Apple system fonts and a fixed type scale, so on most
 | Page bounds | `root-background`, `horizontal-overflow`, `viewport-bounds`, `content-clipping`, `content-overflow` |
 | Color | `text-contrast` |
 | Accessibility | `accessible-name`, `form-label`, `aria-reference`, `label-consistency`, `control-state`, `keyboard-operation`, `focus-visible`, `focus-obscured`, `dialog-focus` |
+| Actions | `redundant-state-actions` (two nearby buttons in one group with the same declared action or complementary disabled state should be one button that changes after the click) |
 
 ## Adopting it in the project
 
-When the user wants these checks to keep running, offer to adopt lintapple in the project. It changes the project, so ask first:
+When the user wants these checks to keep running, offer to adopt the fork in the project. It changes the project, so ask first. Copy `packages/lintapple/ui-policy.json` into the project as `ui-policy.json`, then add a script that calls the fork directly:
 
 ```bash
-npm install -D lintapple && npx lintapple init
+node <gti-skills>/packages/lintapple/dist/bin/lintapple.js . --config ui-policy.json --json
 ```
 
-This adds `ui-policy.json` and a `lint:ui` script. In Playwright tests, `import { expectUI } from 'lintapple/playwright'` and `await expectUI(page, testInfo)` after the page is ready fail the test on findings. Add the `data-ui-*` markers to the components whose spacing and alignment should be enforced.
+Do not install `lintapple` from npm. The npm package is the upstream original and does not have this fork's checks. The fork also exposes a Playwright helper at `dist/src/playwright.js` for projects that link to it. Add the `data-ui-*` markers to the components whose spacing and alignment should be enforced.

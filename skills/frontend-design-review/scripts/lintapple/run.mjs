@@ -11,9 +11,9 @@
  *   node run.mjs --write-policy FILE      Writes the default policy to FILE to adapt
  *   node run.mjs --where                  Shows which lintapple would run
  *
- * lintapple is found in this order: the project's own node_modules/lintapple, the
- * gti-skills package this skill was installed with (lintapple.root next to this file),
- * then `npx lintapple@<version>` from npm. The policy is --config, else the project's
+ * lintapple is always the gti-skills fork in packages/lintapple, found through the
+ * lintapple.root pointer next to this file. It never uses a project copy or downloads
+ * the upstream package from npm. The policy is --config, else the project's
  * ui-policy.json, else the default policy. Nothing is written to the project.
  */
 
@@ -24,7 +24,6 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const FALLBACK_VERSION = "0.1.24";
 
 export const DEFAULT_POLICY = {
     fonts: ["system-ui", "-apple-system", "BlinkMacSystemFont", "SF Pro Text", "SF Pro Display"],
@@ -56,22 +55,12 @@ function packageRoot() {
     return root && existsSync(join(root, "package.json")) ? root : null;
 }
 
-/** Decides which lintapple to run. Returns { kind, command, args, version, note }. */
+/** Decides which lintapple to run. Only the gti-skills fork is accepted. */
 export function resolveLintapple(project, root = packageRoot(), exists = existsSync) {
-    const local = join(project, "node_modules", "lintapple", "dist", "bin", "lintapple.js");
-    if (exists(local)) return { kind: "project", command: process.execPath, args: [local], note: "the project's own lintapple" };
-    if (root) {
-        const built = join(root, "dist", "bin", "lintapple.js");
-        if (exists(built)) return { kind: "package", command: process.execPath, args: [built], root, note: `gti-skills package at ${root}` };
-    }
-    let version = FALLBACK_VERSION;
-    try {
-        if (root) version = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).version || version;
-    } catch {
-        // keep the fallback version
-    }
-    const hint = root ? `The gti-skills copy at ${root} is not built; run "npm ci && npm run build" there to use it.` : "";
-    return { kind: "npx", command: "npx", args: ["--yes", `lintapple@${version}`], note: `lintapple@${version} from npm. ${hint}`.trim() };
+    if (!root) return { kind: "missing", error: "This skill has no gti-skills lintapple fork. Install it with the gti-skills CLI so lintapple.root points at packages/lintapple." };
+    const built = join(root, "dist", "bin", "lintapple.js");
+    if (!exists(built)) return { kind: "missing", root, error: `The gti-skills lintapple fork at ${root} is not built. Run "npm ci && npm run build" there to use it.` };
+    return { kind: "package", command: process.execPath, args: [built], root, note: `gti-skills lintapple fork at ${root}` };
 }
 
 /** Where generated files go: ~/.gti/lintapple/<project> (GTI_HOME replaces ~/.gti). Never the project itself. */
@@ -161,8 +150,12 @@ export function main(argv) {
     }
     const tool = resolveLintapple(project);
     if (options.where) {
-        console.log(`${tool.kind}: ${tool.note}`);
-        return 0;
+        console.log(`${tool.kind}: ${tool.note ?? tool.error}`);
+        return tool.kind === "missing" ? 2 : 0;
+    }
+    if (tool.error) {
+        console.error(`lintapple: ${tool.error}`);
+        return 2;
     }
     if (!options.url) {
         console.error("Usage: run.mjs <url> [--project DIR] [--config FILE] [--ready SELECTOR] [--interactions FILE] [--out FILE]");
@@ -175,7 +168,6 @@ export function main(argv) {
     const result = spawnSync(tool.command, [...tool.args, options.url, "--config", policy.file, "--json", ...options.passthrough], {
         cwd: project,
         encoding: "utf8",
-        shell: tool.kind === "npx" && process.platform === "win32",
         maxBuffer: 64 * 1024 * 1024,
     });
     const stderr = String(result.stderr ?? "");

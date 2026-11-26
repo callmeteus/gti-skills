@@ -86,7 +86,7 @@ Frontend Design Review gives an agent two modes. Mode 1 reviews code, a PR, Figm
 | Dependency | Version | Purpose | Auto-installed |
 |------------|---------|---------|:--------------:|
 | Node.js | 22+ | Runs lintapple, the measured UI checks (optional) | No |
-| lintapple | 0.1.24, from `packages/lintapple` | Measured checks of the rendered page; built on install and update, or run with `npx` | Yes |
+| lintapple fork | In `packages/lintapple` | Measured checks of the rendered page; the only linter the runner uses, built on install and update | Yes |
 | Chromium for Playwright | Matches lintapple's Playwright | Browser lintapple drives; the runner prints the install command when it is missing | No |
 | Unslop Interface skill | Same repository | Slop inventory and passes | No, install it with the same command |
 | Figma Dev Mode or Storybook | Any | Design system comparison in reviews | No |
@@ -221,14 +221,14 @@ node skills/frontend-design-review/scripts/lintapple/run.mjs http://localhost:30
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `<url>` | Required | The running page: a dev server, preview URL, or `file://` page |
-| `--project` | Current folder | The app folder; its `ui-policy.json` and `node_modules/lintapple` are used when present |
+| `--project` | Current folder | The app folder; its `ui-policy.json` is used when present |
 | `--config` | Project policy, else the default | Policy file adapted to the design system |
 | `--ready` | None | Selector that is visible when the page is ready |
 | `--interactions` | None | lintapple interaction plan for menus, dialogs, and other states |
 | `--out` | `~/.gti/lintapple/<project>/` | Where to save the full JSON report |
 | `--top` | `15` | Problem groups printed in the summary |
 | `--write-policy FILE` | - | Writes the default policy to adapt |
-| `--where` | - | Shows which lintapple runs: the project's, the gti-skills package, or `npx` |
+| `--where` | - | Shows the gti-skills fork path, or the build error when it is missing |
 
 ### scripts/lintapple/probe.mjs
 
@@ -407,7 +407,7 @@ The design system should win over the aesthetic guidelines. Point the agent to t
 |---------|---------|----------|
 | [Anthropic: frontend-design skill](https://github.com/anthropics/skills/tree/main/skills/frontend-design) | Apache 2.0 | Creative frontend principles in create mode |
 | [@Quirinevwm](https://github.com/Quirinevwm) | Not declared | Quality pillar framework and design review workflow |
-| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured UI checks, vendored in `packages/lintapple` with open pull requests #8 and #9 ported |
+| [lintapple by Gavin Holtzapple](https://github.com/gholtzap/lintapple) | MIT | Measured UI checks, forked into `packages/lintapple` with local checks |
 
 ## License
 

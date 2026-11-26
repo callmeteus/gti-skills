@@ -34,5 +34,5 @@ Ask the agent which skills it has loaded and check that `frontend-design-review`
 ## Notes
 
 - OpenCode also reads .claude/skills and .agents/skills.
-- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
+- Measured checks use the gti-skills lintapple fork in packages/lintapple; it needs Node.js 22+ and Chromium for Playwright, and fails with build instructions when the fork is not built.
 - Documentation: [OpenCode](https://opencode.ai/docs/skills/) (path source: official).

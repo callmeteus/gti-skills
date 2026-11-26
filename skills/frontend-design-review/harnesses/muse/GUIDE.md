@@ -34,5 +34,5 @@ Run `muse skills list` to see the skills Muse discovered.
 ## Notes
 
 - Based on one community report: muse skills list scans ~/.agents/skills, ~/.claude/skills, and ~/.codex/skills.
-- Measured checks run the shared packages/lintapple linter; it needs Node.js 22+ and Chromium for Playwright, and falls back to npx lintapple when the package copy is not built.
+- Measured checks use the gti-skills lintapple fork in packages/lintapple; it needs Node.js 22+ and Chromium for Playwright, and fails with build instructions when the fork is not built.
 - Documentation: [Muse Code](https://www.withone.ai/blog/muse-code-skills-not-mcp) (path source: community).
