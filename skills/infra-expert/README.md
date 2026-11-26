@@ -81,7 +81,8 @@ This skill applies automatically to any infrastructure work through six modes. *
 - **Zero downtime:** every operate change to a running service is planned as rolling or zero-downtime; when no such path exists the agent stops, says what would go down and the options, and asks the user.
 - **Project knowledge:** reads the project's committed `.gti/infra-expert/` folder at the nearest git root before the first remote command, and discovers the provisioning path, closest example, naming, and tags into `conventions.md` so create and deploy requests follow the project's own way. Creates the folder from a template only when asked.
 - **Access ladder:** project MCP tools first, then the project CLI, then a vendor CLI with a documented profile, then raw SSH or HTTP only when the project documents it; every drop is recorded as an MCP gap.
-- **Operate checklist:** 47 recurring failure patterns with the reference file that explains each one, from wrong-host actions to hidden stderr, scratch files outside the run folder, code-only diagnosis, and unverified cutovers.
+- **Operate checklist:** 62 recurring failure patterns with the reference file that explains each one, from wrong-host actions and hidden stderr to self-resolving alerts, unpiloted fleet changes, notices without a measured close, and unverified cutovers.
+- **Alert and window discipline:** an alert stream is read as data, correlated into one incident and fixed at its cause instead of muted; maintenance windows are announced with scope and exclusions, silence alerts only for the exact resource and window, and close with the measured duration.
 - **Secret manager discipline:** finds the project's canonical manager from its rules and code, stores every application secret there, lets each host read with its own identity, generates values where they are stored, and never passes a value through the agent.
 - **Change plans:** writes a Markdown plan in `.gti/infra-expert/plans/` with ordered steps, backups, verification, rollback, dependencies, and explicit approvals; `plan.py` creates, checks, renders, summarizes, and tracks it, and a CVE fix plan carries the CVE id and report path.
 - **Approval contract:** writing or summarizing a plan applies nothing; a step runs only after the plan or that step is approved, and a step that needs downtime always needs its own approval. Summaries include text, Slack, and Telegram actions.
@@ -478,7 +479,9 @@ Each run writes `<name>.mmd` and `<name>.html`; the HTML loads Mermaid from jsDe
 | `references/concepts/plain-language.md` | Counting, naming, and the vague claims to avoid | Review steps 4 to 6 |
 | `references/concepts/project-docs.md` | Project rules, inventories, ADRs, glossary | Review steps 1 and 5 |
 | `references/quality/safety.md` | Commands that never run, need permission, or are safe; operate rules | Every mode |
-| `references/quality/operate-checklist.md` | 47 recurring failure patterns, including plan, approval, migration, and measurement rows | Operate mode |
+| `references/quality/operate-checklist.md` | 62 recurring failure patterns, including plan, approval, migration, alert, window, and measurement rows | Operate mode |
+| `references/areas/alert-triage.md` | Alert definition checks, deduplication, correlation of bursts, reading state rather than chat | Operate step 3 |
+| `references/areas/maintenance-windows.md` | Window announcement fields, expected alerts, scoped silencing, measured close and corrections | Operate step 4 |
 | `references/quality/report-checklist.md` | Checks before rendering | Review step 4 |
 | `assets/templates/project-knowledge/README.md` | Template of the project's committed knowledge folder | Operate and CVE |
 | `assets/templates/project-knowledge/conventions.md` | Template for the project's provisioning path, closest examples, naming, tags, and inventories | Operate step 1 |

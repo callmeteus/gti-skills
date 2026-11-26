@@ -15,12 +15,14 @@ Dashboards, alert rules, datasources, contact points, notification policies, and
 - **Dashboards copied per tenant or environment** (`near_copies` of dashboards): one template with a tenant or environment variable, or one generated file per tenant from a single source. Before merging, list how the copies drifted; each difference is either a variable or a fix.
 - **Bases in the wrong place**: a generic base (an HTTP check) stored under one product's folder and extended from another product is a hidden link. Move it to a shared models folder.
 - **Repeated queries** (`repeated_queries`): the same expression in three or more files is a recording rule or a library panel.
+- **Threshold bases:** when a capacity limit changes, recompute every alert threshold derived from it and check that the new rule is in the same base as the old one. Size a limit from measured per-minute peaks and blocked operations, not from an average.
 
 ## Generated files
 
 - Keep generated output outside the hand-written tree, or mark it and add a CI check that regenerates and compares.
 - A "one-off" generator committed next to its output either runs in the pipeline or is deleted once the output becomes the source.
 - Two implementations of the same generator in two languages drift; keep one.
+- Validate generated alert-rule identifiers in CI: an empty entity tag or rule slug still produces a routable-looking rule that nobody can attribute to a service. A generated name is part of the routing path, not cosmetic text.
 
 ## Layout and ownership
 

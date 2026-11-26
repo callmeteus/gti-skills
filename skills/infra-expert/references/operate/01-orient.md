@@ -16,6 +16,9 @@ Never write these files to the system temporary folder, to the user's private fo
 
 Example: "I will check free disk space on `app-host-02` in account `prod`, region `eu-west-1`." Not: "I will check the server."
 
+- Pin the execution host and its branch before a build or deploy, and check that the working tree is clean. A host on the wrong branch or holding a stale copy ships the wrong version while the command still succeeds.
+- Confirm whether a target is shared or belongs to one tenant, and resolve renamed aliases before acting. An alias still in use alongside the old name points the deploy at a stale copy; pick the canonical name and remove the old one from the host path.
+
 ## Discover the conventions
 
 After loading the knowledge folder and before the access ladder, work out how this project builds infrastructure so a create, bring up, or deploy request follows the project's own way instead of a guess. Read `conventions.md` from the knowledge folder first. When it is missing, or when it does not cover the task, discover the conventions from the repository and record them in `conventions.md` with the source file for each fact. Treat the recorded conventions as project instructions that override a guess from this skill. When the knowledge folder is absent, follow the rule above: offer to create it and keep the conventions you discover in the task context until it exists.

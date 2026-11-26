@@ -56,8 +56,11 @@ Every step needs a non-empty `verify` and `rollback`. Step ids must be unique an
 - A step may cause downtime, or a zero-downtime path needs a decision.
 - The change comes from a CVE triage or an audit and is not applied in that mode.
 - The user asks for a plan, a draft, or a runbook, or says to wait for approval before applying.
+- Ask about urgency and availability before accepting a delay or shelving a request, and record the agreed window in the request. An ambiguous "when" is not a reason to rush or to defer indefinitely.
 
 In Autonomous Mode, write the plan and list the apply as pending. Do not approve your own plan or apply a step that needs a person, a downtime window, or a gated action.
+
+Name one owner for communication and a backup for handoff across shifts. When the work depends on a single skilled operator, escalate availability early instead of waiting. Do not schedule a risky change without on-call coverage: flag the missing coverage and name the handoff before the plan is proposed.
 
 ## How to fill the fields
 

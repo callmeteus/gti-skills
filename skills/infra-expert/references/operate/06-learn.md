@@ -14,6 +14,7 @@ python3 <skill-dir>/scripts/knowledge/knowledge.py learn \
 ```
 
 - Merge a near-copy into an existing entry instead of appending a second one. Do not keep five variants of the same lesson, because the file stops being read.
+- Write a postmortem as a structured record: the detection gap, how hard the evidence was to find, the full chain of causes, the impact including its financial cost, and one preventive action per link. A list of fixes that does not match the links leaves a cause unaddressed.
 
 ## MCP gaps
 

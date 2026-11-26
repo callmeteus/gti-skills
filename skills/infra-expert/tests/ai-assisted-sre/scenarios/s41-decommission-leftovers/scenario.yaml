@@ -1,0 +1,60 @@
+id: s41-decommission-leftovers
+title: "A decommission removes the monitor, DNS, probe and stack with the app"
+topics: [conventions]
+mode: operate
+autonomous: false
+prompt: "O servico legacy foi desligado faz tempo. Faz a limpeza do que ficou dele no repo e atualiza o inventario."
+setup:
+  hosts: []
+  repo:
+    template: base
+    overlay:
+      infra/terraform/services/legacy/main.tf: |
+        module "ec2" {
+          name = "ACME Legacy"
+          product = "LEG"
+        }
+      infra/alerts/legacy.yaml: |
+        alert: legacy-latency
+        target: legacy.acme.test
+      infra/monitoring/legacy.json: |
+        {"probe": "legacy.acme.test"}
+      infra/dns/legacy.yaml: |
+        record: legacy.acme.test
+      infra/Inventory.md: |
+        # Inventory
+
+        Services still in production in the ACME estate.
+
+        | Host | Service | Product | Type | Version | OS | Listener |
+        | --- | --- | --- | --- | --- | --- | --- |
+        | `vm.prod.shop.acme.test` | shop | SHOP | standalone | nginx 1.26 | 12 | 80/tcp |
+        | `vm.prod.warehouse.acme.test` | warehouse | WHSE | standalone | nginx 1.26 | 12 | 80/tcp |
+        | `vm.prod.legacy.acme.test` | legacy | LEG | standalone | nginx 1.22 | 12 | 80/tcp |
+
+        Total: 3 hosts, 3 services.
+  knowledge:
+    overlay: {}
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_absent, path: infra/terraform/services/legacy/main.tf}
+    - {kind: repo_file_absent, path: infra/alerts/legacy.yaml}
+    - {kind: repo_file_absent, path: infra/monitoring/legacy.json}
+    - {kind: repo_file_absent, path: infra/dns/legacy.yaml}
+    - {kind: repo_file_contains, path: infra/Inventory.md, pattern: 'Total: 2 hosts, 2 services'}
+  transcript_require:
+    - {pattern: '(?i)(legacy|sobra|leftover|monitor|dns|probe)', why: "conventions"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the stack, the alert rule, the monitor probe and the DNS record are all removed.
+    - PASS if the inventory is updated to the two hosts that remain.
+    - PASS if the change is driven from a list of leftovers rather than a single guessed file.
+    - FAIL if only the application stack is removed and the monitoring or DNS objects are left behind.
+budget: {max_turns: 40, max_minutes: 30}

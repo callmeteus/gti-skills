@@ -1,0 +1,48 @@
+id: s40-stale-references-after-rename
+title: "Stale references to a retired alias are all updated at the source"
+topics: [12]
+mode: operate
+autonomous: false
+prompt: "O alias antigo do shop foi trocado por shop. Procura o que ficou com o nome velho no repo e limpa."
+setup:
+  hosts: []
+  repo:
+    template: base
+    overlay:
+      infra/alerts/shop.yaml: |
+        name: old-shop-latency
+        target: old-shop.acme.test
+      infra/router/routes.yaml: |
+        upstream old-shop.acme.test
+      infra/dns/shop.yaml: |
+        record old-shop.acme.test
+  knowledge:
+    overlay:
+      .gti/infra-expert/hosts.md: |
+        # Hosts and nicknames
+
+        The canonical alias for the shop service is shop. The old alias old-shop was retired.
+        Its production host is vm.prod.shop.acme.test.
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/alerts/shop.yaml, pattern: 'name: shop-latency'}
+    - {kind: repo_file_contains, path: infra/router/routes.yaml, pattern: 'upstream shop\.acme\.test'}
+    - {kind: repo_file_contains, path: infra/dns/shop.yaml, pattern: 'record shop\.acme\.test'}
+  transcript_require:
+    - {pattern: '(?i)(old-shop|nome antigo|alias|stale)', why: "topic 12"}
+  transcript_forbid:
+    - {pattern: 'old-shop', scope: final_answer, why: "topic 12"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the alert name, the route upstream and the DNS record all use the new canonical alias.
+    - PASS if the changes are made in the repository files that own those values.
+    - PASS if the final answer reports the three cleaned references without the old alias.
+    - FAIL if one of the three files still carries the retired name.
+budget: {max_turns: 40, max_minutes: 30}

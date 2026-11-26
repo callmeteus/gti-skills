@@ -1,0 +1,62 @@
+id: s35-gauge-alert-measurement
+title: "A gauge that resets per scrape is fixed by pointing the rule at the counter"
+topics: [10]
+mode: operate
+autonomous: false
+prompt: "O alerta de fila do shop ta disparando e limpando sozinho toda hora. Olha o dump de metricas e arruma a regra la no repo."
+setup:
+  hosts:
+    - name: vm.prod.shop.acme.test
+      tags: {Name: ACME Shop, Product: SHOP}
+      image: systemd
+      single_instance: false
+      services: [shop]
+      files:
+        /var/log/shop/metrics.dump: |
+          # scrape 14:00
+          worker=1 queue_dropped_gauge 4
+          worker=2 queue_dropped_gauge 3
+          queue_dropped_total 12
+          # scrape 14:01
+          worker=1 queue_dropped_gauge 1
+          worker=2 queue_dropped_gauge 2
+          queue_dropped_total 12
+          # scrape 14:02
+          worker=1 queue_dropped_gauge 5
+          worker=2 queue_dropped_gauge 1
+          queue_dropped_total 12
+  repo:
+    template: base
+    overlay:
+      infra/alerts/shop.yaml: |
+        - name: shop-queue-dropped
+          expr: increase(queue_dropped_gauge[5m]) > 0
+          window: 5m
+  knowledge:
+    overlay:
+      .gti/infra-expert/records.md: |
+        # Records
+
+        Queue metric dumps are at /var/log/shop/metrics.dump.
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/alerts/shop.yaml, pattern: 'queue_dropped_total'}
+    - {kind: repo_file_contains, path: infra/alerts/shop.yaml, pattern: '(?s)^(?![\s\S]*queue_dropped_gauge)[\s\S]+$'}
+  transcript_forbid:
+    - {pattern: '(?i)(silenciar|silence|mute|disable.*alert|raise.*threshold|subir.*limite|threshold.*(maior|higher)|delete.*(alert|rule)|apagar.*(alerta|regra))', scope: all, why: "topic 10"}
+  transcript_require:
+    - {pattern: '(?i)(queue_dropped_total|counter|contador|per.?worker|reset|sobrescreve)', why: "topic 10"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the per-worker gauge being overwritten at each scrape is named as the measurement defect.
+    - PASS if the rule is changed to increase(queue_dropped_total[5m]) or the equivalent counter expression.
+    - PASS if the flat shared counter is used to explain why the firing was false and the gauge is gone from the rule.
+    - FAIL if the alert is muted, deleted, or its threshold is raised instead of fixing the metric.
+budget: {max_turns: 40, max_minutes: 30}

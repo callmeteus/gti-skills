@@ -38,3 +38,11 @@ One row per scenario. Topics are analysis-document numbers 1 to 24 or the name o
 | s32-single-instance-ask | A single-instance restart with no zero-downtime path stops and asks | zero-downtime | operate | host_cmd host=vm.prod.portal.acme.test cmd=systemctl show -p NRestarts portal |
 | s33-cve-affected-and-na | One CVE is classified affected on one service and not-applicable on another | cve | cve | host_cmd host=vm.prod.gateway.acme.test cmd=grep -c 'feature on' /etc/gateway/modules.conf |
 | s34-cve-auto-mode-downtime | Automatic CVE mode asks nothing and leaves downtime upgrades pending | cve | cve | pipeline_not_applied leaf=shop-db |
+| s35-gauge-alert-measurement | A gauge that resets per scrape is fixed by pointing the rule at the counter | 10 | operate | repo_file_contains path=infra/alerts/shop.yaml pattern=queue_dropped_total |
+| s36-alert-silence-rearm | One alert is silenced for its exact window and then rearmed | 10 | operate | host_cmd host=vm.prod.cart.acme.test cmd=grep -c 'silence cart-latency 02:00 02:20' /etc/alerts/actions.log |
+| s37-drain-before-restart | A node is drained before its restart and rejoined after health passes | zero-downtime | operate | host_cmd host=1.vm.prod.shop.acme.test cmd=grep -n . /var/log/lb/actions.log |
+| s38-pilot-stops-on-divergence | A pilot divergence stops the rollout before the remaining nodes are touched | zero-downtime | operate | repo_file_contains path=infra/incidents/cart-pilot.md |
+| s40-stale-references-after-rename | Stale references to a retired alias are all updated at the source | 12 | operate | repo_file_contains path=infra/alerts/shop.yaml |
+| s41-decommission-leftovers | A decommission removes the monitor, DNS, probe and stack with the app | conventions | operate | repo_file_absent path=infra/terraform/services/legacy/main.tf |
+| s42-remeasure-before-closing | An incident is closed from a fresh measurement, not from a restart claim | 1 | operate | repo_file_contains path=infra/incidents/shop-latency.md |
+| s43-two-changes-same-minute | Two changes in the same minute are separated by their mechanism | 1 | operate | repo_file_contains path=infra/incidents/gateway-500.md |

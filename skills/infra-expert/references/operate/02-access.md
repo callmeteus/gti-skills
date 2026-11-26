@@ -10,6 +10,9 @@ Access is a cost: every new connection costs time, and every script that runs in
 
 Example: pass `grep=error` to the log tool; do not fetch the whole log and pipe it to `grep`.
 
+- Serialize deploys and branch checkouts on a shared execution host, and name that host in every handoff. Two runs on one host overwrite each other's checkout, and a shared host reserved for one target cannot serve another at the same time.
+- Keep management traffic on the private network and treat a public path as an explicit exception. An access migration is not complete while auxiliary hosts, CI nodes or personal peers are left on the old path or excluded from it.
+
 ## Scripts go in files
 
 - Put any script longer than three lines in a local file and send it with `ssh <host> 'bash -s' < script.sh` or the project CLI's stdin mode (`project-cli <host> execute --stdin < script.sh`). Do not nest heredocs or embed one inside a command substitution, because a misplaced quote changes where the script runs.
@@ -34,6 +37,8 @@ set -o pipefail
 - Change appliance configuration through its API or YAML files, not through its internal state database, because an in-place edit can put the appliance in a restart loop.
 
 Example: install the key, use `ssh app-host-02` afterwards, and define the unit with `Restart=on-failure` before the first start.
+
+- When a host moves behind a new network path, update the name or route mapping that clients use and verify from a consumer host, not only from the host itself. A service reachable on its own box can still be unreachable to the clients that need it.
 
 ## Long remote sequences
 

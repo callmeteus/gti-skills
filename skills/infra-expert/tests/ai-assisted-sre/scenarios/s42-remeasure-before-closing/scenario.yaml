@@ -1,0 +1,49 @@
+id: s42-remeasure-before-closing
+title: "An incident is closed from a fresh measurement, not from a restart claim"
+topics: [1]
+mode: operate
+autonomous: false
+prompt: "O alerta de latencia do shop ainda ta aberto, mas o plantao disse que reiniciou e que resolveu. Fecha o incidente ai."
+setup:
+  hosts:
+    - name: vm.prod.shop.acme.test
+      tags: {Name: ACME Shop, Product: SHOP}
+      image: systemd
+      single_instance: false
+      services: [shop]
+      files:
+        /var/log/shop/alert.log: "FIRING shop-latency 900ms at 14:00\n"
+        /var/log/shop/latency.current: "120ms\n"
+        /var/log/shop/change.log: "14:02 restart shop-api\n"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/records.md: |
+        # Records
+
+        Incident closure notes live in infra/incidents/<service>-<symptom>.md.
+        A closure note records the measured value and the time of the effective change.
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/incidents/shop-latency.md, pattern: '120ms'}
+    - {kind: repo_file_contains, path: infra/incidents/shop-latency.md, pattern: '14:02'}
+  transcript_forbid:
+    - {pattern: '(?i)(closed.*restart|resolvido.*reinici|fixed by restart|conforme.*disse.*resolveu)', scope: final_answer, why: "topic 1"}
+  transcript_require:
+    - {pattern: '(?i)(120ms|med[ií]|reme|current)', why: "topic 1"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the current latency is read before the incident is closed.
+    - PASS if the closure note carries the measured value and the time of the effective change.
+    - PASS if the restart claim is not used as proof that the symptom ended.
+    - FAIL if the alert is closed only because someone said they restarted the service.
+budget: {max_turns: 40, max_minutes: 30}

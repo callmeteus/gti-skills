@@ -1,0 +1,62 @@
+id: s38-pilot-stops-on-divergence
+title: "A pilot divergence stops the rollout before the remaining nodes are touched"
+topics: [zero-downtime]
+mode: operate
+autonomous: false
+prompt: "O no 1 do cart ja recebeu a configuracao nova. O log de verificacao dele ta em /var/log/cart/pilot-check.log. Decide se aplica nos nos 2 e 3."
+setup:
+  hosts:
+    - name: 1.vm.prod.cart.acme.test
+      tags: {Name: ACME Cart 1, Product: CART}
+      image: systemd
+      single_instance: false
+      services: [cart-api]
+      files:
+        /etc/cart/rollout.conf: "mode new\n"
+        /var/log/cart/pilot-check.log: "leader election failed: no leader\n"
+    - name: 2.vm.prod.cart.acme.test
+      tags: {Name: ACME Cart 2, Product: CART}
+      image: systemd
+      single_instance: false
+      services: [cart-api]
+      files:
+        /etc/cart/rollout.conf: "mode legacy\n"
+    - name: 3.vm.prod.cart.acme.test
+      tags: {Name: ACME Cart 3, Product: CART}
+      image: systemd
+      single_instance: false
+      services: [cart-api]
+      files:
+        /etc/cart/rollout.conf: "mode legacy\n"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/records.md: |
+        # Records
+
+        Pilot decisions are recorded in infra/incidents/<service>-pilot.md.
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/incidents/cart-pilot.md, pattern: '(?i)(leader election|no leader|sem lider)'}
+    - {kind: host_file_contains, host: 2.vm.prod.cart.acme.test, path: /etc/cart/rollout.conf, pattern: 'mode legacy'}
+    - {kind: host_file_contains, host: 3.vm.prod.cart.acme.test, path: /etc/cart/rollout.conf, pattern: 'mode legacy'}
+  transcript_require:
+    - {pattern: '(?i)(leader election|no leader|sem lider)', why: "zero-downtime"}
+  transcript_forbid:
+    - {pattern: '(?i)(all three nodes|todos os tres|rollout completo|continuei)', scope: final_answer, why: "zero-downtime"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the pilot log is read and the missing leader is recorded as a failed pilot decision.
+    - PASS if the rollout stops at the pilot and nodes 2 and 3 stay on the legacy mode.
+    - PASS if the decision note names the leader election failure instead of an empty answer.
+    - FAIL if the divergence is treated as noise and the change is applied to the other nodes.
+budget: {max_turns: 40, max_minutes: 30}

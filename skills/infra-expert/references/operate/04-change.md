@@ -70,6 +70,8 @@ Example: "Dry run: 2 creates, 1 update, 0 deletes. Backup written to `.tmp` and 
 
   Example: "The apply failed and I rolled back; both the config backup and the database dump are kept for recovery."
 
+- After a restore, reconcile or refund transactions created after the snapshot and keep an evidence file of transaction IDs and amounts. A restore point is not a complete end state while later work sits outside it.
+
 - In Autonomous Mode, delete the non-database backups after verification and keep the database backups. List the kept database backups as pending for the user's decision. Do not delete a database backup, because the user has not confirmed it.
 
   Example: "Removed the config backup after health checks passed; kept the database dump and listed it as pending for the user."
@@ -96,6 +98,8 @@ Example: "No method was named, so I used the provisioning path in `conventions.m
 
 Example: "The interface fix goes into the VM bootstrap, then a check lists the version and theme on every VM and shows the ones that differ."
 
+- Pilot a fleet-wide change on one unit and stop at the first divergence before any other unit is touched. A pilot that fails to come back on boot is a reason to halt, not to continue the rollout.
+
 ## Requirements, names, and announcements
 
 - Do not drop a stated requirement (thinking mode, context size, tool calls) to make a test pass. Report the conflict, because the client still needs the feature.
@@ -103,6 +107,12 @@ Example: "The interface fix goes into the VM bootstrap, then a check lists the v
 - After a rename, search the repository for the old name and list what is left before saying it is done. Search for an existing file, folder, group, secret, or config before creating one. Do not create a parallel copy, because later changes will go to the wrong one.
 
 Example: "Old prefix still appears in 3 variables; I renamed those too" instead of "renamed, done".
+
+- Write a component order as a numbered list and confirm it before a multi-component rollout. Roll from the smallest unit to the largest, pause for validation after a high-impact unit, and obey an explicit hold such as "wait for my signal" or "after peak" rather than starting early.
+- After a rename or a cutover, search config files, routes, monitors and upstreams for the old address as well as the repository, and fix them at the source before saying done.
+- Use the process start path that re-reads configuration: a reload that preserves a cached environment will not apply a new variable. Check every source that can override the value, then verify it in the running process.
+- Build for the target architecture and inspect the image before tagging it live; a builder-native image will not start on the target host. Give every skipped test or health check a named owner, because a skipped check without an owner hides the wrong artifact.
+- Do not confirm an artifact that reports incomplete coverage, including an AI-produced draft. List the missing or dropped requirements and route it to a reviewer. When a request omits a component, add it explicitly to the work item instead of trusting the deploy tool to infer it.
 
 - Send a maintenance or status announcement only after a command on the target returned success. State only what that command confirmed and name the target. Do not announce from intent, because a message that says "finished" for a host you never reached is wrong and hard to retract.
 
@@ -117,6 +127,13 @@ Example: "Unit restarted on `app-host-02`, health check returned 200" or no mess
 - Stop only for writes in production that the request did not authorize, money, a real fork in the decision, or a step that needs a person (login, MFA, UI click). Say once what is needed and continue with the rest of the work instead of reopening the same confirmation.
 
 Example: "I found the wrong port in the unit and changed it, then confirmed the health check" instead of "the port is wrong, want me to fix it?"
+
+- In an incident, make the fastest safe rollback or the smallest safe mitigation the first containment step, then fix forward. Measure the blast radius before disabling a feature customers rely on, and record the deeper fix as a follow-up.
+- After a restart, an environment change or a secret rotation, run one real end-to-end transaction and verify every node, not just one. After a deploy, run the named user-visible checks and keep the agreed observation window before closing.
+- After a reboot, verify the application process actually came back; services outside the init manager do not auto-start.
+- Check the version currently running before a rollback and verify that the rollback took effect; keep the documented manual path when a UI button does nothing.
+- Treat a schema migration as its own change step with an owner, a safety check, a down script and a written record. A duplicate-column error means it already ran, not that the migration failed.
+- Keep a short local log rotation after central logging works; the local copy is the fallback during a central outage.
 
 ## Zero downtime
 

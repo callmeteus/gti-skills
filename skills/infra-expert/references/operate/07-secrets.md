@@ -69,6 +69,10 @@ Example: "I sent `migrate-secrets.sh` to `<host>`, backed up `.env` with mode 60
 
 Example: "Rotating the session signing key would log out every current session. I named that impact, kept the old key accepted until the new one rolled out, and asked before retiring the old key rather than doing it unattended."
 
+- Classify a rotation list before acting: session and token secrets are often safe to rotate live, while encryption keys need stored data re-encrypted or external consumers notified, so those rotations go into a planned window.
+- A managed credential that rotates on a schedule breaks clients holding a static copy with an open pool. Give the client read access to the current value or refresh its copy before rotation, and check that it still works after a restart; extending the rotation interval is a mitigation, not a fix.
+- Put short-lived credentials, for example a mirror token, on a renewal timer and verify one sync immediately after the rotation. A manual replacement without a timer fails again when the token expires.
+
 ## 8. Discovery tools
 
 - Prefer the project's MCP for the manager, through the access ladder in `01-orient.md`, to list projects, folders, and key names.

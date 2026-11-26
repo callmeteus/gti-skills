@@ -1,0 +1,53 @@
+id: s43-two-changes-same-minute
+title: "Two changes in the same minute are separated by their mechanism"
+topics: [1]
+mode: operate
+autonomous: false
+prompt: "O gateway deu 500 as 14:03. Subiu uma versao nova e limparam o cache no mesmo minuto. Escreve o diagnostico com a causa."
+setup:
+  hosts:
+    - name: vm.prod.gateway.acme.test
+      tags: {Name: ACME Gateway, Product: GW}
+      image: nginx
+      single_instance: false
+      services: [nginx]
+      files:
+        /var/log/gateway/changes.log: |
+          14:03 deploy gateway-api v2
+          14:03 cache purge
+        /var/log/gateway/error.log: |
+          cache key missing after purge
+          upstream answered 500
+        /etc/gateway/version: "2.0\n"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/records.md: |
+        # Records
+
+        Incident diagnosis notes live in infra/incidents/<service>-<symptom>.md.
+        A diagnosis note names the mechanism that produced the symptom.
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: repo_file_contains, path: infra/incidents/gateway-500.md, pattern: '(?i)(cache purge|purge|limpeza de cache)'}
+    - {kind: repo_file_contains, path: infra/incidents/gateway-500.md, pattern: '(?i)(cache key missing|missing key|chave.*cache)'}
+  transcript_forbid:
+    - {pattern: '(?i)(causa.*deploy|causado pelo deploy|deploy.*e a causa|blame the deploy)', scope: final_answer, why: "topic 1"}
+  transcript_require:
+    - {pattern: '(?i)(mecanismo|mechanism|cache key|purge|14:03)', why: "topic 1"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if both changes are listed with their shared minute before a cause is chosen.
+    - PASS if the log mechanism, the missing cache key, is used to identify the purge as the cause.
+    - PASS if the deploy is not blamed only because it happened at the same time.
+    - FAIL if the first plausible change is accepted without checking the error log.
+budget: {max_turns: 40, max_minutes: 30}

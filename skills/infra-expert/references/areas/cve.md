@@ -57,6 +57,8 @@ Give each service exactly one status from this vocabulary:
 
 A CVE's overall status is the worst of its services, in this order: `affected`, `possible`, `no-fix`, `not-checked`, `not-applicable`, `fixed`. [cve_report.py](../../scripts/cve/cve_report.py) computes the overall status. You still choose each service status.
 
+A version that only moves a host off an end-of-life line is not `fixed`: the advisory's fixed version must actually be installed. Re-classify after a later rollout installs it, and record the earlier state as a partial remediation rather than a closed case.
+
 ### 6. Follow the project's filter
 
 - Read the filter in the project's records policy (`records.md`). If it says a case gets no record, for example a module compiled but not loaded or a package only installed, that case gets only a line in the not-applicable index, not a per-CVE file.

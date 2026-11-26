@@ -52,6 +52,8 @@ Example: "Destination was empty; after the user approved, the copy read from a r
 
 ## 7. Verify the cutover on the host, then keep watching
 
+- A cutover is not done when the processes are online: check that the client joined the cluster and elected a leader. Cross-slot errors on a client that reports "online" mean scheduled jobs will never run.
+- Prefer a short measured full stop over a rolling cutover when queued jobs could be processed twice. Pause the consumers, copy, and resume them once, rather than letting two sets of workers see the same queue.
 - After the restart check, per process: the process state, the application's boot log line that names the cache host and TLS mode, established connections per destination address (`ss -tnp`), with zero application connections left on the old endpoint, and the provider's connection and throttling metrics (they can lag two to three minutes).
 - Check again over the next hours. A subscriber or a worker can fail later with redirection or closed-connection errors. Restart only the affected process, one at a time, through the process manager.
 - Watch the old cache: application reads and writes should drop to zero, with only replication and monitoring connections left.

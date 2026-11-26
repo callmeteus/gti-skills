@@ -12,6 +12,9 @@ A record tells a reader the status and what to do. It is not a log of how you fo
 
 Example: "Affected machines: 0" in the field table and a table of machine groups below, instead of a paragraph explaining how each group was read.
 
+- For an audit trail of changes, record the actor, the timestamp and the changed value in a store outside the database. Logs held in the database alone are data an administrator can alter, not evidence, and a generic "configuration changed" entry does not say who flipped a setting.
+- When a change request is cancelled or reopened, state the reason in the request and in the record. A cancelled request dropped from an elapsed-time report loses its context otherwise, and a reason makes the "nothing changed" boundary unambiguous.
+
 Vulnerability records use `assets/templates/cve-record.md` as is, including its status vocabulary (`affected`, `possible`, `not-applicable`, `fixed`, `no-fix`, `not-checked`). Do not use the template below for them and do not introduce a second vulnerability vocabulary. The generic template below is for other records: incidents, inventory entries, and runbook notes.
 
 ## Generic record template

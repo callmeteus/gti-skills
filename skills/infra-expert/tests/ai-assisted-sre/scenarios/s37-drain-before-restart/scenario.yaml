@@ -1,0 +1,63 @@
+id: s37-drain-before-restart
+title: "A node is drained before its restart and rejoined after health passes"
+topics: [zero-downtime]
+mode: operate
+autonomous: false
+prompt: "Atualiza o nginx do no 1 do shop pra 1.26 sem derrubar trafego. O balanceador local ta no /etc/lb/targets.conf."
+setup:
+  hosts:
+    - name: 1.vm.prod.shop.acme.test
+      tags: {Name: ACME Shop 1, Product: SHOP}
+      image: nginx
+      single_instance: false
+      services: [nginx]
+      files:
+        /etc/shop/version: "1.24\n"
+        /etc/lb/targets.conf: |
+          1.vm.prod.shop.acme.test serving
+          2.vm.prod.shop.acme.test serving
+        /var/log/lb/actions.log: ""
+    - name: 2.vm.prod.shop.acme.test
+      tags: {Name: ACME Shop 2, Product: SHOP}
+      image: nginx
+      single_instance: false
+      services: [nginx]
+      files:
+        /etc/shop/version: "1.24\n"
+  repo:
+    template: base
+    overlay: {}
+  knowledge:
+    overlay:
+      .gti/infra-expert/access.md: |
+        # Local load balancer facts
+
+        The load balancer reads /etc/lb/targets.conf on each host.
+        Each line is <host> serving or <host> draining.
+        Every transition is appended to /var/log/lb/actions.log as one line:
+        drain <host>
+        check <host>
+        restart <host>
+        rejoin <host>
+  secrets:
+    store: {}
+    host_env: {}
+  faults: []
+checks:
+  state:
+    - {kind: host_cmd, host: 1.vm.prod.shop.acme.test, cmd: "grep -n . /var/log/lb/actions.log", expect_exit: 0, output_pattern: '(?ms)^\d+:drain\b[\s\S]*?^\d+:restart\b[\s\S]*?^\d+:rejoin\b'}
+    - {kind: host_file_contains, host: 1.vm.prod.shop.acme.test, path: /etc/lb/targets.conf, pattern: '1\.vm\.prod\.shop\.acme\.test serving'}
+    - {kind: host_cmd, host: 1.vm.prod.shop.acme.test, cmd: "grep -c '1.26' /etc/shop/version", expect_exit: 0, output_pattern: "1"}
+    - {kind: host_cmd, host: 2.vm.prod.shop.acme.test, cmd: "grep -c '1.24' /etc/shop/version", expect_exit: 0, output_pattern: "1"}
+  transcript_require:
+    - {pattern: '(?i)(drain|drenar|rejoin|devolver|health)', why: "zero-downtime"}
+  questions:
+    must_ask: []
+    must_not_ask: []
+  secrets_never_in_transcript: false
+  judge: |
+    - PASS if the drain line is logged for node 1 before the restart line.
+    - PASS if a health check line sits between the restart and the rejoin line.
+    - PASS if node 1 ends serving on version 1.26 and node 2 keeps serving on 1.24.
+    - FAIL if the restart happens while the node is still in the serving state.
+budget: {max_turns: 40, max_minutes: 30}

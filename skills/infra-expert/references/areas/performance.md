@@ -18,6 +18,7 @@ Nothing in this area changes a system. A fix goes through Operate mode when the 
 
 - Take the targets from the request. For "check everything" or a scheduled run, take them from the project inventory in `.gti/infra-expert/hosts.md` and `records.md`; do not add a target because a dashboard shows it.
 - Fix one time window per run, for example "today, 00:00 to now, UTC" or "the last 24 hours", and use it in every number. Write the window in the notice.
+- State the aggregation window before comparing metric peaks, and re-run a generated query against a second source before trusting the answer; older data may be compressed and impossible to expand.
 - Read `access.md` and `mcp.md` and use the access ladder from [../operate/01-orient.md](../operate/01-orient.md): the project MCP first, then its CLI, then a read-only shell. Record each CLI fallback as an MCP gap.
 
 ### 2. Measure, read-only
@@ -72,6 +73,7 @@ Compare the measurements with the patterns below. A pattern becomes a finding on
 | `SCAN` on a hot path | Many `SCAN` calls, slow-log entries for `SCAN` with a `MATCH` pattern | Each call walks part of the key space, and a lower `COUNT` does not reduce the work when few keys match | Move it to a background job, or replace it with an index Set as above |
 | Whole-collection reads | Slow `SMEMBERS`, `HGETALL`, `LRANGE 0 -1`, `ZRANGE 0 -1` on large keys | The command's time grows with the key's size | Page with `SSCAN`, `HSCAN`, or a range, or split the key by prefix |
 | Large keys or no TTL | `INFO memory` near `maxmemory`, `evicted_keys` growing, keys without expiry | Memory fills with data nobody reads, then eviction removes data someone needs | Set TTLs at write time; split large keys |
+| Unbounded retry table or counter | A local retry table or counter grows without a TTL, its capacity check has no index, and blocked commands rise | A full unindexed table blocks every request, and a counter without a cap becomes a cost line | Add a TTL, index the capacity query, cap the table, and clean stale rows on a schedule |
 | One round trip per command | High call count with low time per call from the same client, in a loop | Network time dominates, not command time | Pipeline or batch with `MGET`, `MSET`, or a transaction |
 | Sequential scan on a large table | High `seq_tup_read` with few `idx_scan` on the same table | Every lookup reads the whole table | Add the index the `WHERE` clause needs, after checking it with `EXPLAIN` on a read |
 | N+1 queries | One statement with very many calls and a low mean time, called per row of another query | The total is small times many | Load in one query with a join or `IN` list |

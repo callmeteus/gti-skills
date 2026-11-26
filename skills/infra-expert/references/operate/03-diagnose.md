@@ -10,6 +10,12 @@ Diagnosis ends with the symptom measured again, not with a plausible explanation
 
 Example: "The 5xx was reported after the 14:00 deploy. I dropped the dataset hypothesis and replayed the captured request; it now returns 200."
 
+- Prove the cause by mechanism, not by timing. When two changes land in the same minute, do not accept the first plausible one: trace which change can produce the symptom and name the measurement that rejects the other. A coincidence is not a cause.
+- An incident that starts the moment a feature is re-enabled is a dormant defect chain, not a new break caused by the toggle. Map each link, for example per-line sends, an unindexed blocking check, and a full retry table, instead of naming the trigger as the cause.
+- A restart alone does not close an incident. Remeasure the exact symptom and confirm when the effective change took hold before declaring it fixed.
+- A 200 response proves the route exists, not that every role is running or that the backend dependency works. Check the readiness signal, the per-role processes, the deployed revision, and the specific dependency plus its rendered content before calling a node healthy.
+- Failures at many independent services or tenants at once point to a shared edge or control-plane change. Check that path and its own signal before the services behind it; a downstream health check cannot confirm the shared path. When a monitor or identity control plane is degraded, verify it with its own signal instead of blaming the dependent services.
+
 - A number or cause quoted from an alert, a screenshot caption, or a diagnosis forwarded from someone else is a claim, not a user-stated fact. Check it on the named resource and window, and report a mismatch with the measured number. Do not build the investigation on it unchecked.
 - For a regression after a deploy, read the version each node actually runs (image tag, version file, container or process start time) and compare the version before the change with the version after it. Do not diff the default branch against a commit picked by date, because nodes can run different versions and the default branch may not be deployed anywhere.
 - Before saying a fix is deployed, check that the release that runs contains the fix commit (`git merge-base --is-ancestor <fix> <release>`). Pull the default branch before reading code, because a stale clone shows code that is not in production.
@@ -48,3 +54,5 @@ Example: "I listed the projects and copied the slug instead of guessing it from 
 - Parse timestamps from APIs defensively. Many metric APIs return them as strings, so convert before formatting.
 
 Example: "The log query for the job service was empty; the label values for that window had no stream for it, so its logs are not collected, which I report as Not checked rather than as no errors."
+
+- Proof of connection is not proof of data. After wiring an exporter or datasource, query for the expected label or tenant at query time and carry that identifier through every hop: a wrong scope header hides one tenant's data while another's lands under the wrong label. Check the batch size of a buffered shipper and wait for a flush before calling a quiet pipeline broken or reinstalling it.
