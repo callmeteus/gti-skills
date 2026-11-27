@@ -21,10 +21,11 @@ def method():
         return ("uac", None) if shutil.which("powershell") else (None, "PowerShell is not available")
     if sys.platform == "darwin":
         return ("osascript", None) if shutil.which("osascript") else (None, "osascript is not available")
-    if not shutil.which("pkexec"):
-        return None, "pkexec (polkit) is not installed"
+    # Without a display there is no dialog to show, whether or not pkexec happens to be installed.
     if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
         return None, "there is no graphical session to show the password dialog in"
+    if not shutil.which("pkexec"):
+        return None, "pkexec (polkit) is not installed"
     return "pkexec", None
 
 
