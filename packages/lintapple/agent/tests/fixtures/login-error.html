@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px/20px sans-serif; margin: 0; padding: 24px; width: 420px; }
+  label, input { display: block; }
+  form { margin-bottom: 32px; }
+</style>
+</head>
+<body>
+  <form id="slop">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" value="admin@leados.local">
+    <label for="password">Senha</label>
+    <input id="password" type="password" value="secret">
+    <p>E-mail ou senha incorretos.</p>
+    <button>Entrar</button>
+  </form>
+  <form id="clean">
+    <label for="email2">E-mail</label>
+    <input id="email2" type="email" aria-invalid="true" aria-describedby="email2-error">
+    <small id="email2-error">Informe um e-mail válido</small>
+    <label for="password2">Senha</label>
+    <input id="password2" type="password">
+    <button>Entrar</button>
+  </form>
+  <div class="toast" role="alert">E-mail ou senha incorretos</div>
+</body>
+</html>

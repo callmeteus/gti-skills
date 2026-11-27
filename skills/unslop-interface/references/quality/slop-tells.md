@@ -194,4 +194,5 @@ Use this list twice: to inventory the screen before the first pass, and to check
 | Clickable elements that keep the arrow cursor | Common | 08 |
 | A button that starts slow work (generate, save, connect) and shows nothing while it runs | Admin panels | 08 |
 | Actions that change data with no confirmation toast | Admin panels | 08 |
+| A form result ("E-mail ou senha incorretos.") as a loose line of text in the form instead of a toast | Admin panels | 08 |
 

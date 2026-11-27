@@ -60,6 +60,14 @@ describe("detail page probe", { skip: browser ? false : "Chromium for Playwright
         assert.match(enums[0].items[0].selector, /input#key/);
     });
 
+    it("finds a form result left as a loose line of text, and leaves a tied field error and a toast alone", async () => {
+        const errors = (await probe("login-error.html")).filter((finding) => finding.rule === "loose-form-error");
+        assert.equal(errors.length, 1);
+        assert.match(errors[0].actual, /"E-mail ou senha incorretos\."/);
+        assert.match(errors[0].items[0].selector, /form#slop/);
+        assert.equal(errors[0].items.length, 1);
+    });
+
     it("closes the browser", async () => {
         await browser.close();
     });

@@ -3,7 +3,8 @@
  * separate buttons, controls stacked under the page title instead of on its right, notes that
  * explain how the page refreshes, the same value repeated in several cards, and values cut
  * with an ellipsis and no way to read them in full, empty states written in different
- * patterns, and text fields whose allowed values are listed under them instead of a select.
+ * patterns, text fields whose allowed values are listed under them instead of a select, and
+ * form results ("E-mail ou senha incorretos") left as a loose line of text instead of a toast.
  *
  * `measureDetail` runs in the page through Playwright, so it keeps no outside references.
  * probe.mjs merges its findings into the probe report.
@@ -218,6 +219,21 @@ export function measureDetail(options = {}) {
         }
     }
     if (enums.length) add("enum-as-text", enums.slice(0, 3).flatMap((entry) => [entry.field, entry.hint]), `${enums.length} text field(s) take a value from a fixed list written under them (${enums.slice(0, 2).map((entry) => entry.values.slice(0, 4).join(" · ")).join("; ")})`, "a select (or radio buttons for up to four values) with readable labels", "Replace the text field with a select whose options are the allowed values with readable labels (\"Tocar ou pausar\", \"Próxima faixa\", \"Volume +\"), keeping the identifiers as option values only. Use radio buttons or a segmented control for two to four values. Remove the list of values from the help text, and never show snake_case identifiers to the user.");
+
+    // A form-level result ("E-mail ou senha incorretos", "Falha ao salvar") set as a loose line of
+    // text inside the form: no alert role, not tied to a field, not in a toast.
+    const failure = /(incorret|inválid|invalid|incorrect|wrong|falh|failed|erro|error|não foi possível|nao foi possivel|could not|couldn't|unable to|tente novamente|try again|denied|negad|expirad|expired)/i;
+    const described = new Set();
+    for (const field of document.querySelectorAll("input, select, textarea")) {
+        for (const attr of ["aria-describedby", "aria-errormessage"]) for (const id of (field.getAttribute(attr) ?? "").split(/\s+/).filter(Boolean)) described.add(id);
+    }
+    const loose = [...document.querySelectorAll("form p, form div, form span, form small, form output")].filter((el) => {
+        if ((ignore && el.closest(ignore)) || !shown(el) || el.closest("[role=alert], [role=status], [aria-live], [class*=toast], [class*=Toast], [class*=snackbar], [data-sonner-toast], label, button, select, option")) return false;
+        const text = ownText(el);
+        if (!text || text.length > 140 || !failure.test(text)) return false;
+        return !(el.id && described.has(el.id));
+    });
+    if (loose.length) add("loose-form-error", loose.slice(0, 2), `a form result is a loose line of text in the form ("${ownText(loose[0]).slice(0, 48)}"), not a toast or an alert`, "a toast with `role=\"alert\"` for a form-level result, and field errors next to their field", "Show a result that belongs to the whole form (wrong e-mail or password, the server failed, the session expired) as an error toast with `role=\"alert\"`, the danger color, and an icon, kept until the next try or until closed. Keep the typed values, mark the fields `aria-invalid=\"true\"`, and put focus back on the first field. An error that belongs to one field stays under that field, tied with `aria-describedby`.");
 
     return findings;
 }

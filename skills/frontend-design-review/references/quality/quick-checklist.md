@@ -29,6 +29,7 @@ Run this before approving a review or delivering a build. Every unchecked box is
 - [ ] Every control has a label, and no select has a single option (no `unexplained-control`)
 - [ ] A settings page is one grid: every section the same width, labels on the left and controls on the right edge, the language as a select, and each choice with the setup of its chosen option under it, as a wizard when it takes steps (no `ragged-stack`, `language-as-buttons`, or `option-apart-from-settings`)
 - [ ] Every empty state on a page follows one pattern, such as "Nenhum resultado" and "Nenhuma atualização" (no `inconsistent-empty-copy`)
+- [ ] Form-level results are toasts (errors with `role="alert"`), and field errors sit under their field (no `loose-form-error`)
 - [ ] On desktop, every clickable element changes on hover and shows the pointer cursor (no `no-hover-state` or `no-pointer-cursor`)
 - [ ] Lists add items from a "+" button in their header, and the user is an avatar with an icon sign-out (no `create-as-item` or `user-as-text`)
 - [ ] Hand-drawn icons get a suggestion for one icon library in the report, not a silent swap (`icon-source`)

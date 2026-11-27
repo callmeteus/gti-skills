@@ -82,6 +82,7 @@ node <skill-dir>/scripts/lintapple/probe.mjs http://localhost:3000 --project .
 | `language-as-buttons` | Two or more buttons, radios, tabs, or links in one group labeled with language names ("English", "Português (Brasil)") and no select or combobox in that group |
 | `option-apart-from-settings` | An option of a choice (a toggle button, radio, tab, or select option) whose text is also the heading of a separate section on the page, as "Device: [Stream Deck Mobile]" above a "Stream Deck Mobile" card |
 | `enum-as-text` | A text field followed by help text that lists three or more identifiers ("play_pause · next · previous") as its allowed values |
+| `loose-form-error` | Error text inside a form ("incorretos", "inválido", "failed", "try again") that is not a toast, has no `role=alert` or `aria-live`, and is not tied to a field with `aria-describedby` or `aria-errormessage` |
 | `empty-list-without-message` | A table with column headers and no data rows, and nothing after it that says it is empty |
 | `open-create-form` | A form with two or more fields and a create button ("Criar", "Create", "Add", "New") that is always open, outside a dialog or closed disclosure, on a page that shows a table or a list of three or more items |
 | `ragged-form-labels` | Labels placed beside their fields, so fields in one column start at different x positions |
