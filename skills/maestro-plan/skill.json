@@ -1,0 +1,11 @@
+{
+    "id": "maestro-plan",
+    "displayName": "Maestro Plan",
+    "packs": [
+        "coding",
+        "personal"
+    ],
+    "requires": [
+        "maestro"
+    ]
+}

@@ -76,5 +76,38 @@ export function selectSkills(skills, packs, flags) {
         }
     }
 
-    return skills.filter((skill) => skillList.includes(skill.id) || skill.packs.some((id) => packList.includes(id)));
+    const selected = new Set(skills.filter((skill) => skillList.includes(skill.id) || skill.packs.some((id) => packList.includes(id))).map((skill) => skill.id));
+    const queue = [...selected];
+
+    // A selected skill brings the skills it loads, so it never installs without them
+    while (queue.length > 0) {
+        const id = queue.shift();
+        const skill = skills.find((candidate) => candidate.id === id);
+
+        for (const required of skill?.requires ?? []) {
+            if (!selected.has(required)) {
+                selected.add(required);
+                queue.push(required);
+            }
+        }
+    }
+
+    return skills.filter((skill) => selected.has(skill.id));
+}
+
+/**
+ * Checks that every skill a skill requires exists and is not the skill itself.
+ *
+ * @param {{ id: string, requires?: string[] }} skill Skill being validated
+ * @param {{ id: string }[]} skills Every skill in the repository
+ * @returns {string[]} Errors, empty when valid
+ */
+export function validateSkillRequires(skill, skills) {
+    return (skill.requires ?? []).flatMap((id) => {
+        if (id === skill.id) {
+            return [`skill.json requires itself`];
+        }
+
+        return skills.some((candidate) => candidate.id === id) ? [] : [`skill.json requires unknown skill "${id}"`];
+    });
 }

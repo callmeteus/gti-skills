@@ -32,7 +32,7 @@ From this folder, replace `node packages/cli` with `node .`.
 | `index.mjs` | Entry point and command dispatch |
 | `commands/` | One file per command: `Build`, `Check`, `Install`, `List`, `Update`, `Validate` |
 | `core/Registry.mjs` | Loads the agent registry and resolves skill folders |
-| `core/Packs.mjs` | Loads the pack registry, validates each skill's packs, and resolves `--skill` and `--pack` selections |
+| `core/Packs.mjs` | Loads the pack registry, validates each skill's packs and required skills, and resolves `--skill` and `--pack` selections, adding the skills a selected skill `requires` |
 | `core/Skills.mjs` | Discovers skills from `skill.json` and applies shared and generated files |
 | `core/Frontmatter.mjs` | Validates `SKILL.md` against the Agent Skills standard and the repository rules |
 | `core/Plan.mjs` | Runs validation across all skills |

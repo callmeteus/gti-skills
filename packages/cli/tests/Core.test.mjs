@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import { parseArgs } from "../core/Args.mjs";
 import { parseFrontmatter, splitFrontmatter, validateSkillFolder } from "../core/Frontmatter.mjs";
 import { renderGenerated, renderGuide } from "../core/Generated.mjs";
-import { loadPacks, selectSkills, validateSkillPacks } from "../core/Packs.mjs";
+import { loadPacks, selectSkills, validateSkillPacks, validateSkillRequires } from "../core/Packs.mjs";
 import { loadHarnesses, selectHarnesses, skillsFolder } from "../core/Registry.mjs";
 import { diffTree, normalizeContent, readTree, writeTree } from "../core/Tree.mjs";
 
@@ -130,6 +130,21 @@ describe("packs", () => {
     it("rejects unknown packs and skills", () => {
         assert.throws(() => selectSkills(skills, packs, { pack: "nope" }), /Unknown pack "nope"/);
         assert.throws(() => selectSkills(skills, packs, { skill: "nope" }), /Unknown skill "nope"/);
+    });
+
+    it("adds the skills a selected skill requires, transitively", () => {
+        const withRequires = [{ id: "base", packs: ["art"] }, { id: "mid", packs: ["art"], requires: ["base"] }, { id: "top", packs: ["coding"], requires: ["mid"] }];
+
+        assert.deepEqual(selectSkills(withRequires, packs, { skill: "top" }).map((skill) => skill.id), ["base", "mid", "top"]);
+        assert.deepEqual(selectSkills(withRequires, packs, { pack: "coding" }).map((skill) => skill.id), ["base", "mid", "top"]);
+        assert.deepEqual(selectSkills(withRequires, packs, { skill: "base" }).map((skill) => skill.id), ["base"]);
+    });
+
+    it("rejects unknown and self requirements", () => {
+        assert.deepEqual(validateSkillRequires({ id: "a", requires: ["b"] }, skills), []);
+        assert.deepEqual(validateSkillRequires({ id: "a" }, skills), []);
+        assert.match(validateSkillRequires({ id: "a", requires: ["nope"] }, skills)[0], /unknown skill "nope"/);
+        assert.match(validateSkillRequires({ id: "a", requires: ["a"] }, skills)[0], /requires itself/);
     });
 
     it("requires every skill to name at least one known pack", () => {

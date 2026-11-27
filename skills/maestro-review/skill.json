@@ -1,0 +1,11 @@
+{
+    "id": "maestro-review",
+    "displayName": "Maestro Review",
+    "packs": [
+        "coding",
+        "personal"
+    ],
+    "requires": [
+        "maestro"
+    ]
+}

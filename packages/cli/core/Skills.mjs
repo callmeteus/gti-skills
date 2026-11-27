@@ -14,6 +14,7 @@ const RootOnlyNames = new Set(["README.md", "skill.json", "tests"]);
  * @property {string} displayName Name shown in documentation
  * @property {string} dir Absolute folder that holds skill.json and SKILL.md
  * @property {string[]} packs Pack ids the skill belongs to
+ * @property {string[]} requires Skill ids installed together with this skill, because it loads them
  * @property {Record<string, string>} harnessNotes Extra sentence per agent id, added to that agent's guide
  * @property {string | null} packageDir Absolute package the skill drives, or null
  * @property {string | null} rootPointer File (relative to the installed skill) that receives the package path
@@ -48,6 +49,7 @@ export function discoverSkills(skillsDir = RepoPaths.skills) {
             displayName: config.displayName ?? config.id,
             dir: join(skillsDir, entry.name),
             packs: config.packs ?? [],
+            requires: config.requires ?? [],
             harnessNotes: config.harnessNotes ?? {},
             packageDir: config.package ? join(RepoRoot, ...config.package.split("/")) : null,
             rootPointer: config.rootPointer ?? null,

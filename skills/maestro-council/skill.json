@@ -1,0 +1,11 @@
+{
+    "id": "maestro-council",
+    "displayName": "Maestro Council",
+    "packs": [
+        "coding",
+        "personal"
+    ],
+    "requires": [
+        "maestro"
+    ]
+}

@@ -101,6 +101,7 @@ Each skill has a `skill.json` manifest in its folder. It is read by `packages/cl
 | `shared` | No | List of `{ "from", "to" }`: copies a shared folder, for example `packages/python/shared/scripts`, into the skill |
 | `generated` | No | List of `{ "to", "template" }`: extra documents rendered from the agent registry |
 | `harnessNotes` | No | Map of agent id to one sentence added to that agent's `GUIDE.md`. The key `*` applies to every agent |
+| `requires` | No | List of skill ids this skill loads, such as `maestro` for the Maestro entry points. `install` adds them whenever this skill is selected, and `validate` fails on an unknown id |
 
 ## Packs
 Skills are grouped into packs so users can install a whole area at once with `--pack`. The registry `packages/cli/registry/packs.json` is the single source of truth, and `node packages/cli validate` fails when a skill has no pack or names an unknown one.
@@ -210,6 +211,12 @@ Current skills:
 | `leak-guard` | Leak Guard |
 | `skill-distill` | Skill Distill |
 | `disk-cleanup` | Disk Cleanup |
+| `maestro-council` | Maestro Council |
+| `maestro-plan` | Maestro Plan |
+| `maestro-review` | Maestro Review |
+| `maestro-simple` | Maestro Simple |
+| `maestro-teach` | Maestro Teach |
+| `maestro-team` | Maestro Team |
 
 Short connecting words (`to`, `from`, `and`, `of`) stay lowercase in display names. Never use the skill ID as a README title.
 

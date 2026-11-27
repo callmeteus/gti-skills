@@ -1,0 +1,11 @@
+{
+    "id": "maestro-team",
+    "displayName": "Maestro Team",
+    "packs": [
+        "coding",
+        "personal"
+    ],
+    "requires": [
+        "maestro"
+    ]
+}

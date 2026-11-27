@@ -6,7 +6,7 @@
 
 **Drop-in skills that teach coding agents real workflows: design graphics from HTML, turn tutorials into skills, and turn videos into documentation. Written once, installed into Cursor, Claude Code, Antigravity, OpenCode, Cline, Kilo, Kiro, Codex, Copilot, and Muse Code.**
 
-[![Skills](https://img.shields.io/badge/skills-24-blue.svg)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-30-blue.svg)](#skill-catalog)
 [![Format](https://img.shields.io/badge/format-Agent%20Skills-green.svg)](#skill-anatomy)
 [![Agents](https://img.shields.io/badge/agents-10%20supported-8A63D2.svg)](#supported-agents)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
@@ -62,6 +62,12 @@ GTI AI Skills is the collection the [Gio Technology Investments (GTI)](https://g
 | **Gestures** | coding, design | Builds drags, swipes, sheets, and hold-to-confirm that track the finger 1:1 and stay interruptible, in plain JavaScript or any framework, with a dependency-free gesture module and a recipe per framework. Adapted from Emil Kowalski's skill. | A browser with Pointer Events | [README](skills/gestures/README.md) |
 | **GTI** | coding, personal | Keeps gti-skills current with one command (`/gti update`): updates every installed gti-skills skill from the latest GitHub commit, installs skills that are new in that commit for the packs already in use, and installs or refreshes the gti-skills MCP servers in a managed folder that agent configs point at, with backups. Works without a clone. | Node 18+, Python 3.10+ for MCP servers | [README](skills/gti/README.md) |
 | **Maestro** | coding, personal | Orchestrates a request as delegated tasks: plans on the strongest model, remembers the user's model preferences, discovers the providers and models the harness can run, routes each task by context, speed, cost, and health, probes orchestration MCP servers such as OpenAgents, spawns cheaper workers, reuses their chats for review and fixes, falls back on rate limits, and never does the work itself. Detects Paseo, Claude and Claude Code, Cursor, Codex, OpenCode, Kilo, Cline, Command Code, Pi, Hermes, OpenAgents, and other ACP harnesses. | A harness with subagents, a worker CLI on PATH (with Python 3.8+), or an MCP orchestration server; Git | [README](skills/maestro/README.md) |
+| **Maestro Council** | coding, personal | Convenes 3 to 7 agents on different models that write blind openings, debate each other directly for up to 3 rounds, and cast a blind vote, while Maestro chairs, checks for herding and collusion, and writes the verdict with the dissent. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-council/README.md) |
+| **Maestro Plan** | coding, personal | Writes Maestro's plan for a request (tasks, waves, routes, done criteria) and starts no worker; `/maestro resume` runs it later. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-plan/README.md) |
+| **Maestro Review** | coding, personal | Reviews a pull request or the local diff with Maestro's panel of 1 to 5 independent reviewers and a consensus built on evidence; posts only with permission. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-review/README.md) |
+| **Maestro Simple** | coding, personal | Simple orchestration through Maestro: one task, one cheap worker chat, and Maestro's evidence review in the same chat. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-simple/README.md) |
+| **Maestro Teach** | coding, personal | Maestro's teacher and student mode: a teacher writes a lesson, at least 3 students per iteration follow it, and the lesson is revised until they master the task with shorter output. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-teach/README.md) |
+| **Maestro Team** | coding, personal | Maestro with team mode on for long, hard runs: parallel workers share findings through mailboxes, a findings board, and task locks. Entry point into Maestro, which it installs alongside. | Maestro; same as Maestro | [README](skills/maestro-team/README.md) |
 | **Better Tests** | coding | Makes agents write tests that catch bugs: real dependencies over mocks, public API assertions, a failing test before every fix, mandatory Stryker and fast-check for JS and TS (installed outside the project), and safe pruning of brittle suites. | Node 18+ and npm for JS and TS projects | [README](skills/better-tests/README.md) |
 | **Web Performance Audit** | coding | Audits page load with the Chrome DevTools MCP server: a throttled trace, Core Web Vitals insights, network, accessibility snapshot, and codebase checks, with fixes ranked by measured savings. | Node LTS, Chrome, chrome-devtools-mcp | [README](skills/web-performance-audit/README.md) |
 | **Fast CI** | coding, infra | Makes CI as fast as possible without letting it lie: audits the last 150 runs on any CI (GitHub Actions, Forgejo, Gitea, Woodpecker, GitLab, Jenkins, Kubernetes and K3s runners, or manual scripts) split into waiting, setup, and running, then lands small measured changes (warm runners, baked images, seeded caches, fast tools, time-balanced shards, proven test selection, hooks, budgets) until PRs get results in under a minute while the full suite still gates main, and checks rollback scripts, rollback jobs, and migrations with timed rollback drills. | Python 3.8+ | [README](skills/fast-ci/README.md) |
@@ -83,13 +89,13 @@ Skills are grouped into packs so you can install a whole area at once. A skill c
 
 | Pack | Purpose | Skills |
 |------|---------|--------|
-| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Disk Cleanup, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Security Audit, SEO Growth, Skill Distill, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
+| `coding` | Writing, testing, reviewing, and auditing code | Better Tests, Disk Cleanup, Fast CI, Frontend Design Review, Gestures, GTI, Improve Codebase Architecture, Infra Expert, Leak Guard, LLM Fine Tuning, Maestro, Maestro Council, Maestro Plan, Maestro Review, Maestro Simple, Maestro Teach, Maestro Team, Security Audit, SEO Growth, Skill Distill, Unslop Interface, Untangle Codebase, Video to Skill, Web Performance Audit, Weight Space Programming |
 | `infra` | Infrastructure as code, cloud accounts, and observability as code | Fast CI, Infra Expert, Leak Guard |
 | `design` | Interface design, design reviews, and UX | Frontend Design Review, Gestures, Unslop Interface, UX Psychology Review |
 | `research` | Finding, collecting, and summarizing information from the web, video, and social media | LLM Fine Tuning, SEO Growth, Video to Markdown, Weight Space Programming, X Research |
 | `social` | Social media research, monitoring, and content | Video Editor, X Research |
 | `art` | Graphic design, illustration, and visual artwork | Art Director, Video Editor |
-| `personal` | Personal productivity, notes, and everyday tasks | Disk Cleanup, GTI, Maestro |
+| `personal` | Personal productivity, notes, and everyday tasks | Disk Cleanup, GTI, Maestro, Maestro Council, Maestro Plan, Maestro Review, Maestro Simple, Maestro Teach, Maestro Team |
 
 ```bash
 node packages/cli install --harness all --pack coding,design --scope user
@@ -263,6 +269,12 @@ Notes:
 | Improve Codebase Architecture | No | 3.8+ | No | Mermaid from jsDelivr when viewing the report |
 | Maestro | No | 3.8+ for CLI workers (agent runner) | No | Optional: remote MCP servers such as OpenAgents; worker commands use the host's own tools |
 | Untangle Codebase | No | 3.8+ | No | No |
+| Maestro Council | No | Same as Maestro | No | Same as Maestro |
+| Maestro Plan | No | Same as Maestro | No | Same as Maestro |
+| Maestro Review | No | Same as Maestro | No | Same as Maestro |
+| Maestro Simple | No | Same as Maestro | No | Same as Maestro |
+| Maestro Teach | No | Same as Maestro | No | Same as Maestro |
+| Maestro Team | No | Same as Maestro | No | Same as Maestro |
 | Skill Distill | No | 3.10+; Playwright and Pillow for web results | No | Only what the student harness does, such as calls to its model server |
 | Disk Cleanup | No | 3.8+ | No | No; scans and cleans local drives only |
 | Infra Expert | No | 3.8+ | No | AWS APIs through the AWS CLI in the aws area, read-only; Mermaid from jsDelivr when viewing the report |
@@ -405,6 +417,12 @@ ai-skills/
 │   ├── leak-guard/
 │   ├── llm-fine-tuning/
 │   ├── maestro/
+│   ├── maestro-council/
+│   ├── maestro-plan/
+│   ├── maestro-review/
+│   ├── maestro-simple/
+│   ├── maestro-teach/
+│   ├── maestro-team/
 │   ├── security-audit/
 │   ├── seo-growth/
 │   ├── skill-distill/
@@ -504,6 +522,12 @@ Report vulnerabilities privately through [GitHub Security Advisories](https://gi
 | [skills/weight-space-programming/README.md](skills/weight-space-programming/README.md) | Reading, fixing, and writing neural network weights without training |
 | [skills/improve-codebase-architecture/README.md](skills/improve-codebase-architecture/README.md) | Finding refactors and reporting them in plain coding terms |
 | [skills/maestro/README.md](skills/maestro/README.md) | Orchestrating tasks across cheap workers with review gates and reusable chats |
+| [skills/maestro-council/README.md](skills/maestro-council/README.md) | A council of agents that debate a question and vote, chaired by Maestro |
+| [skills/maestro-plan/README.md](skills/maestro-plan/README.md) | Planning a Maestro run without starting workers |
+| [skills/maestro-review/README.md](skills/maestro-review/README.md) | Reviewing a pull request with an independent panel and a consensus |
+| [skills/maestro-simple/README.md](skills/maestro-simple/README.md) | Delegating one task to one cheap worker through Maestro |
+| [skills/maestro-teach/README.md](skills/maestro-teach/README.md) | Teaching a lesson to student models until they master it |
+| [skills/maestro-team/README.md](skills/maestro-team/README.md) | Long, hard Maestro runs with workers that share findings |
 | [skills/untangle-codebase/README.md](skills/untangle-codebase/README.md) | Untangling a whole codebase in one verified refactor |
 | [skills/skill-distill/README.md](skills/skill-distill/README.md) | Distilling a good session into a tested skill for an open-weight model |
 | [skills/infra-expert/README.md](skills/infra-expert/README.md) | Reviewing and untangling infrastructure code and AWS accounts |
@@ -537,6 +561,12 @@ No repository-wide license has been declared yet. Skills may carry their own lic
 | Weight Space Programming | Not declared |
 | Improve Codebase Architecture | MIT, see [LICENSE](skills/improve-codebase-architecture/LICENSE); adapted from Matt Pocock's skills |
 | Maestro | Not declared; the interface was inspired by the MIT-licensed Maestro Skills project; the bundled [agent runner](packages/python/agent-runner/LICENSE) is MIT |
+| Maestro Council | Not declared |
+| Maestro Plan | Not declared |
+| Maestro Review | Not declared |
+| Maestro Simple | Not declared |
+| Maestro Teach | Not declared |
+| Maestro Team | Not declared |
 | Untangle Codebase | MIT, see [LICENSE](skills/untangle-codebase/LICENSE); adapted from Caldo's untangle-codebase skill |
 | Skill Distill | MIT, see [LICENSE](skills/skill-distill/LICENSE); adapted from Sybil Solutions' skill-distill |
 | Infra Expert | MIT, see [LICENSE](skills/infra-expert/LICENSE); the report renderer and hot spot scan are adapted from Improve Codebase Architecture |
